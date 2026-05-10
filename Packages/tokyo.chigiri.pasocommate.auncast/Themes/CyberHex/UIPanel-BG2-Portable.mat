@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: UIPanel-BG2-Portable
+  m_Shader: {fileID: 4800000, guid: f3be90d6c8bee3c4e8203c531d70e142, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Brightness: 5
+    - _CamHeight: 0.5
+    - _CamPitch: 12.3
+    - _CoCStr: 1.09
+    - _ColorMask: 15
+    - _Density: 1
+    - _DriftSpeed: 0.826
+    - _Exposure: 3
+    - _FloatDensity: 0.377
+    - _FloatHeight: 0
+    - _FoV: 36
+    - _FocalDist: 1.7
+    - _FogDist: 5
+    - _Opacity: 1
+    - _ParticleSize: 0.133
+    - _Saturation: 1.625
+    - _Softness: 0.91
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TwinkleAmt: 0
+    - _TwinkleSpeed: 0
+    - _UseUIAlphaClip: 0
+    m_Colors:
+    - _BgBottom: {r: 0.19999996, g: 0.29999998, b: 0.6, a: 1}
+    - _BgTop: {r: 0.52, g: 0.62, b: 0.8399999, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCool: {r: 0.54999995, g: 0.8, b: 1, a: 1}
+    - _ColorPink: {r: 0.88, g: 0.6, b: 0.88, a: 1}
+    - _ColorWarm: {r: 1, g: 0.75, b: 0.5, a: 1}
+    - _FogColor: {r: 0.68, g: 0.75, b: 0.9, a: 1}
+  m_BuildTextureStacks: []

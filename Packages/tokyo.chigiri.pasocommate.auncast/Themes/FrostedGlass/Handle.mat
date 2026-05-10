@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Handle
+  m_Shader: {fileID: 4800000, guid: f2b6e8e4c48d4a4da2f6b38f6b4f1c3a, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _CORNER_OCTAGON
+  - _DISSOLVE_OFF
+  - _MATCAP_ON
+  m_InvalidKeywords:
+  - _BLINK_EASEINOUT
+  - _BORDER_ON
+  - _GRADIENT_BLEND_MUL
+  - _GRADIENT_LINEAR
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMatcapTex:
+        m_Texture: {fileID: 2800000, guid: a5c8129dcdb9f684595e2a242d878410, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BorderMatcapTex:
+        m_Texture: {fileID: 2800000, guid: ec80b68caccb2f343a5a3503f331a368, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MSDFTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MatcapNormalTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AudioLinkBorderFilter: 3
+    - _AudioLinkBorderIntensity: 0
+    - _AudioLinkFilterIntensity: 3
+    - _AudioLinkKickDecayFrames: 10
+    - _AudioLinkKickEnvelope: 0
+    - _AudioLinkKickGain: 24
+    - _AudioLinkKickThreshold: 0.02
+    - _AudioLinkShiftEnd: 0
+    - _AudioLinkShiftStart: 0
+    - _AudioLinkSource: 0
+    - _BaseMatcapBevel: 2
+    - _BaseMatcapColorInfluence: 0
+    - _BaseMatcapNormalStrength: 1
+    - _BaseMatcapStrength: 0
+    - _BaseMatcapTilt: 0.2
+    - _BaseMatcapVertexColorInfluence: 0.9
+    - _BlinkOn: 0
+    - _BlinkPeriod: 2
+    - _BlinkSharpness: 0
+    - _BlurOn: 0
+    - _BlurRadius: 10
+    - _BorderGap: 0
+    - _BorderMatcapBevel: 0.5
+    - _BorderMatcapColorInfluence: 0
+    - _BorderMatcapFlip: 0
+    - _BorderMatcapNormalStrength: 1
+    - _BorderMatcapStrength: 0
+    - _BorderMatcapTilt: 2
+    - _BorderMatcapVertexColorInfluence: 0.6
+    - _BorderRingCount: 1.89
+    - _BorderVertexColorInfluence: 1
+    - _BorderWidth: 3
+    - _CORNER: 2
+    - _ColorMask: 15
+    - _CornerSize: 4
+    - _DISSOLVE: 0
+    - _DissolveAngle: 0
+    - _DissolveEdgeVertexColorInfluence: 0
+    - _DissolveEdgeWidth: 0.05
+    - _DissolveRadius: 0.5
+    - _DissolveSoftness: 0.1
+    - _DissolveThreshold: 0
+    - _GRADIENT: 1
+    - _GradientAngle: 0
+    - _MSDFPixelRange: 4
+    - _MatcapOn: 1
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseMSDF: 0
+    - _UseUIAlphaClip: 0
+    m_Colors:
+    - _BaseMatcapColor: {r: 2, g: 2, b: 2, a: 1}
+    - _BorderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _BorderMatcapColor: {r: 1.5, g: 1.5, b: 1.5, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBlink: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _DissolveEdgeColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GradientCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _GradientColor1: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _GradientColor2: {r: 2, g: 2, b: 2, a: 1}
+    - _GradientRadius: {r: 0, g: 0.5, b: 1, a: 1}
+    - _GradientRange: {r: 0, g: 0.5, b: 1, a: 1}
+    - _MSDFColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
