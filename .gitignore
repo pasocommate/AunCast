@@ -62,3 +62,6 @@ crashlytics-build.properties
 Assets/PackageMakerWindowData.asset*
 .idea
 .vscode
+
+# Unity user-specific settings
+/[Uu]ser[Ss]ettings/
