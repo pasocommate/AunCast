@@ -234,6 +234,7 @@ namespace PasocomMate.AunCast.Internal
             var rccList = root.GetComponentsInChildren<ResyncCoordinatorClient>(true);
             var pbsList = root.GetComponentsInChildren<PlaybackSwitcher>(true);
             var rcList = root.GetComponentsInChildren<ResyncCoordinator>(true);
+            AutoAssignAudioLinkBehaviour(pbsList);
 
             int totalCount = ldpcList.Length + apmList.Length + rccList.Length + pbsList.Length + rcList.Length;
 
@@ -1110,6 +1111,52 @@ namespace PasocomMate.AunCast.Internal
             }
 
             return new string(buffer, 0, count);
+        }
+
+        private static void AutoAssignAudioLinkBehaviour(PlaybackSwitcher[] switchers)
+        {
+            if (switchers == null || switchers.Length == 0) return;
+
+            GameObject audioLinkObject = GameObject.Find("AudioLink");
+            if (audioLinkObject == null) return;
+
+            UdonSharp.UdonSharpBehaviour[] candidates = audioLinkObject.GetComponents<UdonSharp.UdonSharpBehaviour>();
+            UdonSharp.UdonSharpBehaviour audioLink = null;
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                if (candidates[i] == null) continue;
+                if (candidates[i].GetType().Name == "AudioLink")
+                {
+                    audioLink = candidates[i];
+                    break;
+                }
+                if (audioLink == null)
+                    audioLink = candidates[i];
+            }
+            if (audioLink == null) return;
+
+            for (int i = 0; i < switchers.Length; i++)
+            {
+                PlaybackSwitcher switcher = switchers[i];
+                if (switcher == null) continue;
+
+                var so = new SerializedObject(switcher);
+                var prop = so.FindProperty("audioLinkBehaviour");
+                if (prop == null || prop.objectReferenceValue != null) continue;
+
+                Undo.RecordObject(switcher, "Auto Assign AudioLink Behaviour");
+                prop.objectReferenceValue = audioLink;
+                if (!so.ApplyModifiedProperties()) continue;
+
+                UdonSharpEditorUtility.CopyProxyToUdon(switcher);
+                EditorUtility.SetDirty(switcher);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(switcher);
+
+                var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(switcher);
+                if (udon == null) continue;
+                EditorUtility.SetDirty(udon);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+            }
         }
 
         private void DrawTimelineLoggingToggle(
