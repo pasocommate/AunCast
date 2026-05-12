@@ -118,6 +118,8 @@ namespace PasocomMate.AunCast
         private void SetViewTarget(int view, bool instant)
         {
             _viewTarget = view;
+            if (view == VIEW_USER)
+                SyncGestureToggles();
             if (!_passcodeUnlocked)
             {
                 if (switchViewButtonLabel != null)

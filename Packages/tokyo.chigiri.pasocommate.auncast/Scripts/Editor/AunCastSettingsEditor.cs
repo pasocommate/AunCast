@@ -247,6 +247,9 @@ namespace PasocomMate.AunCast.Internal
             }
 
             EditorGUILayout.Space(8);
+            DrawWallPanelReferenceTools(root);
+
+            EditorGUILayout.Space(8);
 
             // ── 映像プレイヤー ──
             var avProPlayers = root.GetComponentsInChildren<VRCAVProVideoPlayer>(true);
@@ -271,6 +274,16 @@ namespace PasocomMate.AunCast.Internal
 
             // ── デバッグ ──
             DrawTimelineLoggingToggle(ldpcList, apmList, rccList, pbsList, rcList);
+        }
+
+        private void OnEnable()
+        {
+            // Inspector が開かれた瞬間に一度だけ壁パネル参照を自動再配線する。
+            // OnInspectorGUI から呼ぶと毎フレーム走り、手動で変更した参照を
+            // 上書きしてしまうので OnEnable に限定する。
+            var settings = target as PasocomMate.AunCast.AunCastSettings;
+            if (settings != null)
+                RewireWallPanelReferences(settings.transform, recordUndo: false, writeLog: false);
         }
 
         private void OnDisable()
@@ -329,6 +342,102 @@ namespace PasocomMate.AunCast.Internal
         private static string Localize(string ja, string en)
         {
             return Application.systemLanguage == SystemLanguage.Japanese ? ja : en;
+        }
+
+        private static void DrawWallPanelReferenceTools(Transform root)
+        {
+            EditorGUILayout.LabelField("壁パネル配線", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "AunCast 配下の WallControlPanel / UserStatusPanel の参照を再配線します。",
+                MessageType.None);
+            using (new EditorGUI.DisabledScope(root == null))
+            {
+                if (!GUILayout.Button("WallControlPanel参照を再配線", GUILayout.Height(24)))
+                    return;
+
+                RewireWallPanelReferences(root, recordUndo: true, writeLog: true);
+            }
+        }
+
+        private static void RewireWallPanelReferences(Transform root, bool recordUndo, bool writeLog)
+        {
+            if (root == null) return;
+
+            var controller = root.GetComponentInChildren<LocalDualPlayerController>(true);
+            var staffPanel = root.GetComponentInChildren<StaffControlPanel>(true);
+            var portablePanel = root.GetComponentInChildren<UserStatusPanel>(true);
+            var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);
+            var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
+
+            if (controller == null || staffPanel == null || portablePanel == null)
+            {
+                if (writeLog)
+                    Debug.LogWarning("[AunCast] 再配線を中止しました。LocalDualPlayerController / StaffControlPanel / UserStatusPanel のいずれかが見つかりません。");
+                return;
+            }
+
+            int wallUpdated = 0;
+            foreach (var wall in wallPanels)
+            {
+                if (wall == null) continue;
+                var so = new SerializedObject(wall);
+                bool changed = false;
+                changed |= SetObjectProperty(so, "controller", controller);
+                changed |= SetObjectProperty(so, "staffPanel", staffPanel);
+                changed |= SetObjectProperty(so, "portablePanel", portablePanel);
+
+                if (!changed) continue;
+                if (recordUndo)
+                    Undo.RecordObject(wall, "Rewire WallControlPanel References");
+                bool wallApplied = recordUndo
+                    ? so.ApplyModifiedProperties()
+                    : so.ApplyModifiedPropertiesWithoutUndo();
+                if (!wallApplied) continue;
+
+                UdonSharpEditorUtility.CopyProxyToUdon(wall);
+                EditorUtility.SetDirty(wall);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(wall);
+                var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(wall);
+                if (udon != null)
+                {
+                    EditorUtility.SetDirty(udon);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+                }
+                wallUpdated++;
+            }
+
+            WallControlPanel fallbackWall = wallPanels.Length > 0 ? wallPanels[0] : null;
+            int userUpdated = 0;
+            foreach (var user in userPanels)
+            {
+                if (user == null) continue;
+                var so = new SerializedObject(user);
+                bool changed = false;
+                changed |= SetObjectArrayProperty(so, "wallPanels", wallPanels);
+                changed |= SetObjectProperty(so, "wallPanel", fallbackWall);
+
+                if (!changed) continue;
+                if (recordUndo)
+                    Undo.RecordObject(user, "Rewire UserStatusPanel Wall References");
+                bool userApplied = recordUndo
+                    ? so.ApplyModifiedProperties()
+                    : so.ApplyModifiedPropertiesWithoutUndo();
+                if (!userApplied) continue;
+
+                UdonSharpEditorUtility.CopyProxyToUdon(user);
+                EditorUtility.SetDirty(user);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(user);
+                var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(user);
+                if (udon != null)
+                {
+                    EditorUtility.SetDirty(udon);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+                }
+                userUpdated++;
+            }
+
+            if (writeLog)
+                Debug.Log($"[AunCast] 壁パネル参照を再配線しました。WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件");
         }
 
         private void EnsureVpmVersionCheckStarted()
@@ -1094,6 +1203,40 @@ namespace PasocomMate.AunCast.Internal
             var prop = so.FindProperty(fieldName);
             if (prop != null)
                 prop.stringValue = value ?? string.Empty;
+        }
+
+        private static bool SetObjectProperty(SerializedObject so, string fieldName, UnityEngine.Object value)
+        {
+            var prop = so.FindProperty(fieldName);
+            if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference)
+                return false;
+            if (prop.objectReferenceValue == value)
+                return false;
+
+            prop.objectReferenceValue = value;
+            return true;
+        }
+
+        private static bool SetObjectArrayProperty<T>(SerializedObject so, string fieldName, T[] values)
+            where T : UnityEngine.Object
+        {
+            var prop = so.FindProperty(fieldName);
+            if (prop == null || !prop.isArray)
+                return false;
+
+            int count = values != null ? values.Length : 0;
+            bool changed = prop.arraySize != count;
+            prop.arraySize = count;
+            for (int i = 0; i < count; i++)
+            {
+                var element = prop.GetArrayElementAtIndex(i);
+                var value = values[i];
+                if (element.objectReferenceValue == value) continue;
+                element.objectReferenceValue = value;
+                changed = true;
+            }
+
+            return changed;
         }
 
         private static string NormalizeWallUnlockPasscode(string raw)

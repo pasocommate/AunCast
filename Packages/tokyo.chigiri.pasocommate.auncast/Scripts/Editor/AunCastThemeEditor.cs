@@ -113,7 +113,7 @@ namespace PasocomMate.AunCast.Internal
                 SetSerializedField(proxy, "disabledButtonLabelAlpha", theme.disabledButtonLabelAlpha);
             });
 
-            ApplyThemeToProxy<WallControlPanel>(root, "WallControlPanel", proxy =>
+            ApplyThemeToAllProxies<WallControlPanel>(root, proxy =>
             {
                 SetSerializedField(proxy, "disabledButtonLabelAlpha", theme.disabledButtonLabelAlpha);
             });
@@ -133,6 +133,20 @@ namespace PasocomMate.AunCast.Internal
             if (proxy == null) return;
             apply(proxy);
             UdonSharpEditorUtility.CopyProxyToUdon(proxy);
+        }
+
+        private static void ApplyThemeToAllProxies<T>(Transform root, Action<T> apply)
+            where T : UdonSharpBehaviour
+        {
+            if (root == null) return;
+
+            var proxies = root.GetComponentsInChildren<T>(true);
+            foreach (var proxy in proxies)
+            {
+                if (proxy == null) continue;
+                apply(proxy);
+                UdonSharpEditorUtility.CopyProxyToUdon(proxy);
+            }
         }
 
         private static void SetSerializedField(UnityEngine.Object target, string fieldName, object value)

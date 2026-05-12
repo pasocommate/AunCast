@@ -18,6 +18,9 @@ namespace PasocomMate.AunCast
         [Header("References")]
         [SerializeField] private LocalDualPlayerController controller;
         [SerializeField] private ResyncCoordinator coordinator;
+        [Tooltip("複数設置された WallControlPanel。SetMenuVisible 時に全てへ通知する。")]
+        [SerializeField] private WallControlPanel[] wallPanels;
+        [Tooltip("旧シーン互換用の単一参照。wallPanels 未設定時のみフォールバック使用。")]
         [SerializeField] private WallControlPanel wallPanel;
 
         [Header("UI Elements")]
@@ -654,6 +657,23 @@ namespace PasocomMate.AunCast
                 SendCustomEventDelayedSeconds(nameof(OnDissolveOutComplete), dissolveDuration);
             }
 
+            NotifyWallPanelVisibilityChanged(visible);
+        }
+
+        private void NotifyWallPanelVisibilityChanged(bool visible)
+        {
+            // wallPanels が設定されていれば配列を尊重する。要素が全て null の場合でも
+            // wallPanel への暗黙フォールバックはしない（明示設定を優先するため）。
+            if (wallPanels != null && wallPanels.Length > 0)
+            {
+                foreach (var panel in wallPanels)
+                {
+                    if (panel == null) continue;
+                    panel.OnPortablePanelVisibilityChanged(visible);
+                }
+                return;
+            }
+
             if (wallPanel != null)
                 wallPanel.OnPortablePanelVisibilityChanged(visible);
         }
@@ -880,6 +900,8 @@ namespace PasocomMate.AunCast
         /// <summary>InputUse の press-down エッジで呼ばれ、片手ダブルトリガー判定を行う。</summary>
         private void HandleDoubleTriggerEdge(bool isLeft)
         {
+            VRCPlayerApi local = Networking.LocalPlayer;
+            if (local == null || !local.IsUserInVR()) return;
             if ((summonGesture & GESTURE_DOUBLE_TRIGGER) == 0) return;
 
             float now = Time.time;
@@ -891,9 +913,6 @@ namespace PasocomMate.AunCast
             if ((now - prev) > vrDoubleTriggerWindowSec) return;
 
             _vrHoldConsumed = true;
-            // InputUse は VR 入力コールバックなので IsUserInVR チェック不要
-            VRCPlayerApi local = Networking.LocalPlayer;
-            if (local == null) return;
             TriggerSummonByGesture(local);
         }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -181,23 +182,7 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, topBar + "/CloseButton", secondaryColor);
             SetThemeImageColor(root, topBar + "/SwitchViewButton", secondaryColor);
 
-            const string wall = "WallControlPanel/ContentScaler/WallContentArea";
-            SetThemeImageColor(root, "WallControlPanel/ContentScaler/Background", wallBackgroundColor);
-            string keypad = wall + "/StaffContent/PasscodeKeypad";
-            for (int i = 0; i < 10; i++)
-                SetThemeImageColor(root, keypad + $"/PasscodeKey{i}", primaryColor);
-            SetThemeImageColor(root, keypad + "/PasscodeBackspace", warningColor);
-            SetThemeImageColor(root, wall + "/SharedContent/SpawnPanelButton", primaryColor);
-            SetThemeImageColor(root, wall + "/SharedContent/SwitchViewButton", secondaryColor);
-            string wallUser = wall + "/UserContent";
-            SetThemeImageColor(root, wallUser + "/UserResyncButton", primaryColor);
-            SetThemeImageColor(root, wallUser + "/UserRebootButton", warningColor);
-            SetThemeImageColor(root, wallUser + "/GestureRightStickUpToggle/Background", toggleBackgroundColor);
-            SetThemeTextColor(root, wallUser + "/GestureRightStickUpToggle/Background/Checkmark", toggleCheckmarkColor);
-            SetThemeImageColor(root, wallUser + "/GestureDoubleTriggerToggle/Background", toggleBackgroundColor);
-            SetThemeTextColor(root, wallUser + "/GestureDoubleTriggerToggle/Background/Checkmark", toggleCheckmarkColor);
-            SetThemeImageColor(root, wallUser + "/GestureBothTriggersToggle/Background", toggleBackgroundColor);
-            SetThemeTextColor(root, wallUser + "/GestureBothTriggersToggle/Background/Checkmark", toggleCheckmarkColor);
+            ApplyWallPanelTheme(root);
 
             if (hudProgressMaterial != null)
                 ApplyHudProgressMaterialFromTheme(hudProgressMaterial);
@@ -288,6 +273,77 @@ namespace PasocomMate.AunCast
                 tmp.color = color;
         }
 
+        private static List<Transform> CollectWallPanelRoots(Transform root)
+        {
+            var roots = new List<Transform>();
+            if (root == null) return roots;
+
+            var allTransforms = root.GetComponentsInChildren<Transform>(true);
+            foreach (var t in allTransforms)
+            {
+                if (t == null) continue;
+                if (!HasWallControlPanelProxy(t)) continue;
+                if (t.Find("ContentScaler/WallContentArea") == null) continue;
+                if (t.Find("ContentScaler/WallContentArea/SharedContent/SpawnPanelButton") == null) continue;
+                roots.Add(t);
+            }
+            return roots;
+        }
+
+        private static bool HasWallControlPanelProxy(Transform root)
+        {
+            // Runtime asmdef は Udon asmdef を参照しないため WallControlPanel 型を
+            // 直接参照できず、型名・名前空間の文字列一致で判定する。
+            // WallControlPanel をリネームしたらここも合わせて更新する。
+            var behaviours = root.GetComponents<MonoBehaviour>();
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour == null) continue;
+                var type = behaviour.GetType();
+                if (type.Name != "WallControlPanel") continue;
+                if (type.Namespace != "PasocomMate.AunCast") continue;
+                return true;
+            }
+            return false;
+        }
+
+        private void ApplyWallPanelTheme(Transform root)
+        {
+            const string wall = "ContentScaler/WallContentArea";
+            foreach (var wallRoot in CollectWallPanelRoots(root))
+            {
+                SetThemeImageColor(wallRoot, "ContentScaler/Background", wallBackgroundColor);
+
+                string keypad = wall + "/StaffContent/PasscodeKeypad";
+                for (int i = 0; i < 10; i++)
+                    SetThemeImageColor(wallRoot, keypad + $"/PasscodeKey{i}", primaryColor);
+                SetThemeImageColor(wallRoot, keypad + "/PasscodeBackspace", warningColor);
+
+                SetThemeImageColor(wallRoot, wall + "/SharedContent/SpawnPanelButton", primaryColor);
+                SetThemeImageColor(wallRoot, wall + "/SharedContent/SwitchViewButton", secondaryColor);
+
+                string wallUser = wall + "/UserContent";
+                SetThemeImageColor(wallRoot, wallUser + "/UserResyncButton", primaryColor);
+                SetThemeImageColor(wallRoot, wallUser + "/UserRebootButton", warningColor);
+                SetThemeImageColor(wallRoot, wallUser + "/GestureRightStickUpToggle/Background", toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, wallUser + "/GestureRightStickUpToggle/Background/Checkmark", toggleCheckmarkColor);
+                SetThemeImageColor(wallRoot, wallUser + "/GestureDoubleTriggerToggle/Background", toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, wallUser + "/GestureDoubleTriggerToggle/Background/Checkmark", toggleCheckmarkColor);
+                SetThemeImageColor(wallRoot, wallUser + "/GestureBothTriggersToggle/Background", toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, wallUser + "/GestureBothTriggersToggle/Background/Checkmark", toggleCheckmarkColor);
+            }
+        }
+
+        private void ApplyWallPanelTextColors(Transform root)
+        {
+            const string wall = "ContentScaler/WallContentArea";
+            foreach (var wallRoot in CollectWallPanelRoots(root))
+            {
+                SetThemeTextColor(wallRoot, wall + "/SharedContent/SpawnPanelButton/Label", buttonLabelColor);
+                SetThemeTextColor(wallRoot, wall + "/SharedContent/SwitchViewButton/Label", buttonLabelColor);
+            }
+        }
+
         private void ApplyThemeTextColors(Transform root)
         {
             const string pp = "PortablePanel/ContentScaler";
@@ -295,7 +351,6 @@ namespace PasocomMate.AunCast
             const string viewer = pp + "/PortableContentArea/UserContent/UserPadded";
             const string shared = pp + "/PortableContentArea/SharedContent/SharedPadded";
             const string topBar = pp + "/PortableContentArea/TopBarPadded";
-            const string wall = "WallControlPanel/ContentScaler/WallContentArea";
             string clc = staff + "/ConcurrentLimitControls";
 
             string[] headingPaths =
@@ -324,8 +379,6 @@ namespace PasocomMate.AunCast
                 shared + "/ResyncButton/Label",
                 topBar + "/CloseButton/Label",
                 topBar + "/SwitchViewButton/Label",
-                wall + "/SharedContent/SpawnPanelButton/Label",
-                wall + "/SharedContent/SwitchViewButton/Label",
             };
 
             string[] bodyPaths =
@@ -360,6 +413,8 @@ namespace PasocomMate.AunCast
                 SetThemeTextColor(root, path, inputTextColor);
             foreach (var path in placeholderPaths)
                 SetThemeTextColor(root, path, placeholderTextColor);
+
+            ApplyWallPanelTextColors(root);
         }
 
         private void ApplyHudProgressMaterialFromTheme(Material mat)
