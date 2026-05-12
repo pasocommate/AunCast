@@ -349,11 +349,42 @@ namespace PasocomMate.AunCast
         // =================================================================
 
         /// <summary>
+        /// audioLinkBehaviour が未設定の場合、シーン内から AudioLink を探索して自動割り当てする。
+        /// </summary>
+        public void EnsureAudioLinkBehaviourAssignedFromScene()
+        {
+            if (audioLinkBehaviour != null) return;
+
+            GameObject audioLinkObject = GameObject.Find("AudioLink");
+            if (audioLinkObject == null)
+            {
+                LogWarning("AudioLink behaviour not found in scene (GameObject: AudioLink)");
+                return;
+            }
+
+            UdonSharpBehaviour[] behaviours = audioLinkObject.GetComponents<UdonSharpBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                UdonSharpBehaviour candidate = behaviours[i];
+                if (candidate == null || candidate == this) continue;
+
+                audioLinkBehaviour = candidate;
+                LogMessage($"AudioLink behaviour auto-assigned: {candidate.name}");
+                return;
+            }
+
+            LogWarning("AudioLink behaviour not found on GameObject: AudioLink");
+        }
+
+        /// <summary>
         /// AudioLink のソースを現在の Active プレイヤーの AudioSource に切替える。
         /// ビジュアライザが常に再生中の音声を参照するようにするため。
         /// </summary>
         public void SwitchAudioLinkSource()
         {
+            if (audioLinkBehaviour == null)
+                EnsureAudioLinkBehaviourAssignedFromScene();
+
             if (audioLinkBehaviour == null)
             {
                 LogVerbose("SwitchAudioLinkSource skipped: audioLinkBehaviour is null");

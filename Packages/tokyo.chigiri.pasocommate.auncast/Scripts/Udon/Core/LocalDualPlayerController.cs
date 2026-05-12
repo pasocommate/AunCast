@@ -135,7 +135,12 @@ namespace PasocomMate.AunCast
 
             // Active は A、Standby は B。B のオーディオはミュート開始
             _activeIsA = true;
-            if (switcher != null) switcher.InitializeToA();
+            if (switcher != null)
+            {
+                switcher.InitializeToA();
+                switcher.EnsureAudioLinkBehaviourAssignedFromScene();
+                switcher.SwitchAudioLinkSource();
+            }
 
             QueueSerialize();
             LogMessage("LocalDualPlayerController initialized");
