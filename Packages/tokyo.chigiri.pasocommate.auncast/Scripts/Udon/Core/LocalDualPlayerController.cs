@@ -834,6 +834,7 @@ namespace PasocomMate.AunCast
             _tlAction = "STOP_VIDEO";
             LogMessage("StopVideo requested");
             _ownerPlaying = false;
+            _syncedURL = VRCUrl.Empty;
 
             _tlLoadingA = false;
             _tlLoadingB = false;
