@@ -27,6 +27,10 @@ namespace PasocomMate.AunCast
         [Tooltip("HUD プログレスを表示し始めるまでの猶予（秒）。誤押下でちらつかないようにこれを過ぎてから表示する。")]
         public float gestureHudShowThreshold = 0.1f;
 
+        [Header("Instance")]
+        [Tooltip("インスタンスのユーザー数上限（0 = ビルド時に VRC_SceneDescriptor の Capacity を自動使用）")]
+        public int instanceCapacity;
+
         [Header("Portable Panel Auto Dismiss")]
         // パネルから離れすぎたら自動で閉じる
         [Tooltip("ポータブルパネルからこの距離（m）以上離れると自動的に閉じる。0 で無効。")]

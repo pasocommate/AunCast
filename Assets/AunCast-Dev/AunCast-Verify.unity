@@ -751,11 +751,6 @@ PrefabInstance:
       propertyPath: m_BlocksRaycasts
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 2071682585213451644, guid: 0d617877712537147a584eb2a1ef735c,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 2537792760387121733, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab

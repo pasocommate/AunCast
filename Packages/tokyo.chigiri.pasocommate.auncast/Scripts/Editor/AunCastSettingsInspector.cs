@@ -733,6 +733,10 @@ namespace PasocomMate.AunCast.Internal
             EditorGUILayout.LabelField("UI / 操作", EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
 
+            int newCapacity = IntSliderField("インスタンス定員", "instanceCapacity",
+                "インスタンスのユーザー数上限。0 の場合、ビルド時に VRC_SceneDescriptor の Capacity を自動使用する。",
+                settings.instanceCapacity, 0, 82);
+
             float newHold = SliderField("ジェスチャー保持時間 [秒]", "gestureHoldDuration",
                 "長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。",
                 settings.gestureHoldDuration, 0.1f, 2f);
@@ -761,6 +765,7 @@ namespace PasocomMate.AunCast.Internal
             if (!EditorGUI.EndChangeCheck()) return;
 
             Undo.RecordObject(settings, "Change AunCast UI Settings");
+            settings.instanceCapacity = newCapacity;
             settings.gestureHoldDuration = newHold;
             settings.gestureHudShowThreshold = newHudThreshold;
             settings.panelAutoDismissDistance = newDist;
@@ -936,6 +941,12 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "wallNearDistance", settings.wallNearDistance);
                 SetFloatProperty(so, "wallFarDistance", settings.wallFarDistance);
                 SetStringProperty(so, "unlockPasscode", settings.wallUnlockPasscode);
+            });
+
+            var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
+            ApplyToUdonComponents(staffPanels, so =>
+            {
+                SetIntProperty(so, "instanceCapacity", settings.instanceCapacity);
             });
         }
 

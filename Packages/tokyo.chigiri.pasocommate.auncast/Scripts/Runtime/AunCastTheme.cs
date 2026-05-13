@@ -37,11 +37,6 @@ namespace PasocomMate.AunCast
         public TMP_FontAsset displayFont;
         public TMP_FontAsset bodyFont;
 
-        // インスタンス定員（インジケーター表示数の決定に使う）
-        [Header("Instance")]
-        [Tooltip("インスタンスのユーザー数上限（0 = SDK Builder の Max Capacity を使用）")]
-        public int instanceCapacity;
-
         // Viewer/Staff/Wall パネル背景色
         [Header("Panel Background")]
         public Color userBackgroundColor = new Color(0.23f, 0.38f, 0.45f);

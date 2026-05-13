@@ -8442,6 +8442,7 @@ MonoBehaviour:
   useLowLatency: 1
   gestureHoldDuration: 0.8
   gestureHudShowThreshold: 0.1
+  instanceCapacity: 0
   panelAutoDismissDistance: 3
   panelOutOfSightDismissSec: 20
   wallNearDistance: 2.8
@@ -8497,7 +8498,6 @@ MonoBehaviour:
     type: 3}
   displayFont: {fileID: 11400000, guid: 9d7d01127c58f5f4796c54f98cb2f0fa, type: 2}
   bodyFont: {fileID: 11400000, guid: c69bb701418e6b441a398f17daa3f423, type: 2}
-  instanceCapacity: 0
   userBackgroundColor: {r: 0.23, g: 0.38, b: 0.45, a: 1}
   staffBackgroundColor: {r: 0.56, g: 0.48, b: 0.77, a: 1}
   wallBackgroundColor: {r: 0.23, g: 0.38, b: 0.45, a: 1}
@@ -16798,7 +16798,7 @@ MonoBehaviour:
   helpTextField: {fileID: 7136706143972660112}
   indicatorText: {fileID: 3963171657236632523}
   userCountText: {fileID: 2278575103092355664}
-  instanceCapacity: 32
+  instanceCapacity: 82
   concurrentLimitDisplayText: {fileID: 4586715846898299294}
   concurrentDisplayGroup: {fileID: 744835454024197497}
   concurrentEditGroup: {fileID: 5065406981513894294}
