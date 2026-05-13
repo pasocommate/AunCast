@@ -5,8 +5,10 @@ using System.IO;
 using TMPro;
 using UdonSharpEditor;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using VRC.SDK3.Video.Components.AVPro;
 
 namespace PasocomMate.AunCast.Internal
@@ -31,6 +33,8 @@ namespace PasocomMate.AunCast.Internal
         private const string GENERATED_SPEAKER_CONTAINER_B_NAME = "AunCastSpeakerRefs_B";
         private const string EDITOR_ONLY_TAG = "EditorOnly";
 
+        private const double SPEAKER_CACHE_POLL_INTERVAL_SEC = 3.0;
+
         private bool _prevAlt;
         private bool _vpmVersionCheckRequested;
         private bool _vpmVersionCheckInProgress;
@@ -40,6 +44,11 @@ namespace PasocomMate.AunCast.Internal
         private string _latestVersion;
         private string _vpmListingUrl;
         private bool _vpmSessionCacheLoaded;
+
+        private bool _speakerCacheDirty = true;
+        private double _speakerCacheTime;
+        private SpeakerCandidate[] _cachedSpeakerCandidates;
+        private List<string> _cachedSpeakerValidationErrors;
 
         private readonly struct SpeakerCandidate
         {
@@ -213,11 +222,28 @@ namespace PasocomMate.AunCast.Internal
             var settings = target as PasocomMate.AunCast.AunCastSettings;
             if (settings != null)
                 RewireWallPanelReferences(settings.transform, recordUndo: false, writeLog: false);
+
+            EditorSceneManager.sceneDirtied += OnSceneDirtied;
+            Undo.postprocessModifications += OnPostprocessModifications;
+            _speakerCacheDirty = true;
         }
 
         private void OnDisable()
         {
             StopVpmVersionCheck();
+            EditorSceneManager.sceneDirtied -= OnSceneDirtied;
+            Undo.postprocessModifications -= OnPostprocessModifications;
+        }
+
+        private void OnSceneDirtied(Scene scene)
+        {
+            _speakerCacheDirty = true;
+        }
+
+        private UndoPropertyModification[] OnPostprocessModifications(UndoPropertyModification[] modifications)
+        {
+            _speakerCacheDirty = true;
+            return modifications;
         }
 
         private static void DrawTmpFallbackFontWarning()
@@ -377,10 +403,11 @@ namespace PasocomMate.AunCast.Internal
                 return;
             }
 
-            SpeakerCandidate[] candidates = CollectSpeakerCandidates(root, context);
+            RefreshSpeakerCacheIfNeeded(root, context);
+            SpeakerCandidate[] candidates = _cachedSpeakerCandidates ?? Array.Empty<SpeakerCandidate>();
             DrawSpeakerCandidateList(candidates);
 
-            List<string> validationErrors = ValidateCurrentSpeakerRouting(context);
+            List<string> validationErrors = _cachedSpeakerValidationErrors ?? new List<string>();
             if (validationErrors.Count == 0)
             {
                 EditorGUILayout.HelpBox("現在の PlayerA/B AudioSource 配線に重複やルーティング不整合はありません。", MessageType.Info);
@@ -397,18 +424,29 @@ namespace PasocomMate.AunCast.Internal
                     return;
 
                 ExecuteSpeakerSetup(root, settings, context, candidates);
+                _speakerCacheDirty = true;
             }
+        }
+
+        private void RefreshSpeakerCacheIfNeeded(Transform root, SpeakerSetupContext context)
+        {
+            double now = EditorApplication.timeSinceStartup;
+            bool expired = now - _speakerCacheTime >= SPEAKER_CACHE_POLL_INTERVAL_SEC;
+            if (!_speakerCacheDirty && !expired)
+                return;
+
+            _cachedSpeakerCandidates = CollectSpeakerCandidates(root, context);
+            _cachedSpeakerValidationErrors = ValidateCurrentSpeakerRouting(context);
+            _speakerCacheDirty = false;
+            _speakerCacheTime = now;
         }
 
         private static void DrawSpeakerCandidateList(SpeakerCandidate[] candidates)
         {
-            EditorGUILayout.LabelField("検出対象", EditorStyles.miniBoldLabel);
             if (candidates == null || candidates.Length == 0)
-            {
-                EditorGUILayout.HelpBox("対象が見つかりません。シーン上に VRC AVPro Video Speaker + AudioSource を配置してください。", MessageType.Warning);
                 return;
-            }
 
+            EditorGUILayout.LabelField("検出対象", EditorStyles.miniBoldLabel);
             for (int i = 0; i < candidates.Length; i++)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);

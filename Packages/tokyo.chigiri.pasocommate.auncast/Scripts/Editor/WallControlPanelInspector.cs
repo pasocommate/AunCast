@@ -55,6 +55,8 @@ namespace PasocomMate.AunCast.Internal
             AunCastInspectorBanner.Draw(this);
             if (UdonSharpGUI.DrawProgramSource(target, false)) return;
 
+            DrawSettingsNotice();
+
             serializedObject.Update();
 
             EditorGUI.BeginChangeCheck();
@@ -91,6 +93,32 @@ namespace PasocomMate.AunCast.Internal
                 _spawnPanelButtonRectProperty.objectReferenceValue = rects[i];
                 return;
             }
+        }
+
+        private void DrawSettingsNotice()
+        {
+            string message = AunCastEditorLocalization.Localize(
+                "壁パネルの距離設定やパスコードなどは AunCastSettings で一括管理されています。値を変更するには AunCastSettings を選択してください。",
+                "Wall panel distance settings and passcode are managed centrally via AunCastSettings. Select AunCastSettings to change these values.");
+            EditorGUILayout.HelpBox(message, MessageType.Info);
+
+            var wallPanel = target as WallControlPanel;
+            if (wallPanel == null) return;
+
+            var settings = wallPanel.GetComponentInParent<AunCastSettings>();
+            if (settings == null)
+                settings = wallPanel.transform.root.GetComponentInChildren<AunCastSettings>();
+
+            if (settings != null)
+            {
+                string buttonLabel = AunCastEditorLocalization.Localize(
+                    "AunCastSettings を選択",
+                    "Select AunCastSettings");
+                if (GUILayout.Button(buttonLabel))
+                    Selection.activeGameObject = settings.gameObject;
+            }
+
+            EditorGUILayout.Space(4f);
         }
 
         private void DrawReadonlyProperties()
