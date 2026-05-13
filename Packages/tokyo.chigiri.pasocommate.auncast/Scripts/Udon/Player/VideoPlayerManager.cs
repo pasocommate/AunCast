@@ -38,6 +38,10 @@ namespace PasocomMate.AunCast
         private Texture _lastLoggedTexture;
         private float _lastNullTextureWarnAt;
 
+        /// <summary>AudioSource ごとの初期音量。UI 音量・クロスフェードの最終出力に乗算して使う。</summary>
+        private float[] _audioSourceBaseVolumes;
+        private AudioSource[] _cachedAudioSourcesForBaseVolume;
+
         private bool _initialized;
 
         /// <summary>テクスチャ取得用マテリアル参照を事前にキャッシュする。</summary>
@@ -46,6 +50,7 @@ namespace PasocomMate.AunCast
             if (_initialized)
                 return;
 
+            CacheAudioSourceBaseVolumes();
             EnsureFetchMaterial();
             LogVerbose($"Initialized (playerIndex={playerIndex}, avPro={(avProPlayer != null)}, renderer={(avProTextureRenderer != null)})");
 
@@ -214,6 +219,8 @@ namespace PasocomMate.AunCast
         /// </summary>
         private void ApplyVolume()
         {
+            if (audioSources == null) return;
+
             // 左側は x^2 ベース、右側は Dr. Lex 指数カーブ (50dB レンジ) を補間係数 x で lerp。
             // これで指数カーブ単体だと発生する左半分の「死にゾーン」を避けつつ、
             // 右端付近は知覚的にリニアな音量上昇を維持する。
@@ -223,8 +230,47 @@ namespace PasocomMate.AunCast
             float adjustedVolume = (1f - x) * x * x + x * expCurve;
             float output = adjustedVolume * _fadeGain;
 
-            foreach (AudioSource audioSource in audioSources)
-                audioSource.volume = output;
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource == null) continue;
+                float baseVolume = 1f;
+                if (_audioSourceBaseVolumes != null && i < _audioSourceBaseVolumes.Length)
+                    baseVolume = _audioSourceBaseVolumes[i];
+
+                audioSource.volume = Mathf.Clamp01(baseVolume * output);
+            }
+        }
+
+        private void CacheAudioSourceBaseVolumes()
+        {
+            if (audioSources == null)
+            {
+                _audioSourceBaseVolumes = null;
+                _cachedAudioSourcesForBaseVolume = null;
+                return;
+            }
+
+            bool needsResize = _audioSourceBaseVolumes == null
+                || _cachedAudioSourcesForBaseVolume == null
+                || _audioSourceBaseVolumes.Length != audioSources.Length
+                || _cachedAudioSourcesForBaseVolume.Length != audioSources.Length;
+
+            if (needsResize)
+            {
+                _audioSourceBaseVolumes = new float[audioSources.Length];
+                _cachedAudioSourcesForBaseVolume = new AudioSource[audioSources.Length];
+            }
+
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource source = audioSources[i];
+                if (!needsResize && _cachedAudioSourcesForBaseVolume[i] == source)
+                    continue;
+
+                _cachedAudioSourcesForBaseVolume[i] = source;
+                _audioSourceBaseVolumes[i] = source != null ? source.volume : 1f;
+            }
         }
 
         /// <summary>テクスチャ取得用マテリアルをキャッシュし、毎フレームのインスタンス生成を防ぐ。</summary>

@@ -31,6 +31,10 @@ namespace PasocomMate.AunCast
         [Tooltip("インスタンスのユーザー数上限（0 = ビルド時に VRC_SceneDescriptor の Capacity を自動使用）")]
         public int instanceCapacity;
 
+        [Header("Volume")]
+        [Tooltip("起動時のローカル再生デフォルト音量（0〜1）")]
+        public float defaultVolume = 0.6f;
+
         [Header("Portable Panel Auto Dismiss")]
         // パネルから離れすぎたら自動で閉じる
         [Tooltip("ポータブルパネルからこの距離（m）以上離れると自動的に閉じる。0 で無効。")]

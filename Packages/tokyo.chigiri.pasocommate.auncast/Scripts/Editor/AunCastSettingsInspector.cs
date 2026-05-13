@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UdonSharpEditor;
@@ -25,6 +26,10 @@ namespace PasocomMate.AunCast.Internal
         private const string SESSION_KEY_VPM_CHECK_DONE = "AunCast.SettingsEditor.VpmCheckDone";
         private const string SESSION_KEY_VPM_HAS_UPDATE = "AunCast.SettingsEditor.VpmHasUpdate";
         private const string SESSION_KEY_VPM_LATEST_VERSION = "AunCast.SettingsEditor.VpmLatestVersion";
+        private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
+        private const string GENERATED_SPEAKER_CONTAINER_A_NAME = "AunCastSpeakerRefs_A";
+        private const string GENERATED_SPEAKER_CONTAINER_B_NAME = "AunCastSpeakerRefs_B";
+        private const string EDITOR_ONLY_TAG = "EditorOnly";
 
         private bool _prevAlt;
         private bool _vpmVersionCheckRequested;
@@ -35,6 +40,54 @@ namespace PasocomMate.AunCast.Internal
         private string _latestVersion;
         private string _vpmListingUrl;
         private bool _vpmSessionCacheLoaded;
+
+        private readonly struct SpeakerCandidate
+        {
+            public readonly GameObject gameObject;
+            public readonly AudioSource audioSource;
+            public readonly Component speaker;
+            public readonly string hierarchyPath;
+
+            public SpeakerCandidate(GameObject gameObject, AudioSource audioSource, Component speaker, string hierarchyPath)
+            {
+                this.gameObject = gameObject;
+                this.audioSource = audioSource;
+                this.speaker = speaker;
+                this.hierarchyPath = hierarchyPath;
+            }
+        }
+
+        private readonly struct SpeakerSetupContext
+        {
+            public readonly VideoPlayerManager managerA;
+            public readonly VideoPlayerManager managerB;
+            public readonly VRCAVProVideoPlayer playerA;
+            public readonly VRCAVProVideoPlayer playerB;
+            public readonly Transform playerRootA;
+            public readonly Transform playerRootB;
+            public readonly PlaybackSwitcher switcher;
+            public readonly SyncDebugDisplay syncDebugDisplay;
+
+            public SpeakerSetupContext(
+                VideoPlayerManager managerA,
+                VideoPlayerManager managerB,
+                VRCAVProVideoPlayer playerA,
+                VRCAVProVideoPlayer playerB,
+                Transform playerRootA,
+                Transform playerRootB,
+                PlaybackSwitcher switcher,
+                SyncDebugDisplay syncDebugDisplay)
+            {
+                this.managerA = managerA;
+                this.managerB = managerB;
+                this.playerA = playerA;
+                this.playerB = playerB;
+                this.playerRootA = playerRootA;
+                this.playerRootB = playerRootB;
+                this.switcher = switcher;
+                this.syncDebugDisplay = syncDebugDisplay;
+            }
+        }
 
         private static GUIContent L(string label, string fieldName, string tooltip)
         {
@@ -121,6 +174,9 @@ namespace PasocomMate.AunCast.Internal
 
             EditorGUILayout.Space(8);
             DrawWallPanelReferenceTools(root);
+
+            EditorGUILayout.Space(8);
+            DrawAvProSpeakerSetupTools(root, settings);
 
             EditorGUILayout.Space(8);
 
@@ -306,6 +362,543 @@ namespace PasocomMate.AunCast.Internal
 
             if (writeLog)
                 Debug.Log($"[AunCast] 壁パネル参照を再配線しました。WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件");
+        }
+
+        private void DrawAvProSpeakerSetupTools(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        {
+            EditorGUILayout.LabelField("AVPro Speaker 配線", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "シーン上の VRC AVPro Video Speaker + AudioSource を検出し、PlayerA/B 用に複製して参照を配線します。",
+                MessageType.None);
+
+            if (!TryResolveSpeakerSetupContext(root, out var context, out var resolveError))
+            {
+                EditorGUILayout.HelpBox(resolveError, MessageType.Warning);
+                return;
+            }
+
+            SpeakerCandidate[] candidates = CollectSpeakerCandidates(root, context);
+            DrawSpeakerCandidateList(candidates);
+
+            List<string> validationErrors = ValidateCurrentSpeakerRouting(context);
+            if (validationErrors.Count == 0)
+            {
+                EditorGUILayout.HelpBox("現在の PlayerA/B AudioSource 配線に重複やルーティング不整合はありません。", MessageType.Info);
+            }
+            else
+            {
+                for (int i = 0; i < validationErrors.Count; i++)
+                    EditorGUILayout.HelpBox(validationErrors[i], MessageType.Error);
+            }
+
+            using (new EditorGUI.DisabledScope(candidates.Length == 0))
+            {
+                if (!GUILayout.Button("AVPro Speaker 出力先セットアップを実行", GUILayout.Height(24)))
+                    return;
+
+                ExecuteSpeakerSetup(root, settings, context, candidates);
+            }
+        }
+
+        private static void DrawSpeakerCandidateList(SpeakerCandidate[] candidates)
+        {
+            EditorGUILayout.LabelField("検出対象", EditorStyles.miniBoldLabel);
+            if (candidates == null || candidates.Length == 0)
+            {
+                EditorGUILayout.HelpBox("対象が見つかりません。シーン上に VRC AVPro Video Speaker + AudioSource を配置してください。", MessageType.Warning);
+                return;
+            }
+
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.ObjectField(candidates[i].gameObject, typeof(GameObject), true);
+                EditorGUILayout.LabelField(candidates[i].hierarchyPath, EditorStyles.miniLabel);
+                EditorGUILayout.EndVertical();
+            }
+        }
+
+        private static bool TryResolveSpeakerSetupContext(
+            Transform root,
+            out SpeakerSetupContext context,
+            out string error)
+        {
+            context = default;
+            error = string.Empty;
+            if (root == null)
+            {
+                error = "AunCast ルートが見つかりません。";
+                return false;
+            }
+
+            VideoPlayerManager managerA = null;
+            VideoPlayerManager managerB = null;
+            VideoPlayerManager[] managers = root.GetComponentsInChildren<VideoPlayerManager>(true);
+            for (int i = 0; i < managers.Length; i++)
+            {
+                VideoPlayerManager manager = managers[i];
+                if (manager == null) continue;
+                if (manager.playerIndex == 0 && managerA == null)
+                    managerA = manager;
+                else if (manager.playerIndex == 1 && managerB == null)
+                    managerB = manager;
+            }
+
+            if (managerA == null || managerB == null)
+            {
+                error = "VideoPlayerManager A/B が見つかりません。";
+                return false;
+            }
+            if (managerA.avProPlayer == null || managerB.avProPlayer == null)
+            {
+                error = "VideoPlayerManager の avProPlayer 参照が不足しています。";
+                return false;
+            }
+
+            var switcher = root.GetComponentInChildren<PlaybackSwitcher>(true);
+            if (switcher == null)
+            {
+                error = "PlaybackSwitcher が見つかりません。";
+                return false;
+            }
+
+            context = new SpeakerSetupContext(
+                managerA,
+                managerB,
+                managerA.avProPlayer,
+                managerB.avProPlayer,
+                managerA.transform,
+                managerB.transform,
+                switcher,
+                root.GetComponentInChildren<SyncDebugDisplay>(true));
+            return true;
+        }
+
+        private static SpeakerCandidate[] CollectSpeakerCandidates(Transform root, SpeakerSetupContext context)
+        {
+            var list = new List<SpeakerCandidate>();
+            AudioSource[] audioSources = UnityEngine.Object.FindObjectsOfType<AudioSource>(true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource == null) continue;
+                GameObject go = audioSource.gameObject;
+                if (go == null) continue;
+                if (!go.activeInHierarchy) continue;
+                if (!go.scene.IsValid() || go.scene != root.gameObject.scene) continue;
+                if (IsUnderTransform(go.transform, context.playerRootA) || IsUnderTransform(go.transform, context.playerRootB))
+                    continue;
+                if (IsUnderGeneratedSpeakerContainer(go.transform))
+                    continue;
+                if (IsOriginalPrefabObjectUnderRoot(root, go))
+                    continue;
+
+                Component speaker = FindSpeakerComponent(go);
+                if (speaker == null) continue;
+
+                list.Add(new SpeakerCandidate(go, audioSource, speaker, GetHierarchyPath(go.transform)));
+            }
+
+            list.Sort((a, b) => string.Compare(a.hierarchyPath, b.hierarchyPath, StringComparison.Ordinal));
+            return list.ToArray();
+        }
+
+        private static List<string> ValidateCurrentSpeakerRouting(SpeakerSetupContext context)
+        {
+            var errors = new List<string>();
+            AudioSource[] aSources = context.managerA != null ? context.managerA.audioSources : null;
+            AudioSource[] bSources = context.managerB != null ? context.managerB.audioSources : null;
+
+            var used = new HashSet<AudioSource>();
+            if (aSources != null)
+            {
+                for (int i = 0; i < aSources.Length; i++)
+                {
+                    AudioSource source = aSources[i];
+                    if (source == null)
+                    {
+                        errors.Add($"PlayerA audioSources[{i}] が null です。");
+                        continue;
+                    }
+                    used.Add(source);
+                    ValidateSpeakerBinding(errors, source, context.playerA, $"PlayerA audioSources[{i}]");
+                }
+            }
+
+            if (bSources != null)
+            {
+                for (int i = 0; i < bSources.Length; i++)
+                {
+                    AudioSource source = bSources[i];
+                    if (source == null)
+                    {
+                        errors.Add($"PlayerB audioSources[{i}] が null です。");
+                        continue;
+                    }
+                    if (used.Contains(source))
+                        errors.Add($"PlayerA/PlayerB で同一 AudioSource を共有しています: {GetHierarchyPath(source.transform)}");
+                    ValidateSpeakerBinding(errors, source, context.playerB, $"PlayerB audioSources[{i}]");
+                }
+            }
+
+            return errors;
+        }
+
+        private static void ValidateSpeakerBinding(
+            List<string> errors,
+            AudioSource source,
+            VRCAVProVideoPlayer expectedPlayer,
+            string label)
+        {
+            if (source == null) return;
+            if (expectedPlayer == null)
+            {
+                errors.Add($"{label}: 期待する VRCAVProVideoPlayer が null です。");
+                return;
+            }
+
+            Component speaker = FindSpeakerComponent(source.gameObject);
+            if (speaker == null)
+            {
+                errors.Add($"{label}: VRC AVPro Video Speaker がありません。({GetHierarchyPath(source.transform)})");
+                return;
+            }
+
+            if (!IsSpeakerRoutedTo(speaker, expectedPlayer))
+            {
+                errors.Add($"{label}: Speaker の videoPlayer が想定先を向いていません。({GetHierarchyPath(source.transform)})");
+            }
+        }
+
+        private static void ExecuteSpeakerSetup(
+            Transform root,
+            PasocomMate.AunCast.AunCastSettings settings,
+            SpeakerSetupContext context,
+            SpeakerCandidate[] candidates)
+        {
+            if (candidates == null || candidates.Length == 0) return;
+
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("AunCast AVPro Speaker Setup");
+            try
+            {
+                AudioSource[] defaultA = context.managerA.audioSources;
+                AudioSource[] defaultB = context.managerB.audioSources;
+
+                ClearGeneratedSpeakerContainers(context.playerRootA, context.playerRootB);
+                Transform containerA = GetOrCreateGeneratedSpeakerContainer(context.playerRootA, GENERATED_SPEAKER_CONTAINER_A_NAME);
+                Transform containerB = GetOrCreateGeneratedSpeakerContainer(context.playerRootB, GENERATED_SPEAKER_CONTAINER_B_NAME);
+
+                var newSourcesA = new List<AudioSource>();
+                var newSourcesB = new List<AudioSource>();
+                var newDetectorsA = new List<AudioSilenceDetector>();
+                var newDetectorsB = new List<AudioSilenceDetector>();
+
+                for (int i = 0; i < candidates.Length; i++)
+                {
+                    SpeakerCandidate candidate = candidates[i];
+                    if (candidate.gameObject == null) continue;
+
+                    GameObject cloneA = CloneSpeakerSource(candidate.gameObject, containerA);
+                    GameObject cloneB = CloneSpeakerSource(candidate.gameObject, containerB);
+                    if (cloneA == null || cloneB == null) continue;
+
+                    AudioSource sourceA = cloneA.GetComponent<AudioSource>();
+                    AudioSource sourceB = cloneB.GetComponent<AudioSource>();
+                    if (sourceA == null || sourceB == null)
+                    {
+                        Debug.LogWarning($"[AunCast] AudioSource の複製に失敗したためスキップしました: {candidate.hierarchyPath}");
+                        continue;
+                    }
+
+                    Component speakerA = FindSpeakerComponent(cloneA);
+                    Component speakerB = FindSpeakerComponent(cloneB);
+                    if (!TrySetSpeakerVideoPlayer(speakerA, context.playerA) ||
+                        !TrySetSpeakerVideoPlayer(speakerB, context.playerB))
+                    {
+                        Debug.LogWarning($"[AunCast] Speaker の videoPlayer 再配線に失敗しました: {candidate.hierarchyPath}");
+                        continue;
+                    }
+
+                    AudioSilenceDetector detectorA = EnsureAudioSilenceDetector(sourceA.gameObject, settings);
+                    AudioSilenceDetector detectorB = EnsureAudioSilenceDetector(sourceB.gameObject, settings);
+
+                    newSourcesA.Add(sourceA);
+                    newSourcesB.Add(sourceB);
+                    if (detectorA != null) newDetectorsA.Add(detectorA);
+                    if (detectorB != null) newDetectorsB.Add(detectorB);
+
+                    SetGameObjectDisabledAndEditorOnly(candidate.gameObject);
+                }
+
+                if (newSourcesA.Count == 0 || newSourcesB.Count == 0)
+                {
+                    Debug.LogWarning("[AunCast] 複製先 AudioSource を作成できなかったため、配線を中止しました。");
+                    return;
+                }
+                if (newDetectorsA.Count == 0 || newDetectorsB.Count == 0)
+                {
+                    Debug.LogWarning("[AunCast] AudioSilenceDetector の生成に失敗したため、配線を中止しました。");
+                    return;
+                }
+
+                DisableAudioSources(defaultA);
+                DisableAudioSources(defaultB);
+
+                ApplyAudioSourcesToManager(context.managerA, newSourcesA.ToArray());
+                ApplyAudioSourcesToManager(context.managerB, newSourcesB.ToArray());
+
+                AudioSilenceDetector detectorForA = newDetectorsA.Count > 0 ? newDetectorsA[0] : null;
+                AudioSilenceDetector detectorForB = newDetectorsB.Count > 0 ? newDetectorsB[0] : null;
+                AudioSource sourceForA = newSourcesA.Count > 0 ? newSourcesA[0] : null;
+                AudioSource sourceForB = newSourcesB.Count > 0 ? newSourcesB[0] : null;
+
+                ApplySilenceDetectorsToSwitcher(context.switcher, detectorForA, detectorForB);
+                ApplySourcesToSyncDebugDisplay(context.syncDebugDisplay, sourceForA, sourceForB, detectorForA, detectorForB);
+
+                EditorUtility.SetDirty(root.gameObject);
+                Debug.Log($"[AunCast] AVPro Speaker 出力先セットアップを完了しました。対象: {candidates.Length}件 / A:{newSourcesA.Count} / B:{newSourcesB.Count}");
+            }
+            finally
+            {
+                Undo.CollapseUndoOperations(undoGroup);
+            }
+        }
+
+        private static void ClearGeneratedSpeakerContainers(Transform playerRootA, Transform playerRootB)
+        {
+            DestroyContainerIfExists(playerRootA, GENERATED_SPEAKER_CONTAINER_A_NAME);
+            DestroyContainerIfExists(playerRootB, GENERATED_SPEAKER_CONTAINER_B_NAME);
+        }
+
+        private static void DestroyContainerIfExists(Transform parent, string containerName)
+        {
+            if (parent == null) return;
+            Transform found = parent.Find(containerName);
+            if (found == null) return;
+            Undo.DestroyObjectImmediate(found.gameObject);
+        }
+
+        private static Transform GetOrCreateGeneratedSpeakerContainer(Transform parent, string containerName)
+        {
+            Transform existing = parent.Find(containerName);
+            if (existing != null) return existing;
+
+            var go = new GameObject(containerName);
+            Undo.RegisterCreatedObjectUndo(go, "Create AVPro Speaker Container");
+            go.transform.SetParent(parent, false);
+            return go.transform;
+        }
+
+        private static GameObject CloneSpeakerSource(GameObject source, Transform parent)
+        {
+            if (source == null || parent == null) return null;
+
+            GameObject clone = UnityEngine.Object.Instantiate(source);
+            Undo.RegisterCreatedObjectUndo(clone, "Duplicate AVPro Speaker Source");
+            clone.transform.SetParent(parent, true);
+            clone.name = source.name;
+            if (string.Equals(clone.tag, EDITOR_ONLY_TAG, StringComparison.Ordinal))
+                clone.tag = "Untagged";
+            EditorUtility.SetDirty(clone);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(clone);
+            return clone;
+        }
+
+        private static void ApplyAudioSourcesToManager(VideoPlayerManager manager, AudioSource[] sources)
+        {
+            if (manager == null) return;
+            var so = new SerializedObject(manager);
+            if (SetObjectArrayProperty(so, nameof(VideoPlayerManager.audioSources), sources))
+                ApplyUdonSerializedChanges(manager, so, "Apply AudioSources to VideoPlayerManager");
+        }
+
+        private static void ApplySilenceDetectorsToSwitcher(
+            PlaybackSwitcher switcher,
+            AudioSilenceDetector detectorA,
+            AudioSilenceDetector detectorB)
+        {
+            if (switcher == null) return;
+
+            var so = new SerializedObject(switcher);
+            bool changed = false;
+            changed |= SetObjectProperty(so, "silenceDetectorA", detectorA);
+            changed |= SetObjectProperty(so, "silenceDetectorB", detectorB);
+            if (changed)
+                ApplyUdonSerializedChanges(switcher, so, "Apply Silence Detectors to PlaybackSwitcher");
+        }
+
+        private static void ApplySourcesToSyncDebugDisplay(
+            SyncDebugDisplay syncDebugDisplay,
+            AudioSource audioSourceA,
+            AudioSource audioSourceB,
+            AudioSilenceDetector detectorA,
+            AudioSilenceDetector detectorB)
+        {
+            if (syncDebugDisplay == null) return;
+
+            var so = new SerializedObject(syncDebugDisplay);
+            bool changed = false;
+            changed |= SetObjectProperty(so, "audioSourceA", audioSourceA);
+            changed |= SetObjectProperty(so, "audioSourceB", audioSourceB);
+            changed |= SetObjectProperty(so, "silenceDetectorA", detectorA);
+            changed |= SetObjectProperty(so, "silenceDetectorB", detectorB);
+            if (changed)
+                ApplyUdonSerializedChanges(syncDebugDisplay, so, "Apply Audio Sources to SyncDebugDisplay");
+        }
+
+        private static void ApplyUdonSerializedChanges(
+            UdonSharp.UdonSharpBehaviour component,
+            SerializedObject so,
+            string undoName)
+        {
+            if (component == null || so == null) return;
+
+            Undo.RecordObject(component, undoName);
+            if (!so.ApplyModifiedProperties()) return;
+
+            UdonSharpEditorUtility.CopyProxyToUdon(component);
+            EditorUtility.SetDirty(component);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(component);
+            if (udon == null) return;
+            EditorUtility.SetDirty(udon);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+        }
+
+        private static void DisableAudioSources(AudioSource[] audioSources)
+        {
+            if (audioSources == null) return;
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource source = audioSources[i];
+                if (source == null) continue;
+                SetGameObjectDisabledAndEditorOnly(source.gameObject);
+            }
+        }
+
+        private static AudioSilenceDetector EnsureAudioSilenceDetector(
+            GameObject gameObject,
+            PasocomMate.AunCast.AunCastSettings settings)
+        {
+            if (gameObject == null) return null;
+
+            var detector = gameObject.GetComponent<AudioSilenceDetector>();
+            if (detector == null)
+                detector = Undo.AddComponent<AudioSilenceDetector>(gameObject);
+            if (detector == null) return null;
+
+            var so = new SerializedObject(detector);
+            SetFloatProperty(so, "silenceRmsThresholdDbfs", settings != null ? settings.silenceRmsThresholdDbfs : -60f);
+            SetFloatProperty(so, "silenceConsecutiveSec", settings != null ? settings.silenceConsecutiveSec : 2.0f);
+            ApplyUdonSerializedChanges(detector, so, "Configure AudioSilenceDetector");
+            return detector;
+        }
+
+        private static bool TrySetSpeakerVideoPlayer(Component speaker, VRCAVProVideoPlayer player)
+        {
+            if (speaker == null || player == null) return false;
+            var so = new SerializedObject(speaker);
+            SerializedProperty prop = so.FindProperty("videoPlayer");
+            if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference)
+                return false;
+
+            Undo.RecordObject(speaker, "Rewire AVPro Speaker videoPlayer");
+            prop.objectReferenceValue = player;
+            if (!so.ApplyModifiedProperties()) return false;
+
+            EditorUtility.SetDirty(speaker);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(speaker);
+            return true;
+        }
+
+        private static bool IsSpeakerRoutedTo(Component speaker, VRCAVProVideoPlayer expected)
+        {
+            if (speaker == null || expected == null) return false;
+            var so = new SerializedObject(speaker);
+            SerializedProperty prop = so.FindProperty("videoPlayer");
+            if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference)
+                return false;
+            return prop.objectReferenceValue == expected;
+        }
+
+        private static Component FindSpeakerComponent(GameObject gameObject)
+        {
+            if (gameObject == null) return null;
+            Component[] components = gameObject.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null) continue;
+                if (component.GetType().Name == SPEAKER_COMPONENT_TYPE_NAME)
+                    return component;
+            }
+
+            return null;
+        }
+
+        private static bool IsUnderTransform(Transform target, Transform root)
+        {
+            if (target == null || root == null) return false;
+            Transform current = target;
+            while (current != null)
+            {
+                if (current == root) return true;
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsUnderGeneratedSpeakerContainer(Transform target)
+        {
+            if (target == null) return false;
+            Transform current = target;
+            while (current != null)
+            {
+                if (current.name == GENERATED_SPEAKER_CONTAINER_A_NAME || current.name == GENERATED_SPEAKER_CONTAINER_B_NAME)
+                    return true;
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsOriginalPrefabObjectUnderRoot(Transform root, GameObject gameObject)
+        {
+            if (root == null || gameObject == null) return false;
+            if (!IsUnderTransform(gameObject.transform, root)) return false;
+            if (!PrefabUtility.IsPartOfPrefabInstance(gameObject)) return false;
+            if (PrefabUtility.IsAddedGameObjectOverride(gameObject)) return false;
+            return true;
+        }
+
+        private static string GetHierarchyPath(Transform target)
+        {
+            if (target == null) return "<null>";
+            var stack = new Stack<string>();
+            Transform current = target;
+            while (current != null)
+            {
+                stack.Push(current.name);
+                current = current.parent;
+            }
+
+            return string.Join("/", stack.ToArray());
+        }
+
+        private static void SetGameObjectDisabledAndEditorOnly(GameObject gameObject)
+        {
+            if (gameObject == null) return;
+
+            Undo.RecordObject(gameObject, "Disable and Tag EditorOnly");
+            if (gameObject.activeSelf)
+                gameObject.SetActive(false);
+            if (!string.Equals(gameObject.tag, EDITOR_ONLY_TAG, StringComparison.Ordinal))
+                gameObject.tag = EDITOR_ONLY_TAG;
+
+            EditorUtility.SetDirty(gameObject);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(gameObject);
         }
 
         private void EnsureVpmVersionCheckStarted()
@@ -736,6 +1329,9 @@ namespace PasocomMate.AunCast.Internal
             int newCapacity = IntSliderField("インスタンス定員", "instanceCapacity",
                 "インスタンスのユーザー数上限。0 の場合、ビルド時に VRC_SceneDescriptor の Capacity を自動使用する。",
                 settings.instanceCapacity, 0, 82);
+            float newDefaultVolume = SliderField("初期音量", "defaultVolume",
+                "各ユーザーの起動時ローカル再生デフォルト音量（0〜1）。",
+                settings.defaultVolume, 0f, 1f);
 
             float newHold = SliderField("ジェスチャー保持時間 [秒]", "gestureHoldDuration",
                 "長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。",
@@ -766,6 +1362,7 @@ namespace PasocomMate.AunCast.Internal
 
             Undo.RecordObject(settings, "Change AunCast UI Settings");
             settings.instanceCapacity = newCapacity;
+            settings.defaultVolume = newDefaultVolume;
             settings.gestureHoldDuration = newHold;
             settings.gestureHudShowThreshold = newHudThreshold;
             settings.panelAutoDismissDistance = newDist;
@@ -947,6 +1544,12 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(staffPanels, so =>
             {
                 SetIntProperty(so, "instanceCapacity", settings.instanceCapacity);
+            });
+
+            var controllers = root.GetComponentsInChildren<LocalDualPlayerController>(true);
+            ApplyToUdonComponents(controllers, so =>
+            {
+                SetFloatProperty(so, "defaultVolume", settings.defaultVolume);
             });
         }
 

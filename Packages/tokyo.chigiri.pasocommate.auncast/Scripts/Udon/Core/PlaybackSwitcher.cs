@@ -96,6 +96,11 @@ namespace PasocomMate.AunCast
         //  初期化
         // =================================================================
 
+        private void Start()
+        {
+            DisableUnusedSilenceDetectors();
+        }
+
         /// <summary>
         /// 初期状態を確立する: A をフル音量で Active、B をミュートで Standby に設定。
         /// </summary>
@@ -123,6 +128,38 @@ namespace PasocomMate.AunCast
                 playerManagerB.SetFadeGain(0.0f);
             }
             _activeIsA = true;
+        }
+
+        private void DisableUnusedSilenceDetectors()
+        {
+            DisableUnusedSilenceDetectorsForManager(playerManagerA, silenceDetectorA, "A");
+            DisableUnusedSilenceDetectorsForManager(playerManagerB, silenceDetectorB, "B");
+        }
+
+        private void DisableUnusedSilenceDetectorsForManager(
+            VideoPlayerManager manager,
+            AudioSilenceDetector keepDetector,
+            string label)
+        {
+            if (manager == null || manager.audioSources == null) return;
+
+            int disabledCount = 0;
+            for (int i = 0; i < manager.audioSources.Length; i++)
+            {
+                AudioSource source = manager.audioSources[i];
+                if (source == null) continue;
+
+                AudioSilenceDetector detector = source.GetComponent<AudioSilenceDetector>();
+                if (detector == null) continue;
+                if (detector == keepDetector) continue;
+                if (!detector.enabled) continue;
+
+                detector.enabled = false;
+                disabledCount++;
+            }
+
+            if (disabledCount > 0)
+                LogVerbose($"Disabled unused AudioSilenceDetector on Player{label}: {disabledCount}");
         }
 
         // =================================================================
