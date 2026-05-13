@@ -577,6 +577,26 @@ namespace PasocomMate.AunCast
             return ((float)ahead / concurrent) * AVG_RESYNC_DURATION_SEC;
         }
 
+        /// <summary>
+        /// 待機列が解消して全 Resync が完了するまでの推定残り時間（秒）を返す。
+        /// 待機者（QUEUED）がいない場合は 0 を返す。
+        /// </summary>
+        public float EstimateGlobalWaitTime()
+        {
+            if (resyncState == null) return 0f;
+            int queued = 0;
+            int active = 0;
+            for (int i = 0; i < maxPlayers; i++)
+            {
+                int s = resyncState[i];
+                if (s == STATE_QUEUED) queued++;
+                else if (s == STATE_GRANTED || s == STATE_RUNNING) active++;
+            }
+            if (queued == 0) return 0f;
+            int concurrent = maxConcurrentResyncUsers > 0 ? maxConcurrentResyncUsers : 1;
+            return Mathf.Ceil((float)(queued + active) / concurrent) * AVG_RESYNC_DURATION_SEC;
+        }
+
         /// <summary>プレイヤー ID からスロットインデックスを逆引きする。未割当なら -1。</summary>
         public int FindSlotByPlayerId(int playerId)
         {

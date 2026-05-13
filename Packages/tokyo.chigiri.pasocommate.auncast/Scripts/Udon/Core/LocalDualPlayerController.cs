@@ -59,10 +59,6 @@ namespace PasocomMate.AunCast
         [Tooltip("デフォルト音量（x^2 と Dr. Lex 指数カーブの lerp。0.6 で約 -13dB）")]
         [SerializeField] private float defaultVolume = 0.6f;
 
-        [Header("Reboot")]
-        [Tooltip("リブートボタン表示条件: GetTime 停止超過時間（秒）")]
-        [SerializeField] private float rebootStallSec = 10.0f;
-
         [Header("Debug")]
         [Tooltip("要所ログを詳細出力する")]
         [SerializeField] private bool verboseLogging = true;
@@ -587,29 +583,6 @@ namespace PasocomMate.AunCast
             _tlAction = "EMERGENCY_REBOOT";
             _localState = STATE_RETRY_WAIT;
             LogMessage("Reboot initiated");
-        }
-
-        /// <summary>リブートボタンを表示すべきか判定する。Resync 予約が長時間取れない場合や長期スタル時に true。</summary>
-        [PublicAPI]
-        public bool ShouldShowRebootButton()
-        {
-            float now = Time.time;
-
-            // Resync スロットの割当待ちが推定時間を超過したか
-            bool grantTimeout = false;
-            if (_localState == STATE_REQUEST_PENDING)
-            {
-                float waited = now - resyncClient.GetRequestStartedAt();
-                float estimated = resyncClient.GetRebootWaitEstimate();
-                grantTimeout = waited > estimated + resyncClient.GetRebootGrantMarginSec();
-            }
-
-            // Active の GetTime が長時間停止しているか
-            float stallStartedAt = activeMonitor.GetStallStartedAt();
-            bool stallTimeout = stallStartedAt > 0f
-                && (now - stallStartedAt) > rebootStallSec;
-
-            return grantTimeout || stallTimeout;
         }
 
         /// <summary>ユーザー操作による手動 Resync 要求。再生中のみ受け付け、Coordinator にスロットを申請する。</summary>

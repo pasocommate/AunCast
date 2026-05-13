@@ -185,21 +185,20 @@ Standby 接続が失敗した場合、クライアントは状態を解放し、
 ### FR-12: Late Joiner 耐性
 Late Joiner は参加時点での Coordinator 状態を再構築できなければならない。
 
-### FR-13: グローバル Resync トリガー
-スタッフ（Master または許可されたユーザー）が全ユーザーの一斉 Resync を発行できなければならない。発行方法は以下の 2 種類を含む。
+### FR-13: Resync トリガー
+Resync の発動方法は以下の 3 種類を含む。
 
-- **手動トリガー**: スタッフが UI 操作で明示的に発行する
-- **自動トリガー**: Audio RMS やストリーム状態から「目立たないタイミング」（曲間・無音区間等）を検知し自動で発行する
+- **手動トリガー（グローバル）**: スタッフ（Master または許可されたユーザー）が UI 操作で全ユーザーの一斉 Resync を発行する
+- **手動トリガー（個別）**: 各ユーザーが ViewerPanel の Resync ボタンで自身の Resync を要求する
+- **自動トリガー（個別）**: 各クライアントが Audio RMS 無音検知やストール検知に基づき、自動的に自身の Resync を Coordinator キューに投入する。連続発火を防ぐため `silenceSuppressSec` によるクールダウンを設ける
 
-### FR-14: グローバル Resync モニタリング
-グローバル Resync の発行者は、進捗状況をリアルタイムで確認できなければならない。少なくとも以下の情報を含む。
+### FR-14: Resync モニタリング
+スタッフは、インスタンス全体の再生・Resync 状況をリアルタイムで確認できなければならない。以下の情報を含む。
 
-- インスタンス内の全ユーザー数
-- 現在再生中のユーザー数
-- 現在 Resync 実行中のユーザー数
-- 予約待機中（Queued）のユーザー数
-- 全員完了までの推定残り時間
-- 完了数 / 失敗数
+- **数値サマリ**: 再生中ユーザー数 / 接続中ユーザー数 / インスタンス内ユーザー数 / インスタンス収容上限
+- **スロットインジケーター**: 各ユーザーの状態（正常再生 / 接続中 / Resync 待機 / Resync 実行中 / エラー）を色分けアイコンで一覧表示し、異常度の高い順にソートする
+- **推定残り時間（ユーザー向け）**: Resync 待機が発生したとき、待機列が解消して自身の Resync が完了するまでの推定残り時間を ViewerPanel に表示する
+- **推定残り時間（スタッフ向け）**: 待機列がある場合、全体の Resync が完了するまでの推定残り時間を StaffControlPanel に表示する
 
 ### FR-15: スタッフ操作パネル
 スタッフ向けの操作パネルをワールド内に設置できなければならない。操作可能なユーザーを制限するアクセス制御を備えること。以下の機能を含む。
@@ -236,7 +235,7 @@ Resync リクエストが長時間応答なし、または `GetTime()` が長時
 各観客が自身の再生状態を確認できるポータブルパネルを提供しなければならない。VR ジェスチャー（複数方式選択可）またはデスクトップの Tab キーで呼び出す形式とする。少なくとも以下の情報・操作を含む。
 
 - Resync リクエストボタン（Cooldown 中は ETA / カウントダウン表示）
-- 緊急リブートボタン（条件を満たした場合のみ interactable、FR-16b 参照）
+- 緊急リブートボタン（常時操作可能。Coordinator を介さず自身のストリームを全断→再接続する）
 - Resync 実行までの推定待ち時間（「ETA ○s」表示）
 - 自身のプレイヤー `GetTime()` とサーバー時間のズレ（ドリフト）蓄積ゲージ
 - 無音検出連続時間ゲージ（抑制中はグレーアウト）
@@ -396,7 +395,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 観客向けの自己状態確認・Resync リクエスト UI。VR ジェスチャーまたはデスクトップの Tab キーで呼び出す。Viewer ビューと Staff ビュー（StaffControlPanel）をクロスフェードで切替可能。
 
 責務:
-- 個人 Resync リクエストボタン / 緊急リブートボタン（条件付き interactable 制御）
+- 個人 Resync リクエストボタン / 緊急リブートボタン
 - 状態テキス���表示（ローカル状態 + エラーメッセージ + Stall/Fail カウント）
 - ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示
 - サイレンスゲージ（`silenceGauge`）: 無音検出の連続時間を表示。抑制中はグレーアウト
@@ -1288,7 +1287,6 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `playTimeoutSec`
 - `verifyTimeoutSec`
 - `defaultVolume`
-- `rebootStallSec`
 - `verboseLogging` / `_timelineLogging`
 
 ### ActivePlayerMonitor 側
@@ -1313,7 +1311,6 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `localCooldownSec` (5s)
 - `baseCooldownSec` (15s)
 - `maxRetryCooldownSec` (120s)
-- `rebootGrantMarginSec` (30s)
 
 ### ResyncCoordinator 側
 
@@ -1499,7 +1496,7 @@ VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポ
 
 #### 表示項目・操作項目（Viewer ビュー）
 - **Resync ボタン**: 押すと自身の Resync を Coordinator に Request する。非再生時は無効化。Cooldown / 待機中は ETA またはカウントダウンを表示
-- **緊急リブートボタン**: Coordinator を介さず自身のストリームを全断→再接続する。`ShouldShowRebootButton()` が true の場合のみ interactable
+- **緊急リブートボタン**: Coordinator を介さず自身のストリームを全断→再接続する。常時操作可能
 - **状態テキスト**: ローカル状態 + エラーメッセージ + Stall/Fail カウント
 - **ドリフトゲージ** (`headroomGauge`): 蓄積ドリフトのしきい値に対する割合をスライダーで表示
 - **サイレンスゲージ** (`silenceGauge`): 無音検出の連続時間をスライダーで表示。`silenceSuppressSec` 中はグレーアウト

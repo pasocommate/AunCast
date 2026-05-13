@@ -1,76 +1,94 @@
-# VPM Package Template
+# AunCast
 
-Starter for making Packages, including automation for building and publishing them.
+AunCast は、VRChat ワールド向けの低遅延ライブ配信プレイヤーシステムです。  
+`VRCAVProVideoPlayer` を 2 系統（Active/Standby）で運用し、停止やドリフト発生時に Resync して視聴継続性を高めることを目的にしています。
 
-Once you're all set up, you'll be able to push changes to this repository and have .zip and .unitypackage versions automatically generated, and a listing made which works in the VPM for delivering updates for this package. If you want to make a listing with a variety of packages, check out our [template-package-listing](https://github.com/vrchat-community/template-package-listing) repo.
+## 主な特徴
 
-## ▶ Getting Started
+- 2 系統プレイヤー（Active/Standby）での切替運用
+- `GetTime()` 前進確認ベースの Resync 判定
+- `ResyncCoordinator` による予約制御と同時実行数制限
+- スタッフ向け操作パネル（URL 更新、全体 Resync、停止、接続制限調整）
+- 視聴者向け状態表示とローカル設定 UI（音量、無音時自動 Resync など）
 
-* Press [![Use This Template](https://user-images.githubusercontent.com/737888/185467681-e5fdb099-d99f-454b-8d9e-0760e5a6e588.png)](https://github.com/vrchat-community/template-package/generate)
-to start a new GitHub project based on this template.
-  * Choose a fitting repository name and description.
-  * Set the visibility to 'Public'. You can also choose 'Private' and change it later.
-  * You don't need to select 'Include all branches.'
-* Clone this repository locally using Git.
-  * If you're unfamiliar with Git and GitHub, [visit GitHub's documentation](https://docs.github.com/en/get-started/quickstart/git-and-github-learning-resources) to learn more.
-* Add the folder to Unity Hub and open it as a Unity Project.
-* After opening the project, wait while the VPM resolver is downloaded and added to your project.
-  * This gives you access to the VPM Package Maker and Package Resolver tools.
+詳細設計は [Docs/Design.md](Docs/Design.md) を参照してください。
 
-## 🚇 Migrating Assets Package
-Full details at [Converting Assets to a VPM Package](https://vcc.docs.vrchat.com/guides/convert-unitypackage)
+## 動作環境
 
-## ✏️ Working on Your Package
+`Packages/tokyo.chigiri.pasocommate.auncast/package.json` に基づく情報です。
 
-* Delete the "Packages/com.vrchat.demo-template" directory or reuse it for your own package.
-  * If you reuse the package, don't forget to rename it and add generated meta files to your repository!
-* Update the `.gitignore` file in the "Packages" directory to include your package.
-  * For example, change `!com.vrchat.demo-template` to `!com.username.package-name`.
-  * `.gitignore` files normally *exclude* the contents of your "Packages" directory. This `.gitignore` in this template show how to *include* the demo package. You can easily change this out for your own package name.
-* Open the Unity project and work on your package's files in your favorite code editor.
-* When you're ready, commit and push your changes.
-* Once you've set up the automation as described below, you can easily publish new versions.
+- Unity: `2022.3`
+- Package name: `tokyo.chigiri.pasocommate.auncast`
+- Display name: `AunCast`
+- 依存 VPM パッケージ:
+  - `com.vrchat.worlds >=3.10.2`
+  - `net.narazaka.vrchat.tmp-fallback-fonts-jp >=1.0.0`
+  - `tokyo.chigiri.pasocommate.rendermate >=1.0.0 <2.0.0`
 
-## 🤖 Setting up the Automation
+## リポジトリ構成
 
-Create a repository variable with the name and value described below.
-For details on how to create repository variables, see [Creating Configuration Variables for a Repository](https://docs.github.com/en/actions/learn-github-actions/variables#creating-configuration-variables-for-a-repository).
-Make sure you are creating a **repository variable**, and not a **repository secret**.
+- `Packages/tokyo.chigiri.pasocommate.auncast/`
+  - AunCast 本体パッケージ
+  - `AunCast.prefab`、`Prefabs/WallControlPanel.prefab`
+  - Udon スクリプト群（`Scripts/Udon/*`）
+- `Assets/AunCast-Dev/AunCast-Verify.unity`
+  - 検証用シーン
+- `Docs/`
+  - 設計、実装パターン、QA、ローカル RTSP 検証手順
 
-* `PACKAGE_NAME`: the name of your package, like `com.vrchat.demo-template`.
+## 主要コンポーネント
 
-Finally, go to the "Settings" page for your repo, then choose "Pages", and look for the heading "Build and deployment". Change the "Source" dropdown from "Deploy from a branch" to "GitHub Actions".
+- `LocalDualPlayerController`
+  - Active/Standby の 2 系統再生と切替制御
+- `ResyncCoordinator` / `ResyncCoordinatorClient`
+  - ワールド全体の Resync 要求キューと実行調停
+- `PlaybackSwitcher` / `PlaybackMonitor` / `ActivePlayerMonitor`
+  - 切替進行、状態監視、異常検知
+- `AudioSilenceDetector`
+  - 無音区間検知
+- `StaffControlPanel` / `UserStatusPanel` / `WallControlPanel`
+  - スタッフ操作 UI・視聴者 UI・壁面操作 UI
 
-That's it!
-Some other notes:
-* We highly recommend you keep the existing folder structure of this template.
-  * The root of the project should be a Unity project.
-  * Your packages should be in the "Packages" directory.
-  * If you deviate from this folder structure, you'll need to update the paths that assume your package is in the "Packages" directory on lines 24, 38, 41 and 57.
-* If you want to store and generate your web files in a folder other than "Website" in the root, you can change the `listPublicDirectory` item [here in build-listing.yml](.github/workflows/build-listing.yml#L17).
+## 導入・検証
 
-## 🎉 Publishing a Release
+### このリポジトリで開発する場合
 
-You can make a release by running the [Build Release](.github/workflows/release.yml) action. The version specified in your `package.json` file will be used to define the version of the release.
+1. リポジトリを clone する
+2. Unity Hub でプロジェクトを開く
+3. `Assets/AunCast-Dev/AunCast-Verify.unity` で動作確認する
 
-## 📃 Rebuilding the Listing
+### ローカル RTSP で検証する場合
 
-Whenever you make a change to a release - manually publishing it, or manually creating, editing or deleting a release, the [Build Repo Listing](.github/workflows/build-listing.yml) action will make a new index of all the releases available, and publish them as a website hosted fore free on [GitHub Pages](https://pages.github.com/). This listing can be used by the VPM to keep your package up to date, and the generated index page can serve as a simple landing page with info for your package. The URL for your package will be in the format `https://username.github.io/repo-name`.
+- [Docs/Local-Test-Server.md](Docs/Local-Test-Server.md) を参照してください
+- MediaMTX + FFmpeg で `rtsp://` / `rtspt://` ストリームを作って検証できます
 
-## 🏠 Customizing the Landing Page (Optional)
+## 開発ルール（要点）
 
-The action which rebuilds the listing also publishes a landing page. The source for this page is in `Website/index.html`. The automation system uses [Scriban](https://github.com/scriban/scriban) to fill in the objects like `{{ this }}` with information from the latest release's manifest, so it will stay up-to-date with the name, id and description that you provide there. You are welcome to modify this page however you want - just use the existing `{{ template.objects }}` to fill in that info wherever you like. The entire contents of your "Website" folder are published to your GitHub Page each time.
+- 作業前に `CLAUDE.md` を確認
+- 同期変数・スタッフ権限操作・UI 追従は [Docs/Implementation-Patterns.md](Docs/Implementation-Patterns.md) のパターンに合わせる
+- `[UdonSynced]` を追加/変更した場合は `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行して `.asset` を更新
 
-## 💻 Technical Stuff
+## QA
 
-You are welcome to make your own changes to the automation process to make it fit your needs, and you can create Pull Requests if you have some changes you think we should adopt. Here's some more info on the included automation:
+- 自動/手動の検証観点は [Docs/QA-Checklist.md](Docs/QA-Checklist.md)
+- テストコード（EditMode）: `Assets/AunCast-Dev/Tests/Editor/`
 
-### Build Release Action
-[release.yml](/.github/workflows/release.yml)
+## リリースとワークフロー
 
-This is a composite action combining a variety of existing GitHub Actions and some shell commands to create both a .zip of your Package and a .unitypackage. It creates a release which is named for the `version` in the `package.json` file found in your target Package, and publishes the zip, the unitypackage and the package.json file to this release.
+- リリース作成: `.github/workflows/release.yml`（手動実行）
+- リポジトリ listing 再構築: `.github/workflows/build-listing.yml`
 
-### Build Repo Listing
-[build-listing.yml](.github/workflows/build-listing.yml)
+`release.yml` では、以下を設定すると別リポジトリの listing ワークフローを自動起動できます。
 
-This is a composite action which builds a vpm-compatible [Repo Listing](https://vcc.docs.vrchat.com/vpm/repos) based on the releases you've created. In order to find all your releases and combine them into a listing, it checks out [another repository](https://github.com/vrchat-community/package-list-action) which has a [Nuke](https://nuke.build/) project which includes the VPM core lib to have access to its types and methods. This project will be expanded to include more functionality in the future - for now, the action just calls its `BuildRepoListing` target.
+- Variables
+  - `VPM_LISTING_REPOSITORY`（`owner/repo` 形式）
+  - `VPM_LISTING_WORKFLOW`（省略時 `build-listing.yml`）
+  - `VPM_LISTING_REF`（省略時 `main`）
+- Secret
+  - `VPM_LISTING_REPO_TOKEN`（対象リポジトリの Actions 実行権限を持つトークン）
+
+## ライセンス
+
+- 本体ライセンス: `Packages/tokyo.chigiri.pasocommate.auncast/LICENSE`
+- サードパーティ表記: `Packages/tokyo.chigiri.pasocommate.auncast/THIRD_PARTY_NOTICES.md`
+- VN3 ライセンス文書: `Packages/tokyo.chigiri.pasocommate.auncast/vn3license_ja.pdf`, `vn3license_en.pdf`

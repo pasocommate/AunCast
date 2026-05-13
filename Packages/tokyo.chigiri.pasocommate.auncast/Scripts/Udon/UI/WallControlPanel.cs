@@ -37,6 +37,10 @@ namespace PasocomMate.AunCast
         [SerializeField] private TMP_Text switchViewButtonLabel;
         [SerializeField] private Button switchViewButton;
 
+        [Header("Shared Buttons Layout")]
+        [SerializeField] private bool disablePasscodeViewSwitchButton;
+        [SerializeField] private RectTransform spawnPanelButtonRect;
+
         [Header("Passcode UI (Staff View)")]
         [SerializeField] private TMP_Text passcodeDisplay;
         [Tooltip("4 桁の数字パスコード。空文字にすると常に Not configured を返す。")]
@@ -67,6 +71,9 @@ namespace PasocomMate.AunCast
         private const string SWITCH_ICON_TO_STAFF = "\ue899";   // Lock
         private const string SWITCH_ICON_TO_USER  = "\uf20b";   // AccountCircle
         private const string SWITCH_ICON_UNLOCKED = "\ue898";   // LockOpen
+        // プレハブ SpawnPanelButton の offsetMax.x に対応
+        private const float SPAWN_PANEL_BUTTON_RIGHT_DEFAULT = 94f;
+        private const float SPAWN_PANEL_BUTTON_RIGHT_EXPANDED = 0f;
 
         // ビュー定数
         private const int VIEW_USER = 0;
@@ -92,6 +99,7 @@ namespace PasocomMate.AunCast
         {
             _nearSqrDist = wallNearDistance * wallNearDistance;
             _farSqrDist = wallFarDistance * wallFarDistance;
+            ApplySharedButtonsLayout();
             UpdatePasscodeDisplay();
             SetViewTarget(VIEW_USER, true);
             ApplyGestureGroupVisibility();
@@ -197,6 +205,7 @@ namespace PasocomMate.AunCast
 
         public void OnSwitchViewButtonPress()
         {
+            if (disablePasscodeViewSwitchButton) return;
             if (_passcodeUnlocked)
             {
                 SetViewTarget(VIEW_USER, false);
@@ -204,6 +213,36 @@ namespace PasocomMate.AunCast
                 return;
             }
             SetViewTarget(_viewTarget == VIEW_STAFF ? VIEW_USER : VIEW_STAFF, false);
+        }
+
+        public void ApplySharedButtonsLayout()
+        {
+            if (switchViewButton != null)
+                switchViewButton.gameObject.SetActive(!disablePasscodeViewSwitchButton);
+
+            RectTransform spawnRect = GetSpawnPanelButtonRect();
+            if (spawnRect == null) return;
+            float right = disablePasscodeViewSwitchButton
+                ? SPAWN_PANEL_BUTTON_RIGHT_EXPANDED
+                : SPAWN_PANEL_BUTTON_RIGHT_DEFAULT;
+            Vector2 offsetMax = spawnRect.offsetMax;
+            offsetMax.x = -right;
+            spawnRect.offsetMax = offsetMax;
+        }
+
+        private RectTransform GetSpawnPanelButtonRect()
+        {
+            if (spawnPanelButtonRect != null) return spawnPanelButtonRect;
+
+            var rects = GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < rects.Length; i++)
+            {
+                if (rects[i] == null) continue;
+                if (rects[i].name != "SpawnPanelButton") continue;
+                spawnPanelButtonRect = rects[i];
+                break;
+            }
+            return spawnPanelButtonRect;
         }
 
         // =================================================================
@@ -295,7 +334,6 @@ namespace PasocomMate.AunCast
             bool canResync = controller.GetLocalState() == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
             SetButtonInteractable(userResyncButton, canResync);
             SetButtonInteractable(resyncOnlyButton, canResync);
-            SetButtonInteractable(userRebootButton, controller.ShouldShowRebootButton());
         }
 
         private void SetButtonInteractable(Button button, bool interactable)

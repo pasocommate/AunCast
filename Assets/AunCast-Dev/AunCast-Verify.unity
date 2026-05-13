@@ -751,6 +751,11 @@ PrefabInstance:
       propertyPath: m_BlocksRaycasts
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2071682585213451644, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2537792760387121733, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
@@ -759,10 +764,20 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 3278151562744594794, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+      propertyPath: spawnPanelButtonRect
+      value: 
+      objectReference: {fileID: 1142965046}
+    - target: {fileID: 3278151562744594794, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 3278151562744594794, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 3278151562744594794, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: disablePasscodeViewSwitchButton
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4060580733508892117, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_AnchorMax.x
@@ -1001,6 +1016,12 @@ PrefabInstance:
       addedObject: {fileID: 1984023953}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d617877712537147a584eb2a1ef735c, type: 3}
+--- !u!224 &1142965046 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6418455704807867715, guid: 0d617877712537147a584eb2a1ef735c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1142965045}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1239818112
 PrefabInstance:
   m_ObjectHideFlags: 0

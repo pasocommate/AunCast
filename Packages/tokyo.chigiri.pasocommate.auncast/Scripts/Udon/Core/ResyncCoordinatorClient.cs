@@ -51,10 +51,6 @@ namespace PasocomMate.AunCast
         [Tooltip("再試行の最大待機時間（秒）")]
         [SerializeField] private float maxRetryCooldownSec = 120.0f;
 
-        [Header("Reboot")]
-        [Tooltip("リブートボタン有効化: 推定待ち時間を超えてさらに待つ猶予（秒）")]
-        [SerializeField] private float rebootGrantMarginSec = 30.0f;
-
         [Header("Debug")]
         [Tooltip("要所ログを詳細出力する")]
         [SerializeField] private bool verboseLogging = true;
@@ -369,16 +365,6 @@ namespace PasocomMate.AunCast
         public float GetLastResyncCompletedAt() { return _lastResyncCompletedAt; }
         /// <summary>Resync 完了時刻を記録する。無音検知の抑制判定に使う。</summary>
         public void OnResyncCompleted(float now) { _lastResyncCompletedAt = now; }
-
-        /// <summary>Coordinator に問い合わせた推定待ち時間（リブートボタン表示判定用）。</summary>
-        public float GetRebootWaitEstimate()
-        {
-            if (coordinator == null || _mySlotIndex < 0) return 0f;
-            return coordinator.EstimateWaitTime(_mySlotIndex);
-        }
-
-        /// <summary>推定待ち時間に加算する猶予秒数（リブートボタン有効化閾値）。</summary>
-        public float GetRebootGrantMarginSec() { return rebootGrantMarginSec; }
 
         /// <summary>
         /// 前回 Resync 完了から十分な時間が経過し、無音検知による自動 Resync を

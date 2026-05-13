@@ -7,7 +7,6 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 using VRC.SDK3.Video.Components.AVPro;
-using UpmPackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace PasocomMate.AunCast.Internal
 {
@@ -16,10 +15,8 @@ namespace PasocomMate.AunCast.Internal
     /// ScriptableObject では表現しにくい設定項目を、ヘルプ付きの専用 GUI で編集できるようにする。
     /// </summary>
     [CustomEditor(typeof(PasocomMate.AunCast.AunCastSettings))]
-    public class AunCastSettingsEditor : Editor
+    public class AunCastSettingsInspector : Editor
     {
-        private const string LOGO_GUID = "0b03f41b908bc7d48b57b7f713e1e3f4";
-        private const string BANNER_BG_GUID = "113e351a1b05afd48b1027675bb3bf15";
         private const string DEFAULT_VPM_LISTING_URL = "https://pasocommate.github.io/AunCast/index.json";
         private const string TMP_FALLBACK_DEFAULT_FONT_GUID = "b0cf90c18247f154094021e2de9bf529";
         private const string TMP_FALLBACK_NOTO_FONT_GUID = "32134e5dc8c950c4cb5bb7deaae7d539";
@@ -28,16 +25,8 @@ namespace PasocomMate.AunCast.Internal
         private const string SESSION_KEY_VPM_CHECK_DONE = "AunCast.SettingsEditor.VpmCheckDone";
         private const string SESSION_KEY_VPM_HAS_UPDATE = "AunCast.SettingsEditor.VpmHasUpdate";
         private const string SESSION_KEY_VPM_LATEST_VERSION = "AunCast.SettingsEditor.VpmLatestVersion";
-        private static readonly Color BANNER_FALLBACK_COLOR = new Color(0.518f, 0.624f, 0.82f);
-        private static readonly Color UPDATE_BADGE_BG_COLOR = new Color(0.85f, 0.15f, 0.15f);
 
         private bool _prevAlt;
-        private Texture2D _logo;
-        private Texture2D _bannerBackground;
-        private GUIStyle _bannerVersionStyle;
-        private GUIStyle _bannerUpdateBadgeStyle;
-        private string _packageName;
-        private string _packageVersion;
         private bool _vpmVersionCheckRequested;
         private bool _vpmVersionCheckInProgress;
         private UnityWebRequest _vpmVersionRequest;
@@ -46,122 +35,6 @@ namespace PasocomMate.AunCast.Internal
         private string _latestVersion;
         private string _vpmListingUrl;
         private bool _vpmSessionCacheLoaded;
-
-        private void DrawLogo()
-        {
-            if (_bannerBackground == null)
-            {
-                var bgPath = AssetDatabase.GUIDToAssetPath(BANNER_BG_GUID);
-                if (!string.IsNullOrEmpty(bgPath))
-                    _bannerBackground = AssetDatabase.LoadAssetAtPath<Texture2D>(bgPath);
-            }
-
-            if (_logo == null)
-            {
-                var path = AssetDatabase.GUIDToAssetPath(LOGO_GUID);
-                if (!string.IsNullOrEmpty(path))
-                    _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                if (_logo == null) return;
-            }
-
-            const float padTop = 16f;
-            const float padBottom = 10f;
-            const float maxLogoWidth = 320f;
-            const float versionGap = 8f;
-            const float versionHeight = 16f;
-            var rect = GUILayoutUtility.GetRect(0f, 0f);
-            float fullWidth = EditorGUIUtility.currentViewWidth;
-            float logoWidth = Mathf.Min(fullWidth - 80f, maxLogoWidth);
-            float logoHeight = logoWidth * _logo.height / _logo.width;
-            float totalHeight = padTop + logoHeight + versionGap + versionHeight + padBottom;
-            var bgRect = new Rect(0f, rect.y, fullWidth, totalHeight);
-            GUILayoutUtility.GetRect(fullWidth, totalHeight);
-
-            if (_bannerBackground != null)
-                GUI.DrawTexture(bgRect, _bannerBackground, ScaleMode.ScaleAndCrop);
-            else
-                EditorGUI.DrawRect(bgRect, BANNER_FALLBACK_COLOR);
-            float logoX = (fullWidth - logoWidth) / 2f;
-            var logoRect = new Rect(logoX, bgRect.y + padTop, logoWidth, logoHeight);
-            GUI.DrawTexture(logoRect, _logo, ScaleMode.ScaleToFit);
-
-            var versionRect = new Rect(0f, logoRect.yMax + versionGap, fullWidth, versionHeight);
-            DrawVersionLabel(versionRect);
-        }
-
-        private void DrawVersionLabel(Rect versionRect)
-        {
-            string currentVersion = GetCurrentPackageVersion();
-            string versionText = $"Version: <b>{currentVersion}</b>";
-            if (!_hasVersionUpdate || string.IsNullOrEmpty(_latestVersion))
-            {
-                GUI.Label(versionRect, versionText, GetBannerVersionStyle());
-                return;
-            }
-
-            string badgeText = $"更新があります ({_latestVersion})";
-
-            var versionContent = new GUIContent(versionText);
-            var badgeContent = new GUIContent(badgeText);
-            var versionStyle = GetBannerVersionStyle();
-            var badgeStyle = GetBannerUpdateBadgeStyle();
-
-            Vector2 versionSize = versionStyle.CalcSize(versionContent);
-            Vector2 badgeTextSize = badgeStyle.CalcSize(badgeContent);
-            const float badgePadX = 8f;
-            const float badgePadY = 2f;
-            const float gap = 8f;
-
-            float badgeWidth = badgeTextSize.x + badgePadX * 2f;
-            float badgeHeight = badgeTextSize.y + badgePadY * 2f;
-            float totalWidth = versionSize.x + gap + badgeWidth;
-            float startX = versionRect.x + (versionRect.width - totalWidth) * 0.5f;
-
-            var textRect = new Rect(startX, versionRect.y, versionSize.x, versionRect.height);
-            GUI.Label(textRect, versionContent, versionStyle);
-
-            var badgeRect = new Rect(
-                textRect.xMax + gap,
-                versionRect.y + (versionRect.height - badgeHeight) * 0.5f,
-                badgeWidth,
-                badgeHeight);
-            EditorGUI.DrawRect(badgeRect, UPDATE_BADGE_BG_COLOR);
-
-            var badgeTextRect = new Rect(
-                badgeRect.x + badgePadX,
-                badgeRect.y + badgePadY,
-                badgeRect.width - badgePadX * 2f,
-                badgeRect.height - badgePadY * 2f);
-            GUI.Label(badgeTextRect, badgeContent, badgeStyle);
-        }
-
-        private GUIStyle GetBannerVersionStyle()
-        {
-            if (_bannerVersionStyle != null) return _bannerVersionStyle;
-
-            _bannerVersionStyle = new GUIStyle(EditorStyles.miniLabel)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 11,
-                richText = true
-            };
-            _bannerVersionStyle.normal.textColor = new Color(0.85f, 0.85f, 0.85f);
-            return _bannerVersionStyle;
-        }
-
-        private GUIStyle GetBannerUpdateBadgeStyle()
-        {
-            if (_bannerUpdateBadgeStyle != null) return _bannerUpdateBadgeStyle;
-
-            _bannerUpdateBadgeStyle = new GUIStyle(EditorStyles.miniLabel)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 11,
-                fontStyle = FontStyle.Bold
-            };
-            _bannerUpdateBadgeStyle.normal.textColor = Color.white;
-            return _bannerUpdateBadgeStyle;
-        }
 
         private static GUIContent L(string label, string fieldName, string tooltip)
         {
@@ -223,7 +96,7 @@ namespace PasocomMate.AunCast.Internal
 
             EnsureVpmVersionCheckStarted();
             PollVpmVersionCheck();
-            DrawLogo();
+            AunCastInspectorBanner.Draw(this, _hasVersionUpdate, _latestVersion);
             DrawTmpFallbackFontWarning();
 
             var settings = (PasocomMate.AunCast.AunCastSettings)target;
@@ -304,7 +177,7 @@ namespace PasocomMate.AunCast.Internal
             var tmpSettings = TMP_Settings.instance;
             if (tmpSettings == null)
             {
-                return Localize(
+                return AunCastEditorLocalization.Localize(
                     "TMP Settings が見つかりません。Edit→Project Settings→TextMesh Pro から TMP Essentials を先にインポートしてください。",
                     "TMP Settings was not found. Open Edit > Project Settings > TextMesh Pro and import TMP Essentials first.");
             }
@@ -313,7 +186,7 @@ namespace PasocomMate.AunCast.Internal
             var fallbackFontAsset = LoadAssetByGuid<TMP_FontAsset>(TMP_FALLBACK_NOTO_FONT_GUID);
             if (defaultFontAsset == null || fallbackFontAsset == null)
             {
-                return Localize(
+                return AunCastEditorLocalization.Localize(
                     "net.narazaka.vrchat.tmp-fallback-fonts-jp のフォントアセットが見つかりません。Manage Project で TextMesh Pro VRC Fallback Font JP を導入してください。",
                     "Font assets from net.narazaka.vrchat.tmp-fallback-fonts-jp were not found. Install TextMesh Pro VRC Fallback Font JP from Manage Project.");
             }
@@ -334,14 +207,9 @@ namespace PasocomMate.AunCast.Internal
             }
 
             if (hasDefault && hasFallback) return null;
-            return Localize(
+            return AunCastEditorLocalization.Localize(
                 $"TMP フォールバック設定が未適用です。{TMP_FALLBACK_MENU_PATH} を実行してください。実行後はシーンを開き直してください。",
                 $"TMP fallback font settings are not applied. Run {TMP_FALLBACK_MENU_PATH}. After that, reopen the scene.");
-        }
-
-        private static string Localize(string ja, string en)
-        {
-            return Application.systemLanguage == SystemLanguage.Japanese ? ja : en;
         }
 
         private static void DrawWallPanelReferenceTools(Transform root)
@@ -793,34 +661,12 @@ namespace PasocomMate.AunCast.Internal
 
         private string GetCurrentPackageName()
         {
-            if (!string.IsNullOrEmpty(_packageName)) return _packageName;
-            CachePackageInfo();
-            return _packageName;
+            return AunCastInspectorBanner.GetCurrentPackageName(this);
         }
 
         private string GetCurrentPackageVersion()
         {
-            if (!string.IsNullOrEmpty(_packageVersion)) return _packageVersion;
-            CachePackageInfo();
-            return string.IsNullOrEmpty(_packageVersion) ? "unknown" : _packageVersion;
-        }
-
-        private void CachePackageInfo()
-        {
-            _packageName = string.Empty;
-            _packageVersion = string.Empty;
-
-            var script = MonoScript.FromScriptableObject(this);
-            if (script == null) return;
-
-            string scriptPath = AssetDatabase.GetAssetPath(script);
-            if (string.IsNullOrEmpty(scriptPath)) return;
-
-            UpmPackageInfo packageInfo = UpmPackageInfo.FindForAssetPath(scriptPath);
-            if (packageInfo == null) return;
-
-            _packageName = packageInfo.name ?? string.Empty;
-            _packageVersion = packageInfo.version ?? string.Empty;
+            return AunCastInspectorBanner.GetCurrentPackageVersion(this);
         }
 
         private static T LoadAssetByGuid<T>(string guid) where T : UnityEngine.Object
@@ -982,10 +828,6 @@ namespace PasocomMate.AunCast.Internal
                 settings.driftWarmupSec, 0f, 30f);
             EditorGUI.indentLevel--;
 
-            float newStall = SliderField("リブート停止超過時間 [秒]", "rebootStallSec",
-                "再生位置が動かなくなってからリブートボタンを表示するまでの時間（秒）。",
-                settings.rebootStallSec, 1f, 60f);
-
             if (!EditorGUI.EndChangeCheck()) return;
 
             Undo.RecordObject(settings, "Change AunCast Playback Monitor Settings");
@@ -1001,7 +843,6 @@ namespace PasocomMate.AunCast.Internal
             settings.driftResyncThresholdSec = newDriftThreshold;
             settings.driftSmoothingTimeConstant = newSmoothing;
             settings.driftWarmupSec = newWarmup;
-            settings.rebootStallSec = newStall;
             EditorUtility.SetDirty(settings);
 
             ApplyPlaybackMonitorSettingsToScene(root, settings);
@@ -1123,12 +964,6 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(clients, so =>
             {
                 SetFloatProperty(so, "silenceSuppressSec", settings.silenceSuppressSec);
-            });
-
-            var controllers = root.GetComponentsInChildren<LocalDualPlayerController>(true);
-            ApplyToUdonComponents(controllers, so =>
-            {
-                SetFloatProperty(so, "rebootStallSec", settings.rebootStallSec);
             });
 
             var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);

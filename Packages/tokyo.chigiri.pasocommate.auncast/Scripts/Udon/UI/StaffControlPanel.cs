@@ -56,6 +56,9 @@ namespace PasocomMate.AunCast
         private bool _connectionEditMode;
         private int _connectionEditOriginal;
 
+        private float _globalEtaBase;
+        private float _globalEtaCapturedAt;
+
         [Header("Access Control")]
         [Tooltip("操作可能なユーザー名リスト（空の場合はパスコード解錠時のみ操作可能）")]
         [SerializeField] private string[] allowedUserNames;
@@ -517,15 +520,35 @@ namespace PasocomMate.AunCast
         /// <summary>
         /// 再生中(+接続中)・インスタンス人数・収容上限の 3 指標を縦並びテキストで表示する。
         /// スタッフが配信の到達率とインスタンス収容状況を一目で把握するためのサマリ表示。
+        /// 待機列がある場合は全体 ETA も追加表示する。
         /// </summary>
         private void UpdateUserCountDisplay(int playing, int connecting)
         {
             if (userCountText == null) return;
             string connectingSuffix = connecting > 0 ? $"+{connecting}" : "";
             int inInstance = VRCPlayerApi.GetPlayerCount();
-            int capacity = instanceCapacity > 0 ? instanceCapacity : 0;
+            float now = Time.unscaledTime;
+            float rawEta = coordinator != null ? coordinator.EstimateGlobalWaitTime() : 0f;
+            if (rawEta > 0f)
+            {
+                if (rawEta > _globalEtaBase || _globalEtaBase <= 0f)
+                {
+                    _globalEtaBase = rawEta;
+                    _globalEtaCapturedAt = now;
+                }
+            }
+            else
+            {
+                _globalEtaBase = 0f;
+            }
+            float displayEta = _globalEtaBase > 0f
+                ? Mathf.Max(0f, _globalEtaBase - (now - _globalEtaCapturedAt))
+                : 0f;
+            string thirdRow = displayEta > 0f
+                ? $"Resync ETA\n<size=28>{displayEta:F0}s</size>"
+                : $"Capacity\n<size=28>{(instanceCapacity > 0 ? instanceCapacity : 0)}</size>";
             userCountText.text =
-                $"Playing\n<size=28>{playing}</size>{connectingSuffix}\n\nIn Instance\n<size=28>{inInstance}</size>\n\nCapacity\n<size=28>{capacity}</size>";
+                $"Playing\n<size=28>{playing}</size>{connectingSuffix}\n\nIn Instance\n<size=28>{inInstance}</size>\n\n{thirdRow}";
         }
 
         /// <summary>

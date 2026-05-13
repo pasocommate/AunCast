@@ -1,5 +1,13 @@
 {
   "dependencies": {
+    "com.anatawa12.vpm-package-auto-installer.creator": {
+      "version": "file:com.anatawa12.vpm-package-auto-installer.creator",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "2.0.2"
+      }
+    },
     "com.llealloo.audiolink": {
       "version": "file:com.llealloo.audiolink",
       "depth": 0,

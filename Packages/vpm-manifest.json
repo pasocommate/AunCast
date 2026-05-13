@@ -14,6 +14,9 @@
     },
     "tokyo.chigiri.pasocommate.avpvideostub": {
       "version": "1.0.0"
+    },
+    "com.anatawa12.vpm-package-auto-installer.creator": {
+      "version": "1.1.5"
     }
   },
   "locked": {
@@ -46,6 +49,10 @@
       "dependencies": {
         "com.vrchat.worlds": ">=3.10.2"
       }
+    },
+    "com.anatawa12.vpm-package-auto-installer.creator": {
+      "version": "1.1.5",
+      "dependencies": {}
     }
   }
 }

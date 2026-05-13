@@ -1115,8 +1115,6 @@ namespace PasocomMate.AunCast
             if (resyncButtonObject != null)
                 resyncButtonObject.SetActive(true);
 
-            SetButtonInteractable(rebootButton, controller.ShouldShowRebootButton());
-
             if (closeButtonObject != null)
                 closeButtonObject.SetActive(true);
         }

@@ -16,7 +16,7 @@ namespace PasocomMate.AunCast.Internal
     /// テーマカラー変更時にシーン内 UI へ即時プレビュー反映するためのボタン等を提供する。
     /// </summary>
     [CustomEditor(typeof(PasocomMate.AunCast.AunCastTheme))]
-    public class AunCastThemeEditor : Editor
+    public class AunCastThemeInspector : Editor
     {
         private const string USER_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/UserContent";
         private const string STAFF_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/StaffContent";

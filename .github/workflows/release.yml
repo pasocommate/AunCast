@@ -31,6 +31,10 @@ jobs:
       contents: write
     env:
       packagePath: Packages/${{ vars.PACKAGE_NAME }}
+      listingRepository: ${{ vars.VPM_LISTING_REPOSITORY }}
+      listingWorkflow: ${{ vars.VPM_LISTING_WORKFLOW }}
+      listingRef: ${{ vars.VPM_LISTING_REF }}
+      listingToken: ${{ secrets.VPM_LISTING_REPO_TOKEN }}
     if: needs.config.outputs.config_package == 'true'
     steps:
 
@@ -85,3 +89,37 @@ jobs:
             ${{ env.unityPackage }}
             ${{ env.packagePath }}/package.json
           tag_name: ${{ env.version }}
+
+      - name: Trigger vpm-listing workflow
+        if: env.listingRepository != '' && env.listingToken != ''
+        uses: actions/github-script@v7
+        env:
+          LISTING_REPOSITORY: ${{ env.listingRepository }}
+          LISTING_WORKFLOW: ${{ env.listingWorkflow }}
+          LISTING_REF: ${{ env.listingRef }}
+        with:
+          github-token: ${{ env.listingToken }}
+          script: |
+            const repository = process.env.LISTING_REPOSITORY;
+            const [owner, repo] = repository.split("/");
+            if (!owner || !repo) {
+              core.setFailed(`VPM_LISTING_REPOSITORY format is invalid: ${repository}`);
+              return;
+            }
+
+            const workflow_id = process.env.LISTING_WORKFLOW || "build-listing.yml";
+            const ref = process.env.LISTING_REF || "main";
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id,
+              ref
+            });
+
+            core.info(`Dispatched ${workflow_id} on ${owner}/${repo} (${ref})`);
+
+      - name: Skip vpm-listing dispatch
+        if: env.listingRepository == '' || env.listingToken == ''
+        run: |
+          echo "::notice::Skip remote listing dispatch. Set VPM_LISTING_REPOSITORY variable and VPM_LISTING_REPO_TOKEN secret to enable it."

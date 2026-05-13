@@ -3662,8 +3662,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -0, y: 39}
-  m_SizeDelta: {x: 56, y: 56}
+  m_AnchoredPosition: {x: -0, y: 40}
+  m_SizeDelta: {x: 64, y: 64}
   m_Pivot: {x: 1, y: 0}
 --- !u!1 &3767884915459141712
 GameObject:
@@ -4930,9 +4930,9 @@ RectTransform:
   m_Father: {fileID: 9165194303999773432}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 32}
-  m_SizeDelta: {x: 306, y: 70}
+  m_SizeDelta: {x: -94, y: 80}
   m_Pivot: {x: 0, y: 0}
 --- !u!1 &5374409873934281548
 GameObject:
@@ -8915,12 +8915,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9034184729032412337}
+  - component: {fileID: 7955929322901129559}
   - component: {fileID: 143231590962047360}
   - component: {fileID: 9180817231742398224}
   - component: {fileID: 5554881573237575294}
   - component: {fileID: 6395604392706681729}
   - component: {fileID: 5388048645966391299}
-  - component: {fileID: 7955929322901129559}
   - component: {fileID: 1853117440773738386}
   m_Layer: 0
   m_Name: WallControlPanel
@@ -8949,6 +8949,56 @@ RectTransform:
   m_AnchoredPosition: {x: 1.4, y: 1.3}
   m_SizeDelta: {x: 48, y: 56}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &7955929322901129559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9064427902862176086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f1e2d3c4b5a69870b0c0d0e0f010203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  _udonSharpBackingUdonBehaviour: {fileID: 1853117440773738386}
+  controller: {fileID: 0}
+  staffPanel: {fileID: 0}
+  portablePanel: {fileID: 0}
+  userCanvasGroup: {fileID: 5240029687952979616}
+  staffCanvasGroup: {fileID: 2856132562752179806}
+  sharedCanvasGroup: {fileID: 5573500652185814711}
+  resyncOnlyCanvasGroup: {fileID: 7884168545160912482}
+  crossfadeDuration: 0.25
+  resyncOnlyButton: {fileID: 5469892914511262908}
+  switchViewButtonLabel: {fileID: 5020325689885971780}
+  switchViewButton: {fileID: 7981227563021211924}
+  disablePasscodeViewSwitchButton: 0
+  spawnPanelButtonRect: {fileID: 1875073724949810558}
+  passcodeDisplay: {fileID: 1373682853028291900}
+  unlockPasscode: 0000
+  userResyncButton: {fileID: 7305550475812507542}
+  userRebootButton: {fileID: 1774261687653203025}
+  disabledButtonLabelAlpha: 0.5
+  vrGestureGroup: {fileID: 6646712844309337851}
+  gestureDoubleTriggerToggle: {fileID: 1458792807918970957}
+  gestureBothTriggersToggle: {fileID: 3113296114463966746}
+  gestureRightStickUpToggle: {fileID: 4051208993161629132}
+  desktopGestureGroup: {fileID: 3017832964769270222}
+  desktopTabDoubleTapToggle: {fileID: 841610926330154451}
+  desktopF5DoubleTapToggle: {fileID: 8708588826532222416}
+  desktopEscHoldToggle: {fileID: 4163619433751103518}
+  wallNearDistance: 2.8
+  wallFarDistance: 3
 --- !u!223 &143231590962047360
 Canvas:
   m_ObjectHideFlags: 0
@@ -9046,54 +9096,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AllowFocusView: 1
---- !u!114 &7955929322901129559
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9064427902862176086}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f1e2d3c4b5a69870b0c0d0e0f010203, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serializationData:
-    SerializedFormat: 2
-    SerializedBytes: 
-    ReferencedUnityObjects: []
-    SerializedBytesString: 
-    Prefab: {fileID: 0}
-    PrefabModificationsReferencedUnityObjects: []
-    PrefabModifications: []
-    SerializationNodes: []
-  _udonSharpBackingUdonBehaviour: {fileID: 1853117440773738386}
-  controller: {fileID: 0}
-  staffPanel: {fileID: 0}
-  portablePanel: {fileID: 0}
-  userCanvasGroup: {fileID: 5240029687952979616}
-  staffCanvasGroup: {fileID: 2856132562752179806}
-  sharedCanvasGroup: {fileID: 5573500652185814711}
-  resyncOnlyCanvasGroup: {fileID: 7884168545160912482}
-  crossfadeDuration: 0.25
-  resyncOnlyButton: {fileID: 5469892914511262908}
-  switchViewButtonLabel: {fileID: 5020325689885971780}
-  switchViewButton: {fileID: 7981227563021211924}
-  passcodeDisplay: {fileID: 1373682853028291900}
-  unlockPasscode: 0000
-  userResyncButton: {fileID: 7305550475812507542}
-  userRebootButton: {fileID: 1774261687653203025}
-  disabledButtonLabelAlpha: 0.5
-  vrGestureGroup: {fileID: 6646712844309337851}
-  gestureDoubleTriggerToggle: {fileID: 1458792807918970957}
-  gestureBothTriggersToggle: {fileID: 3113296114463966746}
-  gestureRightStickUpToggle: {fileID: 4051208993161629132}
-  desktopGestureGroup: {fileID: 3017832964769270222}
-  desktopTabDoubleTapToggle: {fileID: 841610926330154451}
-  desktopF5DoubleTapToggle: {fileID: 8708588826532222416}
-  desktopEscHoldToggle: {fileID: 4163619433751103518}
-  wallNearDistance: 2.8
-  wallFarDistance: 3
 --- !u!114 &1853117440773738386
 MonoBehaviour:
   m_ObjectHideFlags: 0

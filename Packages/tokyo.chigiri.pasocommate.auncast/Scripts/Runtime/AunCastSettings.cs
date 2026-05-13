@@ -113,10 +113,6 @@ namespace PasocomMate.AunCast
         [Tooltip("再試行の最大待機時間（秒）")]
         public float maxRetryCooldownSec = 120.0f;
 
-        [Header("Reboot / Stall")]
-        [Tooltip("リブートボタン表示条件: GetTime 停止超過時間（秒）")]
-        public float rebootStallSec = 10.0f;
-
         [Header("Crossfade")]
         [Tooltip("クロスフェード時間（秒）")]
         public float crossfadeDurationSec = 0.1f;
