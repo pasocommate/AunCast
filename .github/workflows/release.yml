@@ -1,7 +1,15 @@
 name: Build Release
 
-on: 
-  workflow_dispatch:
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+env:
+  PACKAGE_NAME: tokyo.chigiri.pasocommate.auncast
+  VPM_LISTING_REPOSITORY: pasocommate/vpm-listing
+  VPM_LISTING_WORKFLOW: build-listing.yml
+  VPM_LISTING_REF: main
 
 jobs:
 
@@ -12,11 +20,11 @@ jobs:
       config_package: ${{ steps.config_package.outputs.configPackage }}
     steps:
 
-    # Ensure that required repository variable has been created for the Package
+    # Ensure that required package name is set
     - name: Validate Package Config
       id: config_package
       run: |
-        if [ "${{ vars.PACKAGE_NAME }}" != "" ]; then
+        if [ "${{ env.PACKAGE_NAME }}" != "" ]; then
           echo "configPackage=true" >> $GITHUB_OUTPUT;
         else
           echo "configPackage=false" >> $GITHUB_OUTPUT;
@@ -30,11 +38,10 @@ jobs:
     permissions:
       contents: write
     env:
-      packagePath: Packages/${{ vars.PACKAGE_NAME }}
-      listingRepository: ${{ vars.VPM_LISTING_REPOSITORY }}
-      listingWorkflow: ${{ vars.VPM_LISTING_WORKFLOW }}
-      listingRef: ${{ vars.VPM_LISTING_REF }}
-      listingToken: ${{ secrets.VPM_LISTING_REPO_TOKEN }}
+      packagePath: Packages/tokyo.chigiri.pasocommate.auncast
+      listingRepository: pasocommate/vpm-listing
+      listingWorkflow: build-listing.yml
+      listingRef: main
     if: needs.config.outputs.config_package == 'true'
     steps:
 
@@ -53,9 +60,26 @@ jobs:
       # Configure the Environment Variables needed for releasing the Package
       - name: Set Environment Variables
         run: |
-          echo "zipFile=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_ENV
-          echo "unityPackage=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
+          echo "zipFile=${{ env.PACKAGE_NAME }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_ENV
+          echo "unityPackage=${{ env.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
           echo "version=${{ steps.version.outputs.value }}" >> $GITHUB_ENV
+          echo "tag=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      # Validate pushed tag format as x.y.z
+      - name: Validate Tag Format
+        run: |
+          if [[ ! "${{ env.tag }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag format must be x.y.z (e.g. 1.4.0). actual: ${{ env.tag }}"
+            exit 1
+          fi
+
+      # Validate pushed tag matches package.json version
+      - name: Validate Tag Version
+        run: |
+          if [ "${{ env.tag }}" != "${{ env.version }}" ]; then
+            echo "::error::Tag version (${{ env.tag }}) does not match package.json version (${{ env.version }})."
+            exit 1
+          fi
 
       # Zip the Package for release
       - name: Create Package Zip
@@ -73,13 +97,6 @@ jobs:
           package-path: ${{ env.unityPackage }}
           include-files: metaList
       
-      # Make a release tag of the version from the package.json file 
-      - name: Create Tag
-        id: tag_version
-        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
-        with:
-          tag: "${{ env.version }}"
-      
       # Publish the Release to GitHub
       - name: Make Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
@@ -88,17 +105,29 @@ jobs:
             ${{ env.zipFile }}
             ${{ env.unityPackage }}
             ${{ env.packagePath }}/package.json
-          tag_name: ${{ env.version }}
+          tag_name: ${{ env.tag }}
+
+      - name: Evaluate vpm-listing dispatch condition
+        id: listing_dispatch
+        env:
+          LISTING_TOKEN: ${{ secrets.VPM_LISTING_REPO_TOKEN }}
+          LISTING_REPOSITORY: ${{ env.listingRepository }}
+        run: |
+          if [ -n "${LISTING_REPOSITORY}" ] && [ -n "${LISTING_TOKEN}" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Trigger vpm-listing workflow
-        if: env.listingRepository != '' && env.listingToken != ''
+        if: ${{ steps.listing_dispatch.outputs.enabled == 'true' }}
         uses: actions/github-script@v7
         env:
           LISTING_REPOSITORY: ${{ env.listingRepository }}
           LISTING_WORKFLOW: ${{ env.listingWorkflow }}
           LISTING_REF: ${{ env.listingRef }}
         with:
-          github-token: ${{ env.listingToken }}
+          github-token: ${{ secrets.VPM_LISTING_REPO_TOKEN }}
           script: |
             const repository = process.env.LISTING_REPOSITORY;
             const [owner, repo] = repository.split("/");
@@ -120,6 +149,6 @@ jobs:
             core.info(`Dispatched ${workflow_id} on ${owner}/${repo} (${ref})`);
 
       - name: Skip vpm-listing dispatch
-        if: env.listingRepository == '' || env.listingToken == ''
+        if: ${{ steps.listing_dispatch.outputs.enabled != 'true' }}
         run: |
           echo "::notice::Skip remote listing dispatch. Set VPM_LISTING_REPOSITORY variable and VPM_LISTING_REPO_TOKEN secret to enable it."
