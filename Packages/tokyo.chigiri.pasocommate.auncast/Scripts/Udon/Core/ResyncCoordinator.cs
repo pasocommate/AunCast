@@ -435,12 +435,11 @@ namespace PasocomMate.AunCast
                     ResetSlot(i);
 
                     // Rejoin 等でワールド破棄直前に呼ばれると遅延シリアライズが
-                    // ロストするため、PlaybackMonitor と併せて即時送信する
+                    // ロストするため即時送信する。PlaybackMonitor は自身の OnPlayerLeft で掃除する。
                     CompressTimestamps();
                     RequestSerialization();
                     NotifyObservers();
                     _serializationPending = false;
-                    if (playbackMonitor != null) playbackMonitor.FlushSerialization();
 
                     if (debugLoggingEnabled)
                         LogMessage($"Player {playerId} left, slot {i} freed");
@@ -641,10 +640,12 @@ namespace PasocomMate.AunCast
             userTimestampDelta[i] = 0;
         }
 
-        /// <summary>スロットを完全にクリアし、PlaybackMonitor 側の状態も解除する。</summary>
+        /// <summary>
+        /// 自オブジェクトのスロット状態を初期化する。PlaybackMonitor 側のビット掃除は
+        /// PlaybackMonitor 自身の OnPlayerLeft / OnPlayerJoined が担当する（ownership 分離のため）。
+        /// </summary>
         private void ResetSlot(int i)
         {
-            if (playbackMonitor != null) playbackMonitor.ClearSlot(i);
             InitializeSlot(i, 0);
         }
 

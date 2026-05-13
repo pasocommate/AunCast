@@ -26,6 +26,8 @@ namespace PasocomMate.AunCast
         [Header("References")]
         [Tooltip("同期変数の更新を通知する UI パネル（描画再更新用）")]
         [SerializeField] private StaffControlPanel staffPanel;
+        [Tooltip("スロット→プレイヤー ID 対応の参照元。OnPlayerLeft で残留ビットを掃除するときに使う。")]
+        [SerializeField] private ResyncCoordinator coordinator;
 
         [UdonSynced] private byte[] playbackActive;
         [UdonSynced] private byte[] connectingActive;
@@ -75,6 +77,63 @@ namespace PasocomMate.AunCast
             RequestSerialization();
             NotifyObservers();
             _serializationPending = false;
+        }
+
+        /// <summary>
+        /// プレイヤー退室時に、自オブジェクトの所有者が残留ビットを掃除する。
+        /// ResyncCoordinator と所有者が分かれていても確実にビットを解放するため、
+        /// 自前で全スロットを走査して 3 配列まとめてクリアする。
+        /// </summary>
+        public override void OnPlayerLeft(VRCPlayerApi player)
+        {
+            if (CleanupStaleSlots() && debugLoggingEnabled)
+                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on player left (playerId={player.playerId})", this);
+        }
+
+        /// <summary>
+        /// 参加時のフォールバック掃除。OnPlayerLeft のシリアライズがロストして残った
+        /// 過去のビットを、新規プレイヤーの参加時にまとめて回収する。
+        /// </summary>
+        public override void OnPlayerJoined(VRCPlayerApi player)
+        {
+            if (CleanupStaleSlots() && debugLoggingEnabled)
+                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on player joined (playerId={player.playerId})", this);
+        }
+
+        /// <summary>
+        /// 全スロットを走査し「対応プレイヤーが既にインスタンスにいない」3 配列のビットをクリアする。
+        /// 自オブジェクトの所有者のみ書き換え、即時シリアライズして他クライアントへ反映する。
+        /// </summary>
+        private bool CleanupStaleSlots()
+        {
+            if (!Networking.IsOwner(gameObject)) return false;
+            if (coordinator == null) return false;
+            if (playbackActive == null || playbackActive.Length != _packedLength) return false;
+
+            bool anyChanged = false;
+            for (int i = 0; i < maxPlayers; i++)
+            {
+                // 3 配列とも 0 のスロットは検証不要
+                if (!GetSlotActive(i) && !GetSlotConnecting(i) && !GetSlotError(i)) continue;
+
+                // pid==0 は Coordinator 側で既にスロット解放済み = プレイヤー不在。
+                // pid!=0 でも GetPlayerById が null / IsValid()=false なら退室済み。
+                int pid = coordinator.GetUserPlayerId(i);
+                VRCPlayerApi p = pid == 0 ? null : VRCPlayerApi.GetPlayerById(pid);
+                if (p != null && p.IsValid()) continue;
+
+                bool changed = SetSlotActive(i, false);
+                changed |= SetSlotConnecting(i, false);
+                changed |= SetSlotError(i, false);
+                if (changed) anyChanged = true;
+            }
+
+            if (!anyChanged) return false;
+
+            // ワールド破棄直前に呼ばれることもあるため遅延せず即時送信する
+            _serializationPending = true;
+            FlushSerialization();
+            return true;
         }
 
         // =====================================================================
@@ -231,10 +290,14 @@ namespace PasocomMate.AunCast
         }
 
         // =====================================================================
-        //  Owner 直接呼び出し（ResyncCoordinator.ResetSlot 用）
+        //  Owner 直接呼び出し
         // =====================================================================
 
-        /// <summary>スロットの再生状態をクリアする。Owner から直接呼ぶ。</summary>
+        /// <summary>
+        /// スロットの 3 配列ビットをまとめてクリアする。自オブジェクトの所有者が呼ぶ前提。
+        /// 通常の退室掃除は OnPlayerLeft / OnPlayerJoined で自動実行されるため、本メソッドは
+        /// 個別スロットを明示的に解放したい場面（テスト等）でのみ使用する。
+        /// </summary>
         public void ClearSlot(int slotIndex)
         {
             if (!ValidateSlot(slotIndex)) return;

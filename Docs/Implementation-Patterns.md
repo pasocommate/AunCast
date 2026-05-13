@@ -238,3 +238,50 @@ if (coordinator.GetResyncState(_mySlotIndex) == ResyncCoordinator.STATE_NONE
 |---|---|---|
 | クライアント→Coordinator の状態変更 | `SendCustomNetworkEvent` + `[NetworkCallable]` | 競合排除、パケット削減 |
 | スタッフ操作（Global Resync 等） | `TryTakeOwnership` → 直接書換 | 全スロットの原子的更新が必要 |
+
+## 6. ownership 分離オブジェクトの退室クリーンアップ
+
+複数の `[UdonSynced]` オブジェクトを意図的に分離してある場合（例: `ResyncCoordinator` と
+`PlaybackMonitor`）、各オブジェクトの ownership は独立に移動する。スタッフ操作で
+片方の owner だけが変わったり、マスター離脱で別々のクライアントへ移譲されたりして
+ownership が乖離した状況で `OnPlayerLeft` をやらせると、**「片方の所有者が他方の同期変数を書き換える」呼び出しが silent fail する**（`RequestSerialization()` は非所有者だと no-op）。
+
+そのため、**各オブジェクトの「自分の同期変数」は自オブジェクトの所有者だけが
+`OnPlayerLeft` で掃除する**。他オブジェクトから命じない。
+
+PlaybackMonitor の例: 自前で全スロット走査し、`coordinator.GetUserPlayerId(i)` の
+プレイヤーが `VRCPlayerApi.GetPlayerById(pid).IsValid() == false` のスロットを
+3 配列まとめてクリアする。`pid == 0`（Coordinator 側で既に解放済み）も「不在」と扱う。
+
+```csharp
+public override void OnPlayerLeft(VRCPlayerApi player) { CleanupStaleSlots(); }
+public override void OnPlayerJoined(VRCPlayerApi player) { CleanupStaleSlots(); }
+
+private bool CleanupStaleSlots()
+{
+    if (!Networking.IsOwner(gameObject)) return false;
+    if (coordinator == null) return false;
+
+    bool anyChanged = false;
+    for (int i = 0; i < maxPlayers; i++)
+    {
+        if (!HasAnyBit(i)) continue;
+        int pid = coordinator.GetUserPlayerId(i);
+        VRCPlayerApi p = pid == 0 ? null : VRCPlayerApi.GetPlayerById(pid);
+        if (p != null && p.IsValid()) continue;
+        anyChanged |= ClearAllBitsForSlot(i);
+    }
+    if (!anyChanged) return false;
+    _serializationPending = true;
+    FlushSerialization();   // Rejoin 等のロスト対策
+    return true;
+}
+```
+
+ポイント:
+- **走査ベースで「現在 invalid なスロット」をまとめて掃除する** ことで、`OnPlayerLeft`
+  間の同一クライアント上の実行順レース（Coordinator が先に `userPlayerId[i] = 0`
+  にしても、`GetPlayerById(0)==null` で同じ結論になる）を回避できる
+- `OnPlayerJoined` でも同じ走査を呼び、`OnPlayerLeft` のシリアライズロスト時の
+  フォールバックにする
+- 自オブジェクトの掃除以外は他オブジェクトに任せる（責務分離）
