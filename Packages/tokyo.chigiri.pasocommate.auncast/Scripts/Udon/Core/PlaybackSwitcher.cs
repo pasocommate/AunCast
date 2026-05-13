@@ -404,6 +404,7 @@ namespace PasocomMate.AunCast
             {
                 UdonSharpBehaviour candidate = behaviours[i];
                 if (candidate == null || candidate == this) continue;
+                if (candidate.GetType().Name != "AudioLink") continue;
 
                 audioLinkBehaviour = candidate;
                 LogMessage($"AudioLink behaviour auto-assigned: {candidate.name}");

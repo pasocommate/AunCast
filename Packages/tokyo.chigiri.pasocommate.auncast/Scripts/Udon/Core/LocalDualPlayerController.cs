@@ -659,6 +659,7 @@ namespace PasocomMate.AunCast
                         QueueSerialize();
                     }
 
+                    switcher.SwitchAudioLinkSource();
                     LogMessage("Active reboot succeeded");
                     return;
                 }
