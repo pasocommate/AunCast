@@ -12,11 +12,11 @@ using VRC.Udon;
 namespace PasocomMate.AunCast.Internal
 {
     /// <summary>
-    /// AunCastTheme の Inspector カスタムエディタ。
+    /// AunCastThemeApplier の Inspector カスタムエディタ。
     /// テーマカラー変更時にシーン内 UI へ即時プレビュー反映するためのボタン等を提供する。
     /// </summary>
-    [CustomEditor(typeof(PasocomMate.AunCast.AunCastTheme))]
-    public class AunCastThemeInspector : Editor
+    [CustomEditor(typeof(PasocomMate.AunCast.AunCastThemeApplier))]
+    public class AunCastThemeApplierInspector : Editor
     {
         private const string USER_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/UserContent";
         private const string STAFF_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/StaffContent";
@@ -25,11 +25,10 @@ namespace PasocomMate.AunCast.Internal
 
         public override void OnInspectorGUI()
         {
-            var theme = (PasocomMate.AunCast.AunCastTheme)target;
-            var root = theme != null ? theme.transform : null;
+            var applier = (PasocomMate.AunCast.AunCastThemeApplier)target;
+            var root = applier != null ? applier.transform : null;
 
-            // --- ボタン類 ---
-            using (new EditorGUI.DisabledScope(theme == null))
+            using (new EditorGUI.DisabledScope(applier == null))
             {
                 EditorGUILayout.Space(4);
 
@@ -47,12 +46,15 @@ namespace PasocomMate.AunCast.Internal
 
                 EditorGUILayout.Space(4);
 
-                if (GUILayout.Button("Apply Theme", GUILayout.Height(32)))
+                using (new EditorGUI.DisabledScope(applier.theme == null))
                 {
-                    RecordUndoTargets(theme.transform);
-                    theme.ApplyTheme(theme.transform);
-                    ApplyThemeToUdonProxies(theme.transform, theme);
-                    Debug.Log("[AunCast] テーマを適用しました");
+                    if (GUILayout.Button("Apply Theme", GUILayout.Height(32)))
+                    {
+                        RecordUndoTargets(applier.transform);
+                        applier.ApplyTheme(applier.transform);
+                        ApplyThemeToUdonProxies(applier.transform, applier.theme);
+                        Debug.Log("[AunCast] テーマを適用しました");
+                    }
                 }
             }
 
@@ -96,7 +98,6 @@ namespace PasocomMate.AunCast.Internal
                 targets.Add(tmp);
             foreach (var udon in root.GetComponentsInChildren<UdonBehaviour>(true))
                 targets.Add(udon);
-            // ビデオスクリーン: sharedMaterial / RawImage.material / RawImage.texture の差し替えを Undo 可能にする
             foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
                 targets.Add(mr);
             foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
@@ -106,6 +107,8 @@ namespace PasocomMate.AunCast.Internal
 
         public static void ApplyThemeToUdonProxies(Transform root, PasocomMate.AunCast.AunCastTheme theme)
         {
+            if (theme == null) return;
+
             ApplyThemeToProxy<UserStatusPanel>(root, "PortablePanel", proxy =>
             {
                 SetSerializedField(proxy, "userBackgroundColor", theme.userBackgroundColor);

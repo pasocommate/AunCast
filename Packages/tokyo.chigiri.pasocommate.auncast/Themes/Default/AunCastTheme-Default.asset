@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4f8e2a1c6b3947d8e5f0a2b1c3d4e56, type: 3}
+  m_Name: AunCastTheme-Default
+  m_EditorClassIdentifier: 
+  bgWallMaterial: {fileID: 2100000, guid: 158eda48914094247be705b9e97cf2b2, type: 2}
+  bgPortableMaterial: {fileID: 2100000, guid: 335068f73c185cf43aca3fed9fa37d35, type: 2}
+  buttonRectMaterial: {fileID: 2100000, guid: 468b55fc37f72d946be29efb36aeec98, type: 2}
+  buttonRoundMaterial: {fileID: 2100000, guid: e6105f3fa0816b84e9eba1eb9437cef3, type: 2}
+  inputMaterial: {fileID: 2100000, guid: 20a38ac6fdd31554ebefbe62ab3becc6, type: 2}
+  decal1Material: {fileID: 2100000, guid: 577dfb2a27372af48bd40ed218b10dae, type: 2}
+  decal2Material: {fileID: 2100000, guid: d4c88f06f6c7d474f92e952cca366e6e, type: 2}
+  videoScreenMaterial: {fileID: 2100000, guid: 4032c7a0661a43e46bc7a8e6c1e4b4b2, type: 2}
+  videoScreenUiMaterial: {fileID: 2100000, guid: d58e02e0b57067949a5af32e8fb0424b, type: 2}
+  rtGrabMaterial: {fileID: 2100000, guid: 18ca111552bb501408e4d67a34818f3f, type: 2}
+  handleMaterial: {fileID: 2100000, guid: 0e94381e434beed4d83196f0082fb0cf, type: 2}
+  hudProgressMaterial: {fileID: 2100000, guid: 375046126d2a3ff6c185e891bd5f51a7, type: 2}
+  videoScreenDefaultTexture: {fileID: 2800000, guid: a87b42f8054ae604984b7e41d3dbc096, type: 3}
+  displayFont: {fileID: 11400000, guid: 9d7d01127c58f5f4796c54f98cb2f0fa, type: 2}
+  bodyFont: {fileID: 11400000, guid: c69bb701418e6b441a398f17daa3f423, type: 2}
+  userBackgroundColor: {r: 0.23, g: 0.38, b: 0.45, a: 1}
+  staffBackgroundColor: {r: 0.56, g: 0.48, b: 0.77, a: 1}
+  wallBackgroundColor: {r: 0.23, g: 0.38, b: 0.45, a: 1}
+  decalColor: {r: 1, g: 1, b: 1, a: 1}
+  primaryColor: {r: 0, g: 0.33, b: 1, a: 1}
+  secondaryColor: {r: 0.38, g: 0.38, b: 0.42, a: 1}
+  warningColor: {r: 1, g: 0.37, b: 0, a: 1}
+  dangerColor: {r: 1, g: 0, b: 0, a: 1}
+  inputBackgroundColor: {r: 0.156862, g: 0.156862, b: 0.156862, a: 1}
+  toggleBackgroundColor: {r: 0.156862, g: 0.156862, b: 0.156862, a: 1}
+  toggleCheckmarkColor: {r: 1, g: 1, b: 1, a: 1}
+  sliderBackgroundColor: {r: 0.156862, g: 0.156862, b: 0.156862, a: 1}
+  sliderFillColor: {r: 0, g: 0.33, b: 1, a: 1}
+  sliderHandleColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  disabledButtonLabelAlpha: 0.5
+  buttonTransitionColors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.96, g: 0.96, b: 0.96, a: 1}
+    m_PressedColor: {r: 0.78, g: 0.78, b: 0.78, a: 1}
+    m_SelectedColor: {r: 0.96, g: 0.96, b: 0.96, a: 1}
+    m_DisabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.8}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  headingTextColor: {r: 1, g: 1, b: 1, a: 1}
+  buttonLabelColor: {r: 1, g: 1, b: 1, a: 1}
+  bodyTextColor: {r: 0.75, g: 0.75, b: 0.78, a: 1}
+  inputTextColor: {r: 1, g: 1, b: 1, a: 1}
+  placeholderTextColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  hudProgressUsePieMode: 1
+  hudProgressLocalOffset: {x: 0, y: -0.18, z: 0.6}
+  hudProgressBarSize: {x: 0.18, y: 0.018}
+  hudProgressPieDiameter: 0.09
+  hudProgressPieRingThickness: 0.1
+  hudProgressDecalTexture: {fileID: 2800000, guid: d5a2baa2f12f49fb85d449ca4c4edea2, type: 3}
+  hudProgressDecalColor: {r: 1, g: 1, b: 1, a: 1}
+  hudProgressDecalScale: {x: 0.8, y: 0.1}
+  hudProgressFillColor: {r: 0, g: 0.75, b: 1, a: 0.5}
+  hudProgressBaseColor: {r: 0, g: 0, b: 0, a: 0.5}
