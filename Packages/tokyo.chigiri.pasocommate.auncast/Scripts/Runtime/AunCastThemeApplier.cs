@@ -17,13 +17,15 @@ namespace PasocomMate.AunCast
         public AunCastTheme theme;
 
         /// <summary>
-        /// テーマの見た目（色・ボタン遷移・HUDマテリアル）を既存階層へ適用する。
+        /// テーマの見た目（マテリアル・フォント・色・ボタン遷移・HUD）を既存階層へ適用する。
         /// UdonSharp Proxy への SerializedField 反映はエディタ側のセットアップ処理が担当する。
         /// </summary>
         public void ApplyTheme(Transform root)
         {
             if (root == null || theme == null) return;
 
+            ApplyMaterials(root);
+            ApplyFonts(root);
             ApplyVideoScreenAssets(root);
 
             const string pp = "PortablePanel/ContentScaler";
@@ -72,6 +74,7 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, topBar + "/CloseButton", theme.secondaryColor);
             SetThemeImageColor(root, topBar + "/SwitchViewButton", theme.secondaryColor);
 
+            ApplyDecalColors(root);
             ApplyWallPanelTheme(root);
 
             if (theme.hudProgressMaterial != null)
@@ -94,6 +97,90 @@ namespace PasocomMate.AunCast
                 btn.colors = theme.buttonTransitionColors;
 
             ApplyThemeTextColors(root);
+        }
+
+        private void ApplyMaterials(Transform root)
+        {
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+            {
+                var mat = ResolveImageMaterial(img);
+                if (mat != null)
+                    img.material = mat;
+            }
+
+            ApplyMeshRendererMaterial(root, "TextureGrab", theme.rtGrabMaterial);
+        }
+
+        private Material ResolveImageMaterial(Image img)
+        {
+            var name = img.gameObject.name;
+
+            if (name.EndsWith("_Inner"))
+            {
+                if (name == "TitleDecal_Inner")
+                    return theme.decal2Material;
+                if (name == "DecalDiamond_Inner")
+                    return theme.decal1Material;
+                if (name.Contains("Input"))
+                    return theme.inputMaterial;
+                if (name.StartsWith("CloseButton") || name.StartsWith("SwitchViewButton"))
+                    return theme.buttonRoundMaterial;
+                if (name.Contains("Button") || name.Contains("Key") || name.Contains("Backspace"))
+                    return theme.buttonRectMaterial;
+                return null;
+            }
+
+            if (name == "Background" && img.transform.parent != null
+                && img.transform.parent.name == "ContentScaler")
+            {
+                var contentScaler = img.transform.parent;
+                if (contentScaler.Find("WallContentArea") != null)
+                    return theme.bgWallMaterial;
+                return theme.bgPortableMaterial;
+            }
+
+            if (name == "Handle")
+                return theme.handleMaterial;
+
+            return null;
+        }
+
+        private static void ApplyMeshRendererMaterial(Transform root, string name, Material mat)
+        {
+            if (mat == null) return;
+            foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (mr.gameObject.name != name) continue;
+                mr.sharedMaterial = mat;
+            }
+        }
+
+        private void ApplyFonts(Transform root)
+        {
+            foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
+            {
+                var font = ResolveFont(tmp);
+                if (font != null)
+                    tmp.font = font;
+            }
+        }
+
+        private TMP_FontAsset ResolveFont(TMP_Text tmp)
+        {
+            var name = tmp.gameObject.name;
+            if (name.EndsWith("Label") || name == "Checkmark")
+                return theme.displayFont;
+            return theme.bodyFont;
+        }
+
+        private void ApplyDecalColors(Transform root)
+        {
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+            {
+                var name = img.gameObject.name;
+                if (name == "TitleDecal_Inner" || name == "DecalDiamond_Inner")
+                    img.color = theme.decalColor;
+            }
         }
 
         private void ApplyVideoScreenAssets(Transform root)

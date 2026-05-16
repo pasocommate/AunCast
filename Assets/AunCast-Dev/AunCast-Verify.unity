@@ -1967,6 +1967,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 5750774041585807010, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 5986956631821098715, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: theme
+      value: 
+      objectReference: {fileID: 11400000, guid: cb7cc3f8285f6104c847d348744d8738,
+        type: 2}
     - target: {fileID: 6293963138451541506, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: _syncMethod
