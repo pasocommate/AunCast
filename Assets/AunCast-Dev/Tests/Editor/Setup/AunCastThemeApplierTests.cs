@@ -149,41 +149,6 @@ namespace PasocomMate.AunCast.Tests
                 "Handle に handleMaterial が適用されていません");
         }
 
-        [Test]
-        public void TextureGrabMeshRenderer_HasRtGrabMaterial()
-        {
-            foreach (var mr in _instance.GetComponentsInChildren<MeshRenderer>(true))
-            {
-                if (mr.gameObject.name != "TextureGrab") continue;
-                Assert.AreEqual(_theme.rtGrabMaterial, mr.sharedMaterial,
-                    "TextureGrab に rtGrabMaterial が適用されていません");
-                return;
-            }
-        }
-
-        [Test]
-        public void VideoScreen_HasVideoScreenMaterial()
-        {
-            var screen = _instance.transform.Find("Screen");
-            if (screen == null) return;
-            var mr = screen.GetComponent<MeshRenderer>();
-            Assert.IsNotNull(mr);
-            Assert.AreEqual(_theme.videoScreenMaterial, mr.sharedMaterial,
-                "Screen に videoScreenMaterial が適用されていません");
-        }
-
-        [Test]
-        public void VideoScreenUi_HasVideoScreenUiMaterial()
-        {
-            var uiScreen = _instance.transform.Find(
-                "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea/VideoScreen");
-            if (uiScreen == null) return;
-            var raw = uiScreen.GetComponent<RawImage>();
-            Assert.IsNotNull(raw);
-            Assert.AreEqual(_theme.videoScreenUiMaterial, raw.material,
-                "VideoScreen (UI) に videoScreenUiMaterial が適用されていません");
-        }
-
         // ── フォント適用テスト ──
 
         [Test]
@@ -278,9 +243,60 @@ namespace PasocomMate.AunCast.Tests
         public void SliderColors_Applied()
         {
             var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
-            AssertImageColor(shared + "/VolumeSlider/Background", _theme.sliderBackgroundColor, "Slider Background");
-            AssertImageColor(shared + "/VolumeSlider/Fill Area/Fill", _theme.sliderFillColor, "Slider Fill");
-            AssertImageColor(shared + "/VolumeSlider/Handle Slide Area/Handle", _theme.sliderHandleColor, "Slider Handle");
+            var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
+            AssertImageColor(shared + "/VolumeSlider/Background", _theme.sliderBackgroundColor, "VolumeSlider Background");
+            AssertImageColor(shared + "/VolumeSlider/Fill Area/Fill", _theme.sliderFillColor, "VolumeSlider Fill");
+            AssertImageColor(shared + "/VolumeSlider/Handle Slide Area/Handle", _theme.sliderHandleColor, "VolumeSlider Handle");
+            AssertImageColor(viewer + "/HeadroomGauge/Background", _theme.sliderBackgroundColor, "HeadroomGauge Background");
+            AssertImageColor(viewer + "/HeadroomGauge/Fill Area/Fill", _theme.sliderFillColor, "HeadroomGauge Fill");
+            AssertImageColor(viewer + "/SilenceGauge/Background", _theme.sliderBackgroundColor, "SilenceGauge Background");
+            AssertImageColor(viewer + "/SilenceGauge/Fill Area/Fill", _theme.sliderFillColor, "SilenceGauge Fill");
+            AssertImageColor(viewer + "/SilenceGauge/Handle Slide Area/Handle", _theme.sliderHandleColor, "SilenceGauge Handle");
+        }
+
+        [Test]
+        public void SliderFillMaterial_Applied()
+        {
+            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
+            var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
+            string[] fillPaths =
+            {
+                shared + "/VolumeSlider/Fill Area/Fill",
+                viewer + "/HeadroomGauge/Fill Area/Fill",
+                viewer + "/SilenceGauge/Fill Area/Fill",
+            };
+            foreach (var path in fillPaths)
+            {
+                var t = _instance.transform.Find(path);
+                if (t == null) continue;
+                var img = t.GetComponent<Image>();
+                Assert.IsNotNull(img, $"Image が見つかりません: {path}");
+                Assert.AreEqual(_theme.buttonRectMaterial, img.material,
+                    $"Fill に buttonRectMaterial が適用されていません: {path}");
+            }
+        }
+
+        [Test]
+        public void SliderBackgroundMaterial_Applied()
+        {
+            if (_theme.inputMaterial == null) return;
+            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
+            var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
+            string[] bgPaths =
+            {
+                shared + "/VolumeSlider/Background",
+                viewer + "/HeadroomGauge/Background",
+                viewer + "/SilenceGauge/Background",
+            };
+            foreach (var path in bgPaths)
+            {
+                var t = _instance.transform.Find(path);
+                if (t == null) continue;
+                var img = t.GetComponent<Image>();
+                Assert.IsNotNull(img, $"Image が見つかりません: {path}");
+                Assert.AreEqual(_theme.inputMaterial, img.material,
+                    $"Slider Background に inputMaterial が適用されていません: {path}");
+            }
         }
 
         [Test]
@@ -313,12 +329,113 @@ namespace PasocomMate.AunCast.Tests
         }
 
         [Test]
-        public void TextColors_Applied()
+        public void HeadingTextColors_Applied()
         {
             var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
-            AssertTextColor(staff + "/PlayingLabel", _theme.headingTextColor, "PlayingLabel headingTextColor");
-            AssertTextColor(staff + "/PromoteNextButton/Label", _theme.buttonLabelColor, "PromoteNextButton/Label buttonLabelColor");
-            AssertTextColor(staff + "/NowPlayingText", _theme.bodyTextColor, "NowPlayingText bodyTextColor");
+            var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
+            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
+            string[] paths =
+            {
+                staff + "/PlayingLabel",
+                staff + "/NextURLLabel",
+                staff + "/ConcurrentMaxLabel",
+                staff + "/ConnectionMaxLabel",
+                viewer + "/HeadroomGaugeLabel",
+                viewer + "/SilenceGaugeLabel",
+                viewer + "/AutoResyncToggle/Label",
+                shared + "/VolumeLabel",
+            };
+            foreach (var path in paths)
+                AssertTextColor(path, _theme.headingTextColor, path + " headingTextColor");
+        }
+
+        [Test]
+        public void ButtonLabelColors_Applied()
+        {
+            var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
+            var ceg = staff + "/ConcurrentEditGroup";
+            var cneg = staff + "/ConnectionEditGroup";
+            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
+            var topBar = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
+            string[] paths =
+            {
+                staff + "/PromoteNextButton/Label",
+                staff + "/StopButton/Label",
+                staff + "/GlobalResyncButton/Label",
+                staff + "/ForceRebootButton/Label",
+                ceg + "/ConcurrentSub10Button/Label",
+                ceg + "/ConcurrentSub1Button/Label",
+                ceg + "/ConcurrentAdd1Button/Label",
+                ceg + "/ConcurrentAdd10Button/Label",
+                ceg + "/ConcurrentApplyButton/Label",
+                ceg + "/ConcurrentCancelButton/Label",
+                cneg + "/ConnectionSub10Button/Label",
+                cneg + "/ConnectionSub1Button/Label",
+                cneg + "/ConnectionAdd1Button/Label",
+                cneg + "/ConnectionAdd10Button/Label",
+                cneg + "/ConnectionApplyButton/Label",
+                cneg + "/ConnectionCancelButton/Label",
+                shared + "/RebootButton/Label",
+                shared + "/ResyncButton/Label",
+                topBar + "/CloseButton/Label",
+                topBar + "/SwitchViewButton/Label",
+            };
+            foreach (var path in paths)
+                AssertTextColor(path, _theme.buttonLabelColor, path + " buttonLabelColor");
+        }
+
+        [Test]
+        public void BodyTextColors_Applied()
+        {
+            var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
+            var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
+            var cdg = staff + "/ConcurrentDisplayGroup";
+            var cndg = staff + "/ConnectionDisplayGroup";
+            string[] paths =
+            {
+                staff + "/NowPlayingText",
+                staff + "/HelpArea/HelpText",
+                staff + "/MonitoringArea/MonitoringText",
+                staff + "/IndicatorText",
+                cdg + "/ConcurrentLimitDisplayText",
+                cndg + "/ConnectionLimitDisplayText",
+                viewer + "/StateText",
+                viewer + "/ErrorText",
+            };
+            foreach (var path in paths)
+                AssertTextColor(path, _theme.bodyTextColor, path + " bodyTextColor");
+        }
+
+        [Test]
+        public void InputTextColors_Applied()
+        {
+            var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
+            var ceg = staff + "/ConcurrentEditGroup";
+            var cneg = staff + "/ConnectionEditGroup";
+            string[] paths =
+            {
+                staff + "/NextURLInputField/Viewport/Text",
+                ceg + "/ConcurrentLimitInput/Viewport/Text",
+                cneg + "/ConnectionLimitInput/Viewport/Text",
+            };
+            foreach (var path in paths)
+                AssertTextColor(path, _theme.inputTextColor, path + " inputTextColor");
+        }
+
+        [Test]
+        public void PlaceholderTextColors_Applied()
+        {
+            var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
+            var ceg = staff + "/ConcurrentEditGroup";
+            var cneg = staff + "/ConnectionEditGroup";
+            string[] paths =
+            {
+                staff + "/NextURLInputField/Viewport/Placeholder",
+                ceg + "/ConcurrentLimitInput/Viewport/Placeholder",
+                cneg + "/ConnectionLimitInput/Viewport/Placeholder",
+            };
+            foreach (var path in paths)
+                AssertTextColor(path, _theme.placeholderTextColor, path + " placeholderTextColor");
         }
 
         // ── 全テーマプロパティが使われていることの検証 ──
@@ -352,9 +469,6 @@ namespace PasocomMate.AunCast.Tests
                 { "inputMaterial", _theme.inputMaterial },
                 { "decal1Material", _theme.decal1Material },
                 { "decal2Material", _theme.decal2Material },
-                { "videoScreenMaterial", _theme.videoScreenMaterial },
-                { "videoScreenUiMaterial", _theme.videoScreenUiMaterial },
-                { "rtGrabMaterial", _theme.rtGrabMaterial },
                 { "handleMaterial", _theme.handleMaterial },
                 { "hudProgressMaterial", _theme.hudProgressMaterial },
             };

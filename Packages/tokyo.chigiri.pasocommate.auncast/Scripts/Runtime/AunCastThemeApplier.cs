@@ -26,7 +26,7 @@ namespace PasocomMate.AunCast
 
             ApplyMaterials(root);
             ApplyFonts(root);
-            ApplyVideoScreenAssets(root);
+            ApplyAudioLinkMaterials(root);
 
             const string pp = "PortablePanel/ContentScaler";
             const string staff = pp + "/PortableContentArea/StaffContent/StaffPadded";
@@ -61,6 +61,8 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, staff + "/NextURLInputField", theme.inputBackgroundColor);
             SetThemeImageColor(root, ceg + "/ConcurrentLimitInput", theme.inputBackgroundColor);
             SetThemeImageColor(root, cneg + "/ConnectionLimitInput", theme.inputBackgroundColor);
+            SetThemeImageColor(root, staff + "/NowPlayingArea", theme.inputBackgroundColor);
+            SetThemeImageColor(root, shared + "/HelpArea", theme.inputBackgroundColor);
 
             SetThemeImageColor(root, viewer + "/AutoResyncToggle/Background", theme.toggleBackgroundColor);
             SetThemeTextColor(root, viewer + "/AutoResyncToggle/Background/Checkmark", theme.toggleCheckmarkColor);
@@ -68,6 +70,13 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, shared + "/VolumeSlider/Background", theme.sliderBackgroundColor);
             SetThemeImageColor(root, shared + "/VolumeSlider/Fill Area/Fill", theme.sliderFillColor);
             SetThemeImageColor(root, shared + "/VolumeSlider/Handle Slide Area/Handle", theme.sliderHandleColor);
+
+            SetThemeImageColor(root, viewer + "/HeadroomGauge/Background", theme.sliderBackgroundColor);
+            SetThemeImageColor(root, viewer + "/HeadroomGauge/Fill Area/Fill", theme.sliderFillColor);
+            SetThemeImageColor(root, viewer + "/SilenceGauge/Background", theme.sliderBackgroundColor);
+            SetThemeImageColor(root, viewer + "/SilenceGauge/Fill Area/Fill", theme.sliderFillColor);
+            SetThemeImageColor(root, viewer + "/SilenceGauge/Handle Slide Area/Handle", theme.sliderHandleColor);
+
             SetThemeImageColor(root, shared + "/RebootButton", theme.warningColor);
             SetThemeImageColor(root, shared + "/ResyncButton", theme.primaryColor);
 
@@ -97,7 +106,32 @@ namespace PasocomMate.AunCast
                 btn.colors = theme.buttonTransitionColors;
 
             ApplyThemeTextColors(root);
+
+#if UNITY_EDITOR
+            RecordPrefabOverrides(root);
+#endif
         }
+
+#if UNITY_EDITOR
+        private static void RecordPrefabOverrides(Transform root)
+        {
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(img);
+            foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(raw);
+            foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(tmp);
+            foreach (var btn in root.GetComponentsInChildren<Button>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(btn);
+            var hudOverlay = root.Find("HudProgressOverlay");
+            if (hudOverlay != null)
+            {
+                var quadTf = hudOverlay.Find("Quad");
+                if (quadTf != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(quadTf);
+            }
+        }
+#endif
 
         private void ApplyMaterials(Transform root)
         {
@@ -107,8 +141,6 @@ namespace PasocomMate.AunCast
                 if (mat != null)
                     img.material = mat;
             }
-
-            ApplyMeshRendererMaterial(root, "TextureGrab", theme.rtGrabMaterial);
         }
 
         private Material ResolveImageMaterial(Image img)
@@ -121,7 +153,7 @@ namespace PasocomMate.AunCast
                     return theme.decal2Material;
                 if (name == "DecalDiamond_Inner")
                     return theme.decal1Material;
-                if (name.Contains("Input"))
+                if (name.Contains("Input") || name.Contains("Area"))
                     return theme.inputMaterial;
                 if (name.StartsWith("CloseButton") || name.StartsWith("SwitchViewButton"))
                     return theme.buttonRoundMaterial;
@@ -139,21 +171,24 @@ namespace PasocomMate.AunCast
                 return theme.bgPortableMaterial;
             }
 
+            if (name == "Fill" && img.transform.parent != null
+                && img.transform.parent.name == "Fill Area")
+                return theme.buttonRectMaterial;
+
             if (name == "Handle")
                 return theme.handleMaterial;
+
+            if (name == "Background" && img.transform.parent != null)
+            {
+                var parentGo = img.transform.parent.gameObject;
+                if (parentGo.GetComponent<Slider>() != null
+                    || parentGo.GetComponent<Toggle>() != null)
+                    return theme.inputMaterial;
+            }
 
             return null;
         }
 
-        private static void ApplyMeshRendererMaterial(Transform root, string name, Material mat)
-        {
-            if (mat == null) return;
-            foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
-            {
-                if (mr.gameObject.name != name) continue;
-                mr.sharedMaterial = mat;
-            }
-        }
 
         private void ApplyFonts(Transform root)
         {
@@ -168,7 +203,11 @@ namespace PasocomMate.AunCast
         private TMP_FontAsset ResolveFont(TMP_Text tmp)
         {
             var name = tmp.gameObject.name;
+            if (name.Contains("Indicator"))
+                return theme.bodyFont;
             if (name.EndsWith("Label") || name == "Checkmark")
+                return theme.displayFont;
+            if (name.Contains("Display") || name == "UserCountText")
                 return theme.displayFont;
             return theme.bodyFont;
         }
@@ -183,38 +222,18 @@ namespace PasocomMate.AunCast
             }
         }
 
-        private void ApplyVideoScreenAssets(Transform root)
+        private void ApplyAudioLinkMaterials(Transform root)
         {
-            var screen = root.Find("Screen");
-            if (screen != null)
+            foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
             {
-                var renderer = screen.GetComponent<MeshRenderer>();
-                if (renderer != null && theme.videoScreenMaterial != null)
-                    renderer.sharedMaterial = theme.videoScreenMaterial;
-            }
-
-            if (theme.videoScreenMaterial != null && theme.videoScreenDefaultTexture != null)
-            {
-                if (theme.videoScreenMaterial.HasProperty("_EmissionMap"))
-                    theme.videoScreenMaterial.SetTexture("_EmissionMap", theme.videoScreenDefaultTexture);
-                if (theme.videoScreenMaterial.HasProperty("_MainTex"))
-                    theme.videoScreenMaterial.SetTexture("_MainTex", theme.videoScreenDefaultTexture);
-            }
-
-            const string uiScreenPath = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea/VideoScreen";
-            var uiScreen = root.Find(uiScreenPath);
-            if (uiScreen != null)
-            {
-                var rawImage = uiScreen.GetComponent<RawImage>();
-                if (rawImage != null)
-                {
-                    if (theme.videoScreenUiMaterial != null)
-                        rawImage.material = theme.videoScreenUiMaterial;
-                    if (theme.videoScreenDefaultTexture != null)
-                        rawImage.texture = theme.videoScreenDefaultTexture;
-                }
+                var name = raw.gameObject.name;
+                if (name == "AL4BandHistory" && theme.al4BandHistoryMaterial != null)
+                    raw.material = theme.al4BandHistoryMaterial;
+                else if (name == "ALAutoCorrelator" && theme.alAutoCorrelatorMaterial != null)
+                    raw.material = theme.alAutoCorrelatorMaterial;
             }
         }
+
 
         private static void SetThemeImageColor(Transform root, string path, Color color)
         {
@@ -289,12 +308,24 @@ namespace PasocomMate.AunCast
                 string wallUser = wall + "/UserContent";
                 SetThemeImageColor(wallRoot, wallUser + "/UserResyncButton", theme.primaryColor);
                 SetThemeImageColor(wallRoot, wallUser + "/UserRebootButton", theme.warningColor);
-                SetThemeImageColor(wallRoot, wallUser + "/GestureRightStickUpToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, wallUser + "/GestureRightStickUpToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-                SetThemeImageColor(wallRoot, wallUser + "/GestureDoubleTriggerToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, wallUser + "/GestureDoubleTriggerToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-                SetThemeImageColor(wallRoot, wallUser + "/GestureBothTriggersToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, wallUser + "/GestureBothTriggersToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+
+                string vrGroup = wallUser + "/VrGestureGroup";
+                SetThemeImageColor(wallRoot, vrGroup + "/GestureRightStickUpToggle/Background", theme.toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, vrGroup + "/GestureRightStickUpToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+                SetThemeImageColor(wallRoot, vrGroup + "/GestureDoubleTriggerToggle/Background", theme.toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, vrGroup + "/GestureDoubleTriggerToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+                SetThemeImageColor(wallRoot, vrGroup + "/GestureBothTriggersToggle/Background", theme.toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, vrGroup + "/GestureBothTriggersToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+
+                string desktopGroup = wallUser + "/DesktopGestureGroup";
+                SetThemeImageColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle/Background", theme.toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+                SetThemeImageColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle/Background", theme.toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+                SetThemeImageColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle/Background", theme.toggleBackgroundColor);
+                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+
+                SetThemeImageColor(wallRoot, wall + "/ResyncOnlyContent/ResyncOnlyButton", theme.primaryColor);
             }
         }
 
@@ -303,8 +334,34 @@ namespace PasocomMate.AunCast
             const string wall = "ContentScaler/WallContentArea";
             foreach (var wallRoot in CollectWallPanelRoots(root))
             {
-                SetThemeTextColor(wallRoot, wall + "/SharedContent/SpawnPanelButton/Label", theme.buttonLabelColor);
-                SetThemeTextColor(wallRoot, wall + "/SharedContent/SwitchViewButton/Label", theme.buttonLabelColor);
+                SetThemeTextColor(wallRoot, wall + "/SharedContent/SpawnPanelButton/SpawnPanelButton_Inner/Label", theme.buttonLabelColor);
+                SetThemeTextColor(wallRoot, wall + "/SharedContent/SwitchViewButton/SwitchViewButton_Inner/Label", theme.buttonLabelColor);
+
+                string wallUser = wall + "/UserContent";
+                SetThemeTextColor(wallRoot, wallUser + "/UserResyncButton/UserResyncButton_Inner/Label", theme.buttonLabelColor);
+                SetThemeTextColor(wallRoot, wallUser + "/UserRebootButton/UserRebootButton_Inner/Label", theme.buttonLabelColor);
+
+                string vrGroup = wallUser + "/VrGestureGroup";
+                SetThemeTextColor(wallRoot, vrGroup + "/GestureRightStickUpToggle/Label", theme.headingTextColor);
+                SetThemeTextColor(wallRoot, vrGroup + "/GestureDoubleTriggerToggle/Label", theme.headingTextColor);
+                SetThemeTextColor(wallRoot, vrGroup + "/GestureBothTriggersToggle/Label", theme.headingTextColor);
+
+                string desktopGroup = wallUser + "/DesktopGestureGroup";
+                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle/Label", theme.headingTextColor);
+                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle/Label", theme.headingTextColor);
+                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle/Label", theme.headingTextColor);
+
+                string wallStaff = wall + "/StaffContent";
+                SetThemeTextColor(wallRoot, wallStaff + "/PasscodeDisplay", theme.bodyTextColor);
+                string keypad = wallStaff + "/PasscodeKeypad";
+                for (int i = 0; i < 10; i++)
+                    SetThemeTextColor(wallRoot, keypad + $"/PasscodeKey{i}/PasscodeKey{i}_Inner/Label", theme.buttonLabelColor);
+                SetThemeTextColor(wallRoot, keypad + "/PasscodeBackspace/PasscodeBackspace_Inner/Label", theme.buttonLabelColor);
+
+                string resyncOnly = wall + "/ResyncOnlyContent/ResyncOnlyButton/ResyncOnlyButton_Inner";
+                SetThemeTextColor(wallRoot, resyncOnly + "/Label", theme.buttonLabelColor);
+                SetThemeTextColor(wallRoot, resyncOnly + "/TextLabel", theme.bodyTextColor);
+                SetThemeTextColor(wallRoot, wallUser + "/GestureLabel", theme.headingTextColor);
             }
         }
 
@@ -315,7 +372,10 @@ namespace PasocomMate.AunCast
             const string viewer = pp + "/PortableContentArea/UserContent/UserPadded";
             const string shared = pp + "/PortableContentArea/SharedContent/SharedPadded";
             const string topBar = pp + "/PortableContentArea/TopBarPadded";
-            string clc = staff + "/ConcurrentLimitControls";
+            string ceg = staff + "/ConcurrentEditGroup";
+            string cneg = staff + "/ConnectionEditGroup";
+            string cdg = staff + "/ConcurrentDisplayGroup";
+            string cndg = staff + "/ConnectionDisplayGroup";
 
             string[] headingPaths =
             {
@@ -331,40 +391,58 @@ namespace PasocomMate.AunCast
 
             string[] buttonLabelPaths =
             {
-                staff + "/PromoteNextButton/Label",
-                staff + "/StopButton/Label",
-                staff + "/GlobalResyncButton/Label",
-                staff + "/ForceRebootButton/Label",
-                clc + "/ConcurrentSub10Button/Label",
-                clc + "/ConcurrentSub1Button/Label",
-                clc + "/ConcurrentAdd1Button/Label",
-                clc + "/ConcurrentAdd10Button/Label",
-                shared + "/RebootButton/Label",
-                shared + "/ResyncButton/Label",
-                topBar + "/CloseButton/Label",
-                topBar + "/SwitchViewButton/Label",
+                staff + "/PromoteNextButton/PromoteNextButton_Inner/Label",
+                staff + "/StopButton/StopButton_Inner/Label",
+                staff + "/GlobalResyncButton/GlobalResyncButton_Inner/Label",
+                staff + "/ForceRebootButton/ForceRebootButton_Inner/Label",
+                cdg + "/ConcurrentChangeButton/ConcurrentChangeButton_Inner/Label",
+                ceg + "/ConcurrentSub10Button/ConcurrentSub10Button_Inner/Label",
+                ceg + "/ConcurrentSub1Button/ConcurrentSub1Button_Inner/Label",
+                ceg + "/ConcurrentAdd1Button/ConcurrentAdd1Button_Inner/Label",
+                ceg + "/ConcurrentAdd10Button/ConcurrentAdd10Button_Inner/Label",
+                ceg + "/ConcurrentApplyButton/ConcurrentApplyButton_Inner/Label",
+                ceg + "/ConcurrentCancelButton/ConcurrentCancelButton_Inner/Label",
+                cndg + "/ConnectionChangeButton/ConnectionChangeButton_Inner/Label",
+                cneg + "/ConnectionSub10Button/ConnectionSub10Button_Inner/Label",
+                cneg + "/ConnectionSub1Button/ConnectionSub1Button_Inner/Label",
+                cneg + "/ConnectionAdd1Button/ConnectionAdd1Button_Inner/Label",
+                cneg + "/ConnectionAdd10Button/ConnectionAdd10Button_Inner/Label",
+                cneg + "/ConnectionApplyButton/ConnectionApplyButton_Inner/Label",
+                cneg + "/ConnectionCancelButton/ConnectionCancelButton_Inner/Label",
+                shared + "/RebootButton/RebootButton_Inner/Label",
+                shared + "/ResyncButton/ResyncButton_Inner/Label",
+                shared + "/ResyncButton/ResyncButton_Inner/CooldownLabel",
+                topBar + "/CloseButton/CloseButton_Inner/Label",
+                topBar + "/SwitchViewButton/SwitchViewButton_Inner/Label",
             };
 
             string[] bodyPaths =
             {
-                staff + "/NowPlayingText",
-                staff + "/HelpArea/HelpText",
-                staff + "/MonitoringArea/MonitoringText",
+                staff + "/NowPlayingArea/NowPlayingArea_Inner/NowPlayingText",
+                staff + "/UserCountText",
                 staff + "/IndicatorText",
+                cdg + "/ConcurrentLimitDisplayText",
+                cndg + "/ConnectionLimitDisplayText",
+                shared + "/HelpArea/HelpArea_Inner/HelpText",
                 viewer + "/StateText",
                 viewer + "/ErrorText",
             };
 
             string[] inputTextPaths =
             {
-                staff + "/NextURLInputField/Viewport/Text",
-                clc + "/ConcurrentLimitInput/Viewport/Text",
+                staff + "/NextURLInputField/NextURLInputField_Inner/Viewport/Text",
+                ceg + "/ConcurrentLimitInput/ConcurrentLimitInput_Inner/Viewport/Text",
+                cneg + "/ConnectionLimitInput/ConnectionLimitInput_Inner/Viewport/Text",
             };
 
             string[] placeholderPaths =
             {
-                staff + "/NextURLInputField/Viewport/Placeholder",
-                clc + "/ConcurrentLimitInput/Viewport/Placeholder",
+                staff + "/NextURLInputField/NextURLInputField_Inner/Placeholder",
+                staff + "/NextURLInputField/NextURLInputField_Inner/Viewport/Placeholder",
+                ceg + "/ConcurrentLimitInput/ConcurrentLimitInput_Inner/Placeholder",
+                ceg + "/ConcurrentLimitInput/ConcurrentLimitInput_Inner/Viewport/Placeholder",
+                cneg + "/ConnectionLimitInput/ConnectionLimitInput_Inner/Placeholder",
+                cneg + "/ConnectionLimitInput/ConnectionLimitInput_Inner/Viewport/Placeholder",
             };
 
             foreach (var path in headingPaths)

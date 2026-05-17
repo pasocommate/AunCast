@@ -22,14 +22,10 @@ namespace PasocomMate.AunCast
         public Material inputMaterial;
         public Material decal1Material;
         public Material decal2Material;
-        public Material videoScreenMaterial;
-        public Material videoScreenUiMaterial;
-        public Material rtGrabMaterial;
         public Material handleMaterial;
         public Material hudProgressMaterial;
-
-        [Header("Textures")]
-        public Texture2D videoScreenDefaultTexture;
+        public Material al4BandHistoryMaterial;
+        public Material alAutoCorrelatorMaterial;
 
         [Header("Fonts")]
         public TMP_FontAsset displayFont;
