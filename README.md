@@ -1,3 +1,10 @@
+# WORK IN PROGRESS
+
+正式リリースは6月を予定しています。
+The official release is scheduled for June.
+
+-----
+
 ![AunCast Banner](Packages/tokyo.chigiri.pasocommate.auncast/Textures/Editor/auncast-banner.jpg)
 
 # AunCast
