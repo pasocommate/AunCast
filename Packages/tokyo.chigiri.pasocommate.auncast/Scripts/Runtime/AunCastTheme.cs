@@ -44,6 +44,7 @@ namespace PasocomMate.AunCast
         public Color secondaryColor = new Color(0.38f, 0.38f, 0.42f);
         public Color warningColor = new Color(1f, 0.37f, 0f);
         public Color dangerColor = new Color(1f, 0f, 0f);
+        public Color buttonLabelColor = Color.white;
 
         [Header("Input")]
         public Color inputBackgroundColor = new Color(0.156862f, 0.156862f, 0.156862f, 1f);
@@ -76,7 +77,6 @@ namespace PasocomMate.AunCast
 
         [Header("Text")]
         public Color headingTextColor = Color.white;
-        public Color buttonLabelColor = Color.white;
         public Color bodyTextColor = new Color(0.75f, 0.75f, 0.78f);
         public Color inputTextColor = Color.white;
         public Color placeholderTextColor = new Color(0.60f, 0.60f, 0.60f, 1f);

@@ -23,6 +23,15 @@ namespace PasocomMate.AunCast.Internal
         private const string USER_PADDED_PATH = USER_CONTENT_PATH + "/UserPadded";
         private const string STAFF_PADDED_PATH = STAFF_CONTENT_PATH + "/StaffPadded";
 
+        private Editor _themeEditor;
+        private bool _themeEditorExpanded;
+
+        private void OnDisable()
+        {
+            if (_themeEditor != null)
+                DestroyImmediate(_themeEditor);
+        }
+
         public override void OnInspectorGUI()
         {
             var applier = (PasocomMate.AunCast.AunCastThemeApplier)target;
@@ -60,6 +69,43 @@ namespace PasocomMate.AunCast.Internal
 
             EditorGUILayout.Space();
             DrawDefaultInspector();
+
+            DrawInlineThemeEditor(applier);
+        }
+
+        private void DrawInlineThemeEditor(PasocomMate.AunCast.AunCastThemeApplier applier)
+        {
+            if (applier.theme == null)
+            {
+                if (_themeEditor != null)
+                {
+                    DestroyImmediate(_themeEditor);
+                    _themeEditor = null;
+                }
+                return;
+            }
+
+            if (_themeEditor == null || _themeEditor.target != applier.theme)
+            {
+                if (_themeEditor != null)
+                    DestroyImmediate(_themeEditor);
+                _themeEditor = CreateEditor(applier.theme);
+            }
+
+            EditorGUILayout.Space(8);
+
+            _themeEditorExpanded = EditorGUILayout.Foldout(_themeEditorExpanded,
+                $"Theme: {applier.theme.name}", true, EditorStyles.foldoutHeader);
+
+            if (_themeEditorExpanded)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUI.BeginChangeCheck();
+                _themeEditor.OnInspectorGUI();
+                if (EditorGUI.EndChangeCheck())
+                    EditorUtility.SetDirty(applier.theme);
+                EditorGUI.indentLevel--;
+            }
         }
 
         private static void SwitchContentView(Transform root, bool showStaff)
