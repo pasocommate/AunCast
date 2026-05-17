@@ -50,7 +50,7 @@ Material:
     - _PolarOffsetX: 0.04
     - _PolarOffsetY: 0.067
     - _SaturationCurve: 1
-    - _SaturationMax: 1
+    - _SaturationMax: 0.67
     - _SaturationMin: 0
     - _Stencil: 0
     - _StencilComp: 8
@@ -60,5 +60,5 @@ Material:
     - _UseUIAlphaClip: 0
     m_Colors:
     - _BackgroundColor: {r: 0, g: 0, b: 0, a: 0}
-    - _WaveformColor: {r: 1, g: 1, b: 1, a: 0.21568628}
+    - _WaveformColor: {r: 1, g: 0.8325, b: 0.32999998, a: 1}
   m_BuildTextureStacks: []
