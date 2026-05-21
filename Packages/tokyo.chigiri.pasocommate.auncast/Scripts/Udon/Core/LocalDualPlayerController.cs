@@ -1025,12 +1025,18 @@ namespace PasocomMate.AunCast
             return !resyncClient.IsSilenceAutoResyncEligible(Time.time);
         }
 
-        /// <summary>メーター表示用の現在 RMS（dBFS）。無音Resyncの有効/無効に関係なく取得する。</summary>
+        /// <summary>メーター表示用の現在 RMS（dBFS）。ボリューム調整前の信号レベルに補正して返す。</summary>
         [PublicAPI]
         public float GetActiveRmsDbfsForMeter()
         {
             AudioSilenceDetector d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
-            return d != null ? d.GetLastRmsDbfs() : -96f;
+            if (d == null) return -96f;
+            float dbfs = d.GetLastRmsDbfs();
+            // GetOutputData はボリューム適用後の PCM を返すため、ボリューム分を差し引いて入力信号レベルを復元
+            float vol = GetVolume();
+            if (vol > 0.0001f)
+                dbfs -= 20f * Mathf.Log10(vol);
+            return Mathf.Clamp(dbfs, -96f, 0f);
         }
 
         /// <summary>メーター表示用の無音判定閾値（dBFS）。</summary>
