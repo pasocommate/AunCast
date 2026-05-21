@@ -99,6 +99,7 @@ namespace PasocomMate.AunCast
         private const int HELP_AUTO_RESYNC = 17;
         private const int HELP_CLOSE_BUTTON = 18;
         private const int HELP_SWITCH_VIEW = 19;
+        private const int HELP_COPY_PLAYING_URL = 20;
 
         private int _activeHelpKey = HELP_NONE;
         private bool _isJapanese;
@@ -148,6 +149,7 @@ namespace PasocomMate.AunCast
                 "Automatically resync when playback delay or silence is detected",
                 "Close this panel",
                 "Switch between local controls and staff controls",
+                "Copy the currently playing URL back to the input field",
             };
             _helpTextsJa = new[]
             {
@@ -171,6 +173,7 @@ namespace PasocomMate.AunCast
                 "再生遅延や無音を検出した際に自動でResyncします",
                 "パネルを閉じます",
                 "ローカル操作パネルとスタッフ操作パネルを切り替えます",
+                "再生中のURLを入力欄にコピーします",
             };
 
             string lang = VRCPlayerApi.GetCurrentLanguage();
@@ -246,6 +249,15 @@ namespace PasocomMate.AunCast
 
             controller.PlayVideoAsStaff(parsedUrl);
             nextUrlField.SetUrl(VRCUrl.Empty);
+        }
+
+        /// <summary>再生中 URL を Next URL 入力欄にコピーする。</summary>
+        public void OnCopyPlayingUrlToInput()
+        {
+            if (controller == null || nextUrlField == null) return;
+            VRCUrl current = controller.GetCurrentURL();
+            if (current == null || string.IsNullOrEmpty(current.Get())) return;
+            nextUrlField.SetUrl(current);
         }
 
         /// <summary>全ユーザーの再生を即座に停止する。</summary>
@@ -792,6 +804,7 @@ namespace PasocomMate.AunCast
         public void OnHoverAutoResync() { SetHelpText(HELP_AUTO_RESYNC); }
         public void OnHoverCloseButton() { SetHelpText(HELP_CLOSE_BUTTON); }
         public void OnHoverSwitchView() { SetHelpText(HELP_SWITCH_VIEW); }
+        public void OnHoverCopyPlayingUrl() { SetHelpText(HELP_COPY_PLAYING_URL); }
         public void OnHoverClear() { SetHelpText(HELP_NONE); }
 
     }
