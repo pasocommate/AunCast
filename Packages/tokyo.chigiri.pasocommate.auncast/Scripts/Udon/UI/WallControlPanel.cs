@@ -55,6 +55,7 @@ namespace PasocomMate.AunCast
         [Header("Gesture Selection (User View)")]
         [SerializeField] private GameObject vrGestureGroup;
         [SerializeField] private Toggle gestureDoubleTriggerToggle;
+        [SerializeField] private Toggle gestureDoubleTriggerRightToggle;
         [SerializeField] private Toggle gestureBothTriggersToggle;
         [SerializeField] private Toggle gestureRightStickUpToggle;
         [SerializeField] private GameObject desktopGestureGroup;
@@ -372,6 +373,14 @@ namespace PasocomMate.AunCast
             SyncGestureToggles();
         }
 
+        public void OnGestureDoubleTriggerRightToggleChanged()
+        {
+            if (gestureDoubleTriggerRightToggle == null || portablePanel == null) return;
+            portablePanel.SetSummonGestureFlag(
+                UserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT, gestureDoubleTriggerRightToggle.isOn);
+            SyncGestureToggles();
+        }
+
         public void OnGestureBothTriggersToggleChanged()
         {
             if (gestureBothTriggersToggle == null || portablePanel == null) return;
@@ -421,6 +430,9 @@ namespace PasocomMate.AunCast
             if (gestureDoubleTriggerToggle != null)
                 gestureDoubleTriggerToggle.SetIsOnWithoutNotify(
                     (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER) != 0);
+            if (gestureDoubleTriggerRightToggle != null)
+                gestureDoubleTriggerRightToggle.SetIsOnWithoutNotify(
+                    (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT) != 0);
             if (gestureBothTriggersToggle != null)
                 gestureBothTriggersToggle.SetIsOnWithoutNotify(
                     (vrCurrent & UserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD) != 0);

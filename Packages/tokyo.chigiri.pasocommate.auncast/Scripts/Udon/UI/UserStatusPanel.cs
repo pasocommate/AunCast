@@ -99,7 +99,7 @@ namespace PasocomMate.AunCast
 
         [Header("Open Trigger")]
         [Tooltip("VR モード時の呼び出しジェスチャー種別 (ビットフラグ)。複数同時有効可。")]
-        [SerializeField] private int summonGesture = GESTURE_DOUBLE_TRIGGER;
+        [SerializeField] private int summonGesture = GESTURE_DOUBLE_TRIGGER | GESTURE_DOUBLE_TRIGGER_RIGHT;
         [Tooltip("両手トリガー長押し ジェスチャーで、両手のトリガーを同時に長押しする秒数。AunCastSettings.gestureHoldDuration と同期される。")]
         [SerializeField] private float vrBothTriggersHoldSec = 0.8f;
         [Tooltip("右スティック上倒し続け ジェスチャーで、右スティックを上方向に倒し続ける秒数。AunCastSettings.gestureHoldDuration と同期される。")]
@@ -120,7 +120,9 @@ namespace PasocomMate.AunCast
         // VR ジェスチャー種別のビットフラグ。複数同時有効にできる。
         public const int GESTURE_BOTH_TRIGGERS_HOLD = 1;
         public const int GESTURE_RIGHT_STICK_UP_HOLD = 2;
+        // ダブルトリガー: 左手 (bit2) と右手 (bit3) を別々に設定可能
         public const int GESTURE_DOUBLE_TRIGGER = 4;
+        public const int GESTURE_DOUBLE_TRIGGER_RIGHT = 8;
 
         // Desktop ジェスチャー種別のビットフラグ。
         public const int DESKTOP_GESTURE_TAB_DOUBLE_TAP = 1;
@@ -829,7 +831,7 @@ namespace PasocomMate.AunCast
                 PollVrBothTriggersHold(local);
             if ((summonGesture & GESTURE_RIGHT_STICK_UP_HOLD) != 0)
                 PollVrRightStickUpHold(local);
-            if ((summonGesture & GESTURE_DOUBLE_TRIGGER) != 0)
+            if ((summonGesture & (GESTURE_DOUBLE_TRIGGER | GESTURE_DOUBLE_TRIGGER_RIGHT)) != 0)
                 PollVrDoubleTrigger(local);
         }
 
@@ -902,7 +904,9 @@ namespace PasocomMate.AunCast
         {
             VRCPlayerApi local = Networking.LocalPlayer;
             if (local == null || !local.IsUserInVR()) return;
-            if ((summonGesture & GESTURE_DOUBLE_TRIGGER) == 0) return;
+            // 左手は GESTURE_DOUBLE_TRIGGER (bit2)、右手は GESTURE_DOUBLE_TRIGGER_RIGHT (bit3) で独立管理
+            if (isLeft && (summonGesture & GESTURE_DOUBLE_TRIGGER) == 0) return;
+            if (!isLeft && (summonGesture & GESTURE_DOUBLE_TRIGGER_RIGHT) == 0) return;
 
             float now = Time.time;
             float prev = isLeft ? _vrLeftLastPressTime : _vrRightLastPressTime;

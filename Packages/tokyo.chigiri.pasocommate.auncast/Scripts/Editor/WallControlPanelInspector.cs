@@ -29,6 +29,7 @@ namespace PasocomMate.AunCast.Internal
             "disabledButtonLabelAlpha",
             "vrGestureGroup",
             "gestureDoubleTriggerToggle",
+            "gestureDoubleTriggerRightToggle",
             "gestureBothTriggersToggle",
             "gestureRightStickUpToggle",
             "desktopGestureGroup",
