@@ -1464,7 +1464,7 @@ namespace PasocomMate.AunCast.Internal
                 "ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する。",
                 settings.driftSmoothingTimeConstant, 0.1f, 10f);
             float newWarmup = SliderField("猶予時間 [秒]", "driftWarmupSec",
-                "再生開始直後にドリフト積算を抑制する猶予時間（秒）。",
+                "安定再生開始直後にドリフト積算を抑制する猶予時間（秒）。",
                 settings.driftWarmupSec, 0f, 30f);
             EditorGUI.indentLevel--;
 

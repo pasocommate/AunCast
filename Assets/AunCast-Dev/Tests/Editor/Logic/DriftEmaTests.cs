@@ -27,13 +27,14 @@ namespace PasocomMate.AunCast.Tests
                 _monitor, "driftWarmupSec");
 
             // ウォームアップ中の状態を設定
+            TestHelper.Set(_monitor, "_stablePlaybackStartedAt", now);
             TestHelper.Set(_monitor, "_driftWarmupUntil", now + warmupSec);
             TestHelper.Set(_monitor, "_driftAccumulator", 0.5f);
 
             // PollActive のドリフト計算部分を模擬:
-            // canMeasureDrift = isPlaying && now >= _driftWarmupUntil
+            // canMeasureDrift = isPlaying && _stablePlaybackStartedAt > 0 && now >= _driftWarmupUntil
             // ウォームアップ中は accumulator が 0 にリセットされる
-            bool canMeasureDrift = now >= (now + warmupSec);
+            bool canMeasureDrift = now > 0f && now >= (now + warmupSec);
             Assert.IsFalse(canMeasureDrift, "ウォームアップ中は計測不可");
 
             // ドリフト計測不可時のロジック: _driftAccumulator = 0f

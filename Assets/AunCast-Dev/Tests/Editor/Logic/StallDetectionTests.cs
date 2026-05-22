@@ -45,6 +45,7 @@ namespace PasocomMate.AunCast.Tests
 
             // ウォームアップ済み、ドリフト閾値超過
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
+            TestHelper.Set(_monitor, "_stablePlaybackStartedAt", 10f);
             TestHelper.Set(_monitor, "_driftWarmupUntil", 50f);
             TestHelper.Set(_monitor, "_driftAccumulator", threshold + 0.05f);
 
@@ -62,6 +63,7 @@ namespace PasocomMate.AunCast.Tests
 
             // 停滞なし、ドリフト正常
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
+            TestHelper.Set(_monitor, "_stablePlaybackStartedAt", 10f);
             TestHelper.Set(_monitor, "_driftWarmupUntil", 50f);
             TestHelper.Set(_monitor, "_driftAccumulator", threshold * 0.5f);
 
@@ -77,8 +79,9 @@ namespace PasocomMate.AunCast.Tests
             float threshold = TestHelper.Get<ActivePlayerMonitor, float>(
                 _monitor, "driftResyncThresholdSec");
 
-            // ウォームアップ中は大きなドリフ��でも無視
+            // ウォームアップ中は大きなドリフトでも無視
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
+            TestHelper.Set(_monitor, "_stablePlaybackStartedAt", 10f);
             TestHelper.Set(_monitor, "_driftWarmupUntil", 100f);
             TestHelper.Set(_monitor, "_driftAccumulator", threshold + 1f);
 
@@ -86,6 +89,21 @@ namespace PasocomMate.AunCast.Tests
 
             bool failure = _monitor.DetectActiveFailure(now);
             Assert.IsFalse(failure, "ウォームアップ中はドリフトで障害検出しない");
+        }
+
+        [Test]
+        public void DetectActiveFailure_BeforeStablePlayback_IgnoresDrift()
+        {
+            float threshold = TestHelper.Get<ActivePlayerMonitor, float>(
+                _monitor, "driftResyncThresholdSec");
+
+            TestHelper.Set(_monitor, "_stallStartedAt", 0f);
+            TestHelper.Set(_monitor, "_stablePlaybackStartedAt", 0f);
+            TestHelper.Set(_monitor, "_driftWarmupUntil", 0f);
+            TestHelper.Set(_monitor, "_driftAccumulator", threshold + 1f);
+
+            bool failure = _monitor.DetectActiveFailure(100f);
+            Assert.IsFalse(failure, "安定再生前はドリフトで障害検出しない");
         }
 
         [Test]

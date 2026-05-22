@@ -40,12 +40,12 @@ namespace PasocomMate.AunCast
 
         [Header("Drift")]
         [Tooltip("蓄積ドリフトがこの値（秒）を超えたら自動 Resync")]
-        [SerializeField] private float driftResyncThresholdSec = 0.3f;
+        [SerializeField] private float driftResyncThresholdSec = 0.1f;
 
         [Tooltip("ドリフト EMA の時定数（秒）。大きいほど緩やかに追従する")]
         [SerializeField] private float driftSmoothingTimeConstant = 1.5f;
 
-        [Tooltip("再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
+        [Tooltip("安定再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
         [SerializeField] private float driftWarmupSec = 5.0f;
 
         [Header("Debug")]
@@ -87,7 +87,9 @@ namespace PasocomMate.AunCast
         private float _baseWallTime;
         /// <summary>ドリフト基準点のプレイヤー時間。壁時間との差分で再生速度のずれを検出する。</summary>
         private float _basePlayerTime;
-        /// <summary>この時刻まではドリフト積算を抑制する。初期バッファリング中の偽陽性を防ぐ。</summary>
+        /// <summary>安定再生を確認した時刻。未確認の間は 0。</summary>
+        private float _stablePlaybackStartedAt;
+        /// <summary>この時刻まではドリフト積算を抑制する。安定再生開始直後の偽陽性を防ぐ。</summary>
         private float _driftWarmupUntil;
 
         // =================================================================
@@ -126,10 +128,11 @@ namespace PasocomMate.AunCast
             _consecutiveStallCount = 0;
             _stallStartedAt = 0f;
             _driftAccumulator = 0f;
-            _driftWarmupUntil = now + GetDriftWarmupSec();
+            _stablePlaybackStartedAt = 0f;
+            _driftWarmupUntil = 0f;
             _baseWallTime = 0f;
             _basePlayerTime = 0f;
-            LogVerbose($"Monitoring initialized (activeTime={_lastActiveTime:F3}, warmupUntil={_driftWarmupUntil:F3})");
+            LogVerbose($"Monitoring initialized (activeTime={_lastActiveTime:F3})");
             if (_timelineLogging) TL($"a=INIT_ACTIVE");
         }
 
@@ -177,6 +180,8 @@ namespace PasocomMate.AunCast
                 _driftAccumulator = 0f;
                 _baseWallTime = 0f;
                 _basePlayerTime = 0f;
+                _stablePlaybackStartedAt = 0f;
+                _driftWarmupUntil = 0f;
                 _lastActiveTime = currentPlayerTime;
                 _lastObservedAt = now;
                 return;
@@ -206,6 +211,8 @@ namespace PasocomMate.AunCast
                 _consecutiveAdvanceCount++;
                 _consecutiveStallCount = 0;
                 _stallStartedAt = 0f;
+                if (_stablePlaybackStartedAt <= 0f && _consecutiveAdvanceCount >= minConsecutiveAdvances)
+                    BeginStablePlayback(now);
             }
             else
             {
@@ -222,7 +229,7 @@ namespace PasocomMate.AunCast
             // ドリフト計算（絶対ドリフト方式 + EMA 平滑化）
             // 壁時間の経過とプレイヤー時間の経過の差分を測り、再生速度のずれを検出する。
             // EMA で平滑化することでネットワークジッターによる瞬間的な偏差を吸収する。
-            bool canMeasureDrift = isPlaying && now >= _driftWarmupUntil;
+            bool canMeasureDrift = isPlaying && _stablePlaybackStartedAt > 0f && now >= _driftWarmupUntil;
             if (canMeasureDrift)
             {
                 if (_baseWallTime <= 0f)
@@ -309,7 +316,9 @@ namespace PasocomMate.AunCast
             if (_stallStartedAt > 0f && (now - _stallStartedAt) >= stalledTimeoutSec)
                 return true;
 
-            if (now >= _driftWarmupUntil && Mathf.Abs(_driftAccumulator) > driftResyncThresholdSec)
+            if (_stablePlaybackStartedAt > 0f
+                && now >= _driftWarmupUntil
+                && Mathf.Abs(_driftAccumulator) > driftResyncThresholdSec)
             {
                 if (_timelineLogging) TL($"a=DRIFT_THRESHOLD drift={_driftAccumulator:F4}");
                 return true;
@@ -396,6 +405,16 @@ namespace PasocomMate.AunCast
         private float GetDriftWarmupSec()
         {
             return driftWarmupSec > 0f ? driftWarmupSec : 5.0f;
+        }
+
+        private void BeginStablePlayback(float now)
+        {
+            _stablePlaybackStartedAt = now;
+            _driftWarmupUntil = now + GetDriftWarmupSec();
+            _driftAccumulator = 0f;
+            _baseWallTime = 0f;
+            _basePlayerTime = 0f;
+            if (_timelineLogging) TL($"a=STABLE_PLAYBACK warmupUntil={_driftWarmupUntil:F3}");
         }
 
         // =================================================================

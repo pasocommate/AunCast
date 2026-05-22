@@ -87,12 +87,12 @@ namespace PasocomMate.AunCast
 
         [Header("Drift Detection")]
         [Tooltip("蓄積ドリフトがこの値（秒）を超えたら自動 Resync")]
-        public float driftResyncThresholdSec = 0.3f;
+        public float driftResyncThresholdSec = 0.1f;
 
         [Tooltip("ドリフト EMA の時定数（秒）。大きいほど緩やかに追従する")]
         public float driftSmoothingTimeConstant = 1.5f;
 
-        [Tooltip("再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
+        [Tooltip("安定再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
         public float driftWarmupSec = 5.0f;
 
         [Header("Resync Coordinator")]
