@@ -310,20 +310,15 @@ namespace PasocomMate.AunCast
                 SetThemeImageColor(wallRoot, wallUser + "/UserRebootButton", theme.warningColor);
 
                 string vrGroup = wallUser + "/VrGestureGroup";
-                SetThemeImageColor(wallRoot, vrGroup + "/GestureRightStickUpToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, vrGroup + "/GestureRightStickUpToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-                SetThemeImageColor(wallRoot, vrGroup + "/GestureDoubleTriggerToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, vrGroup + "/GestureDoubleTriggerToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-                SetThemeImageColor(wallRoot, vrGroup + "/GestureBothTriggersToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, vrGroup + "/GestureBothTriggersToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+                ApplyToggleTheme(wallRoot, vrGroup + "/GestureRightStickUpToggle");
+                ApplyToggleTheme(wallRoot, vrGroup + "/GestureDoubleTriggerLeftToggle");
+                ApplyToggleTheme(wallRoot, vrGroup + "/GestureDoubleTriggerRightToggle");
+                ApplyToggleTheme(wallRoot, vrGroup + "/GestureBothTriggersToggle");
 
                 string desktopGroup = wallUser + "/DesktopGestureGroup";
-                SetThemeImageColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-                SetThemeImageColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-                SetThemeImageColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle/Background", theme.toggleBackgroundColor);
-                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+                ApplyToggleTheme(wallRoot, desktopGroup + "/DesktopEscHoldToggle");
+                ApplyToggleTheme(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle");
+                ApplyToggleTheme(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle");
 
                 SetThemeImageColor(wallRoot, wall + "/ResyncOnlyContent/ResyncOnlyButton", theme.primaryColor);
             }
@@ -342,14 +337,15 @@ namespace PasocomMate.AunCast
                 SetThemeTextColor(wallRoot, wallUser + "/UserRebootButton/UserRebootButton_Inner/Label", theme.buttonLabelColor);
 
                 string vrGroup = wallUser + "/VrGestureGroup";
-                SetThemeTextColor(wallRoot, vrGroup + "/GestureRightStickUpToggle/Label", theme.headingTextColor);
-                SetThemeTextColor(wallRoot, vrGroup + "/GestureDoubleTriggerToggle/Label", theme.headingTextColor);
-                SetThemeTextColor(wallRoot, vrGroup + "/GestureBothTriggersToggle/Label", theme.headingTextColor);
+                ApplyToggleLabelColor(wallRoot, vrGroup + "/GestureRightStickUpToggle");
+                ApplyToggleLabelColor(wallRoot, vrGroup + "/GestureDoubleTriggerLeftToggle");
+                ApplyToggleLabelColor(wallRoot, vrGroup + "/GestureDoubleTriggerRightToggle");
+                ApplyToggleLabelColor(wallRoot, vrGroup + "/GestureBothTriggersToggle");
 
                 string desktopGroup = wallUser + "/DesktopGestureGroup";
-                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle/Label", theme.headingTextColor);
-                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle/Label", theme.headingTextColor);
-                SetThemeTextColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle/Label", theme.headingTextColor);
+                ApplyToggleLabelColor(wallRoot, desktopGroup + "/DesktopEscHoldToggle");
+                ApplyToggleLabelColor(wallRoot, desktopGroup + "/DesktopF5DoubleTapToggle");
+                ApplyToggleLabelColor(wallRoot, desktopGroup + "/DesktopTabDoubleTapToggle");
 
                 string wallStaff = wall + "/StaffContent";
                 SetThemeTextColor(wallRoot, wallStaff + "/PasscodeDisplay", theme.bodyTextColor);
@@ -363,6 +359,17 @@ namespace PasocomMate.AunCast
                 SetThemeTextColor(wallRoot, resyncOnly + "/TextLabel", theme.bodyTextColor);
                 SetThemeTextColor(wallRoot, wallUser + "/GestureLabel", theme.headingTextColor);
             }
+        }
+
+        private void ApplyToggleTheme(Transform root, string togglePath)
+        {
+            SetThemeImageColor(root, togglePath + "/Background", theme.toggleBackgroundColor);
+            SetThemeTextColor(root, togglePath + "/Background/Checkmark", theme.toggleCheckmarkColor);
+        }
+
+        private void ApplyToggleLabelColor(Transform root, string togglePath)
+        {
+            SetThemeTextColor(root, togglePath + "/Label", theme.headingTextColor);
         }
 
         private void ApplyThemeTextColors(Transform root)

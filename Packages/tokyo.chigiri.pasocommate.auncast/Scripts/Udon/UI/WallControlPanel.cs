@@ -54,7 +54,7 @@ namespace PasocomMate.AunCast
 
         [Header("Gesture Selection (User View)")]
         [SerializeField] private GameObject vrGestureGroup;
-        [SerializeField] private Toggle gestureDoubleTriggerToggle;
+        [SerializeField] private Toggle gestureDoubleTriggerLeftToggle;
         [SerializeField] private Toggle gestureDoubleTriggerRightToggle;
         [SerializeField] private Toggle gestureBothTriggersToggle;
         [SerializeField] private Toggle gestureRightStickUpToggle;
@@ -365,11 +365,11 @@ namespace PasocomMate.AunCast
             if (desktopGestureGroup != null) desktopGestureGroup.SetActive(!isVr);
         }
 
-        public void OnGestureDoubleTriggerToggleChanged()
+        public void OnGestureDoubleTriggerLeftToggleChanged()
         {
-            if (gestureDoubleTriggerToggle == null || portablePanel == null) return;
+            if (gestureDoubleTriggerLeftToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                UserStatusPanel.GESTURE_DOUBLE_TRIGGER, gestureDoubleTriggerToggle.isOn);
+                UserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT, gestureDoubleTriggerLeftToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -425,11 +425,11 @@ namespace PasocomMate.AunCast
         {
             int vrCurrent = portablePanel != null
                 ? portablePanel.GetSummonGesture()
-                : UserStatusPanel.GESTURE_DOUBLE_TRIGGER;
+                : UserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD;
 
-            if (gestureDoubleTriggerToggle != null)
-                gestureDoubleTriggerToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER) != 0);
+            if (gestureDoubleTriggerLeftToggle != null)
+                gestureDoubleTriggerLeftToggle.SetIsOnWithoutNotify(
+                    (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT) != 0);
             if (gestureDoubleTriggerRightToggle != null)
                 gestureDoubleTriggerRightToggle.SetIsOnWithoutNotify(
                     (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT) != 0);

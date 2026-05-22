@@ -28,7 +28,7 @@ namespace PasocomMate.AunCast.Internal
             "userRebootButton",
             "disabledButtonLabelAlpha",
             "vrGestureGroup",
-            "gestureDoubleTriggerToggle",
+            "gestureDoubleTriggerLeftToggle",
             "gestureDoubleTriggerRightToggle",
             "gestureBothTriggersToggle",
             "gestureRightStickUpToggle",
