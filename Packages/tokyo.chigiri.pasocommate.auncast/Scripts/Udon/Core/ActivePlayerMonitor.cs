@@ -48,6 +48,9 @@ namespace PasocomMate.AunCast
         [Tooltip("再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
         [SerializeField] private float driftWarmupSec = 5.0f;
 
+        [Tooltip("アバター切替・Join/Leave 後にドリフト計測を再開するまでの猶予（秒）。0 で無効。")]
+        [SerializeField] private float driftEventSuppressSec = 3.0f;
+
         [Header("Debug")]
         [Tooltip("要所ログを詳細出力する")]
         [SerializeField] private bool verboseLogging = true;
@@ -396,6 +399,28 @@ namespace PasocomMate.AunCast
         private float GetDriftWarmupSec()
         {
             return driftWarmupSec > 0f ? driftWarmupSec : 5.0f;
+        }
+
+        // =================================================================
+        //  VRChat イベント: アバター切替・Join/Leave 時のドリフト誤検知抑制 (#5)
+        // =================================================================
+
+        public override void OnAvatarChanged(VRCPlayerApi player) { SuppressDriftAfterEvent(); }
+        public override void OnPlayerJoined(VRCPlayerApi player) { SuppressDriftAfterEvent(); }
+        public override void OnPlayerLeft(VRCPlayerApi player) { SuppressDriftAfterEvent(); }
+
+        /// <summary>外部イベント（アバター切替・Join/Leave）後のドリフト誤検知を防ぐため、
+        /// EMA 蓄積と基準点をリセットしてウォームアップ期間を延長する。</summary>
+        private void SuppressDriftAfterEvent()
+        {
+            if (driftEventSuppressSec <= 0f) return;
+            _driftAccumulator = 0f;
+            _baseWallTime = 0f;
+            _basePlayerTime = 0f;
+            float until = Time.unscaledTime + driftEventSuppressSec;
+            if (until > _driftWarmupUntil)
+                _driftWarmupUntil = until;
+            LogVerbose("Drift suppressed after avatar/player event");
         }
 
         // =================================================================

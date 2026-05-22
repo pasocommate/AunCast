@@ -59,6 +59,10 @@ namespace PasocomMate.AunCast
         [Tooltip("デフォルト音量（x^2 と Dr. Lex 指数カーブの lerp。0.6 で約 -13dB）")]
         [SerializeField] private float defaultVolume = 0.6f;
 
+        [Header("Silence Detection")]
+        [Tooltip("無音自動 Resync を発動する最小ドリフト量（秒）。ドリフトがこれ未満の場合は無音でも Resync しない。0 で無効。")]
+        [SerializeField] private float silenceMinDriftSec = 0.1f;
+
         [Header("Debug")]
         [Tooltip("要所ログを詳細出力する")]
         [SerializeField] private bool verboseLogging = true;
@@ -349,6 +353,12 @@ namespace PasocomMate.AunCast
             if (_localState != STATE_ACTIVE_PLAYING || !_autoSilenceResyncEnabled) return;
             if (!activeMonitor.HasSeenPlayerTimeAdvance()) { _combinedSilenceDuration = 0f; return; }
             if (!resyncClient.IsSilenceAutoResyncEligible(now)) { _combinedSilenceDuration = 0f; return; }
+            // ドリフトが一定量に達するまでは無音 Resync を抑止（一時的な無音による誤発動防止）(#13)
+            if (silenceMinDriftSec > 0f && Mathf.Abs(activeMonitor.GetDriftAccumulator()) < silenceMinDriftSec)
+            {
+                _combinedSilenceDuration = 0f;
+                return;
+            }
 
             AudioSilenceDetector activeDet = switcher.GetActiveSilenceDetector();
             AudioSilenceDetector standbyDet = switcher.GetStandbySilenceDetector();

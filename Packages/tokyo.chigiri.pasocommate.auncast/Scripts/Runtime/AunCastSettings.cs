@@ -72,6 +72,9 @@ namespace PasocomMate.AunCast
         [Tooltip("RMSメーターのピーク減衰速度（dB/秒）")]
         public float silenceMeterPeakDecayDbPerSec = 12.0f;
 
+        [Tooltip("無音自動 Resync を発動する最小ドリフト量（秒）。ドリフトがこれ未満の場合は無音でも Resync しない。0 で無効。")]
+        public float silenceMinDriftSec = 0.1f;
+
         [Header("Active Player Monitoring")]
         [Tooltip("停止判定の継続時間（秒）")]
         public float stalledTimeoutSec = 2.0f;
@@ -94,6 +97,9 @@ namespace PasocomMate.AunCast
 
         [Tooltip("再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
         public float driftWarmupSec = 5.0f;
+
+        [Tooltip("アバター切替・Join/Leave 後にドリフト計測を再開するまでの猶予（秒）。0 で無効。")]
+        public float driftEventSuppressSec = 3.0f;
 
         [Header("Resync Coordinator")]
         [Tooltip("同時 Resync 実行数の初期上限")]
