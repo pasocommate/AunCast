@@ -71,6 +71,7 @@ namespace PasocomMate.AunCast
         //  同期変数 (Design Section 14)
         // =================================================================
         [UdonSynced] private VRCUrl _syncedURL = VRCUrl.Empty;
+        [UdonSynced] private string _syncedUrlSubmitterName = "";
         [UdonSynced] private int _syncedVideoIdx;
         [UdonSynced] private bool _ownerPlaying;
 
@@ -783,6 +784,7 @@ namespace PasocomMate.AunCast
             StopVideoInternal();
 
             _syncedURL = url;
+            _syncedUrlSubmitterName = Networking.LocalPlayer.displayName;
 
             if (wasOwner)
                 ++_syncedVideoIdx;
@@ -814,6 +816,7 @@ namespace PasocomMate.AunCast
             LogMessage("StopVideo requested");
             _ownerPlaying = false;
             _syncedURL = VRCUrl.Empty;
+            _syncedUrlSubmitterName = "";
 
             _tlLoadingA = false;
             _tlLoadingB = false;
@@ -975,6 +978,10 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public void SetVerboseLoggingLocal(bool value) { verboseLogging = value; }
 
+        /// <summary>現在の URL を送信したプレイヤー名を返す。配信停止時は空文字。</summary>
+        [PublicAPI]
+        public string GetUrlSubmitterName() { return _syncedUrlSubmitterName; }
+
         // =================================================================
         //  ヘルパー
         // =================================================================
@@ -1038,7 +1045,13 @@ namespace PasocomMate.AunCast
         public float GetActiveRmsDbfsForMeter()
         {
             AudioSilenceDetector d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
-            return d != null ? d.GetLastRmsDbfs() : -96f;
+            if (d == null) return -96f;
+            float dbfs = d.GetLastRmsDbfs();
+            // GetOutputData はボリューム適用後の出力を返すため、ボリュームで逆補正して元の信号レベルを表示する (#10)
+            float vol = GetVolume();
+            if (vol > 0.001f)
+                dbfs -= 20f * Mathf.Log10(vol);
+            return Mathf.Clamp(dbfs, -96f, 0f);
         }
 
         /// <summary>メーター表示用の無音判定閾値（dBFS）。</summary>

@@ -248,6 +248,15 @@ namespace PasocomMate.AunCast
             nextUrlField.SetUrl(VRCUrl.Empty);
         }
 
+        /// <summary>現在再生中の URL を Next URL 入力欄に戻す（#22）。</summary>
+        public void OnRestoreUrlToField()
+        {
+            if (!IsStaff() || controller == null || nextUrlField == null) return;
+            VRCUrl currentUrl = controller.GetCurrentURL();
+            if (currentUrl == null || string.IsNullOrEmpty(currentUrl.Get())) return;
+            nextUrlField.SetUrl(currentUrl);
+        }
+
         /// <summary>全ユーザーの再生を即座に停止する。</summary>
         public void OnStopButtonPress()
         {
@@ -504,7 +513,15 @@ namespace PasocomMate.AunCast
             if (nowPlayingText == null || controller == null) return;
             VRCUrl current = controller.GetCurrentURL();
             string url = current != null ? current.Get() : null;
-            nowPlayingText.text = string.IsNullOrEmpty(url) ? "No stream" : url;
+            if (string.IsNullOrEmpty(url))
+            {
+                nowPlayingText.text = "No stream";
+                return;
+            }
+            string submitter = controller.GetUrlSubmitterName();
+            nowPlayingText.text = string.IsNullOrEmpty(submitter)
+                ? url
+                : $"{url}\n<size=14>by {submitter}</size>";
         }
 
         private void UpdateMonitoringDisplay()
