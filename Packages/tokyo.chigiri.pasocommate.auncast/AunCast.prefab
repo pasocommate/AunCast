@@ -8457,7 +8457,7 @@ MonoBehaviour:
   monitorIntervalSec: 0.1
   minAdvanceThresholdSec: 0.01
   minConsecutiveAdvances: 5
-  driftResyncThresholdSec: 0.1
+  driftResyncThresholdSec: 0.3
   driftSmoothingTimeConstant: 1.5
   driftWarmupSec: 5
   maxConcurrentResyncUsers: 10
@@ -11040,7 +11040,7 @@ MonoBehaviour:
   minConsecutiveAdvances: 5
   stalledTimeoutSec: 2
   verifyMinDurationSec: 0.5
-  driftResyncThresholdSec: 0.1
+  driftResyncThresholdSec: 0.3
   driftSmoothingTimeConstant: 1.5
   driftWarmupSec: 5
   verboseLogging: 1
