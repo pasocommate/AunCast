@@ -967,6 +967,14 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public bool GetAutoSilenceResyncEnabled() { return _autoSilenceResyncEnabled; }
 
+        /// <summary>詳細ログの現在値を返す。ローカル設定 UI 用。</summary>
+        [PublicAPI]
+        public bool GetVerboseLogging() { return verboseLogging; }
+
+        /// <summary>詳細ログをローカルのみ設定する。</summary>
+        [PublicAPI]
+        public void SetVerboseLoggingLocal(bool value) { verboseLogging = value; }
+
         // =================================================================
         //  ヘルパー
         // =================================================================

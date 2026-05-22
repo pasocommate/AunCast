@@ -48,6 +48,16 @@ namespace PasocomMate.AunCast
         [Header("Auto Silence Resync")]
         [SerializeField] private Toggle autoSilenceResyncToggle;
 
+        [Header("Staff Controls")]
+        [Tooltip("スタッフビューに表示する詳細ログ有効/無効トグル")]
+        [SerializeField] private Toggle verboseLoggingToggle;
+
+        [Header("Staff Lock")]
+        [Tooltip("スタッフビュー誤操作防止ロックボタン（TopBar 上、SwitchButton 左に配置）")]
+        [SerializeField] private Button staffLockButton;
+        [Tooltip("ロックボタン内のアイコンラベル")]
+        [SerializeField] private TMP_Text staffLockButtonLabel;
+
         [Header("Buttons")]
         [SerializeField] private Button resyncButton;
         [SerializeField] private GameObject resyncButtonObject;
@@ -175,6 +185,14 @@ namespace PasocomMate.AunCast
         private float _lastVolumeSliderValue;
         private bool _autoSilenceToggleInitialized;
         private bool _lastAutoSilenceToggleState;
+        private bool _verboseLoggingToggleInitialized;
+        private bool _lastVerboseLoggingToggleState;
+        // スタッフビュー誤操作防止ロック (#16)
+        private bool _staffLocked = true;
+        private bool _inStaffView;
+        // ロック状態アイコン（Material Symbols: lock=\uE899, lock_open=\uE898）
+        private const string ICON_LOCK = "\uE899";
+        private const string ICON_LOCK_OPEN = "\uE898";
         private Canvas _canvas;
         private Collider _collider;
         private bool _vrLeftUsePressed;
@@ -367,6 +385,11 @@ namespace PasocomMate.AunCast
 
             if (!menuVisible) return;
 
+            if (_crossfadeTarget >= 0.5f)
+            {
+                PollVerboseLoggingToggle();
+            }
+
             if (_crossfadeTarget < 0.5f)
             {
                 PollVolumeSlider();
@@ -421,6 +444,16 @@ namespace PasocomMate.AunCast
             bool viewerActive = _crossfadeCurrent <= 0.01f;
             bool staffActive = _crossfadeCurrent >= 0.99f;
 
+            // スタッフビューに入った瞬間にロックをリセット (#16)
+            bool wasInStaffView = _inStaffView;
+            _inStaffView = staffActive;
+            if (_inStaffView && !wasInStaffView)
+            {
+                _staffLocked = true;
+                if (staffLockButtonLabel != null)
+                    staffLockButtonLabel.text = ICON_LOCK;
+            }
+
             if (userContentCanvasGroup != null)
             {
                 userContentCanvasGroup.alpha = viewerAlpha;
@@ -430,7 +463,7 @@ namespace PasocomMate.AunCast
             if (staffContentCanvasGroup != null)
             {
                 staffContentCanvasGroup.alpha = staffAlpha;
-                staffContentCanvasGroup.interactable = staffActive;
+                staffContentCanvasGroup.interactable = staffActive && !_staffLocked;
                 staffContentCanvasGroup.blocksRaycasts = staffActive;
             }
 
@@ -1212,7 +1245,7 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
-        //  ローカル設定 UI (Volume / Auto Silence Resync)
+        //  ローカル設定 UI (Volume / Auto Silence Resync / Verbose Logging)
         // =================================================================
 
         private void SyncLocalSettingsUI()
@@ -1231,6 +1264,14 @@ namespace PasocomMate.AunCast
                 autoSilenceResyncToggle.isOn = enabled;
                 _lastAutoSilenceToggleState = enabled;
                 _autoSilenceToggleInitialized = true;
+            }
+
+            if (verboseLoggingToggle != null && controller != null)
+            {
+                bool enabled = controller.GetVerboseLogging();
+                verboseLoggingToggle.isOn = enabled;
+                _lastVerboseLoggingToggleState = enabled;
+                _verboseLoggingToggleInitialized = true;
             }
         }
 
@@ -1276,6 +1317,44 @@ namespace PasocomMate.AunCast
 
             if (autoSilenceResyncToggle.isOn != _lastAutoSilenceToggleState)
                 OnAutoSilenceResyncToggleChanged();
+        }
+
+        public void OnVerboseLoggingToggleChanged()
+        {
+            if (controller == null || verboseLoggingToggle == null) return;
+            controller.SetVerboseLoggingLocal(verboseLoggingToggle.isOn);
+            _lastVerboseLoggingToggleState = verboseLoggingToggle.isOn;
+            _verboseLoggingToggleInitialized = true;
+        }
+
+        private void PollVerboseLoggingToggle()
+        {
+            if (verboseLoggingToggle == null) return;
+            if (!_verboseLoggingToggleInitialized)
+            {
+                _lastVerboseLoggingToggleState = verboseLoggingToggle.isOn;
+                _verboseLoggingToggleInitialized = true;
+                return;
+            }
+
+            if (verboseLoggingToggle.isOn != _lastVerboseLoggingToggleState)
+                OnVerboseLoggingToggleChanged();
+        }
+
+        /// <summary>スタッフロックボタンが押された。ロック状態をトグルして表示を更新する。</summary>
+        public void OnStaffLockButtonPress()
+        {
+            _staffLocked = !_staffLocked;
+            ApplyStaffLock();
+        }
+
+        private void ApplyStaffLock()
+        {
+            bool staffActive = _crossfadeCurrent >= 0.99f;
+            if (staffContentCanvasGroup != null)
+                staffContentCanvasGroup.interactable = staffActive && !_staffLocked;
+            if (staffLockButtonLabel != null)
+                staffLockButtonLabel.text = _staffLocked ? ICON_LOCK : ICON_LOCK_OPEN;
         }
 
         /// <summary>個人 Resync リクエスト (FR-16)。</summary>
