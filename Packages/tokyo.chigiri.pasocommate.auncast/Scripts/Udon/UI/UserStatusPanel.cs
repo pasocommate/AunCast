@@ -109,7 +109,7 @@ namespace PasocomMate.AunCast
 
         [Header("Open Trigger")]
         [Tooltip("VR モード時の呼び出しジェスチャー種別 (ビットフラグ)。複数同時有効可。")]
-        [SerializeField] private int summonGesture = GESTURE_DOUBLE_TRIGGER | GESTURE_DOUBLE_TRIGGER_RIGHT;
+        [SerializeField] private int summonGesture = GESTURE_RIGHT_STICK_UP_HOLD;
         [Tooltip("両手トリガー長押し ジェスチャーで、両手のトリガーを同時に長押しする秒数。AunCastSettings.gestureHoldDuration と同期される。")]
         [SerializeField] private float vrBothTriggersHoldSec = 0.8f;
         [Tooltip("右スティック上倒し続け ジェスチャーで、右スティックを上方向に倒し続ける秒数。AunCastSettings.gestureHoldDuration と同期される。")]

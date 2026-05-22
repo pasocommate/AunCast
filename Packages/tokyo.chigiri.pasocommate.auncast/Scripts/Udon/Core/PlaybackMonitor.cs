@@ -91,6 +91,18 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
+        /// オーナーシップ移譲時（前オーナー退室など）に残留ビットを掃除する。
+        /// OnPlayerLeft の発火順とオーナーシップ移譲のタイミングにより
+        /// OnPlayerLeft 内では CleanupStaleSlots が実行されない場合があるため、
+        /// 新オーナーが確定した時点で再度掃除を試みる（#15）。
+        /// </summary>
+        public override void OnOwnershipTransferred(VRCPlayerApi player)
+        {
+            if (CleanupStaleSlots() && debugLoggingEnabled)
+                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on ownership transferred", this);
+        }
+
+        /// <summary>
         /// 参加時のフォールバック掃除。OnPlayerLeft のシリアライズがロストして残った
         /// 過去のビットを、新規プレイヤーの参加時にまとめて回収する。
         /// </summary>

@@ -19,6 +19,9 @@ namespace PasocomMate.AunCast
         public bool useLowLatency = true;
 
         [Header("Gesture HUD")]
+        [Tooltip("呼び出しジェスチャーの初期設定（ビットフラグ合計）。2=右スティック上、4=左手ダブルトリガー、8=右手ダブルトリガー、1=両手トリガー。")]
+        public int defaultSummonGesture = 2;
+
         // 誤操作防止のための長押し判定時間
         [Tooltip("長押しジェスチャーの保持時間（秒）。VR 両手トリガー / 右スティック上 / デスクトップ ESC に共通適用。")]
         public float gestureHoldDuration = 0.8f;
