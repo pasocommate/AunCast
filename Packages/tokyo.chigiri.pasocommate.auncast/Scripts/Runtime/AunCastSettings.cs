@@ -59,6 +59,10 @@ namespace PasocomMate.AunCast
         [Tooltip("Staff ビュー解錠用の 4 桁数字パスコード。空文字で無効。")]
         public string wallUnlockPasscode = "0000";
 
+        [Header("Staff Access Control")]
+        [Tooltip("パスコードなしでスタッフ権限が付与される VRChat ユーザー名のリスト。空の場合はパスコード解錠のみ有効。")]
+        public string[] staffAllowedUserNames = new string[0];
+
         [Header("Silence Detection")]
         [Tooltip("無音判定 RMS 閾値 (dBFS)")]
         public float silenceRmsThresholdDbfs = -60f;

@@ -225,7 +225,8 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>統合パネル側が切替ボタンの可視判定などに使う。ローカル解錠状態を返す。</summary>
-        public bool IsLocallyUnlocked() { return _passcodeUnlocked; }
+        /// <summary>パスコード解錠済みか allowedUserNames に含まれていれば true (#18)。</summary>
+        public bool IsLocallyUnlocked() { return IsStaff(); }
 
         /// <summary>Next URL 欄の URL を昇格させて再生を開始する。</summary>
         public void OnPromoteNextUrl()

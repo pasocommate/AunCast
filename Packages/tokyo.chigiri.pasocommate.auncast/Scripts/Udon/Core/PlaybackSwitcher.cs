@@ -53,6 +53,9 @@ namespace PasocomMate.AunCast
         /// <summary>null テクスチャ警告のスロットル用タイムスタンプ</summary>
         private float _lastNullTextureWarnAt;
 
+        /// <summary>クロスフェード実行中フラグ。完了前に UpdateRenderTexture が旧 Active のテクスチャで上書きしないようにする (#9)。</summary>
+        private bool _crossfading;
+
         // =================================================================
         //  Active/Standby 取得
         // =================================================================
@@ -194,6 +197,7 @@ namespace PasocomMate.AunCast
         public void StartCrossfade(float now)
         {
             _crossfadeStartedAt = now;
+            _crossfading = true;
 
             // 映像は即座に新ソースへ切替（映像のクロスフェードは視覚的に不自然なため）
             UpdateRenderTextureFromManager(GetStandbyManager());
@@ -258,6 +262,7 @@ namespace PasocomMate.AunCast
             }
 
             _activeIsA = !_activeIsA;
+            _crossfading = false;
             if (_timelineLogging) TL($"a=SWITCH_ROLES");
 
             VideoPlayerManager newActiveManager = GetActiveManager();
@@ -311,6 +316,9 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void UpdateRenderTexture(int localState, bool ownerPlaying)
         {
+            // クロスフェード中は StartCrossfade が設定したスタンバイのテクスチャを保持する (#9)
+            if (_crossfading) return;
+
             VideoPlayerManager active = GetActiveManager();
             if (active == null) return;
 
