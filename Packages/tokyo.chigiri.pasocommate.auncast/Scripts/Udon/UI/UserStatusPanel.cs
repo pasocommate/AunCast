@@ -185,6 +185,9 @@ namespace PasocomMate.AunCast
         private float _vrLookVertical;
         private float _vrStickUpHoldElapsed;
         private bool _vrStickHoldConsumed;
+        // グリップボタンの生押下状態（#23 右スティックジェスチャー抑制用）
+        private bool _vrLeftGrabPressed;
+        private bool _vrRightGrabPressed;
         // VRChat メニューの開閉状態（メニュー中はスティック系ジェスチャーを抑止する）
         private bool _isVRChatMenuOpen;
         // 片手ダブルトリガージェスチャー: 各手のトリガー前回 press-down 時刻
@@ -750,6 +753,8 @@ namespace PasocomMate.AunCast
 
         public override void InputGrab(bool value, UdonInputEventArgs args)
         {
+            if (args.handType == HandType.LEFT) _vrLeftGrabPressed = value;
+            else if (args.handType == HandType.RIGHT) _vrRightGrabPressed = value;
             if (value) TryStartGrab(args.handType);
             else TryEndGrab(args.handType);
         }
@@ -866,7 +871,10 @@ namespace PasocomMate.AunCast
         /// <summary>右スティックを上方向へ閾値を超えて一定秒数倒し続けたらメニューを開く。</summary>
         private void PollVrRightStickUpHold(VRCPlayerApi local)
         {
-            if (_isVRChatMenuOpen || _vrLookVertical < vrRightStickUpThreshold)
+            // 他ボタン押下中または右手が視界外の場合はジェスチャーをリセットして抑制 (#23, #24)
+            if (_isVRChatMenuOpen || _vrLookVertical < vrRightStickUpThreshold
+                || _vrLeftUsePressed || _vrRightUsePressed || _vrLeftGrabPressed || _vrRightGrabPressed
+                || !IsHandInView(HandType.RIGHT, local))
             {
                 if (_vrStickUpHoldElapsed > 0f && hudProgress != null)
                     hudProgress.Hide();
@@ -907,6 +915,8 @@ namespace PasocomMate.AunCast
             // 左手は GESTURE_DOUBLE_TRIGGER (bit2)、右手は GESTURE_DOUBLE_TRIGGER_RIGHT (bit3) で独立管理
             if (isLeft && (summonGesture & GESTURE_DOUBLE_TRIGGER) == 0) return;
             if (!isLeft && (summonGesture & GESTURE_DOUBLE_TRIGGER_RIGHT) == 0) return;
+            // 操作する手が視界外の場合は発動を抑制 (#24)
+            if (!IsHandInView(isLeft ? HandType.LEFT : HandType.RIGHT, local)) return;
 
             float now = Time.time;
             float prev = isLeft ? _vrLeftLastPressTime : _vrRightLastPressTime;
@@ -918,6 +928,19 @@ namespace PasocomMate.AunCast
 
             _vrHoldConsumed = true;
             TriggerSummonByGesture(local);
+        }
+
+        /// <summary>指定した手がヘッドの前方半球内にあるか判定する。視界外ジェスチャー抑制 (#24) に使用。</summary>
+        private bool IsHandInView(HandType hand, VRCPlayerApi local)
+        {
+            VRCPlayerApi.TrackingData head = local.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
+            VRCPlayerApi.TrackingData handData = local.GetTrackingData(
+                hand == HandType.LEFT
+                    ? VRCPlayerApi.TrackingDataType.LeftHand
+                    : VRCPlayerApi.TrackingDataType.RightHand);
+            Vector3 toHand = handData.position - head.position;
+            if (toHand.sqrMagnitude < 0.0001f) return true;
+            return Vector3.Dot(head.rotation * Vector3.forward, toHand.normalized) > 0f;
         }
 
         /// <summary>ジェスチャー検知時の共通処理。非表示なら開き、表示中はビュー切替または閉じる。</summary>

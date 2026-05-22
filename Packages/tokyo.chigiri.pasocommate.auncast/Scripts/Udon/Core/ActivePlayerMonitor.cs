@@ -40,7 +40,7 @@ namespace PasocomMate.AunCast
 
         [Header("Drift")]
         [Tooltip("蓄積ドリフトがこの値（秒）を超えたら自動 Resync")]
-        [SerializeField] private float driftResyncThresholdSec = 0.1f;
+        [SerializeField] private float driftResyncThresholdSec = 0.3f;
 
         [Tooltip("ドリフト EMA の時定数（秒）。大きいほど緩やかに追従する")]
         [SerializeField] private float driftSmoothingTimeConstant = 1.5f;
