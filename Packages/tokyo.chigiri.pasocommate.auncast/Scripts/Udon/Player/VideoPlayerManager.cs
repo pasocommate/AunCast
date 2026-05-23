@@ -30,12 +30,7 @@ namespace PasocomMate.AunCast
         /// <summary>このプレイヤーに紐づく全 AudioSource。音量・クロスフェードの反映対象。</summary>
         public AudioSource[] audioSources;
 
-        [Header("Debug")]
-        [Tooltip("VideoPlayerManager の詳細ログを出力する")]
-        public bool verboseLogging = true;
-
         private Material avproFetchMaterial;
-        private Texture _lastLoggedTexture;
         private float _lastNullTextureWarnAt;
 
         /// <summary>AudioSource ごとの初期音量。UI 音量・クロスフェードの最終出力に乗算して使う。</summary>
@@ -52,7 +47,6 @@ namespace PasocomMate.AunCast
 
             CacheAudioSourceBaseVolumes();
             EnsureFetchMaterial();
-            LogVerbose($"Initialized (playerIndex={playerIndex}, avPro={(avProPlayer != null)}, renderer={(avProTextureRenderer != null)})");
 
             _initialized = true;
         }
@@ -64,7 +58,6 @@ namespace PasocomMate.AunCast
         public override void OnVideoEnd()
         {
             if (receiver == null) return;
-            LogVerbose("OnVideoEnd");
             receiver._lastCallbackPlayerIndex = playerIndex;
             receiver.OnManagerVideoEnd();
         }
@@ -81,7 +74,6 @@ namespace PasocomMate.AunCast
         public override void OnVideoLoop()
         {
             if (receiver == null) return;
-            LogVerbose("OnVideoLoop");
             receiver._lastCallbackPlayerIndex = playerIndex;
             receiver.OnManagerVideoLoop();
         }
@@ -89,7 +81,6 @@ namespace PasocomMate.AunCast
         public override void OnVideoReady()
         {
             if (receiver == null) return;
-            LogVerbose("OnVideoReady");
             receiver._lastCallbackPlayerIndex = playerIndex;
             receiver.OnManagerVideoReady();
         }
@@ -97,7 +88,6 @@ namespace PasocomMate.AunCast
         public override void OnVideoStart()
         {
             if (receiver == null) return;
-            LogVerbose("OnVideoStart");
             receiver._lastCallbackPlayerIndex = playerIndex;
             receiver.OnManagerVideoStart();
         }
@@ -109,19 +99,16 @@ namespace PasocomMate.AunCast
         public void Play()
         {
             avProPlayer.Play();
-            LogVerbose("Play");
         }
 
         public void Pause()
         {
             avProPlayer.Pause();
-            LogVerbose("Pause");
         }
 
         public void Stop()
         {
             avProPlayer.Stop();
-            LogVerbose("Stop");
         }
 
         public float GetTime() => avProPlayer.GetTime();
@@ -129,7 +116,6 @@ namespace PasocomMate.AunCast
         public void LoadURL(VRCUrl url)
         {
             avProPlayer.LoadURL(url);
-            LogVerbose($"LoadURL: {(url != null ? url.Get() : "null")}");
         }
 
         /// <summary>
@@ -144,14 +130,14 @@ namespace PasocomMate.AunCast
 
             Material mat = EnsureFetchMaterial();
             tex = GetTextureByKnownParams(mat);
-            if (tex != null) return ReportTexture(tex, "material");
+            if (tex != null) return tex;
 
             if (avProTextureRenderer == null)
                 return null;
 
             mat = avProTextureRenderer.sharedMaterial;
             tex = GetTextureByKnownParams(mat);
-            if (tex != null) return ReportTexture(tex, "sharedMaterial");
+            if (tex != null) return tex;
 
             Material[] mats = avProTextureRenderer.materials;
             if (mats != null && mats.Length > 0)
@@ -160,7 +146,7 @@ namespace PasocomMate.AunCast
                 if (tex != null)
                 {
                     avproFetchMaterial = mats[0];
-                    return ReportTexture(tex, "materials[0]");
+                    return tex;
                 }
             }
 
@@ -171,7 +157,7 @@ namespace PasocomMate.AunCast
                 if (tex != null)
                 {
                     avproFetchMaterial = sharedMats[0];
-                    return ReportTexture(tex, "sharedMaterials[0]");
+                    return tex;
                 }
             }
 
@@ -316,22 +302,6 @@ namespace PasocomMate.AunCast
             }
 
             return null;
-        }
-
-        private Texture ReportTexture(Texture texture, string source)
-        {
-            if (texture != _lastLoggedTexture)
-            {
-                _lastLoggedTexture = texture;
-                LogVerbose($"Video texture updated via {source}: {texture.name}");
-            }
-            return texture;
-        }
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            Debug.Log($"[AunCast/VideoPlayerManager[{playerIndex}]] {message}", this);
         }
 
         private void LogWarning(string message)

@@ -11,10 +11,6 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class VideoUiScreen : UdonSharpBehaviour
     {
-        [Header("Debug")]
-        [Tooltip("VideoUiScreen の詳細ログを出力する")]
-        public bool verboseLogging = true;
-
         /// <summary>同一 GameObject 上の RawImage をキャッシュ。</summary>
         private RawImage rawImage;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
@@ -37,7 +33,6 @@ namespace PasocomMate.AunCast
                         _uiContainerSize = parentRt.rect.size;
                 }
             }
-            LogVerbose($"Initialized (rawImage={(rawImage != null)}, containerSize={_uiContainerSize})");
         }
 
         /// <summary>テクスチャを RawImage に適用しアスペクト比フィットさせる。変化がなければスキップ。</summary>
@@ -68,7 +63,6 @@ namespace PasocomMate.AunCast
             }
 
             lastRenderTexture = renderTexture;
-            LogVerbose($"Texture updated: {(renderTexture != null ? renderTexture.name : "null")}");
         }
 
         /// <summary>映像のアスペクト比を保ちつつ、コンテナ内に収まるよう RawImage サイズを調整する。</summary>
@@ -81,12 +75,6 @@ namespace PasocomMate.AunCast
                 rt.sizeDelta = new Vector2(_uiContainerSize.x, _uiContainerSize.x / texAspect);
             else
                 rt.sizeDelta = new Vector2(_uiContainerSize.y * texAspect, _uiContainerSize.y);
-        }
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            Debug.Log($"[AunCast/VideoUiScreen] {message}", this);
         }
 
         private void LogWarning(string message)

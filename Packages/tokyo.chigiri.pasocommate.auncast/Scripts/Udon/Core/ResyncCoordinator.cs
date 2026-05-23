@@ -682,6 +682,12 @@ namespace PasocomMate.AunCast
             Debug.LogWarning($"[AunCast/ResyncCoordinator] {message}", this);
         }
 
+        /// <summary>タイムラインログをローカルのみ設定する。</summary>
+        public void SetTimelineLoggingLocal(bool value)
+        {
+            _timelineLogging = value;
+        }
+
         private void TL(string eventAndData)
         {
             Debug.Log($"[AunCast:TL] st={Networking.GetServerTimeInMilliseconds()} c=RC {eventAndData}");

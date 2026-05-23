@@ -51,10 +51,6 @@ namespace PasocomMate.AunCast
         [Tooltip("再試行の最大待機時間（秒）")]
         [SerializeField] private float maxRetryCooldownSec = 120.0f;
 
-        [Header("Debug")]
-        [Tooltip("要所ログを詳細出力する")]
-        [SerializeField] private bool verboseLogging = true;
-
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
@@ -108,7 +104,6 @@ namespace PasocomMate.AunCast
             if (_mySlotIndex >= 0)
             {
                 if (_timelineLogging) TL($"a=SLOT_ASSIGNED slot={_mySlotIndex}");
-                LogVerbose($"Assigned local slot: {_mySlotIndex}");
                 return true;
             }
 
@@ -254,7 +249,6 @@ namespace PasocomMate.AunCast
             if (_mySlotIndex >= 0 && coordinator != null)
             {
                 int coordState = coordinator.GetResyncState(_mySlotIndex);
-                LogVerbose($"CancelResync: slot={_mySlotIndex}, coordState={coordState}");
                 if (coordState != ResyncCoordinator.STATE_NONE)
                 {
                     coordinator.SendCustomNetworkEvent(
@@ -311,7 +305,6 @@ namespace PasocomMate.AunCast
             coordinator.SendCustomNetworkEvent(
                 NetworkEventTarget.Owner, "OnResyncRequest", _mySlotIndex);
             if (_timelineLogging) TL($"a=RESYNC_RETRY slot={_mySlotIndex}");
-            LogVerbose("Resync request re-sent (event lost fallback)");
         }
 
         // =================================================================
@@ -378,6 +371,12 @@ namespace PasocomMate.AunCast
         /// <summary>Coordinator 参照（外部からの状態確認用）。</summary>
         public ResyncCoordinator GetCoordinator() { return coordinator; }
 
+        /// <summary>タイムラインログをローカルのみ設定する。</summary>
+        public void SetTimelineLoggingLocal(bool value)
+        {
+            _timelineLogging = value;
+        }
+
         // =================================================================
         //  ログ
         // =================================================================
@@ -385,12 +384,6 @@ namespace PasocomMate.AunCast
         private void LogMessage(string message)
         {
             Debug.Log($"[AunCast/ResyncClient] {message}", this);
-        }
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            LogMessage(message);
         }
 
         private void LogWarning(string message)

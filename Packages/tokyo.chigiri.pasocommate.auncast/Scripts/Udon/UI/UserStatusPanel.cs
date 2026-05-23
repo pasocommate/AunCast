@@ -1,6 +1,7 @@
 using TMPro;
 using UdonSharp;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using VRC.SDK3.Rendering;
 using VRC.SDKBase;
@@ -47,6 +48,17 @@ namespace PasocomMate.AunCast
 
         [Header("Auto Silence Resync")]
         [SerializeField] private Toggle autoSilenceResyncToggle;
+
+        [Header("Staff Controls")]
+        [Tooltip("スタッフビューに表示するタイムラインログ有効/無効トグル")]
+        [FormerlySerializedAs("verboseLoggingToggle")]
+        [SerializeField] private Toggle timelineLoggingToggle;
+
+        [Header("Staff Lock")]
+        [Tooltip("スタッフビュー誤操作防止ロックボタン（TopBar 上、SwitchButton 左に配置）")]
+        [SerializeField] private Button staffLockButton;
+        [Tooltip("ロックボタン内のアイコンラベル")]
+        [SerializeField] private TMP_Text staffLockButtonLabel;
 
         [Header("Buttons")]
         [SerializeField] private Button resyncButton;
@@ -175,6 +187,14 @@ namespace PasocomMate.AunCast
         private float _lastVolumeSliderValue;
         private bool _autoSilenceToggleInitialized;
         private bool _lastAutoSilenceToggleState;
+        private bool _timelineLoggingToggleInitialized;
+        private bool _lastTimelineLoggingToggleState;
+        // スタッフビュー誤操作防止ロック (#16)
+        private bool _staffLocked = true;
+        private bool _inStaffView;
+        // ロック状態アイコン（Material Symbols: lock=\uE899, lock_open=\uE898）
+        private const string ICON_LOCK = "\uE899";
+        private const string ICON_LOCK_OPEN = "\uE898";
         private Canvas _canvas;
         private Collider _collider;
         private bool _vrLeftUsePressed;
@@ -367,6 +387,11 @@ namespace PasocomMate.AunCast
 
             if (!menuVisible) return;
 
+            if (_crossfadeTarget >= 0.5f)
+            {
+                PollTimelineLoggingToggle();
+            }
+
             if (_crossfadeTarget < 0.5f)
             {
                 PollVolumeSlider();
@@ -421,6 +446,12 @@ namespace PasocomMate.AunCast
             bool viewerActive = _crossfadeCurrent <= 0.01f;
             bool staffActive = _crossfadeCurrent >= 0.99f;
 
+            // スタッフビューに入った瞬間にロックをリセット (#16)
+            bool wasInStaffView = _inStaffView;
+            _inStaffView = staffActive;
+            if (_inStaffView && !wasInStaffView)
+                _staffLocked = true;
+
             if (userContentCanvasGroup != null)
             {
                 userContentCanvasGroup.alpha = viewerAlpha;
@@ -430,9 +461,8 @@ namespace PasocomMate.AunCast
             if (staffContentCanvasGroup != null)
             {
                 staffContentCanvasGroup.alpha = staffAlpha;
-                staffContentCanvasGroup.interactable = staffActive;
-                staffContentCanvasGroup.blocksRaycasts = staffActive;
             }
+            ApplyStaffLock(staffActive);
 
             if (backgroundImage != null)
                 backgroundImage.color = Color.Lerp(userBackgroundColor, staffBackgroundColor, _crossfadeCurrent);
@@ -1221,7 +1251,7 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
-        //  ローカル設定 UI (Volume / Auto Silence Resync)
+        //  ローカル設定 UI (Volume / Auto Silence Resync / Timeline Logging)
         // =================================================================
 
         private void SyncLocalSettingsUI()
@@ -1240,6 +1270,14 @@ namespace PasocomMate.AunCast
                 autoSilenceResyncToggle.isOn = enabled;
                 _lastAutoSilenceToggleState = enabled;
                 _autoSilenceToggleInitialized = true;
+            }
+
+            if (timelineLoggingToggle != null && controller != null)
+            {
+                bool enabled = controller.GetTimelineLogging();
+                timelineLoggingToggle.isOn = enabled;
+                _lastTimelineLoggingToggleState = enabled;
+                _timelineLoggingToggleInitialized = true;
             }
         }
 
@@ -1285,6 +1323,62 @@ namespace PasocomMate.AunCast
 
             if (autoSilenceResyncToggle.isOn != _lastAutoSilenceToggleState)
                 OnAutoSilenceResyncToggleChanged();
+        }
+
+        public void OnTimelineLoggingToggleChanged()
+        {
+            if (timelineLoggingToggle == null) return;
+
+            bool enabled = timelineLoggingToggle.isOn;
+            if (controller != null)
+                controller.SetTimelineLoggingLocal(enabled);
+            if (coordinator != null)
+                coordinator.SetTimelineLoggingLocal(enabled);
+
+            _lastTimelineLoggingToggleState = enabled;
+            _timelineLoggingToggleInitialized = true;
+        }
+
+        private void PollTimelineLoggingToggle()
+        {
+            if (timelineLoggingToggle == null) return;
+            if (!_timelineLoggingToggleInitialized)
+            {
+                _lastTimelineLoggingToggleState = timelineLoggingToggle.isOn;
+                _timelineLoggingToggleInitialized = true;
+                return;
+            }
+
+            if (timelineLoggingToggle.isOn != _lastTimelineLoggingToggleState)
+                OnTimelineLoggingToggleChanged();
+        }
+
+        /// <summary>スタッフロックボタンが押された。ロック状態をトグルして表示を更新する。</summary>
+        public void OnStaffLockButtonPress()
+        {
+            _staffLocked = !_staffLocked;
+            ApplyStaffLock();
+        }
+
+        private void ApplyStaffLock()
+        {
+            ApplyStaffLock(_crossfadeCurrent >= 0.99f);
+        }
+
+        private void ApplyStaffLock(bool staffActive)
+        {
+            if (staffContentCanvasGroup != null)
+            {
+                staffContentCanvasGroup.interactable = staffActive && !_staffLocked;
+                staffContentCanvasGroup.blocksRaycasts = staffActive && !_staffLocked;
+            }
+            if (staffLockButton != null)
+            {
+                staffLockButton.gameObject.SetActive(staffActive);
+                staffLockButton.interactable = staffActive;
+            }
+            if (staffLockButtonLabel != null)
+                staffLockButtonLabel.text = _staffLocked ? ICON_LOCK : ICON_LOCK_OPEN;
         }
 
         /// <summary>個人 Resync リクエスト (FR-16)。</summary>

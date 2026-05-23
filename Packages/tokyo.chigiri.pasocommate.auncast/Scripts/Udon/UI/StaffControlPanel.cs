@@ -99,6 +99,7 @@ namespace PasocomMate.AunCast
         private const int HELP_AUTO_RESYNC = 17;
         private const int HELP_CLOSE_BUTTON = 18;
         private const int HELP_SWITCH_VIEW = 19;
+        private const int HELP_TIMELINE_LOGGING = 20;
 
         private int _activeHelpKey = HELP_NONE;
         private bool _isJapanese;
@@ -148,6 +149,7 @@ namespace PasocomMate.AunCast
                 "Automatically resync when playback delay or silence is detected",
                 "Close this panel",
                 "Switch between local controls and staff controls",
+                "Output structured timeline logs for playback and resync diagnosis",
             };
             _helpTextsJa = new[]
             {
@@ -171,6 +173,7 @@ namespace PasocomMate.AunCast
                 "再生遅延や無音を検出した際に自動でResyncします",
                 "パネルを閉じます",
                 "ローカル操作パネルとスタッフ操作パネルを切り替えます",
+                "再生・Resync診断用の構造化タイムラインログを出力します",
             };
 
             string lang = VRCPlayerApi.GetCurrentLanguage();
@@ -792,6 +795,7 @@ namespace PasocomMate.AunCast
         public void OnHoverAutoResync() { SetHelpText(HELP_AUTO_RESYNC); }
         public void OnHoverCloseButton() { SetHelpText(HELP_CLOSE_BUTTON); }
         public void OnHoverSwitchView() { SetHelpText(HELP_SWITCH_VIEW); }
+        public void OnHoverTimelineLogging() { SetHelpText(HELP_TIMELINE_LOGGING); }
         public void OnHoverClear() { SetHelpText(HELP_NONE); }
 
     }

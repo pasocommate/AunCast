@@ -19,10 +19,6 @@ namespace PasocomMate.AunCast
         /// <summary>マルチマテリアルのレンダラーで、どのスロットに適用するかを指定する。</summary>
         public int rendererIndex = 0;
 
-        [Header("Debug")]
-        [Tooltip("VideoMeshScreen の詳細ログを出力する")]
-        public bool verboseLogging = true;
-
         /// <summary>同一 GameObject 上のレンダラーをキャッシュ。</summary>
         private Renderer targetRenderer;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
@@ -45,7 +41,6 @@ namespace PasocomMate.AunCast
         {
             targetRenderer = GetComponent<Renderer>();
             CacheRestoreStateIfNeeded(GetTargetMaterial());
-            LogVerbose($"Initialized (renderer={(targetRenderer != null)}, texParam={texParam}, index={rendererIndex})");
         }
 
         private void OnDisable()
@@ -95,7 +90,6 @@ namespace PasocomMate.AunCast
             }
 
             lastRenderTexture = renderTexture;
-            LogVerbose($"Texture updated: {(renderTexture != null ? renderTexture.name : "null")}");
         }
 
         private void EnsureRenderer()
@@ -195,12 +189,6 @@ namespace PasocomMate.AunCast
                 return;
             }
             mat.SetTexture(param, texture);
-        }
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            Debug.Log($"[AunCast/VideoMeshScreen] {message}", this);
         }
 
         private void LogWarning(string message)

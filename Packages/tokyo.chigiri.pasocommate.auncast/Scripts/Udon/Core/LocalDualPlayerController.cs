@@ -59,10 +59,6 @@ namespace PasocomMate.AunCast
         [Tooltip("デフォルト音量（x^2 と Dr. Lex 指数カーブの lerp。0.6 で約 -13dB）")]
         [SerializeField] private float defaultVolume = 0.6f;
 
-        [Header("Debug")]
-        [Tooltip("要所ログを詳細出力する")]
-        [SerializeField] private bool verboseLogging = true;
-
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
@@ -199,7 +195,6 @@ namespace PasocomMate.AunCast
         {
             if (!_waitForSync || !_ownerPlaying) return;
 
-            LogVerbose("Owner sync arrived; resuming active playback");
             switcher.GetActiveManager().Play();
             _waitForSync = false;
             _localState = STATE_ACTIVE_PLAYING;
@@ -324,7 +319,6 @@ namespace PasocomMate.AunCast
                 case STATE_COOLDOWN:
                     if (now >= resyncClient.GetLocalCooldownUntil())
                     {
-                        LogVerbose("Cooldown complete -> ActivePlaying");
                         _localState = STATE_ACTIVE_PLAYING;
                         resyncClient.SetConsecutiveFailCount(0);
                         activeMonitor.BindRoles(switcher.GetActiveIsA());
@@ -405,7 +399,6 @@ namespace PasocomMate.AunCast
             _lastReportedPlaybackActive = isPlaying;
             _hasReportedPlaybackActive = true;
             _lastPlaybackReportAt = now;
-            LogVerbose($"ReportPlaybackActive slot={slotIndex} active={isPlaying}");
         }
 
         private void ReportConnecting(bool isConnecting)
@@ -607,7 +600,6 @@ namespace PasocomMate.AunCast
         public void OnManagerVideoReady()
         {
             bool isActiveEvent = IsActiveEvent();
-            LogVerbose($"OnVideoReady received (activeEvent={isActiveEvent}, callbackIndex={_lastCallbackPlayerIndex})");
             _tlAction = "VIDEO_READY";
 
             if (isActiveEvent)
@@ -626,7 +618,6 @@ namespace PasocomMate.AunCast
                 if (_localState == STATE_STANDBY_CONNECTING)
                 {
                     _standbyReady = true;
-                    LogVerbose("Standby ready -> Play standby");
                     switcher.GetStandbyManager().Play();
                 }
             }
@@ -636,7 +627,6 @@ namespace PasocomMate.AunCast
         public void OnManagerVideoStart()
         {
             bool isActiveEvent = IsActiveEvent();
-            LogVerbose($"OnVideoStart received (activeEvent={isActiveEvent}, callbackIndex={_lastCallbackPlayerIndex})");
             _tlAction = "VIDEO_START";
 
             if (isActiveEvent)
@@ -679,7 +669,6 @@ namespace PasocomMate.AunCast
                 }
                 else if (!_ownerPlaying)
                 {
-                    LogVerbose("OnVideoStart while owner not playing; pausing and waiting sync");
                     switcher.GetActiveManager().Pause();
                     _waitForSync = true;
                 }
@@ -702,7 +691,6 @@ namespace PasocomMate.AunCast
                 if (_localState == STATE_STANDBY_CONNECTING)
                 {
                     _standbyPlayStarted = true;
-                    LogVerbose("Standby play started");
                 }
             }
         }
@@ -967,6 +955,20 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public bool GetAutoSilenceResyncEnabled() { return _autoSilenceResyncEnabled; }
 
+        /// <summary>タイムラインログの現在値を返す。ローカル設定 UI 用。</summary>
+        [PublicAPI]
+        public bool GetTimelineLogging() { return _timelineLogging; }
+
+        /// <summary>タイムラインログをローカルのみ設定する。</summary>
+        [PublicAPI]
+        public void SetTimelineLoggingLocal(bool value)
+        {
+            _timelineLogging = value;
+            if (switcher != null) switcher.SetTimelineLoggingLocal(value);
+            if (activeMonitor != null) activeMonitor.SetTimelineLoggingLocal(value);
+            if (resyncClient != null) resyncClient.SetTimelineLoggingLocal(value);
+        }
+
         // =================================================================
         //  ヘルパー
         // =================================================================
@@ -1118,12 +1120,6 @@ namespace PasocomMate.AunCast
         private void LogMessage(string message)
         {
             Debug.Log($"[AunCast/DualPlayer] {message}", this);
-        }
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            LogMessage(message);
         }
 
         private void LogWarning(string message)

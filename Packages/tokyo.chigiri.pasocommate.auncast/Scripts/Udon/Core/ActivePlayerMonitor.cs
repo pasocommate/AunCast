@@ -48,10 +48,6 @@ namespace PasocomMate.AunCast
         [Tooltip("安定再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
         [SerializeField] private float driftWarmupSec = 5.0f;
 
-        [Header("Debug")]
-        [Tooltip("要所ログを詳細出力する")]
-        [SerializeField] private bool verboseLogging = true;
-
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
@@ -132,7 +128,6 @@ namespace PasocomMate.AunCast
             _driftWarmupUntil = 0f;
             _baseWallTime = 0f;
             _basePlayerTime = 0f;
-            LogVerbose($"Monitoring initialized (activeTime={_lastActiveTime:F3})");
             if (_timelineLogging) TL($"a=INIT_ACTIVE");
         }
 
@@ -433,19 +428,10 @@ namespace PasocomMate.AunCast
             return _activeIsA ? playerManagerB : playerManagerA;
         }
 
-        // =================================================================
-        //  ログ
-        // =================================================================
-
-        private void LogMessage(string message)
+        /// <summary>タイムラインログをローカルのみ設定する。</summary>
+        public void SetTimelineLoggingLocal(bool value)
         {
-            Debug.Log($"[AunCast/ActivePlayerMonitor] {message}", this);
-        }
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            LogMessage(message);
+            _timelineLogging = value;
         }
 
         private int _tlSnapshotCounter;

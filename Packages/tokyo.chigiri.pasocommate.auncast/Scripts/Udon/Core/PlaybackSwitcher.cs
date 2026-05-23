@@ -29,10 +29,6 @@ namespace PasocomMate.AunCast
         [Tooltip("クロスフェード時間（秒）")]
         [SerializeField] private float crossfadeDurationSec = 0.3f;
 
-        [Header("Debug")]
-        [Tooltip("要所ログを詳細出力する")]
-        [SerializeField] private bool verboseLogging = true;
-
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
@@ -143,7 +139,6 @@ namespace PasocomMate.AunCast
         {
             if (manager == null || manager.audioSources == null) return;
 
-            int disabledCount = 0;
             for (int i = 0; i < manager.audioSources.Length; i++)
             {
                 AudioSource source = manager.audioSources[i];
@@ -155,11 +150,7 @@ namespace PasocomMate.AunCast
                 if (!detector.enabled) continue;
 
                 detector.enabled = false;
-                disabledCount++;
             }
-
-            if (disabledCount > 0)
-                LogVerbose($"Disabled unused AudioSilenceDetector on Player{label}: {disabledCount}");
         }
 
         // =================================================================
@@ -325,7 +316,7 @@ namespace PasocomMate.AunCast
             }
 
             Texture tex = active.GetVideoTexture();
-            if (tex == null && verboseLogging)
+            if (tex == null)
             {
                 float now = Time.time;
                 if (now - _lastNullTextureWarnAt > 2.0f)
@@ -340,8 +331,6 @@ namespace PasocomMate.AunCast
             BroadcastVideoTexture(tex);
 
             _lastAssignedRenderTexture = tex;
-            if (verboseLogging)
-                LogVerbose($"Screen texture updated from active {(_activeIsA ? "A" : "B")}: {(tex != null ? tex.name : "null")}");
         }
 
         /// <summary>
@@ -356,8 +345,6 @@ namespace PasocomMate.AunCast
             BroadcastVideoTexture(tex);
 
             _lastAssignedRenderTexture = tex;
-            if (verboseLogging)
-                LogVerbose($"Screen texture force-updated from standby: {(tex != null ? tex.name : "null")}");
         }
 
         /// <summary>登録済みの全 MeshScreen / UiScreen にテクスチャを配信する。</summary>
@@ -379,6 +366,12 @@ namespace PasocomMate.AunCast
                     if (s != null) s.UpdateVideoTexture(tex);
                 }
             }
+        }
+
+        /// <summary>タイムラインログをローカルのみ設定する。</summary>
+        public void SetTimelineLoggingLocal(bool value)
+        {
+            _timelineLogging = value;
         }
 
         // =================================================================
@@ -425,7 +418,6 @@ namespace PasocomMate.AunCast
 
             if (audioLinkBehaviour == null)
             {
-                LogVerbose("SwitchAudioLinkSource skipped: audioLinkBehaviour is null");
                 return;
             }
             AudioSilenceDetector activeDetector = GetActiveSilenceDetector();
@@ -439,7 +431,6 @@ namespace PasocomMate.AunCast
             if (source != null)
             {
                 audioLinkBehaviour.SetProgramVariable("audioSource", source);
-                LogVerbose($"AudioLink source switched: {source.name}");
             }
             else
             {
@@ -455,13 +446,6 @@ namespace PasocomMate.AunCast
         private void LogMessage(string message)
         {
             Debug.Log($"[AunCast/Switcher] {message}", this);
-        }
-
-        /// <summary>詳細モード時のみ出力されるログ。</summary>
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging) return;
-            LogMessage(message);
         }
 
         /// <summary>警告レベルのログ出力。</summary>
