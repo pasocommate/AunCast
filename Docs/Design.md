@@ -279,7 +279,7 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 
 責務:
 - ローカル状態機械 (`_localState`) の管理と TickStateMachine
-- URL の同期・適用 (`_syncedURL`, `_syncedVideoIdx`, `_ownerPlaying`)
+- URL の同期・適用 (`_syncedURL`, `_syncedUrlSubmitterName`, `_syncedVideoIdx`, `_ownerPlaying`)
 - ローカル音量 (`_localVolume`) と無音自動 Resync フラグ (`_autoSilenceResyncEnabled`) の保持
 - 無音検知ポーリング (`PollSilenceDetection`): 全 audible プレイヤーの RMS を確認し、連続無音で個人 Resync 発行
 - サブコンポーネント (`ActivePlayerMonitor`, `PlaybackSwitcher`, `ResyncCoordinatorClient`, `PlaybackMonitor`) への委譲・調停
@@ -921,6 +921,7 @@ Cooldown はクライアントローカルで管理する（Coordinator のス�
 ```csharp
 // --- 同期変数（Manual sync, Owner 書き込み） ---
 [UdonSynced] private VRCUrl _syncedURL;
+[UdonSynced] private string _syncedUrlSubmitterName;  // URL を送信したプレイヤー名
 [UdonSynced] private int _syncedVideoIdx;
 [UdonSynced] private bool _ownerPlaying;
 

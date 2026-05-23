@@ -199,6 +199,29 @@ namespace PasocomMate.AunCast
         /// <summary>現在のクロスフェードゲインを返す。</summary>
         public float GetFadeGain() => _fadeGain;
 
+        /// <summary>音量カーブとクロスフェードを反映した出力ゲインを返す。</summary>
+        public float GetCurrentOutputGain()
+        {
+            return GetAdjustedVolume(_currentVolume) * _fadeGain;
+        }
+
+        /// <summary>指定 AudioSource に実際に適用される出力ゲインを返す。</summary>
+        public float GetAppliedOutputGain(AudioSource target)
+        {
+            float baseVolume = 1f;
+            if (target != null && audioSources != null)
+            {
+                for (int i = 0; i < audioSources.Length; i++)
+                {
+                    if (audioSources[i] != target) continue;
+                    if (_audioSourceBaseVolumes != null && i < _audioSourceBaseVolumes.Length)
+                        baseVolume = _audioSourceBaseVolumes[i];
+                    break;
+                }
+            }
+            return Mathf.Clamp01(baseVolume * GetCurrentOutputGain());
+        }
+
         /// <summary>
         /// volume と fadeGain を合成して全 AudioSource に適用する。
         /// 知覚リニアな音量変化のため、x^2 と指数カーブのブレンドを使用する。
@@ -207,14 +230,7 @@ namespace PasocomMate.AunCast
         {
             if (audioSources == null) return;
 
-            // 左側は x^2 ベース、右側は Dr. Lex 指数カーブ (50dB レンジ) を補間係数 x で lerp。
-            // これで指数カーブ単体だと発生する左半分の「死にゾーン」を避けつつ、
-            // 右端付近は知覚的にリニアな音量上昇を維持する。
-            // 指数カーブの参考: https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal
-            float x = _currentVolume;
-            float expCurve = Mathf.Clamp01(3.1623e-3f * Mathf.Exp(x * 5.757f) - 3.1623e-3f);
-            float adjustedVolume = (1f - x) * x * x + x * expCurve;
-            float output = adjustedVolume * _fadeGain;
+            float output = GetCurrentOutputGain();
 
             for (int i = 0; i < audioSources.Length; i++)
             {
@@ -226,6 +242,17 @@ namespace PasocomMate.AunCast
 
                 audioSource.volume = Mathf.Clamp01(baseVolume * output);
             }
+        }
+
+        private float GetAdjustedVolume(float volume)
+        {
+            // 左側は x^2 ベース、右側は Dr. Lex 指数カーブ (50dB レンジ) を補間係数 x で lerp。
+            // これで指数カーブ単体だと発生する左半分の「死にゾーン」を避けつつ、
+            // 右端付近は知覚的にリニアな音量上昇を維持する。
+            // 指数カーブの参考: https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal
+            float x = Mathf.Clamp01(volume);
+            float expCurve = Mathf.Clamp01(3.1623e-3f * Mathf.Exp(x * 5.757f) - 3.1623e-3f);
+            return (1f - x) * x * x + x * expCurve;
         }
 
         private void CacheAudioSourceBaseVolumes()

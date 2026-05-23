@@ -133,7 +133,7 @@ namespace PasocomMate.AunCast
                 "Re-sync all players (no silent gap)",
                 "Reboot all players (emergency, causes silent gap; use when Resync fails)",
                 "Enter the next stream URL",
-                "Start playback of the entered URL for all",
+                "Swap Playing URL with Next URL and start playback",
                 "Max simultaneous resyncs. Limits burst connections to the streaming server to reduce load",
                 "Max simultaneous connections to the streaming server (0: unlimited)",
                 "Currently playing stream URL",
@@ -157,7 +157,7 @@ namespace PasocomMate.AunCast
                 "全ユーザーのストリームを再同期します（無音区間が発生しません）",
                 "全ユーザーのストリームをリブートします（無音区間が発生します／Resyncで解決しない場合の緊急用）",
                 "次に再生するストリームURLを入力します",
-                "入力したURLの再生を全ユーザーに対して開始します",
+                "Playing URL と Next URL を入れ替えて再生を開始します",
                 "同時Resync数の上限。配信サーバへの連続的な新規接続を制限し、負荷を軽減します",
                 "配信サーバへの同時接続数の上限（0: 無制限）",
                 "現在再生中のストリームURL",
@@ -230,7 +230,7 @@ namespace PasocomMate.AunCast
         /// <summary>統合パネル側が切替ボタンの可視判定などに使う。ローカル解錠状態を返す。</summary>
         public bool IsLocallyUnlocked() { return _passcodeUnlocked; }
 
-        /// <summary>Next URL 欄の URL を昇格させて再生を開始する。</summary>
+        /// <summary>Next URL を再生し、再生前の URL を Next URL 欄へ戻す。</summary>
         public void OnPromoteNextUrl()
         {
             if (!IsStaff())
@@ -247,8 +247,10 @@ namespace PasocomMate.AunCast
             if (schemeIndex < 1 || schemeIndex > 8 || parsedUrlText.Length > 4096)
                 return;
 
+            VRCUrl previousUrl = controller.GetCurrentURL();
+            string previousUrlText = previousUrl != null ? previousUrl.Get() : "";
             controller.PlayVideoAsStaff(parsedUrl);
-            nextUrlField.SetUrl(VRCUrl.Empty);
+            nextUrlField.SetUrl(string.IsNullOrEmpty(previousUrlText) ? VRCUrl.Empty : previousUrl);
         }
 
         /// <summary>全ユーザーの再生を即座に停止する。</summary>
@@ -507,7 +509,21 @@ namespace PasocomMate.AunCast
             if (nowPlayingText == null || controller == null) return;
             VRCUrl current = controller.GetCurrentURL();
             string url = current != null ? current.Get() : null;
-            nowPlayingText.text = string.IsNullOrEmpty(url) ? "No stream" : url;
+            if (string.IsNullOrEmpty(url))
+            {
+                nowPlayingText.text = "No stream";
+                return;
+            }
+            string submitter = controller.GetUrlSubmitterName();
+            nowPlayingText.text = string.IsNullOrEmpty(submitter)
+                ? url
+                : $"{url}\n<size=14>by {EscapeRichText(submitter)}</size>";
+        }
+
+        private string EscapeRichText(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return value.Replace("<", "＜").Replace(">", "＞");
         }
 
         private void UpdateMonitoringDisplay()
