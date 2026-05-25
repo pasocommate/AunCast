@@ -90,6 +90,12 @@ namespace PasocomMate.AunCast
                 Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on player left (playerId={player.playerId})", this);
         }
 
+        public override void OnOwnershipTransferred(VRCPlayerApi player)
+        {
+            if (CleanupStaleSlots() && debugLoggingEnabled)
+                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on ownership transferred", this);
+        }
+
         /// <summary>
         /// 参加時のフォールバック掃除。OnPlayerLeft のシリアライズがロストして残った
         /// 過去のビットを、新規プレイヤーの参加時にまとめて回収する。
