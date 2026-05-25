@@ -1359,6 +1359,26 @@ namespace PasocomMate.AunCast.Internal
 
         // ── UI / 操作 ──
 
+        private void DrawStaffNamesField(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        {
+            EditorGUI.BeginChangeCheck();
+            var sp = serializedObject.FindProperty("staffAllowedUserNames");
+            if (sp != null)
+                EditorGUILayout.PropertyField(sp,
+                    new GUIContent("スタッフ許可ユーザー名", "パスコードなしでスタッフ権限を付与する VRChat ユーザー名リスト。"),
+                    true);
+            if (!EditorGUI.EndChangeCheck()) return;
+            serializedObject.ApplyModifiedProperties();
+            ApplyStaffNamesToScene(root, settings);
+        }
+
+        private static void ApplyStaffNamesToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        {
+            var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
+            ApplyToUdonComponents(staffPanels, so =>
+                SetStringArrayProperty(so, "allowedUserNames", settings.staffAllowedUserNames));
+        }
+
         private void DrawUiSettings(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             EditorGUILayout.LabelField("UI / 操作", EditorStyles.boldLabel);
@@ -1400,7 +1420,11 @@ namespace PasocomMate.AunCast.Internal
                 settings.wallUnlockPasscode);
             newUnlockPasscode = NormalizeWallUnlockPasscode(newUnlockPasscode);
 
-            if (!EditorGUI.EndChangeCheck()) return;
+            if (!EditorGUI.EndChangeCheck())
+            {
+                DrawStaffNamesField(root, settings);
+                return;
+            }
 
             Undo.RecordObject(settings, "Change AunCast UI Settings");
             settings.instanceCapacity = newCapacity;
@@ -1416,6 +1440,7 @@ namespace PasocomMate.AunCast.Internal
             EditorUtility.SetDirty(settings);
 
             ApplyUiSettingsToScene(root, settings);
+            DrawStaffNamesField(root, settings);
         }
 
         // ── 再生監視 ──
@@ -1588,6 +1613,7 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(staffPanels, so =>
             {
                 SetIntProperty(so, "instanceCapacity", settings.instanceCapacity);
+                SetStringArrayProperty(so, "allowedUserNames", settings.staffAllowedUserNames);
             });
 
             var controllers = root.GetComponentsInChildren<LocalDualPlayerController>(true);
@@ -1715,6 +1741,16 @@ namespace PasocomMate.AunCast.Internal
             var prop = so.FindProperty(fieldName);
             if (prop != null)
                 prop.vector3Value = value;
+        }
+
+        private static void SetStringArrayProperty(SerializedObject so, string fieldName, string[] values)
+        {
+            var prop = so.FindProperty(fieldName);
+            if (prop == null || !prop.isArray) return;
+            int count = values != null ? values.Length : 0;
+            prop.arraySize = count;
+            for (int i = 0; i < count; i++)
+                prop.GetArrayElementAtIndex(i).stringValue = values[i] ?? string.Empty;
         }
 
         private static bool SetObjectArrayProperty<T>(SerializedObject so, string fieldName, T[] values)
