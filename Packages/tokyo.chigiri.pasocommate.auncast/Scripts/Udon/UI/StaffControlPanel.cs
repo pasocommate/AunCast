@@ -58,6 +58,9 @@ namespace PasocomMate.AunCast
 
         private float _globalEtaBase;
         private float _globalEtaCapturedAt;
+        private string _nowPlayingUrl;
+        private string _nowPlayingSubmitter;
+        private bool _nowPlayingHovered;
 
         [Header("Access Control")]
         [Tooltip("操作可能なユーザー名リスト（空の場合はパスコード解錠時のみ操作可能）")]
@@ -118,6 +121,7 @@ namespace PasocomMate.AunCast
 
         private void OnEnable()
         {
+            ResolveNowPlayingText();
             _indicatorMaxSlots = instanceCapacity;
             _indicatorHexColors = new[]
             {
@@ -136,7 +140,7 @@ namespace PasocomMate.AunCast
                 "Swap Playing URL with Next URL and start playback",
                 "Max simultaneous resyncs. Limits burst connections to the streaming server to reduce load",
                 "Max simultaneous connections to the streaming server (0: unlimited)",
-                "Currently playing stream URL",
+                "Currently playing stream URL. Hover to show who entered it",
                 "Connection status (■=playing □=stopped / white=ok blue=queued yellow=resyncing orange=connecting red=error)",
                 "Playing: streaming (+connecting) count / In Instance: current count / Capacity: max capacity",
                 "Adjust local playback volume",
@@ -160,7 +164,7 @@ namespace PasocomMate.AunCast
                 "Playing URL と Next URL を入れ替えて再生を開始します",
                 "同時Resync数の上限。配信サーバへの連続的な新規接続を制限し、負荷を軽減します",
                 "配信サーバへの同時接続数の上限（0: 無制限）",
-                "現在再生中のストリームURL",
+                "現在再生中のストリームURL。ホバー中はURL入力者名を表示します",
                 "接続状態（■=再生中 □=停止 / 白=正常 青=待機 黄=Resync中 橙=接続中 赤=エラー）",
                 "Playing: 再生中(+新規接続中)の人数 / In Instance: 現在の人数 / Capacity: 収容上限",
                 "ローカルの再生音量を調整します",
@@ -506,18 +510,63 @@ namespace PasocomMate.AunCast
 
         private void UpdateNowPlayingDisplay()
         {
-            if (nowPlayingText == null || controller == null) return;
+            if (controller == null) return;
             VRCUrl current = controller.GetCurrentURL();
             string url = current != null ? current.Get() : null;
             if (string.IsNullOrEmpty(url))
             {
-                nowPlayingText.text = "No stream";
+                _nowPlayingUrl = "";
+                _nowPlayingSubmitter = "";
+                ApplyNowPlayingDisplay();
                 return;
             }
             string submitter = controller.GetUrlSubmitterName();
-            nowPlayingText.text = string.IsNullOrEmpty(submitter)
-                ? url
-                : $"{url}\n<size=14>by {EscapeRichText(submitter)}</size>";
+            _nowPlayingUrl = url;
+            _nowPlayingSubmitter = submitter;
+            ApplyNowPlayingDisplay();
+        }
+
+        private void ApplyNowPlayingDisplay()
+        {
+            if (string.IsNullOrEmpty(_nowPlayingUrl))
+            {
+                if (nowPlayingText != null)
+                    nowPlayingText.text = "No stream";
+                return;
+            }
+
+            if (nowPlayingText == null) return;
+            if (_nowPlayingHovered && !string.IsNullOrEmpty(_nowPlayingSubmitter))
+                nowPlayingText.text = $"by {EscapeRichText(_nowPlayingSubmitter)}";
+            else
+                nowPlayingText.text = EscapeRichText(_nowPlayingUrl);
+        }
+
+        private void ResolveNowPlayingText()
+        {
+            TMP_Text legacySubmitterText = null;
+
+            TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
+            if (texts != null)
+            {
+                for (int i = 0; i < texts.Length; i++)
+                {
+                    TMP_Text text = texts[i];
+                    if (text == null) continue;
+                    string objectName = text.gameObject.name;
+                    if (objectName == "NowPlayingText" || objectName == "NowPlayingUrlText")
+                    {
+                        if (nowPlayingText == null)
+                            nowPlayingText = text;
+                    }
+                    else if (objectName == "NowPlayingSubmitterText")
+                    {
+                        legacySubmitterText = text;
+                    }
+                }
+            }
+            if (legacySubmitterText != null)
+                legacySubmitterText.text = "";
         }
 
         private string EscapeRichText(string value)
@@ -798,7 +847,12 @@ namespace PasocomMate.AunCast
         public void OnHoverPromoteButton() { SetHelpText(HELP_PROMOTE_BUTTON); }
         public void OnHoverConcurrentMax() { SetHelpText(HELP_CONCURRENT_MAX); }
         public void OnHoverConnectionMax() { SetHelpText(HELP_CONNECTION_MAX); }
-        public void OnHoverNowPlaying() { SetHelpText(HELP_NOW_PLAYING); }
+        public void OnHoverNowPlaying()
+        {
+            _nowPlayingHovered = true;
+            ApplyNowPlayingDisplay();
+            SetHelpText(HELP_NOW_PLAYING);
+        }
         public void OnHoverIndicator() { SetHelpText(HELP_INDICATOR); }
         public void OnHoverUserCount() { SetHelpText(HELP_USER_COUNT); }
         public void OnHoverVolume() { SetHelpText(HELP_VOLUME); }
@@ -812,7 +866,12 @@ namespace PasocomMate.AunCast
         public void OnHoverCloseButton() { SetHelpText(HELP_CLOSE_BUTTON); }
         public void OnHoverSwitchView() { SetHelpText(HELP_SWITCH_VIEW); }
         public void OnHoverTimelineLogging() { SetHelpText(HELP_TIMELINE_LOGGING); }
-        public void OnHoverClear() { SetHelpText(HELP_NONE); }
+        public void OnHoverClear()
+        {
+            _nowPlayingHovered = false;
+            ApplyNowPlayingDisplay();
+            SetHelpText(HELP_NONE);
+        }
 
     }
 }
