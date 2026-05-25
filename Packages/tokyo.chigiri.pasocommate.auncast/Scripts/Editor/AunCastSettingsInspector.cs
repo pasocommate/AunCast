@@ -140,6 +140,12 @@ namespace PasocomMate.AunCast.Internal
             return result;
         }
 
+        private static int ToggleBitFlag(int flags, int bit, string label)
+        {
+            bool on = EditorGUILayout.Toggle(label, (flags & bit) != 0);
+            return on ? flags | bit : flags & ~bit;
+        }
+
         private string TextField(string label, string fieldName, string tooltip, string value)
         {
             string result = EditorGUILayout.TextField(L(label, fieldName, tooltip), value ?? string.Empty);
@@ -1391,6 +1397,26 @@ namespace PasocomMate.AunCast.Internal
                 "各ユーザーの起動時ローカル再生デフォルト音量（0〜1）。",
                 settings.defaultVolume, 0f, 1f);
 
+            EditorGUILayout.LabelField(L("VR 呼び出しジェスチャー初期値", "defaultSummonGesture",
+                "VR モードで HUD を呼び出すジェスチャーの初期有効設定。"));
+            CopyFieldNameMenu("defaultSummonGesture");
+            int newSummonGesture = settings.defaultSummonGesture;
+            EditorGUI.indentLevel++;
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 2, "右スティック上ホールド");
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 1, "両手トリガー長押し");
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 4, "ダブルトリガー (L)");
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 8, "ダブルトリガー (R)");
+            EditorGUI.indentLevel--;
+
+            EditorGUILayout.LabelField(L("デスクトップ呼び出しジェスチャー初期値", "defaultDesktopSummonGesture",
+                "デスクトップモードで HUD を呼び出すジェスチャーの初期有効設定。"));
+            CopyFieldNameMenu("defaultDesktopSummonGesture");
+            int newDesktopSummonGesture = settings.defaultDesktopSummonGesture;
+            EditorGUI.indentLevel++;
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, "Tab ダブルタップ");
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, "F5 ダブルタップ");
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, "ESC 長押し");
+            EditorGUI.indentLevel--;
             float newHold = SliderField("ジェスチャー保持時間 [秒]", "gestureHoldDuration",
                 "長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。",
                 settings.gestureHoldDuration, 0.1f, 2f);
@@ -1429,6 +1455,8 @@ namespace PasocomMate.AunCast.Internal
             Undo.RecordObject(settings, "Change AunCast UI Settings");
             settings.instanceCapacity = newCapacity;
             settings.defaultVolume = newDefaultVolume;
+            settings.defaultSummonGesture = newSummonGesture;
+            settings.defaultDesktopSummonGesture = newDesktopSummonGesture;
             settings.gestureHoldDuration = newHold;
             settings.gestureHudShowThreshold = newHudThreshold;
             settings.hudLocalOffset = newHudOffset;
@@ -1587,6 +1615,8 @@ namespace PasocomMate.AunCast.Internal
             var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
             ApplyToUdonComponents(userPanels, so =>
             {
+                SetIntProperty(so, "summonGesture", settings.defaultSummonGesture);
+                SetIntProperty(so, "desktopSummonGesture", settings.defaultDesktopSummonGesture);
                 SetFloatProperty(so, "vrBothTriggersHoldSec", settings.gestureHoldDuration);
                 SetFloatProperty(so, "vrRightStickUpHoldSec", settings.gestureHoldDuration);
                 SetFloatProperty(so, "desktopEscHoldSec", settings.gestureHoldDuration);
