@@ -27,6 +27,9 @@ namespace PasocomMate.AunCast
         [Tooltip("HUD プログレスを表示し始めるまでの猶予（秒）。誤押下でちらつかないようにこれを過ぎてから表示する。")]
         public float gestureHudShowThreshold = 0.1f;
 
+        [Tooltip("HUD の頭部ローカル座標における配置オフセット（m）。(0,0,Z) で視界中央、Y を下げると視界下部に配置。")]
+        public Vector3 hudLocalOffset = new Vector3(0f, 0f, 0.6f);
+
         [Header("Instance")]
         [Tooltip("インスタンスのユーザー数上限（0 = ビルド時に VRC_SceneDescriptor の Capacity を自動使用）")]
         public int instanceCapacity;

@@ -16491,7 +16491,7 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 1079133330705007976}
   quadTransform: {fileID: 7705814984456981077}
   quadRenderer: {fileID: 8984583158741530981}
-  localOffset: {x: 0, y: -0.18, z: 0.6}
+  localOffset: {x: 0, y: 0, z: 0.6}
   showThreshold: 0.1
   fadeOutDuration: 0.18
 --- !u!114 &1079133330705007976

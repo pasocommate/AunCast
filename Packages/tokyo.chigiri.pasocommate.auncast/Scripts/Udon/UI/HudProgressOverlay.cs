@@ -21,7 +21,7 @@ namespace PasocomMate.AunCast
 
         [Header("Placement (head-local, configurable from Theme)")]
         [Tooltip("頭部ローカル座標における HUD 配置オフセット (m)")]
-        [SerializeField] private Vector3 localOffset = new Vector3(0f, -0.18f, 0.6f);
+        [SerializeField] private Vector3 localOffset = new Vector3(0f, 0f, 0.6f);
 
         [Header("Behavior (configurable from Settings)")]
         [Tooltip("HUD を出し始めるまでの猶予 (秒)。これ以下の進捗では表示しない。")]

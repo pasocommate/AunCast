@@ -1377,6 +1377,10 @@ namespace PasocomMate.AunCast.Internal
             float newHudThreshold = SliderField("ジェスチャーHUD表示猶予 [秒]", "gestureHudShowThreshold",
                 "HUDプログレスを表示し始めるまでの猶予（秒）。",
                 settings.gestureHudShowThreshold, 0f, 0.3f);
+            Vector3 newHudOffset = EditorGUILayout.Vector3Field(
+                L("HUD配置オフセット", "hudLocalOffset", "頭部ローカル座標における HUD オフセット（m）。(0,0,Z)で視界中央。"),
+                settings.hudLocalOffset);
+            CopyFieldNameMenu("hudLocalOffset");
 
             float newDist = SliderField("パネル自動閉じ距離 [m]", "panelAutoDismissDistance",
                 "ポータブルパネルからこの距離（m）以上離れると自動的に閉じる。0 で無効。",
@@ -1403,6 +1407,7 @@ namespace PasocomMate.AunCast.Internal
             settings.defaultVolume = newDefaultVolume;
             settings.gestureHoldDuration = newHold;
             settings.gestureHudShowThreshold = newHudThreshold;
+            settings.hudLocalOffset = newHudOffset;
             settings.panelAutoDismissDistance = newDist;
             settings.panelOutOfSightDismissSec = newSight;
             settings.wallNearDistance = newNear;
@@ -1568,6 +1573,7 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(overlays, so =>
             {
                 SetFloatProperty(so, "showThreshold", settings.gestureHudShowThreshold);
+                SetVector3Property(so, "localOffset", settings.hudLocalOffset);
             });
 
             var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);
@@ -1702,6 +1708,13 @@ namespace PasocomMate.AunCast.Internal
 
             prop.objectReferenceValue = value;
             return true;
+        }
+
+        private static void SetVector3Property(SerializedObject so, string fieldName, Vector3 value)
+        {
+            var prop = so.FindProperty(fieldName);
+            if (prop != null)
+                prop.vector3Value = value;
         }
 
         private static bool SetObjectArrayProperty<T>(SerializedObject so, string fieldName, T[] values)
