@@ -523,7 +523,7 @@ namespace PasocomMate.AunCast
         private string EscapeRichText(string value)
         {
             if (string.IsNullOrEmpty(value)) return "";
-            return value.Replace("<", "＜").Replace(">", "＞");
+            return $"<noparse>{value}</noparse>";
         }
 
         private void UpdateMonitoringDisplay()
