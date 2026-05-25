@@ -121,7 +121,6 @@ namespace PasocomMate.AunCast
 
         private void OnEnable()
         {
-            ResolveNowPlayingText();
             _indicatorMaxSlots = instanceCapacity;
             _indicatorHexColors = new[]
             {
@@ -540,33 +539,6 @@ namespace PasocomMate.AunCast
                 nowPlayingText.text = $"by {EscapeRichText(_nowPlayingSubmitter)}";
             else
                 nowPlayingText.text = EscapeRichText(_nowPlayingUrl);
-        }
-
-        private void ResolveNowPlayingText()
-        {
-            TMP_Text legacySubmitterText = null;
-
-            TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
-            if (texts != null)
-            {
-                for (int i = 0; i < texts.Length; i++)
-                {
-                    TMP_Text text = texts[i];
-                    if (text == null) continue;
-                    string objectName = text.gameObject.name;
-                    if (objectName == "NowPlayingText" || objectName == "NowPlayingUrlText")
-                    {
-                        if (nowPlayingText == null)
-                            nowPlayingText = text;
-                    }
-                    else if (objectName == "NowPlayingSubmitterText")
-                    {
-                        legacySubmitterText = text;
-                    }
-                }
-            }
-            if (legacySubmitterText != null)
-                legacySubmitterText.text = "";
         }
 
         private string EscapeRichText(string value)

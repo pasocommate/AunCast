@@ -344,14 +344,9 @@ namespace PasocomMate.AunCast
             }
         }
 
-        /// <summary>
-        /// ボタンの有効状態を表示へ反映する。
-        /// Hover ヘルプを維持するため Button.interactable は true のままにし、実行可否は handler 側で判定する。
-        /// </summary>
         private void SetButtonInteractable(Button button, bool interactable)
         {
             if (button == null) return;
-            button.interactable = true;
             float alpha = interactable ? 1f : disabledButtonLabelAlpha;
             var cg = button.GetComponent<CanvasGroup>();
             if (cg != null)
