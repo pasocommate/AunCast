@@ -296,6 +296,7 @@ namespace PasocomMate.AunCast
         public void OnResyncOnlyButtonPress()
         {
             if (controller == null) return;
+            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
@@ -316,6 +317,7 @@ namespace PasocomMate.AunCast
         public void OnUserResyncButtonPress()
         {
             if (controller == null) return;
+            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
@@ -339,8 +341,9 @@ namespace PasocomMate.AunCast
 
         private void SetButtonInteractable(Button button, bool interactable)
         {
-            if (button == null || button.interactable == interactable) return;
-            button.interactable = interactable;
+            if (button == null) return;
+            // Hover を維持するため Button.interactable は true のままにし、実行可否は handler 側で判定する。
+            button.interactable = true;
             float alpha = interactable ? 1f : disabledButtonLabelAlpha;
             var labels = button.GetComponentsInChildren<TMP_Text>();
             foreach (var label in labels)

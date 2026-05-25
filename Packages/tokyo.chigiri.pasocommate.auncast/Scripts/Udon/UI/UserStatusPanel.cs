@@ -189,8 +189,8 @@ namespace PasocomMate.AunCast
         private bool _lastAutoSilenceToggleState;
         private bool _timelineLoggingToggleInitialized;
         private bool _lastTimelineLoggingToggleState;
-        // スタッフビュー誤操作防止ロック (#16)
-        private bool _staffLocked = true;
+        // スタッフビュー誤操作防止ロック (#16)。初期状態は操作可能にする。
+        private bool _staffLocked;
         private bool _inStaffView;
         // ロック状態アイコン（Material Symbols: lock=\uE899, lock_open=\uE898）
         private const string ICON_LOCK = "\uE899";
@@ -253,6 +253,7 @@ namespace PasocomMate.AunCast
 
         private TMP_Text _resyncButtonLabel;
         private TMP_Text _resyncCooldownLabel;
+        private TMP_Text[] _staffButtonLabels;
         private bool _debugAutoOpenDone;
 
         private Image _silenceGaugeFillImage;
@@ -294,6 +295,7 @@ namespace PasocomMate.AunCast
                 _silenceGaugeFillImage = silenceGauge.fillRect.GetComponent<Image>();
             SetMenuVisible(false);
             InitResyncButtonStyle();
+            CacheStaffButtonLabels();
             SyncLocalSettingsUI();
             // 起動時は Viewer ビューで開始。Staff 解錠状態に応じた切替ボタンの見せ方も確定させる。
             _crossfadeCurrent = 0f;
@@ -343,13 +345,13 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
-        /// ボタンの interactable 状態を設定し、無効時はラベルや CanvasGroup のアルファを下げて
-        /// ユーザーに「押せない」ことを視覚的にフィードバックする。
+        /// ボタンの有効状態を表示へ反映する。
+        /// Hover ヘルプを維持するため Button.interactable は true のままにし、実行可否は handler 側で判定する。
         /// </summary>
         private void SetButtonInteractable(Button button, bool interactable)
         {
-            if (button == null || button.interactable == interactable) return;
-            button.interactable = interactable;
+            if (button == null) return;
+            button.interactable = true;
             float alpha = interactable ? 1f : disabledButtonLabelAlpha;
             var cg = button.GetComponent<CanvasGroup>();
             if (cg != null)
@@ -357,10 +359,56 @@ namespace PasocomMate.AunCast
                 cg.alpha = alpha;
                 return;
             }
-            var label = button.GetComponentInChildren<TMP_Text>();
-            if (label != null)
+            var labels = button.GetComponentsInChildren<TMP_Text>(true);
+            if (labels == null) return;
+            foreach (var label in labels)
             {
+                if (label == null) continue;
                 var c = label.color;
+                c.a = alpha;
+                label.color = c;
+            }
+        }
+
+        private void CacheStaffButtonLabels()
+        {
+            _staffButtonLabels = null;
+            if (staffContentCanvasGroup == null) return;
+
+            Button[] buttons = staffContentCanvasGroup.GetComponentsInChildren<Button>(true);
+            if (buttons == null || buttons.Length == 0) return;
+
+            int count = 0;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                TMP_Text[] labels = buttons[i] != null ? buttons[i].GetComponentsInChildren<TMP_Text>(true) : null;
+                if (labels != null) count += labels.Length;
+            }
+            if (count == 0) return;
+
+            _staffButtonLabels = new TMP_Text[count];
+            int index = 0;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                TMP_Text[] labels = buttons[i] != null ? buttons[i].GetComponentsInChildren<TMP_Text>(true) : null;
+                if (labels == null) continue;
+                for (int j = 0; j < labels.Length; j++)
+                {
+                    _staffButtonLabels[index] = labels[j];
+                    index++;
+                }
+            }
+        }
+
+        private void SetStaffButtonLabelAlpha(bool interactable)
+        {
+            if (_staffButtonLabels == null) return;
+            float alpha = interactable ? 1f : disabledButtonLabelAlpha;
+            for (int i = 0; i < _staffButtonLabels.Length; i++)
+            {
+                TMP_Text label = _staffButtonLabels[i];
+                if (label == null) continue;
+                Color c = label.color;
                 c.a = alpha;
                 label.color = c;
             }
@@ -446,11 +494,11 @@ namespace PasocomMate.AunCast
             bool viewerActive = _crossfadeCurrent <= 0.01f;
             bool staffActive = _crossfadeCurrent >= 0.99f;
 
-            // スタッフビューに入った瞬間にロックをリセット (#16)
+            // スタッフビューに入った瞬間にロック解除状態へ戻す (#16)
             bool wasInStaffView = _inStaffView;
             _inStaffView = staffActive;
             if (_inStaffView && !wasInStaffView)
-                _staffLocked = true;
+                _staffLocked = false;
 
             if (userContentCanvasGroup != null)
             {
@@ -514,6 +562,7 @@ namespace PasocomMate.AunCast
             if ((now - prev) > desktopTabDoubleTapWindowSec) return;
 
             _desktopTabDoubleTapConsumed = true;
+            _desktopTabLastPressTime = -10f;
             TriggerDesktopMenuToggle();
         }
 
@@ -535,6 +584,7 @@ namespace PasocomMate.AunCast
             if ((now - prev) > desktopF5DoubleTapWindowSec) return;
 
             _desktopF5DoubleTapConsumed = true;
+            _desktopF5LastPressTime = -10f;
             TriggerDesktopMenuToggle();
         }
 
@@ -1048,6 +1098,8 @@ namespace PasocomMate.AunCast
             _desktopEscHoldConsumed = false;
             _desktopTabDoubleTapConsumed = false;
             _desktopF5DoubleTapConsumed = false;
+            _desktopTabLastPressTime = -10f;
+            _desktopF5LastPressTime = -10f;
             if (hudProgress != null) hudProgress.Hide();
         }
 
@@ -1367,15 +1419,17 @@ namespace PasocomMate.AunCast
 
         private void ApplyStaffLock(bool staffActive)
         {
+            bool staffInteractable = staffActive && !_staffLocked;
             if (staffContentCanvasGroup != null)
             {
-                staffContentCanvasGroup.interactable = staffActive && !_staffLocked;
-                staffContentCanvasGroup.blocksRaycasts = staffActive && !_staffLocked;
+                staffContentCanvasGroup.interactable = staffInteractable;
+                staffContentCanvasGroup.blocksRaycasts = staffActive;
             }
+            SetStaffButtonLabelAlpha(staffInteractable);
             if (staffLockButton != null)
             {
                 staffLockButton.gameObject.SetActive(staffActive);
-                staffLockButton.interactable = staffActive;
+                SetButtonInteractable(staffLockButton, staffActive);
             }
             if (staffLockButtonLabel != null)
                 staffLockButtonLabel.text = _staffLocked ? ICON_LOCK : ICON_LOCK_OPEN;
@@ -1385,6 +1439,7 @@ namespace PasocomMate.AunCast
         public void OnResyncButtonPress()
         {
             if (controller == null) return;
+            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
