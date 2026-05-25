@@ -140,7 +140,7 @@ namespace PasocomMate.AunCast.Internal
             return result;
         }
 
-        private static int ToggleBitFlag(int flags, int bit, string label)
+        private static int ToggleBitFlag(int flags, int bit, GUIContent label)
         {
             bool on = EditorGUILayout.Toggle(label, (flags & bit) != 0);
             return on ? flags | bit : flags & ~bit;
@@ -1371,7 +1371,7 @@ namespace PasocomMate.AunCast.Internal
             var sp = serializedObject.FindProperty("staffAllowedUserNames");
             if (sp != null)
                 EditorGUILayout.PropertyField(sp,
-                    new GUIContent("スタッフ許可ユーザー名", "パスコードなしでスタッフ権限を付与する VRChat ユーザー名リスト。"),
+                    L("スタッフ許可ユーザー名", "staffAllowedUserNames", "パスコードなしでスタッフ権限を付与する VRChat ユーザー名リスト。"),
                     true);
             if (!EditorGUI.EndChangeCheck()) return;
             serializedObject.ApplyModifiedProperties();
@@ -1402,10 +1402,10 @@ namespace PasocomMate.AunCast.Internal
             CopyFieldNameMenu("defaultSummonGesture");
             int newSummonGesture = settings.defaultSummonGesture;
             EditorGUI.indentLevel++;
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 2, "右スティック上ホールド");
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 1, "両手トリガー長押し");
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 4, "ダブルトリガー (L)");
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 8, "ダブルトリガー (R)");
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 2, L("右スティック上ホールド", "Hold Right Stick Up", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 1, L("両手トリガー長押し", "Hold Both Triggers", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 4, L("ダブルトリガー (L)", "Double-tap Trigger (L)", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 8, L("ダブルトリガー (R)", "Double-tap Trigger (R)", ""));
             EditorGUI.indentLevel--;
 
             EditorGUILayout.LabelField(L("デスクトップ呼び出しジェスチャー初期値", "defaultDesktopSummonGesture",
@@ -1413,9 +1413,9 @@ namespace PasocomMate.AunCast.Internal
             CopyFieldNameMenu("defaultDesktopSummonGesture");
             int newDesktopSummonGesture = settings.defaultDesktopSummonGesture;
             EditorGUI.indentLevel++;
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, "Tab ダブルタップ");
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, "F5 ダブルタップ");
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, "ESC 長押し");
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, L("Tab ダブルタップ", "Double-tap Tab", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, L("F5 ダブルタップ", "Double-tap F5", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, L("ESC 長押し", "Hold ESC", ""));
             EditorGUI.indentLevel--;
             float newHold = SliderField("ジェスチャー保持時間 [秒]", "gestureHoldDuration",
                 "長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。",

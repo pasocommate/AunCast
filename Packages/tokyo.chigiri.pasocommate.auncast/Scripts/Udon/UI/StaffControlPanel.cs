@@ -230,7 +230,7 @@ namespace PasocomMate.AunCast
                 viewerStatusPanel.OnStaffUnlockStateChanged();
         }
 
-        /// <summary>統合パネル側が切替ボタンの可視判定などに使う。ローカル解錠状態を返す。</summary>
+        /// <summary>統合パネル側が切替ボタンの可視判定などに使う。パスコード解錠済みか allowedUserNames 該当で true。</summary>
         public bool IsLocallyUnlocked() { return IsStaff(); }
 
         /// <summary>Next URL を再生し、再生前の URL を Next URL 欄へ戻す。</summary>
