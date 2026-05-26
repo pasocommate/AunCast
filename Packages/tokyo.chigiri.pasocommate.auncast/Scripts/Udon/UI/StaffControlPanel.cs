@@ -185,6 +185,7 @@ namespace PasocomMate.AunCast
             _concurrentEditMode = false;
             UpdateConcurrentEditVisibility();
             SyncUIFromState();
+            UpdateNowPlayingDisplay();
             _redrawDirty = true;
             _lastRepaintTime = 0f;
         }
@@ -235,6 +236,12 @@ namespace PasocomMate.AunCast
         public void OnCoordinatorChanged()
         {
             _redrawDirty = true;
+        }
+
+        /// <summary>LocalDualPlayerController から URL 変更（再生開始・停止・受信反映）を通知される。</summary>
+        public void OnUrlChanged()
+        {
+            UpdateNowPlayingDisplay();
         }
 
         /// <summary>
@@ -751,8 +758,6 @@ namespace PasocomMate.AunCast
                     helpTextField.text = string.Empty;
                 }
             }
-
-            UpdateNowPlayingDisplay();
 
             if (nextUrlFieldPlaceholderText != null)
                 nextUrlFieldPlaceholderText.text = _isStaff ? "Next URL..." : string.Empty;

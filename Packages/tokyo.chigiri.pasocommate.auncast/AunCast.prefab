@@ -11278,6 +11278,7 @@ MonoBehaviour:
   switcher: {fileID: 5565436277513804548}
   activeMonitor: {fileID: 8867954817485945329}
   resyncClient: {fileID: 6467671380132453154}
+  staffPanel: {fileID: 8485291155812932236}
   readyTimeoutSec: 5
   playTimeoutSec: 3
   verifyTimeoutSec: 2

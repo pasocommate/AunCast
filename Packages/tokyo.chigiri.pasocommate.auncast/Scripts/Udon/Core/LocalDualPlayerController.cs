@@ -41,6 +41,9 @@ namespace PasocomMate.AunCast
         [SerializeField] private ActivePlayerMonitor activeMonitor;
         [SerializeField] private ResyncCoordinatorClient resyncClient;
 
+        [Header("UI Notification")]
+        [SerializeField] private StaffControlPanel staffPanel;
+
         // =================================================================
         //  Inspector パラメータ (Design Section 20)
         // =================================================================
@@ -786,6 +789,7 @@ namespace PasocomMate.AunCast
             _tlAction = "PLAY_VIDEO";
             LogMessage($"PlayVideo requested by local user (url={urlStr})");
             QueueSerialize();
+            if (staffPanel != null) staffPanel.OnUrlChanged();
         }
 
         /// <summary>スタッフによる配信停止。オーナーシップ取得後に全プレイヤーを停止し同期する。</summary>
@@ -825,6 +829,7 @@ namespace PasocomMate.AunCast
             ReportError(false);
 
             QueueSerialize();
+            if (staffPanel != null) staffPanel.OnUrlChanged();
         }
 
         /// <summary>現在の URL で Active を再ロードする（Resync ではなく単純なリロード）。</summary>
@@ -864,7 +869,8 @@ namespace PasocomMate.AunCast
             if (Networking.IsOwner(gameObject)) return;
 
             // 再生停止（非オーナーがオーナーの Stop を受信）
-            if (!_ownerPlaying && _localState != STATE_IDLE)
+            bool stopReceived = !_ownerPlaying && _localState != STATE_IDLE;
+            if (stopReceived)
             {
                 _tlLoadingA = false;
                 _tlLoadingB = false;
@@ -883,7 +889,8 @@ namespace PasocomMate.AunCast
             }
 
             // URL 変更の検知
-            if (_currentVideoIdx != _syncedVideoIdx)
+            bool urlChanged = _currentVideoIdx != _syncedVideoIdx;
+            if (urlChanged)
             {
                 LogMessage($"OnDeserialization URL update detected: {_currentVideoIdx} -> {_syncedVideoIdx}");
                 _currentVideoIdx = _syncedVideoIdx;
@@ -898,6 +905,9 @@ namespace PasocomMate.AunCast
                 StartActivePlayback(_syncedURL);
                 LogMessage($"Playing synced URL: {_syncedURL}");
             }
+
+            if ((stopReceived || urlChanged) && staffPanel != null)
+                staffPanel.OnUrlChanged();
         }
 
         // 遅れて参加したプレイヤーにデータを送る
