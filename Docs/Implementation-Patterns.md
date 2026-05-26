@@ -49,10 +49,9 @@ public void SetXxxAsStaff(Tx value)
 
 ### 呼び出し側 (UI) のルール
 
-- `StaffControlPanel` 側のイベントハンドラは **冒頭でアクセス権チェック**を入れる
-  （`allowedUserNames` または `_passcodeUnlocked` のいずれかが満たされていること）。
+- `StaffControlPanel` 側のイベントハンドラは **冒頭で `_isStaff` チェック**を入れる。
   非スタッフが UI を操作した場合はアクセス拒否表示で UI を同期値へ戻す。
-- 操作可能な UI は `interactable = isStaff` に設定し、
+- 操作可能な UI は `interactable = _isStaff` に設定し、
   非スタッフが物理的に触れないようにもする（アクセス権チェックとの二重防御）。
 
 ## 2. `OnDeserialization` での同期反映
@@ -127,7 +126,7 @@ private void PollXxxSlider()
     // ユーザー操作で動いた
     if (!Mathf.Approximately(xxxSlider.value, _lastXxxSliderValue))
     {
-        OnXxxSliderChanged();   // IsStaff チェック付きハンドラ
+        OnXxxSliderChanged();   // _isStaff チェック付きハンドラ
         return;
     }
 

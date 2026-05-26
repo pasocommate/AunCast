@@ -66,8 +66,8 @@ namespace PasocomMate.AunCast
         [Tooltip("操作可能なユーザー名リスト（空の場合はパスコード解錠時のみ操作可能）")]
         [SerializeField] private string[] allowedUserNames;
 
-        // WallControlPanel から呼ばれてローカルのみ true になる。同期なし。
-        private bool _passcodeUnlocked;
+        // OnPlayerJoined で allowedUserNames 該当、またはパスコード入力で true。ローカルのみ・同期なし。
+        private bool _isStaff;
         private int _indicatorMaxSlots;
         private string[] _indicatorHexColors;
 
@@ -184,10 +184,48 @@ namespace PasocomMate.AunCast
 
             _concurrentEditMode = false;
             UpdateConcurrentEditVisibility();
-            UpdateLockUI();
             SyncUIFromState();
             _redrawDirty = true;
             _lastRepaintTime = 0f;
+        }
+
+        public override void OnPlayerJoined(VRCPlayerApi player)
+        {
+            if (!player.isLocal) return;
+            if (_isStaff) return;
+            if (allowedUserNames == null) return;
+
+            string displayName = player.displayName;
+            bool eligible = false;
+            for (int i = 0; i < allowedUserNames.Length; i++)
+            {
+                if (allowedUserNames[i] == displayName)
+                {
+                    eligible = true;
+                    break;
+                }
+            }
+            if (!eligible) return;
+
+            // SDK Build & Test での同名重複: 最小 playerId のみ許可
+            int playerCount = VRCPlayerApi.GetPlayerCount();
+            if (playerCount > 1)
+            {
+                int localId = player.playerId;
+                VRCPlayerApi[] players = new VRCPlayerApi[playerCount];
+                VRCPlayerApi.GetPlayers(players);
+                for (int i = 0; i < players.Length; i++)
+                {
+                    VRCPlayerApi p = players[i];
+                    if (p == null || !Utilities.IsValid(p)) continue;
+                    if (p.playerId == localId) continue;
+                    if (p.displayName == displayName && p.playerId < localId)
+                        return;
+                }
+            }
+
+            _isStaff = true;
+            UpdateLockUI();
         }
 
         /// <summary>
@@ -215,7 +253,6 @@ namespace PasocomMate.AunCast
                 _redrawDirty = false;
                 _lastRepaintTime = now;
                 UpdateMonitoringDisplay();
-                if (periodicDue) UpdateLockUI();
             }
 
         }
@@ -223,7 +260,7 @@ namespace PasocomMate.AunCast
         /// <summary>WallControlPanel から正解入力時に呼ばれる。ローカルのみ解錠扱いにする。</summary>
         public void SetLocalPasscodeUnlocked()
         {
-            _passcodeUnlocked = true;
+            _isStaff = true;
             UpdateLockUI();
             SyncUIFromState();
             if (viewerStatusPanel != null)
@@ -231,12 +268,12 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>統合パネル側が切替ボタンの可視判定などに使う。パスコード解錠済みか allowedUserNames 該当で true。</summary>
-        public bool IsLocallyUnlocked() { return IsStaff(); }
+        public bool IsLocallyUnlocked() { return _isStaff; }
 
         /// <summary>Next URL を再生し、再生前の URL を Next URL 欄へ戻す。</summary>
         public void OnPromoteNextUrl()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -259,7 +296,7 @@ namespace PasocomMate.AunCast
         /// <summary>全ユーザーの再生を即座に停止する。</summary>
         public void OnStopButtonPress()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -271,7 +308,7 @@ namespace PasocomMate.AunCast
         /// <summary>全ユーザーの一斉 Resync をキューに投入する（手動トリガー）。</summary>
         public void OnGlobalResyncButtonPress()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -283,7 +320,7 @@ namespace PasocomMate.AunCast
         /// <summary>全ユーザーの Active・Standby 両方を切断し Active で再接続する（緊急リブート）。</summary>
         public void OnForceRebootButtonPress()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -295,7 +332,7 @@ namespace PasocomMate.AunCast
         /// <summary>Concurrent Max の Change ボタン — 編集モードに入る。</summary>
         public void OnConcurrentLimitChangeButton()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -311,7 +348,7 @@ namespace PasocomMate.AunCast
         /// <summary>Concurrent Max の Apply ボタン — 編集中の値を確定する。</summary>
         public void OnConcurrentLimitApply()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -342,7 +379,7 @@ namespace PasocomMate.AunCast
         /// <summary>CDN 同時接続数上限を入力欄から変更する（編集モード中）。</summary>
         public void OnConcurrentLimitChanged()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -364,7 +401,7 @@ namespace PasocomMate.AunCast
         /// <summary>編集モード中の同時 Resync 数上限を delta だけ増減する (+/- ボタン用)。</summary>
         private void AdjustConcurrentLimit(int delta)
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -391,7 +428,7 @@ namespace PasocomMate.AunCast
 
         public void OnConnectionLimitChangeButton()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -406,7 +443,7 @@ namespace PasocomMate.AunCast
 
         public void OnConnectionLimitApply()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -437,7 +474,7 @@ namespace PasocomMate.AunCast
 
         public void OnConnectionLimitChanged()
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -461,7 +498,7 @@ namespace PasocomMate.AunCast
         /// <summary>編集モード中の同時接続数上限を delta だけ増減する (+/- ボタン用)。</summary>
         private void AdjustConnectionLimit(int delta)
         {
-            if (!IsStaff())
+            if (!_isStaff)
             {
                 return;
             }
@@ -702,11 +739,9 @@ namespace PasocomMate.AunCast
         {
             if (controller == null) return;
 
-            bool isStaff = IsStaff();
-
             if (helpTextField != null)
             {
-                if (!isStaff)
+                if (!_isStaff)
                 {
                     helpTextField.text = string.Empty;
                     _activeHelpKey = HELP_NONE;
@@ -720,59 +755,7 @@ namespace PasocomMate.AunCast
             UpdateNowPlayingDisplay();
 
             if (nextUrlFieldPlaceholderText != null)
-                nextUrlFieldPlaceholderText.text = isStaff ? "Next URL..." : string.Empty;
-        }
-
-
-        /// <summary>
-        /// ローカルユーザーがスタッフ権限を持つか判定する。
-        /// パスコード解錠済みか、allowedUserNames に displayName が含まれていれば true。
-        /// SDK テスト時の同名重複問題に対処するため、同名が複数いる場合は最小 playerId のみ許可する。
-        /// </summary>
-        private bool IsStaff()
-        {
-            // パスコード解錠は同名重複チェックを経由しない（各クライアントが自分で入力する必要があるため）。
-            if (_passcodeUnlocked) return true;
-
-            VRCPlayerApi local = Networking.LocalPlayer;
-            if (local == null) return false;
-
-            bool eligible = false;
-            if (allowedUserNames != null)
-            {
-                string displayName = local.displayName;
-                for (int i = 0; i < allowedUserNames.Length; i++)
-                {
-                    if (allowedUserNames[i] == displayName)
-                    {
-                        eligible = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!eligible) return false;
-
-            // SDK Build & Test で同一アカウントの複数クライアントが入ると displayName が衝突する。
-            // 本番 VRChat では通常起きない異常なので、衝突を検出したときだけ最小 playerId を優先する。
-            int playerCount = VRCPlayerApi.GetPlayerCount();
-            if (playerCount <= 1) return true;
-
-            VRCPlayerApi[] players = new VRCPlayerApi[playerCount];
-            VRCPlayerApi.GetPlayers(players);
-
-            string localName = local.displayName;
-            int localId = local.playerId;
-            for (int i = 0; i < players.Length; i++)
-            {
-                VRCPlayerApi p = players[i];
-                if (p == null || !Utilities.IsValid(p)) continue;
-                if (p.playerId == localId) continue;
-                if (p.displayName == localName && p.playerId < localId)
-                    return false;
-            }
-
-            return true;
+                nextUrlFieldPlaceholderText.text = _isStaff ? "Next URL..." : string.Empty;
         }
 
         // =================================================================

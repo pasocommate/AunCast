@@ -88,7 +88,7 @@ namespace PasocomMate.AunCast
         private float _resyncOnlyAlpha;
 
         private string _passcodeBuffer = "";
-        private bool _passcodeUnlocked;
+        private bool _isStaff;
         private bool _crossfadeActive;
         private float _lastSlowUpdateTime;
         private const float SLOW_UPDATE_INTERVAL = 0.3f;
@@ -106,6 +106,17 @@ namespace PasocomMate.AunCast
             ApplyGestureGroupVisibility();
             ApplyGestureHighlight();
             UpdateUserButtonInteractable();
+        }
+
+        public override void OnPlayerJoined(VRCPlayerApi player)
+        {
+            if (!player.isLocal) return;
+            if (_isStaff) return;
+            if (staffPanel != null && staffPanel.IsLocallyUnlocked())
+            {
+                _isStaff = true;
+                ApplyUnlockedSwitchButton();
+            }
         }
 
         private void Update()
@@ -129,7 +140,7 @@ namespace PasocomMate.AunCast
             _viewTarget = view;
             if (view == VIEW_USER)
                 SyncGestureToggles();
-            if (!_passcodeUnlocked)
+            if (!_isStaff)
             {
                 if (switchViewButtonLabel != null)
                     switchViewButtonLabel.text = view == VIEW_STAFF
@@ -207,7 +218,7 @@ namespace PasocomMate.AunCast
         public void OnSwitchViewButtonPress()
         {
             if (disablePasscodeViewSwitchButton) return;
-            if (_passcodeUnlocked)
+            if (_isStaff)
             {
                 SetViewTarget(VIEW_USER, false);
                 ApplyUnlockedSwitchButton();
@@ -254,7 +265,7 @@ namespace PasocomMate.AunCast
         /// <remarks>ポーリングではなく UserStatusPanel.SetMenuVisible から直接通知される。</remarks>
         public void OnPortablePanelVisibilityChanged(bool visible)
         {
-            if (!_passcodeUnlocked) return;
+            if (!_isStaff) return;
             if (!visible) return;
             _isNearWallPanel = true;
             SetViewTarget(VIEW_USER, false);
@@ -478,21 +489,21 @@ namespace PasocomMate.AunCast
 
         public void OnPasscodeBackspace()
         {
-            if (_passcodeUnlocked || _passcodeBuffer.Length == 0) return;
+            if (_isStaff || _passcodeBuffer.Length == 0) return;
             _passcodeBuffer = _passcodeBuffer.Substring(0, _passcodeBuffer.Length - 1);
             UpdatePasscodeDisplay();
         }
 
         public void OnPasscodeClear()
         {
-            if (_passcodeUnlocked) return;
+            if (_isStaff) return;
             _passcodeBuffer = "";
             UpdatePasscodeDisplay();
         }
 
         private void AppendPasscodeDigit(string digit)
         {
-            if (_passcodeUnlocked || _passcodeBuffer.Length >= 4) return;
+            if (_isStaff || _passcodeBuffer.Length >= 4) return;
             _passcodeBuffer += digit;
             UpdatePasscodeDisplay();
 
@@ -511,7 +522,7 @@ namespace PasocomMate.AunCast
 
             if (_passcodeBuffer == unlockPasscode)
             {
-                _passcodeUnlocked = true;
+                _isStaff = true;
                 _passcodeBuffer = "";
                 if (passcodeDisplay != null)
                     passcodeDisplay.text = "UNLOCKED";
