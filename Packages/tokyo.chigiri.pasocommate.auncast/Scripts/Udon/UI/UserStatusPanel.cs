@@ -345,11 +345,14 @@ namespace PasocomMate.AunCast
         private void SetButtonInteractable(Button button, bool interactable)
         {
             if (button == null) return;
+            button.interactable = interactable;
             float alpha = interactable ? 1f : disabledButtonLabelAlpha;
             var cg = button.GetComponent<CanvasGroup>();
             if (cg != null)
             {
                 cg.alpha = alpha;
+                cg.interactable = interactable;
+                cg.blocksRaycasts = interactable;
                 return;
             }
             var labels = button.GetComponentsInChildren<TMP_Text>(true);
@@ -509,8 +512,11 @@ namespace PasocomMate.AunCast
                 backgroundImage.color = Color.Lerp(userBackgroundColor, staffBackgroundColor, _crossfadeCurrent);
         }
 
-        /// <summary>スタッフビューが表示中かつロック解除中なら true。StaffControlPanel が個別ボタン制御で使用。</summary>
-        public bool IsStaffInteractable() { return _inStaffView && !_staffLocked; }
+        /// <summary>スタッフロックが解除中なら true。StaffControlPanel が個別ボタン制御で使用。</summary>
+        /// <remarks>_inStaffView は意図的に見ない。クロスフェード中に false になる瞬間があり、その間に
+        /// ボタン色が変わる視覚的ノイズが発生するため。スタッフビュー非表示時の interactable は
+        /// staffContentCanvasGroup.interactable で別途遮断される。</remarks>
+        public bool IsStaffInteractable() { return !_staffLocked; }
 
         /// <summary>StaffControlPanel の解錠状態が変わったときに呼ばれる。切替ボタンの表示とクロスフェードを更新する。</summary>
         public void OnStaffUnlockStateChanged()
@@ -1444,6 +1450,7 @@ namespace PasocomMate.AunCast
         public void OnRebootButtonPress()
         {
             if (controller == null) return;
+            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.Reboot();
         }
 

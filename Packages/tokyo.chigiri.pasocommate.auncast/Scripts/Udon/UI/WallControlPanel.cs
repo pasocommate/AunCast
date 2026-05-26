@@ -348,6 +348,7 @@ namespace PasocomMate.AunCast
         public void OnUserRebootButtonPress()
         {
             if (controller == null) return;
+            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.Reboot();
         }
 
@@ -367,6 +368,7 @@ namespace PasocomMate.AunCast
         private void SetButtonInteractable(Button button, bool interactable)
         {
             if (button == null) return;
+            button.interactable = interactable;
             float alpha = interactable ? 1f : disabledButtonLabelAlpha;
             var labels = button.GetComponentsInChildren<TMP_Text>();
             foreach (var label in labels)

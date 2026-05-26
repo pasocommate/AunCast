@@ -334,6 +334,7 @@ namespace PasocomMate.AunCast
                 return;
             }
             if (controller == null) return;
+            if (!HasCurrentStream()) return;
 
             controller.StopVideoAsStaff();
         }
@@ -346,6 +347,7 @@ namespace PasocomMate.AunCast
                 return;
             }
             if (coordinator == null) return;
+            if (!HasCurrentStream()) return;
 
             coordinator.TriggerGlobalResync();
         }
@@ -358,6 +360,7 @@ namespace PasocomMate.AunCast
                 return;
             }
             if (coordinator == null) return;
+            if (!HasCurrentStream()) return;
 
             coordinator.TriggerGlobalForceReboot();
         }
@@ -625,7 +628,7 @@ namespace PasocomMate.AunCast
         {
             bool staffInteractable = viewerStatusPanel == null || viewerStatusPanel.IsStaffInteractable();
             bool baseEnabled = _isStaff && staffInteractable;
-            bool hasStream = !string.IsNullOrEmpty(_nowPlayingUrl);
+            bool hasStream = HasCurrentStream();
             SetButtonInteractable(stopButton, baseEnabled && hasStream);
             SetButtonInteractable(globalResyncButton, baseEnabled && hasStream);
             SetButtonInteractable(forceRebootButton, baseEnabled && hasStream);
@@ -639,14 +642,26 @@ namespace PasocomMate.AunCast
             SetButtonInteractable(promoteNextButton, baseEnabled && hasNextUrl);
         }
 
+        private bool HasCurrentStream()
+        {
+            if (!string.IsNullOrEmpty(_nowPlayingUrl)) return true;
+            if (controller == null) return false;
+
+            VRCUrl current = controller.GetCurrentURL();
+            return current != null && !string.IsNullOrEmpty(current.Get());
+        }
+
         private void SetButtonInteractable(Button button, bool interactable)
         {
             if (button == null) return;
+            button.interactable = interactable;
             float alpha = interactable ? 1f : disabledButtonLabelAlpha;
             var cg = button.GetComponent<CanvasGroup>();
             if (cg != null)
             {
                 cg.alpha = alpha;
+                cg.interactable = interactable;
+                cg.blocksRaycasts = interactable;
                 return;
             }
             var labels = button.GetComponentsInChildren<TMP_Text>(true);
