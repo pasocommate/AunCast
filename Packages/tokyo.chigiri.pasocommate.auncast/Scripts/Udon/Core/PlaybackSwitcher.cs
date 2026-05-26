@@ -48,8 +48,10 @@ namespace PasocomMate.AunCast
 
         /// <summary>null テクスチャ警告のスロットル用タイムスタンプ</summary>
         private float _lastNullTextureWarnAt;
+        private float _lastSwitchTextureWaitWarnAt;
 
         private bool _crossfading;
+        private bool _switchTextureDisplayed;
 
         // =================================================================
         //  Active/Standby 取得
@@ -181,16 +183,17 @@ namespace PasocomMate.AunCast
         // =================================================================
 
         /// <summary>
-        /// クロスフェードを開始する。映像は瞬時に Standby 側へ切替え、
-        /// 音声のみ徐々にフェードさせることで視聴者の違和感を最小化する。
+        /// クロスフェードを開始する。Standby 側の映像テクスチャ取得後に表示を切替え、
+        /// 音声を徐々にフェードさせることで視聴者の違和感を最小化する。
         /// </summary>
         public void StartCrossfade(float now)
         {
             _crossfadeStartedAt = now;
             _crossfading = true;
+            _switchTextureDisplayed = false;
 
-            // 映像は即座に新ソースへ切替（映像のクロスフェードは視覚的に不自然なため）
-            UpdateRenderTextureFromManager(GetStandbyManager());
+            // Standby の実テクスチャが取れない間は旧映像を保持し、白フレームを出さない。
+            TryEnsureSwitchTextureDisplayed(now);
 
             // ゲインを初期値にリセットしてから TickCrossfade で漸次変化させる
             VideoPlayerManager activeManager = GetActiveManager();
@@ -209,6 +212,24 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void TickCrossfade(float now, float durationSec)
         {
+            if (!TryEnsureSwitchTextureDisplayed(now))
+            {
+                VideoPlayerManager activeManagerWaiting = GetActiveManager();
+                VideoPlayerManager standbyManagerWaiting = GetStandbyManager();
+                if (activeManagerWaiting != null) activeManagerWaiting.SetFadeGain(1.0f);
+                if (standbyManagerWaiting != null) standbyManagerWaiting.SetFadeGain(0.0f);
+                return;
+            }
+
+            if (durationSec <= 0f)
+            {
+                VideoPlayerManager activeManagerInstant = GetActiveManager();
+                VideoPlayerManager standbyManagerInstant = GetStandbyManager();
+                if (activeManagerInstant != null) activeManagerInstant.SetFadeGain(0.0f);
+                if (standbyManagerInstant != null) standbyManagerInstant.SetFadeGain(1.0f);
+                return;
+            }
+
             float elapsed = now - _crossfadeStartedAt;
             float t = Mathf.Clamp01(elapsed / durationSec);
 
@@ -226,6 +247,8 @@ namespace PasocomMate.AunCast
         /// <summary>クロスフェード時間が経過したかを判定する。</summary>
         public bool IsCrossfadeComplete(float now, float durationSec)
         {
+            if (!_switchTextureDisplayed) return false;
+            if (durationSec <= 0f) return true;
             return (now - _crossfadeStartedAt) >= durationSec;
         }
 
@@ -330,6 +353,7 @@ namespace PasocomMate.AunCast
                     _lastNullTextureWarnAt = now;
                     LogWarning($"Active texture is null (active={(_activeIsA ? "A" : "B")}, ownerPlaying={ownerPlaying})");
                 }
+                return;
             }
             // 同一テクスチャなら Screen への再代入を省略
             if (tex == _lastAssignedRenderTexture) return;
@@ -341,16 +365,48 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// 指定プレイヤーのテクスチャを強制的にスクリーンへ反映する。
-        /// クロスフェード開始時に映像を即座に切替える用途で使用。
+        /// クロスフェード開始時に、取得済みの Standby 映像だけを表示へ出す用途で使用。
         /// </summary>
-        private void UpdateRenderTextureFromManager(VideoPlayerManager manager)
+        private bool TryUpdateRenderTextureFromManager(VideoPlayerManager manager)
         {
-            if (manager == null) return;
+            if (manager == null) return false;
 
             Texture tex = manager.GetVideoTexture();
-            BroadcastVideoTexture(tex);
+            if (tex == null)
+            {
+                float now = Time.time;
+                if (now - _lastNullTextureWarnAt > 2.0f)
+                {
+                    _lastNullTextureWarnAt = now;
+                    LogWarning("Switch texture is null; keeping previous video texture");
+                }
+                return false;
+            }
+
+            if (tex != _lastAssignedRenderTexture)
+                BroadcastVideoTexture(tex);
 
             _lastAssignedRenderTexture = tex;
+            return true;
+        }
+
+        private bool TryEnsureSwitchTextureDisplayed(float now)
+        {
+            if (_switchTextureDisplayed) return true;
+
+            _switchTextureDisplayed = TryUpdateRenderTextureFromManager(GetStandbyManager());
+            if (_switchTextureDisplayed)
+            {
+                _crossfadeStartedAt = now;
+                return true;
+            }
+
+            if (now - _lastSwitchTextureWaitWarnAt > 2.0f)
+            {
+                _lastSwitchTextureWaitWarnAt = now;
+                LogWarning("Waiting for standby texture before completing switch");
+            }
+            return false;
         }
 
         /// <summary>登録済みの全 MeshScreen / UiScreen にテクスチャを配信する。</summary>

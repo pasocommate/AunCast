@@ -318,7 +318,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 
 責務:
 - `playerManagerA` / `playerManagerB` のロール（Active/Standby）保持と `_activeIsA` の管理
-- スクリーン群（`VideoMeshScreen[]` / `VideoUiScreen[]`）への RenderTexture ソース切替（`UpdateRenderTexture` / `UpdateRenderTextureFromManager`）。配信は内部の `BroadcastVideoTexture` がループで全要素に適用する
+- スクリーン群（`VideoMeshScreen[]` / `VideoUiScreen[]`）への RenderTexture ソース切替（`UpdateRenderTexture` / `TryUpdateRenderTextureFromManager`）。配信は内部の `BroadcastVideoTexture` がループで全要素に適用する
 - クロスフェード（`crossfadeDurationSec`、等パワーパニング cos/sin カーブで各 `VideoPlayerManager` の `_fadeGain` を制御）
 - AudioLink 入力ソースの切替（`audioLinkBehaviour.SetProgramVariable("audioSource", ...)` 経由）
 - ロール交換 (`CompleteSwitchRoles`) 後のリセット
@@ -1078,7 +1078,8 @@ sequenceDiagram
     S-->>C: OnVideoReady
     S-->>C: OnVideoPlay
     C->>C: GetTime前進確認
-    C->>C: 映像切替（RenderTexture差替）
+    C->>C: 新系テクスチャ取得確認
+    C->>C: 映像切替（テクスチャ差替）
     C->>C: 音声クロスフェード開始
     Note over C: 旧系 vol 1→0, 新系 vol 0→1
     C->>C: クロスフェード完了
@@ -1109,15 +1110,15 @@ sequenceDiagram
 ## 16.1 基本ルール
 
 - 切替は新系生存確認後に行う
-- 映像切替は即座に行い、音声切替はクロスフェードで行う
+- 映像切替は新系テクスチャを取得できた時点で行い、音声切替はクロスフェードで行う
 - 切替前に新系を表に出さない
 - 旧系の停止はクロスフェード完了後に行う
 
 ## 16.2 映像切替
 
-- `StandbyVerifying → Switching` に遷移した瞬間に、登録済みの全 `VideoMeshScreen` / `VideoUiScreen` のテクスチャソースを新系の `VideoPlayerManager` に切り替える
-- 切替は 1 フレームで完了する。瞬間的な黒画面（1 フレーム）が出る可能性があるが、許容事項とする
-- 各 `VideoMeshScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`VideoUiScreen` は RawImage に直接テクスチャを設定する。テクスチャ未取得時の表示はマテリアル既定値に委ねる
+- `StandbyVerifying → Switching` 後、Standby の `VideoPlayerManager` から非 null のテクスチャを取得できた時点で、登録済みの全 `VideoMeshScreen` / `VideoUiScreen` のテクスチャソースを新系へ切り替える
+- テクスチャ未取得時は旧映像を保持し、null テクスチャをスクリーンへ配信しない。これにより切替時の白/黒フレームを避ける
+- 各 `VideoMeshScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`VideoUiScreen` は RawImage に直接テクスチャを設定する
 
 ## 16.3 音声切替・無音検知
 
@@ -1152,7 +1153,7 @@ float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 ```
 
 - `crossfadeDurationSec`: 推奨 0.3〜0.5 秒（Inspector 調整可能、`PlaybackSwitcher` で管理。デフォルト 0.3 秒）
-- Controller が `STATE_SWITCHING` 遷移時に `StartCrossfade` を呼ぶ。開始時にテクスチャを新系に即時切替する
+- Controller が `STATE_SWITCHING` 遷移時に `StartCrossfade` を呼ぶ。新系テクスチャを取得できるまで旧映像を保持し、取得後に切り替える
 - 両系統が同時に AudioListener に出力されるため、等パワー特性により音量の落ち込みなく自然にミックスされる
 - フェード完了後、`CompleteSwitchRoles()` で旧系プレイヤーを停止しロールを交換する
 
