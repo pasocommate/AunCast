@@ -396,16 +396,11 @@ namespace PasocomMate.AunCast
         /// <summary>検証に必要な最低連続前進回数を返す（HUD 表示用）。</summary>
         public int GetMinConsecutiveAdvances() { return minConsecutiveAdvances; }
 
-        /// <summary>ドリフトウォームアップ秒数を取得する（Inspector 未設定時のフォールバック付き）。</summary>
-        private float GetDriftWarmupSec()
-        {
-            return driftWarmupSec > 0f ? driftWarmupSec : 5.0f;
-        }
-
         private void BeginStablePlayback(float now)
         {
             _stablePlaybackStartedAt = now;
-            _driftWarmupUntil = now + GetDriftWarmupSec();
+            // driftWarmupSec が Inspector で 0 に設定された場合のフォールバック
+            _driftWarmupUntil = now + (driftWarmupSec > 0f ? driftWarmupSec : 5.0f);
             _driftAccumulator = 0f;
             _baseWallTime = 0f;
             _basePlayerTime = 0f;
