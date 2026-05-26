@@ -225,7 +225,7 @@ PrefabInstance:
     - target: {fileID: 842115020977551490, guid: 5785b8e73ac64415883e43271846cadf,
         type: 3}
       propertyPath: audioClip
-      value: 
+      value:
       objectReference: {fileID: 8300000, guid: f8a2aded8307daa4083abd1207a2415d, type: 3}
     - target: {fileID: 842115020977551490, guid: 5785b8e73ac64415883e43271846cadf,
         type: 3}
@@ -235,7 +235,7 @@ PrefabInstance:
     - target: {fileID: 842115020977551490, guid: 5785b8e73ac64415883e43271846cadf,
         type: 3}
       propertyPath: slideImages.Array.data[0]
-      value: 
+      value:
       objectReference: {fileID: 2800000, guid: f54d13519424c8f418f94d0c40204c50, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -288,8 +288,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 1361866905, guid: 661092b4961be7145bfbe56e1e62337b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   videoPlayer: {fileID: 0}
   mode: 0
 --- !u!82 &533597998
@@ -414,7 +414,7 @@ PrefabInstance:
     - target: {fileID: -6170736852157925953, guid: eae3866be6550994c98d95c99d4be4df,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: -6170736852157925953, guid: eae3866be6550994c98d95c99d4be4df,
         type: 3}
     - target: {fileID: 856665297275703694, guid: eae3866be6550994c98d95c99d4be4df,
@@ -825,7 +825,7 @@ PrefabInstance:
     - target: {fileID: 8499231295204008044, guid: eae3866be6550994c98d95c99d4be4df,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 45caa1b953aedde4dbc31ae7d8694a3f,
         type: 2}
     - target: {fileID: 9158607368347660208, guid: eae3866be6550994c98d95c99d4be4df,
@@ -943,6 +943,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1142965045}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &690370692 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6368310870574924059, guid: 0d617877712537147a584eb2a1ef735c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1142965045}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &710944906 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6616153333751029179, guid: 1115f50b99de93c479d417894fe2e931,
@@ -981,34 +993,234 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 18907742365424808, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 18907742365424808, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 18907742365424808, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 18907742365424808, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 85719424626777055, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 85719424626777055, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 290525661647226887, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 290525661647226887, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 290525661647226887, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 290525661647226887, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 326947796513708878, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 326947796513708878, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 326947796513708878, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 326947796513708878, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4291280831
+      objectReference: {fileID: 0}
+    - target: {fileID: 387844011786082753, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 387844011786082753, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 387844011786082753, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 387844011786082753, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 522601043806384100, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 522601043806384100, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 522601043806384100, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 522601043806384100, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 627871910587737306, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 627871910587737306, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.33
+      objectReference: {fileID: 0}
+    - target: {fileID: 627871910587737306, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 648377932119866497, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 648377932119866497, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 648377932119866497, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 648377932119866497, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 731579936077581875, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 731579936077581875, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 742669969205080425, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 742669969205080425, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 742669969205080425, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 742669969205080425, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4291280831
+      objectReference: {fileID: 0}
     - target: {fileID: 761875555929777887, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 761875555929777887, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 872609600125345882, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 872609600125345882, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 872609600125345882, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 872609600125345882, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 884155089675577330, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 884155089675577330, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 884155089675577330, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 884155089675577330, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 931712234642278668, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 931712234642278668, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 1079133330705007976, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: serializedPublicVariablesBytesString
+      value: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABggAAAAAAAAAAi8CAAAAAUkAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAGAAMQBbAFsAUwB5AHMAdABlAG0ALgBJAG4AdAAzADIALAAgAG0AcwBjAG8AcgBsAGkAYgBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAIAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAR8AAABfAF8AXwBVAGQAbwBuAFMAaABhAHIAcABCAGUA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
+      objectReference: {fileID: 0}
     - target: {fileID: 1122334455667788990, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 1122334455667788990, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
     - target: {fileID: 1122334455667788991, guid: 0d617877712537147a584eb2a1ef735c,
@@ -1016,10 +1228,50 @@ PrefabInstance:
       propertyPath: _syncMethod
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1246518834395835584, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 1246518834395835584, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1246518834395835584, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1246518834395835584, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 1258254648098191704, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1279829084386806587, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 1279829084386806587, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1279829084386806587, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1279829084386806587, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
       objectReference: {fileID: 0}
     - target: {fileID: 1497806321923076943, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
@@ -1029,15 +1281,40 @@ PrefabInstance:
     - target: {fileID: 1580750154289128844, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 1580750154289128844, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
     - target: {fileID: 1670705022762929325, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+      propertyPath: vrLocalOffset.y
+      value: -0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 1670705022762929325, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 1670705022762929325, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 1768895494555121895, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 1768895494555121895, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1768895494555121895, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1768895494555121895, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 1815049198138440321, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_Alpha
@@ -1053,18 +1330,343 @@ PrefabInstance:
       propertyPath: m_BlocksRaycasts
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2128055761397814149, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 2128055761397814149, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2128055761397814149, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2128055761397814149, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2278575103092355664, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 2278575103092355664, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2278575103092355664, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2278575103092355664, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4291280831
+      objectReference: {fileID: 0}
+    - target: {fileID: 2309531391705892578, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 2309531391705892578, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2309531391705892578, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2309531391705892578, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 2537792760387121733, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 2537792760387121733, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 2573543584202911005, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 2573543584202911005, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2573543584202911005, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2573543584202911005, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2771386784135235499, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 2771386784135235499, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2771386784135235499, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 2771386784135235499, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3111598688468749006, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3111598688468749006, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3111598688468749006, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3111598688468749006, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3149435652509697873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3149435652509697873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3149435652509697873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3149435652509697873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3221435935352418929, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3221435935352418929, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3221435935352418929, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3221435935352418929, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3225037241712565956, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3225037241712565956, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3225037241712565956, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3225037241712565956, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 3278151562744594794, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 3278151562744594794, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 3286638500511364191, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Material
+      value:
+      objectReference: {fileID: 2100000, guid: 468b55fc37f72d946be29efb36aeec98, type: 2}
+    - target: {fileID: 3302390620987183401, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3302390620987183401, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3302390620987183401, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3302390620987183401, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599137874447160958, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599137874447160958, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599137874447160958, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599137874447160958, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623618197494028873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623618197494028873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623618197494028873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623618197494028873, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3909539046451869825, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 3909539046451869825, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 3909539046451869825, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 3909539046451869825, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4291280831
+      objectReference: {fileID: 0}
+    - target: {fileID: 3966410265503862402, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3966410265503862402, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3966410265503862402, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3966410265503862402, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3971549801198939657, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3971549801198939657, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3971549801198939657, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3971549801198939657, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3980988196821045702, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3980988196821045702, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3980988196821045702, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 3980988196821045702, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 4060580733508892117, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_AnchorMax.x
@@ -1073,6 +1675,121 @@ PrefabInstance:
     - target: {fileID: 4060580733508892117, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4069538909574820541, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4069538909574820541, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4069538909574820541, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4069538909574820541, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070925736610632802, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070925736610632802, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070925736610632802, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070925736610632802, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4087885553872129049, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4087885553872129049, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4087885553872129049, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4087885553872129049, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4110024978949780567, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4110024978949780567, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4110024978949780567, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4110024978949780567, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185496977931954190, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185496977931954190, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185496977931954190, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185496977931954190, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4374812601072893299, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4374812601072893299, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.33
+      objectReference: {fileID: 0}
+    - target: {fileID: 4374812601072893299, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.r
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4408121560925559682, guid: 0d617877712537147a584eb2a1ef735c,
@@ -1093,17 +1810,17 @@ PrefabInstance:
     - target: {fileID: 4408121560925559682, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: publicVariablesUnityEngineObjects.Array.data[4]
-      value: 
+      value:
       objectReference: {fileID: 2138752471}
     - target: {fileID: 4408121560925559682, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: publicVariablesUnityEngineObjects.Array.data[5]
-      value: 
+      value:
       objectReference: {fileID: 1890804299}
     - target: {fileID: 4408121560925559682, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: publicVariablesUnityEngineObjects.Array.data[6]
-      value: 
+      value:
       objectReference: {fileID: 1858180801}
     - target: {fileID: 4480082106761629983, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
@@ -1125,29 +1842,234 @@ PrefabInstance:
       propertyPath: m_AnchorMin.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4586715846898299294, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 4586715846898299294, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 4586715846898299294, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 4586715846898299294, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4291280831
+      objectReference: {fileID: 0}
+    - target: {fileID: 4668617430181538665, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4668617430181538665, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4668617430181538665, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4668617430181538665, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: defaultSummonGesture
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: defaultDesktopSummonGesture
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: staffAllowedUserNames.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: staffAllowedUserNames.Array.data[0]
+      value: "CHIGIRI \u3064\u3064\u307F\u3061\u304E\u308A"
+      objectReference: {fileID: 0}
+    - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: staffAllowedUserNames.Array.data[1]
+      value: '[1] Local Player'
+      objectReference: {fileID: 0}
+    - target: {fileID: 4912235191672306750, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 4912235191672306750, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4912235191672306750, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4912235191672306750, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 5041706523353366115, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 5041706523353366115, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 5041706523353366115, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 5041706523353366115, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 5248972186758826917, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 5248972186758826917, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
     - target: {fileID: 5377054145491112149, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 5377054145491112149, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
     - target: {fileID: 5565436277513804548, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: audioLinkBehaviour
-      value: 
+      value:
       objectReference: {fileID: 2138752469}
     - target: {fileID: 5565436277513804548, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 5565436277513804548, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 5766643464706043137, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 5766643464706043137, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 5766643464706043137, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 5766643464706043137, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4291280831
+      objectReference: {fileID: 0}
+    - target: {fileID: 5835975954238321013, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 5835975954238321013, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 5835975954238321013, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 5835975954238321013, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6000667702603924362, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 6000667702603924362, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6000667702603924362, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6000667702603924362, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6090543585217239096, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 6090543585217239096, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6090543585217239096, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6090543585217239096, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6172857375667949232, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 6172857375667949232, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6172857375667949232, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6172857375667949232, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 6293963138451541506, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: _syncMethod
@@ -1161,15 +2083,115 @@ PrefabInstance:
     - target: {fileID: 6467671380132453154, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6467671380132453154, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 6530481786702268335, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: serializedPublicVariablesBytesString
+      value: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABh8AAAAAAAAAAi8CAAAAAUkAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAGAAMQBbAFsAUwB5AHMAdABlAG0ALgBJAG4AdAAzADIALAAgAG0AcwBjAG8AcgBsAGkAYgBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAIAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAR8AAABfAF8AXwBVAGQAbwBuAFMAaABhAHIAcABCAGUA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
+      objectReference: {fileID: 0}
+    - target: {fileID: 6530481786702268335, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: publicVariablesUnityEngineObjects.Array.size
+      value: 23
+      objectReference: {fileID: 0}
+    - target: {fileID: 6530481786702268335, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: publicVariablesUnityEngineObjects.Array.data[21]
+      value:
+      objectReference: {fileID: 1855237577}
+    - target: {fileID: 6530481786702268335, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: publicVariablesUnityEngineObjects.Array.data[22]
+      value:
+      objectReference: {fileID: 690370692}
+    - target: {fileID: 6532443768182485972, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: summonGesture
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532443768182485972, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: desktopSummonGesture
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 6532443768182485972, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6532443768182485972, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 6595529840421319788, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 6595529840421319788, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6595529840421319788, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6595529840421319788, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 6708295643816539461, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6708295643816539461, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0.156862
+      objectReference: {fileID: 0}
+    - target: {fileID: 6708295643816539461, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.156862
+      objectReference: {fileID: 0}
+    - target: {fileID: 6708295643816539461, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 0.156862
+      objectReference: {fileID: 0}
+    - target: {fileID: 7042229008320831994, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7042229008320831994, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4294967295
+      objectReference: {fileID: 0}
+    - target: {fileID: 7077847935915427787, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 7077847935915427787, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 7077847935915427787, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 7077847935915427787, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 7098602957412369292, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1220,6 +2242,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7492253115510568489, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492253115510568489, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492253115510568489, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492253115510568489, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
     - target: {fileID: 7916147953636314777, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_Alpha
@@ -1235,10 +2277,30 @@ PrefabInstance:
       propertyPath: m_BlocksRaycasts
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8164012329369150416, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8164012329369150416, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0.156862
+      objectReference: {fileID: 0}
+    - target: {fileID: 8164012329369150416, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.156862
+      objectReference: {fileID: 0}
+    - target: {fileID: 8164012329369150416, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 0.156862
+      objectReference: {fileID: 0}
     - target: {fileID: 8200345231049393443, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 8200345231049393443, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
     - target: {fileID: 8231059202971838055, guid: 0d617877712537147a584eb2a1ef735c,
@@ -1249,15 +2311,65 @@ PrefabInstance:
     - target: {fileID: 8485291155812932236, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 8485291155812932236, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 8485291155812932236, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: allowedUserNames.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485291155812932236, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: allowedUserNames.Array.data[0]
+      value: "CHIGIRI \u3064\u3064\u307F\u3061\u304E\u308A"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485291155812932236, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: allowedUserNames.Array.data[1]
+      value: '[1] Local Player'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8631296553321550341, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_fontColor.a
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8867954817485945329, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 8867954817485945329, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
+    - target: {fileID: 8924119086970646060, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.a
+      value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 8924119086970646060, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.b
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 8924119086970646060, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.g
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 8924119086970646060, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: m_Colors.m_DisabledColor.r
+      value: 0.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 9039388994002443189, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: serializedPublicVariablesBytesString
+      value: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABj0AAAAAAAAAAi8CAAAAAUkAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAGAAMQBbAFsAUwB5AHMAdABlAG0ALgBJAG4AdAAzADIALAAgAG0AcwBjAG8AcgBsAGkAYgBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAIAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAR8AAABfAF8AXwBVAGQAbwBuAFMAaABhAHIAcABCAGUA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
+      objectReference: {fileID: 0}
+    - target: {fileID: 9122316764414993827, guid: 0d617877712537147a584eb2a1ef735c,
+        type: 3}
+      propertyPath: serializedPublicVariablesBytesString
+      value: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABhQAAAAAAAAAAi8CAAAAAUkAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAGAAMQBbAFsAUwB5AHMAdABlAG0ALgBJAG4AdAAzADIALAAgAG0AcwBjAG8AcgBsAGkAYgBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAIAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAR8AAABfAF8AXwBVAGQAbwBuAFMAaABhAHIAcABCAGUA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
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1291,8 +2403,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 1361866905, guid: 661092b4961be7145bfbe56e1e62337b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   videoPlayer: {fileID: 0}
   mode: 0
 --- !u!82 &1168326898
@@ -1467,41 +2579,41 @@ PrefabInstance:
     - target: {fileID: 2623192494144562529, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 155526fbb9632ad42891e734c3d7283c,
         type: 2}
     - target: {fileID: 3473816337021115274, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 85fdeb46de717c4449d7b483991fa3b7,
         type: 2}
     - target: {fileID: 3487364025369620932, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: audioLink
-      value: 
+      value:
       objectReference: {fileID: 2138752469}
     - target: {fileID: 3487364025369620932, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 3487364025369620932, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 3750058459207842335, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: audioLink
-      value: 
+      value:
       objectReference: {fileID: 2138752469}
     - target: {fileID: 3750058459207842335, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 3750058459207842335, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 5217394829301116157, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 5217394829301116157, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 5718005342757940154, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1532,25 +2644,25 @@ PrefabInstance:
     - target: {fileID: 6616153333061863353, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333061863353, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333061863358, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 155526fbb9632ad42891e734c3d7283c,
         type: 2}
     - target: {fileID: 6616153333142193697, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333142193697, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333142193702, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333167397455, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1571,25 +2683,25 @@ PrefabInstance:
     - target: {fileID: 6616153333311164082, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333311164092, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333311164092, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333391290330, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333391290330, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333391290331, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333525541816, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1630,49 +2742,49 @@ PrefabInstance:
     - target: {fileID: 6616153333697159238, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333697159238, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333697159239, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333829841448, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333829841448, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333829841449, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333841106332, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333841106332, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333841106333, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333847427908, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153333847427911, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153333847427911, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153333955675624, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1708,13 +2820,13 @@ PrefabInstance:
     - target: {fileID: 6616153334156595666, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153334156595677, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153334156595677, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153334244760165, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1765,7 +2877,7 @@ PrefabInstance:
     - target: {fileID: 6616153334363350199, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 95d21d8d66744d74c8feab1aa34ceab4,
         type: 2}
     - target: {fileID: 6616153334576860467, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1786,37 +2898,37 @@ PrefabInstance:
     - target: {fileID: 6616153334688045266, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153334688045277, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153334688045277, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153334697177460, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153334697177460, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153334697177461, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153334724266306, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 14106beb6763c5d47bedde630a8824bb,
         type: 2}
     - target: {fileID: 6616153334724266317, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 6616153334724266317, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 6616153334760494830, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1852,13 +2964,13 @@ PrefabInstance:
     - target: {fileID: 7808914124206671945, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 7808914124206671945, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 7808914124206671946, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: f28c593e960318a4195d4d7f430ff220,
         type: 2}
     - target: {fileID: 7808914124206671991, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1869,7 +2981,7 @@ PrefabInstance:
     - target: {fileID: 7808914124964714835, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 7808914124964714835, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
     - target: {fileID: 7808914124964714841, guid: 1115f50b99de93c479d417894fe2e931,
@@ -1880,7 +2992,7 @@ PrefabInstance:
     - target: {fileID: 7808914124964714844, guid: 1115f50b99de93c479d417894fe2e931,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: f28c593e960318a4195d4d7f430ff220,
         type: 2}
     m_RemovedComponents: []
@@ -2138,13 +3250,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1427037861, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   launchedFromSDKPipeline: 0
   completedSDKPipeline: 0
-  blueprintId: 
+  blueprintId:
   contentType: 1
-  assetBundleUnityVersion: 
+  assetBundleUnityVersion:
   fallbackStatus: 0
 --- !u!114 &1543491917
 MonoBehaviour:
@@ -2156,8 +3268,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -17141911, guid: 661092b4961be7145bfbe56e1e62337b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   spawns:
   - {fileID: 1543491918}
   spawnRadius: 0
@@ -2179,7 +3291,7 @@ MonoBehaviour:
   releasePublic: 0
   unityVersion: 2022.3.22f1
   udonProducts: []
-  Name: 
+  Name:
   NSFW: 0
   SpawnPosition: {x: 0, y: 0, z: 0}
   SpawnLocation: {fileID: 0}
@@ -2522,6 +3634,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!224 &1855237577 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6418455704807867715, guid: 0d617877712537147a584eb2a1ef735c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1142965045}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1858180799 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2734315813200076851, guid: 0d617877712537147a584eb2a1ef735c,
@@ -2538,8 +3656,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1890804297 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 651377710243400827, guid: 0d617877712537147a584eb2a1ef735c,
@@ -2556,8 +3674,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1926951740 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7547899730968341369, guid: 0d617877712537147a584eb2a1ef735c,
@@ -2610,12 +3728,12 @@ PrefabInstance:
     - target: {fileID: 2439678698260312388, guid: 8c1f201f848804f42aa401d0647f8902,
         type: 3}
       propertyPath: audioSource
-      value: 
+      value:
       objectReference: {fileID: 0}
     - target: {fileID: 2439678698260312388, guid: 8c1f201f848804f42aa401d0647f8902,
         type: 3}
       propertyPath: serializationData.Prefab
-      value: 
+      value:
       objectReference: {fileID: 2439678698260312388, guid: 8c1f201f848804f42aa401d0647f8902,
         type: 3}
     - target: {fileID: 4559840160047443413, guid: 8c1f201f848804f42aa401d0647f8902,
@@ -2681,7 +3799,7 @@ PrefabInstance:
     - target: {fileID: 8295703945185298429, guid: 8c1f201f848804f42aa401d0647f8902,
         type: 3}
       propertyPath: serializedProgramAsset
-      value: 
+      value:
       objectReference: {fileID: 11400000, guid: 952f256b423104d418632e109584844e,
         type: 2}
     m_RemovedComponents: []
@@ -2700,8 +3818,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa856f4528fc71343ae13d211071a669, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &2138752471 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8295703945185298429, guid: 8c1f201f848804f42aa401d0647f8902,
@@ -2712,8 +3830,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
