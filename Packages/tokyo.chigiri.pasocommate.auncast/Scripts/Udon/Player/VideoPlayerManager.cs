@@ -246,13 +246,16 @@ namespace PasocomMate.AunCast
 
         private float GetAdjustedVolume(float volume)
         {
-            // 左側は x^2 ベース、右側は Dr. Lex 指数カーブ (50dB レンジ) を補間係数 x で lerp。
-            // これで指数カーブ単体だと発生する左半分の「死にゾーン」を避けつつ、
-            // 右端付近は知覚的にリニアな音量上昇を維持する。
+            // スライダー値 0 はミュート扱い。それ以外は -34 dBFS (=0.02) より下の
+            // 死にゾーンを除去するため x∈(0,1] を t∈[0.15,1] にリマップしてから
+            // 既存の Dr. Lex 指数カーブ (50dB レンジ) を適用する。
             // 指数カーブの参考: https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal
             float x = Mathf.Clamp01(volume);
-            float expCurve = Mathf.Clamp01(3.1623e-3f * Mathf.Exp(x * 5.757f) - 3.1623e-3f);
-            return (1f - x) * x * x + x * expCurve;
+            if (x <= 0f) return 0f;
+
+            float t = 0.15f + 0.85f * x;
+            float expCurve = Mathf.Clamp01(3.1623e-3f * Mathf.Exp(t * 5.757f) - 3.1623e-3f);
+            return (1f - t) * t * t + t * expCurve;
         }
 
         private void CacheAudioSourceBaseVolumes()

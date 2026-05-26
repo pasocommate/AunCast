@@ -354,6 +354,13 @@ namespace PasocomMate.AunCast
 
             VideoPlayerManager activeMgr = switcher.GetActiveManager();
             VideoPlayerManager standbyMgr = switcher.GetStandbyManager();
+
+            // 両系統ともユーザー音量でミュート (slider=0) の場合は無音検知をスキップ。
+            // ミュート中は GetOutputData が全ゼロを返し RMS 正規化が成立しないため。
+            bool activeMuted = activeMgr == null || activeMgr.GetVolume() <= 0f;
+            bool standbyMuted = standbyMgr == null || standbyMgr.GetVolume() <= 0f;
+            if (activeMuted && standbyMuted) { _combinedSilenceDuration = 0f; return; }
+
             bool anyAudible = false;
             anyAudible |= CheckPlayerAudible(activeMgr, activeDet, threshold);
             anyAudible |= CheckPlayerAudible(standbyMgr, standbyDet, threshold);

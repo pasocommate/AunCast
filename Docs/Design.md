@@ -745,6 +745,7 @@ _driftAccumulator = lerp(_driftAccumulator, rawDrift, alpha)
 #### 自動トリガー（個人無音 Resync として実装）
 - 現在の実装では、無音検知はグローバル Resync ではなく、各クライアントの**個人 Resync** (`REQUEST_REASON_SILENCE`) として発行される
 - Active 系・Standby 系の両方の `AudioSilenceDetector.GetRms()` を確認し、`_fadeGain > 0` かつ RMS が閾値以上のプレイヤーが 1 つもない場合に「全 audible プレイヤーで無音」と判定する
+- 両系統ともユーザー音量がミュート（スライダー値 0）の場合は誤検知防止のため検知をスキップする
 - 無音判定が `silenceConsecutiveSec`（デフォルト 2 秒）連続した場合に個人 Resync リクエストを発行する
 - 最後の Resync 完了（`_lastResyncCompletedAt`）から `silenceSuppressSec`（デフォルト 150 秒）が経過するまで、無音検知を無効化する（`IsSilenceAutoResyncEligible`）。これにより、Resync 直後の不要な再発動を防止する
 - 各ユーザーが `_autoSilenceResyncEnabled` フラグ（UserStatusPanel のトグル）で有効/無効を切り替えられる
@@ -1550,19 +1551,23 @@ Tab キーで Viewer 表示 → Staff 表示（解錠時）→ 非表示 の 3 �
 
 #### 音量カーブ
 
-`VideoPlayerManager.ApplyVolume()` で適用される音量カーブは、x² ベースと Dr. Lex 指数カーブ (50dB レンジ) を入力値 x 自体を補間係数として lerp する方式:
+`VideoPlayerManager.ApplyVolume()` で適用される音量カーブは、x² ベースと Dr. Lex 指数カーブ (50dB レンジ) を入力値 x 自体を補間係数として lerp する方式。スライダー値 0 は完全ミュート扱いとし、それ以外は x∈(0,1] を t∈[0.15,1] にリマップしてからカーブを適用する:
 
 ```csharp
-float expCurve = 3.1623e-3f * Mathf.Exp(x * 5.757f) - 3.1623e-3f;
-float adjustedVolume = (1f - x) * x * x + x * expCurve;
+if (x <= 0f) return 0f;                          // スライダー最小値はミュート
+float t = 0.15f + 0.85f * x;                     // -34 dBFS 未満の死にゾーンを除去
+float expCurve = 3.1623e-3f * Mathf.Exp(t * 5.757f) - 3.1623e-3f;
+float adjustedVolume = (1f - t) * t * t + t * expCurve;
 float output = adjustedVolume * _fadeGain;
 // 各 AudioSource に適用: audioSource.volume = baseVolume * output
 ```
 
-- 左半分（低音量域）: x² が支配的で「死にゾーン」を回避
+- 入力値 0 のみミュート、それ以外は最低でも適用ゲイン約 0.02 (= -34 dBFS) を確保し、スライダー下端の死にゾーンをなくす
+- 左半分（低音量域）: x² が支配的で知覚的に滑らかな立ち上がり
 - 右半分（高音量域）: 指数カーブが支配的で知覚的にリニアな音量上昇を維持
-- デフォルト音量 0.6 で約 -13dB
+- デフォルト音量 0.6 で約 -10dB
 - 各 AudioSource の初期音量（`_audioSourceBaseVolumes`）を乗算することで、AudioSource ごとの音量バランスを維持する
+- ミュート時は `AudioSilenceDetector` の GetOutputData が全ゼロを返し正規化が成立しないため、`PollSilenceDetection` は両系統ミュート時に検知をスキップする
 
 > **設計変更履歴**: 当初は「ボリューム UI を提供しない」方針だったが、観客ごとに最適な音量が異なる現実的なユースケースを踏まえ、ローカル設定として提供する形に変更した。
 
