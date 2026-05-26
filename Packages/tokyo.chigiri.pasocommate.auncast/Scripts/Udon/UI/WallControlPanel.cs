@@ -115,8 +115,14 @@ namespace PasocomMate.AunCast
             if (staffPanel != null && staffPanel.IsLocallyUnlocked())
             {
                 _isStaff = true;
-                ApplyUnlockedSwitchButton();
+                UpdateSwitchViewButton();
             }
+        }
+
+        /// <summary>LocalDualPlayerController から FSM 状態変化を Push 通知される。</summary>
+        public void OnLocalStateChanged()
+        {
+            UpdateUserButtonInteractable();
         }
 
         private void Update()
@@ -127,7 +133,6 @@ namespace PasocomMate.AunCast
             if (now - _lastSlowUpdateTime < SLOW_UPDATE_INTERVAL) return;
             _lastSlowUpdateTime = now;
 
-            UpdateUserButtonInteractable();
             CheckWallDistance();
         }
 
@@ -140,13 +145,7 @@ namespace PasocomMate.AunCast
             _viewTarget = view;
             if (view == VIEW_USER)
                 SyncGestureToggles();
-            if (!_isStaff)
-            {
-                if (switchViewButtonLabel != null)
-                    switchViewButtonLabel.text = view == VIEW_STAFF
-                        ? SWITCH_ICON_TO_USER
-                        : SWITCH_ICON_TO_STAFF;
-            }
+            UpdateSwitchViewButton();
             if (instant)
             {
                 float u = view == VIEW_USER ? 1f : 0f;
@@ -221,7 +220,7 @@ namespace PasocomMate.AunCast
             if (_isStaff)
             {
                 SetViewTarget(VIEW_USER, false);
-                ApplyUnlockedSwitchButton();
+                UpdateSwitchViewButton();
                 return;
             }
             SetViewTarget(_viewTarget == VIEW_STAFF ? VIEW_USER : VIEW_STAFF, false);
@@ -229,8 +228,7 @@ namespace PasocomMate.AunCast
 
         public void ApplySharedButtonsLayout()
         {
-            if (switchViewButton != null)
-                switchViewButton.gameObject.SetActive(!disablePasscodeViewSwitchButton);
+            UpdateSwitchViewButton();
 
             RectTransform spawnRect = GetSpawnPanelButtonRect();
             if (spawnRect == null) return;
@@ -297,11 +295,26 @@ namespace PasocomMate.AunCast
             }
         }
 
-        private void ApplyUnlockedSwitchButton()
+        /// <summary>
+        /// switchViewButton の active / interactable / label を _isStaff / _viewTarget /
+        /// disablePasscodeViewSwitchButton の AND で一括設定する。状態変化箇所はここを呼ぶだけにする。
+        /// </summary>
+        private void UpdateSwitchViewButton()
         {
+            if (switchViewButton != null)
+                switchViewButton.gameObject.SetActive(!disablePasscodeViewSwitchButton);
+
             if (switchViewButtonLabel != null)
-                switchViewButtonLabel.text = SWITCH_ICON_UNLOCKED;
-            SetButtonInteractable(switchViewButton, false);
+            {
+                if (_isStaff)
+                    switchViewButtonLabel.text = SWITCH_ICON_UNLOCKED;
+                else
+                    switchViewButtonLabel.text = _viewTarget == VIEW_STAFF
+                        ? SWITCH_ICON_TO_USER
+                        : SWITCH_ICON_TO_STAFF;
+            }
+
+            SetButtonInteractable(switchViewButton, !_isStaff);
         }
 
         public void OnResyncOnlyButtonPress()
@@ -345,9 +358,10 @@ namespace PasocomMate.AunCast
         private void UpdateUserButtonInteractable()
         {
             if (controller == null) return;
-            bool canResync = controller.GetLocalState() == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
-            SetButtonInteractable(userResyncButton, canResync);
-            SetButtonInteractable(resyncOnlyButton, canResync);
+            bool canRequest = controller.GetLocalState() == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
+            SetButtonInteractable(userResyncButton, canRequest);
+            SetButtonInteractable(resyncOnlyButton, canRequest);
+            SetButtonInteractable(userRebootButton, canRequest);
         }
 
         private void SetButtonInteractable(Button button, bool interactable)
@@ -528,7 +542,7 @@ namespace PasocomMate.AunCast
                     passcodeDisplay.text = "UNLOCKED";
                 if (staffPanel != null)
                     staffPanel.SetLocalPasscodeUnlocked();
-                ApplyUnlockedSwitchButton();
+                UpdateSwitchViewButton();
             }
             else
             {

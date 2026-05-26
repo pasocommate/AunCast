@@ -29,6 +29,13 @@ namespace PasocomMate.AunCast
         [SerializeField] private VRCUrlInputField nextUrlField;
         [SerializeField] private TMP_Text nextUrlFieldPlaceholderText;
 
+        [Header("Action Buttons")]
+        [SerializeField] private Button stopButton;
+        [SerializeField] private Button globalResyncButton;
+        [SerializeField] private Button forceRebootButton;
+        [SerializeField] private Button promoteNextButton;
+        [SerializeField] private float disabledButtonLabelAlpha = 0.5f;
+
         [Header("Help Text")]
         [SerializeField] private TMP_Text helpTextField;
 
@@ -193,40 +200,51 @@ namespace PasocomMate.AunCast
         public override void OnPlayerJoined(VRCPlayerApi player)
         {
             if (!player.isLocal) return;
-            if (_isStaff) return;
-            if (allowedUserNames == null) return;
 
-            string displayName = player.displayName;
-            bool eligible = false;
-            for (int i = 0; i < allowedUserNames.Length; i++)
+            if (!_isStaff && allowedUserNames != null)
             {
-                if (allowedUserNames[i] == displayName)
+                string displayName = player.displayName;
+                bool eligible = false;
+                for (int i = 0; i < allowedUserNames.Length; i++)
                 {
-                    eligible = true;
-                    break;
+                    if (allowedUserNames[i] == displayName)
+                    {
+                        eligible = true;
+                        break;
+                    }
+                }
+
+                if (eligible)
+                {
+                    // SDK Build & Test での同名重複: 最小 playerId のみ許可
+                    int playerCount = VRCPlayerApi.GetPlayerCount();
+                    bool overridden = false;
+                    if (playerCount > 1)
+                    {
+                        int localId = player.playerId;
+                        VRCPlayerApi[] players = new VRCPlayerApi[playerCount];
+                        VRCPlayerApi.GetPlayers(players);
+                        for (int i = 0; i < players.Length; i++)
+                        {
+                            VRCPlayerApi p = players[i];
+                            if (p == null || !Utilities.IsValid(p)) continue;
+                            if (p.playerId == localId) continue;
+                            if (p.displayName == displayName && p.playerId < localId)
+                            {
+                                overridden = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!overridden)
+                    {
+                        _isStaff = true;
+                        UpdateLockUI();
+                    }
                 }
             }
-            if (!eligible) return;
 
-            // SDK Build & Test での同名重複: 最小 playerId のみ許可
-            int playerCount = VRCPlayerApi.GetPlayerCount();
-            if (playerCount > 1)
-            {
-                int localId = player.playerId;
-                VRCPlayerApi[] players = new VRCPlayerApi[playerCount];
-                VRCPlayerApi.GetPlayers(players);
-                for (int i = 0; i < players.Length; i++)
-                {
-                    VRCPlayerApi p = players[i];
-                    if (p == null || !Utilities.IsValid(p)) continue;
-                    if (p.playerId == localId) continue;
-                    if (p.displayName == displayName && p.playerId < localId)
-                        return;
-                }
-            }
-
-            _isStaff = true;
-            UpdateLockUI();
+            UpdateActionButtonsInteractable();
         }
 
         /// <summary>
@@ -242,6 +260,13 @@ namespace PasocomMate.AunCast
         public void OnUrlChanged()
         {
             UpdateNowPlayingDisplay();
+            UpdateActionButtonsInteractable();
+        }
+
+        /// <summary>nextUrlField の onValueChanged から呼ばれる。Next URL の有無で Promote ボタンを切替。</summary>
+        public void OnNextUrlChanged()
+        {
+            UpdateActionButtonsInteractable();
         }
 
         /// <summary>
@@ -270,6 +295,7 @@ namespace PasocomMate.AunCast
             _isStaff = true;
             UpdateLockUI();
             SyncUIFromState();
+            UpdateActionButtonsInteractable();
             if (viewerStatusPanel != null)
                 viewerStatusPanel.OnStaffUnlockStateChanged();
         }
@@ -589,6 +615,49 @@ namespace PasocomMate.AunCast
         {
             if (string.IsNullOrEmpty(value)) return "";
             return $"<noparse>{value}</noparse>";
+        }
+
+        /// <summary>
+        /// アクションボタンの有効/無効を現在のストリーム状態・Next URL の有無・スタッフロック状態の AND で更新する。
+        /// UserStatusPanel のスタッフロック切替時にも呼ばれ、ロック中は全ボタンが無効化される。
+        /// </summary>
+        public void UpdateActionButtonsInteractable()
+        {
+            bool staffInteractable = viewerStatusPanel == null || viewerStatusPanel.IsStaffInteractable();
+            bool baseEnabled = _isStaff && staffInteractable;
+            bool hasStream = !string.IsNullOrEmpty(_nowPlayingUrl);
+            SetButtonInteractable(stopButton, baseEnabled && hasStream);
+            SetButtonInteractable(globalResyncButton, baseEnabled && hasStream);
+            SetButtonInteractable(forceRebootButton, baseEnabled && hasStream);
+
+            bool hasNextUrl = false;
+            if (nextUrlField != null)
+            {
+                VRCUrl next = nextUrlField.GetUrl();
+                hasNextUrl = next != null && !string.IsNullOrEmpty(next.Get());
+            }
+            SetButtonInteractable(promoteNextButton, baseEnabled && hasNextUrl);
+        }
+
+        private void SetButtonInteractable(Button button, bool interactable)
+        {
+            if (button == null) return;
+            float alpha = interactable ? 1f : disabledButtonLabelAlpha;
+            var cg = button.GetComponent<CanvasGroup>();
+            if (cg != null)
+            {
+                cg.alpha = alpha;
+                return;
+            }
+            var labels = button.GetComponentsInChildren<TMP_Text>(true);
+            if (labels == null) return;
+            foreach (var label in labels)
+            {
+                if (label == null) continue;
+                var c = label.color;
+                c.a = alpha;
+                label.color = c;
+            }
         }
 
         private void UpdateMonitoringDisplay()

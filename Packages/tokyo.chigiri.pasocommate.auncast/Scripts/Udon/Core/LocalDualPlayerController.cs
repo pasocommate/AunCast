@@ -43,6 +43,7 @@ namespace PasocomMate.AunCast
 
         [Header("UI Notification")]
         [SerializeField] private StaffControlPanel staffPanel;
+        [SerializeField] private WallControlPanel[] wallPanels;
 
         // =================================================================
         //  Inspector パラメータ (Design Section 20)
@@ -115,6 +116,9 @@ namespace PasocomMate.AunCast
         private bool _ranInit;
         private bool _hasReportedPlaybackActive;
         private bool _lastReportedPlaybackActive;
+
+        // FSM 状態変化通知用 (-1 = 未通知)
+        private int _lastReportedLocalState = -1;
 
         // =================================================================
         //  Unity ライフサイクル
@@ -192,6 +196,21 @@ namespace PasocomMate.AunCast
             if (switcher != null) switcher.UpdateRenderTexture(_localState, _ownerPlaying);
             PollSilenceDetection(now);
             ReportPlaybackStateToCoordinator();
+            NotifyLocalStateChangeIfNeeded();
+        }
+
+        /// <summary>FSM 状態が前フレームから変化していれば購読者へ Push 通知する。</summary>
+        private void NotifyLocalStateChangeIfNeeded()
+        {
+            if (_localState == _lastReportedLocalState) return;
+            _lastReportedLocalState = _localState;
+            if (wallPanels != null)
+            {
+                for (int i = 0; i < wallPanels.Length; i++)
+                {
+                    if (wallPanels[i] != null) wallPanels[i].OnLocalStateChanged();
+                }
+            }
         }
 
         /// <summary>非オーナーがオーナーの _ownerPlaying=true 同期を待ち、到達したら再生を再開する。</summary>

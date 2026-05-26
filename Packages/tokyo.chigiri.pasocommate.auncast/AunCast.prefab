@@ -2199,7 +2199,19 @@ MonoBehaviour:
       m_Calls: []
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 9122316764414993827}
+        m_TargetAssemblyTypeName: VRC.Udon.UdonBehaviour, VRC.Udon
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName:
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OnNextUrlChanged
+          m_BoolArgument: 0
+        m_CallState: 2
   m_CaretColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_CustomCaretColor: 0
   m_SelectionColor: {r: 0.65882355, g: 0.80784315, b: 1, a: 0.7529412}
@@ -11279,6 +11291,8 @@ MonoBehaviour:
   activeMonitor: {fileID: 8867954817485945329}
   resyncClient: {fileID: 6467671380132453154}
   staffPanel: {fileID: 8485291155812932236}
+  wallPanels:
+  - {fileID: 3278151562744594794}
   readyTimeoutSec: 5
   playTimeoutSec: 3
   verifyTimeoutSec: 2
@@ -17474,6 +17488,11 @@ MonoBehaviour:
   nowPlayingText: {fileID: 326947796513708878}
   nextUrlField: {fileID: 8502064871704771503}
   nextUrlFieldPlaceholderText: {fileID: 7524603785759154900}
+  stopButton: {fileID: 387844011786082753}
+  globalResyncButton: {fileID: 6090543585217239096}
+  forceRebootButton: {fileID: 5835975954238321013}
+  promoteNextButton: {fileID: 4069538909574820541}
+  disabledButtonLabelAlpha: 0.5
   helpTextField: {fileID: 7136706143972660112}
   indicatorText: {fileID: 3963171657236632523}
   userCountText: {fileID: 2278575103092355664}

@@ -62,10 +62,8 @@ namespace PasocomMate.AunCast
 
         [Header("Buttons")]
         [SerializeField] private Button resyncButton;
-        [SerializeField] private GameObject resyncButtonObject;
         [SerializeField] private Button rebootButton;
         [SerializeField] private Button closeButton;
-        [SerializeField] private GameObject closeButtonObject;
 
         [Header("Background Dissolve")]
         [Tooltip("Background の Image。Dissolve シェーダーと Viewer/Staff 色補間に使用する")]
@@ -510,6 +508,9 @@ namespace PasocomMate.AunCast
             if (backgroundImage != null)
                 backgroundImage.color = Color.Lerp(userBackgroundColor, staffBackgroundColor, _crossfadeCurrent);
         }
+
+        /// <summary>スタッフビューが表示中かつロック解除中なら true。StaffControlPanel が個別ボタン制御で使用。</summary>
+        public bool IsStaffInteractable() { return _inStaffView && !_staffLocked; }
 
         /// <summary>StaffControlPanel の解錠状態が変わったときに呼ばれる。切替ボタンの表示とクロスフェードを更新する。</summary>
         public void OnStaffUnlockStateChanged()
@@ -1194,10 +1195,12 @@ namespace PasocomMate.AunCast
 
             UpdateGauges();
 
+            bool canRequestLocal = localState == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
+            if (rebootButton != null)
+                SetButtonInteractable(rebootButton, canRequestLocal);
             if (resyncButton != null)
             {
-                bool canRequest = localState == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
-                SetButtonInteractable(resyncButton, canRequest);
+                SetButtonInteractable(resyncButton, canRequestLocal);
                 bool isCooldown = localState == LocalDualPlayerController.STATE_COOLDOWN;
                 bool isWaiting = localState == LocalDualPlayerController.STATE_REQUEST_PENDING
                     || localState == LocalDualPlayerController.STATE_RESERVED;
@@ -1225,11 +1228,6 @@ namespace PasocomMate.AunCast
                 }
             }
 
-            if (resyncButtonObject != null)
-                resyncButtonObject.SetActive(true);
-
-            if (closeButtonObject != null)
-                closeButtonObject.SetActive(true);
         }
 
         /// <summary>
@@ -1428,6 +1426,10 @@ namespace PasocomMate.AunCast
             }
             if (staffLockButtonLabel != null)
                 staffLockButtonLabel.text = _staffLocked ? ICON_LOCK : ICON_LOCK_OPEN;
+
+            // StaffControlPanel 側でロック状態と AND を取って個別ボタン alpha を計算する。
+            if (staffControlPanel != null)
+                staffControlPanel.UpdateActionButtonsInteractable();
         }
 
         /// <summary>個人 Resync リクエスト (FR-16)。</summary>
