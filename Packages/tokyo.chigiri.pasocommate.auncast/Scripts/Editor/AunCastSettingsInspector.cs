@@ -1423,10 +1423,14 @@ namespace PasocomMate.AunCast.Internal
             float newHudThreshold = SliderField("ジェスチャーHUD表示猶予 [秒]", "gestureHudShowThreshold",
                 "HUDプログレスを表示し始めるまでの猶予（秒）。",
                 settings.gestureHudShowThreshold, 0f, 0.3f);
-            Vector3 newHudOffset = EditorGUILayout.Vector3Field(
-                L("HUD配置オフセット", "hudLocalOffset", "頭部ローカル座標における HUD オフセット（m）。(0,0,Z)で視界中央。"),
-                settings.hudLocalOffset);
-            CopyFieldNameMenu("hudLocalOffset");
+            Vector3 newHudVrOffset = EditorGUILayout.Vector3Field(
+                L("HUD配置オフセット (VR)", "hudVrLocalOffset", "VR: 頭部ローカル座標における HUD オフセット（m）。(0,0,Z)で視界中央。"),
+                settings.hudVrLocalOffset);
+            CopyFieldNameMenu("hudVrLocalOffset");
+            Vector3 newHudDesktopOffset = EditorGUILayout.Vector3Field(
+                L("HUD配置オフセット (Desktop)", "hudDesktopLocalOffset", "デスクトップ: カメラローカル座標における HUD オフセット（m）。Z は前方距離。"),
+                settings.hudDesktopLocalOffset);
+            CopyFieldNameMenu("hudDesktopLocalOffset");
 
             float newDist = SliderField("パネル自動閉じ距離 [m]", "panelAutoDismissDistance",
                 "ポータブルパネルからこの距離（m）以上離れると自動的に閉じる。0 で無効。",
@@ -1459,7 +1463,8 @@ namespace PasocomMate.AunCast.Internal
             settings.defaultDesktopSummonGesture = newDesktopSummonGesture;
             settings.gestureHoldDuration = newHold;
             settings.gestureHudShowThreshold = newHudThreshold;
-            settings.hudLocalOffset = newHudOffset;
+            settings.hudVrLocalOffset = newHudVrOffset;
+            settings.hudDesktopLocalOffset = newHudDesktopOffset;
             settings.panelAutoDismissDistance = newDist;
             settings.panelOutOfSightDismissSec = newSight;
             settings.wallNearDistance = newNear;
@@ -1628,7 +1633,8 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(overlays, so =>
             {
                 SetFloatProperty(so, "showThreshold", settings.gestureHudShowThreshold);
-                SetVector3Property(so, "localOffset", settings.hudLocalOffset);
+                SetVector3Property(so, "vrLocalOffset", settings.hudVrLocalOffset);
+                SetVector3Property(so, "desktopLocalOffset", settings.hudDesktopLocalOffset);
             });
 
             var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);

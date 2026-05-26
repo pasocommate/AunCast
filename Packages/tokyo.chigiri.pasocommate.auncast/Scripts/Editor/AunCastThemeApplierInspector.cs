@@ -169,7 +169,7 @@ namespace PasocomMate.AunCast.Internal
 
             ApplyThemeToProxy<HudProgressOverlay>(root, "HudProgressOverlay", proxy =>
             {
-                SetSerializedField(proxy, "localOffset", theme.hudProgressLocalOffset);
+                SetSerializedField(proxy, "vrLocalOffset", theme.hudProgressLocalOffset);
             });
         }
 

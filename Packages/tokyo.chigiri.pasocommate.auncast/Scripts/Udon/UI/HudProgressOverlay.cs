@@ -19,9 +19,12 @@ namespace PasocomMate.AunCast
         [SerializeField] private Transform quadTransform;
         [SerializeField] private MeshRenderer quadRenderer;
 
-        [Header("Placement (head-local, configurable from Theme)")]
-        [Tooltip("頭部ローカル座標における HUD 配置オフセット (m)")]
-        [SerializeField] private Vector3 localOffset = new Vector3(0f, 0f, 0.6f);
+        [Header("Placement (configurable from Settings)")]
+        [Tooltip("VR: 頭部ローカル座標における HUD 配置オフセット (m)")]
+        [SerializeField] private Vector3 vrLocalOffset = new Vector3(0f, 0f, 0.6f);
+
+        [Tooltip("デスクトップ: カメラローカル座標における HUD 配置オフセット (m)")]
+        [SerializeField] private Vector3 desktopLocalOffset = new Vector3(0f, -0.1f, 0.6f);
 
         [Header("Behavior (configurable from Settings)")]
         [Tooltip("HUD を出し始めるまでの猶予 (秒)。これ以下の進捗では表示しない。")]
@@ -65,14 +68,13 @@ namespace PasocomMate.AunCast
             if (local.IsUserInVR())
             {
                 VRCPlayerApi.TrackingData head = local.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
-                transform.position = head.position + head.rotation * localOffset;
+                transform.position = head.position + head.rotation * vrLocalOffset;
                 transform.rotation = head.rotation;
             }
             else
             {
                 var cam = VRCCameraSettings.ScreenCamera;
-                float dist = localOffset.z;
-                transform.position = cam.Position + cam.Rotation * new Vector3(0f, 0f, dist);
+                transform.position = cam.Position + cam.Rotation * desktopLocalOffset;
                 transform.rotation = cam.Rotation;
             }
 
