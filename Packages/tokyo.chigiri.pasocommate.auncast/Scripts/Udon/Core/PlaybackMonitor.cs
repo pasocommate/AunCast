@@ -143,60 +143,32 @@ namespace PasocomMate.AunCast
         }
 
         // =====================================================================
-        //  playbackActive 内部アクセス
+        //  スロット別ビットアクセス（playbackActive / connectingActive / errorActive）
         // =====================================================================
 
-        /// <summary>指定スロットの再生ビットを取得する。</summary>
-        private bool GetSlotActive(int slotIndex)
+        private bool GetSlotActive(int slotIndex)    => GetBit(playbackActive, slotIndex);
+        private bool GetSlotConnecting(int slotIndex) => GetBit(connectingActive, slotIndex);
+        private bool GetSlotError(int slotIndex)      => GetBit(errorActive, slotIndex);
+
+        private bool SetSlotActive(int slotIndex, bool value)    => SetBit(playbackActive, slotIndex, value);
+        private bool SetSlotConnecting(int slotIndex, bool value) => SetBit(connectingActive, slotIndex, value);
+        private bool SetSlotError(int slotIndex, bool value)      => SetBit(errorActive, slotIndex, value);
+
+        /// <summary>ビットパック配列の指定スロットを読み取る。</summary>
+        private bool GetBit(byte[] array, int slotIndex)
         {
-            return (playbackActive[slotIndex >> 3] & (1 << (slotIndex & 7))) != 0;
+            return (array[slotIndex >> 3] & (1 << (slotIndex & 7))) != 0;
         }
 
-        /// <summary>指定スロットの再生ビットを設定する。変化があれば true を返す。</summary>
-        private bool SetSlotActive(int slotIndex, bool value)
+        /// <summary>ビットパック配列の指定スロットを書き込む。変化があれば true を返す。</summary>
+        private bool SetBit(byte[] array, int slotIndex, bool value)
         {
             int byteIdx = slotIndex >> 3;
             byte mask = (byte)(1 << (slotIndex & 7));
-            byte old = playbackActive[byteIdx];
+            byte old = array[byteIdx];
             byte next = value ? (byte)(old | mask) : (byte)(old & ~mask);
             if (old == next) return false;
-            playbackActive[byteIdx] = next;
-            return true;
-        }
-
-        /// <summary>指定スロットの接続中ビットを取得する。</summary>
-        private bool GetSlotConnecting(int slotIndex)
-        {
-            return (connectingActive[slotIndex >> 3] & (1 << (slotIndex & 7))) != 0;
-        }
-
-        /// <summary>指定スロットの接続中ビットを設定する。変化があれば true を返す。</summary>
-        private bool SetSlotConnecting(int slotIndex, bool value)
-        {
-            int byteIdx = slotIndex >> 3;
-            byte mask = (byte)(1 << (slotIndex & 7));
-            byte old = connectingActive[byteIdx];
-            byte next = value ? (byte)(old | mask) : (byte)(old & ~mask);
-            if (old == next) return false;
-            connectingActive[byteIdx] = next;
-            return true;
-        }
-
-        /// <summary>指定スロットのエラービットを取得する。</summary>
-        private bool GetSlotError(int slotIndex)
-        {
-            return (errorActive[slotIndex >> 3] & (1 << (slotIndex & 7))) != 0;
-        }
-
-        /// <summary>指定スロットのエラービットを設定する。変化があれば true を返す。</summary>
-        private bool SetSlotError(int slotIndex, bool value)
-        {
-            int byteIdx = slotIndex >> 3;
-            byte mask = (byte)(1 << (slotIndex & 7));
-            byte old = errorActive[byteIdx];
-            byte next = value ? (byte)(old | mask) : (byte)(old & ~mask);
-            if (old == next) return false;
-            errorActive[byteIdx] = next;
+            array[byteIdx] = next;
             return true;
         }
 

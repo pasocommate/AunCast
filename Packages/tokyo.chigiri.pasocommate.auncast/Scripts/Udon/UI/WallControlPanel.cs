@@ -104,7 +104,7 @@ namespace PasocomMate.AunCast
             UpdatePasscodeDisplay();
             SetViewTarget(VIEW_USER, true);
             ApplyGestureGroupVisibility();
-            ApplyGestureHighlight();
+            SyncGestureToggles();
             UpdateUserButtonInteractable();
         }
 
@@ -483,10 +483,6 @@ namespace PasocomMate.AunCast
                     (deskCurrent & UserStatusPanel.DESKTOP_GESTURE_ESC_HOLD) != 0);
         }
 
-        private void ApplyGestureHighlight()
-        {
-            SyncGestureToggles();
-        }
 
         // =================================================================
         //  Staff ビュー: パスコード入力

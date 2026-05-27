@@ -83,7 +83,6 @@ namespace PasocomMate.AunCast
         private int _localState;
         private bool _activeIsA = true;
         private bool _autoSilenceResyncEnabled = true;
-        private float _localVolume = 0.6f;
         private float _combinedSilenceDuration;
 
         // Standby Player 検証（Ready/Play 完了を待つためのフラグ群）
@@ -130,8 +129,7 @@ namespace PasocomMate.AunCast
             if (_ranInit) return;
             _ranInit = true;
 
-            _localVolume = defaultVolume;
-            SetVolume(_localVolume);
+            SetVolume(defaultVolume);
 
             // Active は A、Standby は B。B のオーディオはミュート開始
             _activeIsA = true;
@@ -568,16 +566,21 @@ namespace PasocomMate.AunCast
         /// <summary>最終手段: 両プレイヤーを停止し A に強制ロードする。Standby 切替が不可能な場合の復旧策。</summary>
         private void AttemptActiveReboot(float now)
         {
+            BeginDirectReboot(now);
+            LogMessage("Attempting Active direct reboot");
+        }
+
+        /// <summary>直接リブートの共通セットアップ。Reboot() と AttemptActiveReboot() で使う。</summary>
+        private void BeginDirectReboot(float now)
+        {
             _awaitingActiveReboot = true;
             _activeRebootStartedAt = now;
             _activeIsA = true;
-
             activeMonitor.ResetTimeAdvanceForPlayer(true);
             ReportError(false);
             ReportConnecting(true);
             _tlLoadingA = true;
             switcher.StartActiveDirectReboot(_syncedURL);
-            LogMessage("Attempting Active direct reboot");
         }
 
         // =================================================================
@@ -589,20 +592,9 @@ namespace PasocomMate.AunCast
         public void Reboot()
         {
             float now = Time.time;
-
             // 実行中の Resync をキャンセル（どの状態でも Coordinator 側のスロットを解放する）
             CancelResync();
-
-            _awaitingActiveReboot = true;
-            _activeRebootStartedAt = now;
-            _activeIsA = true;
-
-            activeMonitor.ResetTimeAdvanceForPlayer(true);
-            ReportError(false);
-            ReportConnecting(true);
-            _tlLoadingA = true;
-            switcher.StartActiveDirectReboot(_syncedURL);
-
+            BeginDirectReboot(now);
             _tlAction = "EMERGENCY_REBOOT";
             _localState = STATE_RETRY_WAIT;
             LogMessage("Reboot initiated");
@@ -836,26 +828,30 @@ namespace PasocomMate.AunCast
             _syncedURL = VRCUrl.Empty;
             _syncedUrlSubmitterName = "";
 
-            _tlLoadingA = false;
-            _tlLoadingB = false;
             activeMonitor.ResetTimeAdvanceForPlayer(true);
             activeMonitor.ResetTimeAdvanceForPlayer(false);
             switcher.ResetBothPlayersToA();
             _activeIsA = true;
 
-            // Resync 中ならキャンセル
+            ResetFsmToIdle();
+
+            QueueSerialize();
+            if (staffPanel != null) staffPanel.OnUrlChanged();
+        }
+
+        /// <summary>FSM 状態・フラグをアイドルに一括リセットし、Coordinator への報告も行う。</summary>
+        private void ResetFsmToIdle()
+        {
+            _tlLoadingA = false;
+            _tlLoadingB = false;
             if (_localState >= STATE_REQUEST_PENDING && _localState <= STATE_SWITCHING)
                 CancelResync();
-
             _localState = STATE_IDLE;
             _waitForSync = false;
             _awaitingActiveReboot = false;
             _pendingConnectingReport = false;
             ReportConnecting(false);
             ReportError(false);
-
-            QueueSerialize();
-            if (staffPanel != null) staffPanel.OnUrlChanged();
         }
 
         /// <summary>現在の URL で Active を再ロードする（Resync ではなく単純なリロード）。</summary>
@@ -898,20 +894,9 @@ namespace PasocomMate.AunCast
             bool stopReceived = !_ownerPlaying && _localState != STATE_IDLE;
             if (stopReceived)
             {
-                _tlLoadingA = false;
-                _tlLoadingB = false;
                 playerManagerA.Stop();
                 playerManagerB.Stop();
-
-                if (_localState >= STATE_REQUEST_PENDING && _localState <= STATE_SWITCHING)
-                    CancelResync();
-
-                _localState = STATE_IDLE;
-                _waitForSync = false;
-                _awaitingActiveReboot = false;
-                _pendingConnectingReport = false;
-                ReportConnecting(false);
-                ReportError(false);
+                ResetFsmToIdle();
             }
 
             // URL 変更の検知
@@ -971,12 +956,10 @@ namespace PasocomMate.AunCast
             if (playerManagerB != null) playerManagerB.SetVolume(volume);
         }
 
-        /// <summary>ローカルユーザーの音量を記憶しつつ即座に両プレイヤーに反映する。</summary>
+        /// <summary>ローカルユーザーの音量を即座に両プレイヤーに反映する。</summary>
         [PublicAPI]
         public void SetVolumeLocal(float volume)
         {
-            volume = Mathf.Clamp01(volume);
-            _localVolume = volume;
             SetVolume(volume);
         }
 
