@@ -196,10 +196,7 @@ namespace PasocomMate.AunCast
             TryEnsureSwitchTextureDisplayed(now);
 
             // ゲインを初期値にリセットしてから TickCrossfade で漸次変化させる
-            VideoPlayerManager activeManager = GetActiveManager();
-            VideoPlayerManager standbyManager = GetStandbyManager();
-            if (activeManager != null) activeManager.SetFadeGain(1.0f);
-            if (standbyManager != null) standbyManager.SetFadeGain(0.0f);
+            SetRolesGain(1.0f, 0.0f);
 
             if (_timelineLogging) TL($"a=CROSSFADE_START");
             LogMessage("Switching: crossfade started");
@@ -214,34 +211,31 @@ namespace PasocomMate.AunCast
         {
             if (!TryEnsureSwitchTextureDisplayed(now))
             {
-                VideoPlayerManager activeManagerWaiting = GetActiveManager();
-                VideoPlayerManager standbyManagerWaiting = GetStandbyManager();
-                if (activeManagerWaiting != null) activeManagerWaiting.SetFadeGain(1.0f);
-                if (standbyManagerWaiting != null) standbyManagerWaiting.SetFadeGain(0.0f);
+                // Standby テクスチャ未取得中は Active ゲインを維持して映像を保持する
+                SetRolesGain(1.0f, 0.0f);
                 return;
             }
 
             if (durationSec <= 0f)
             {
-                VideoPlayerManager activeManagerInstant = GetActiveManager();
-                VideoPlayerManager standbyManagerInstant = GetStandbyManager();
-                if (activeManagerInstant != null) activeManagerInstant.SetFadeGain(0.0f);
-                if (standbyManagerInstant != null) standbyManagerInstant.SetFadeGain(1.0f);
+                SetRolesGain(0.0f, 1.0f);
                 return;
             }
 
             float elapsed = now - _crossfadeStartedAt;
             float t = Mathf.Clamp01(elapsed / durationSec);
-
             // 等パワーカーブ: cos^2 + sin^2 = 1 により合計エネルギーが一定
             float angle = t * Mathf.PI * 0.5f;
-            float activeGain = Mathf.Cos(angle);
-            float standbyGain = Mathf.Sin(angle);
+            SetRolesGain(Mathf.Cos(angle), Mathf.Sin(angle));
+        }
 
-            VideoPlayerManager activeManager = GetActiveManager();
-            VideoPlayerManager standbyManager = GetStandbyManager();
-            if (activeManager != null) activeManager.SetFadeGain(activeGain);
-            if (standbyManager != null) standbyManager.SetFadeGain(standbyGain);
+        /// <summary>Active / Standby 両プレイヤーのフェードゲインをまとめて設定する。</summary>
+        private void SetRolesGain(float activeGain, float standbyGain)
+        {
+            VideoPlayerManager active = GetActiveManager();
+            VideoPlayerManager standby = GetStandbyManager();
+            if (active != null) active.SetFadeGain(activeGain);
+            if (standby != null) standby.SetFadeGain(standbyGain);
         }
 
         /// <summary>クロスフェード時間が経過したかを判定する。</summary>

@@ -243,7 +243,7 @@ namespace PasocomMate.AunCast
         /// キャンセル後、Coordinator が NONE に戻るまでの間に同スロットの
         /// 再採用（Adoption）が発動しないよう一時的に抑制期間を設ける。
         /// </summary>
-        public bool CancelResync()
+        public void CancelResync()
         {
             if (_timelineLogging) TL($"a=RESYNC_CANCEL slot={_mySlotIndex}");
             if (_mySlotIndex >= 0 && coordinator != null)
@@ -260,7 +260,6 @@ namespace PasocomMate.AunCast
 
             _resyncRequested = false;
             _requestReason = REQUEST_REASON_FAILURE;
-            return true;
         }
 
         // =================================================================
