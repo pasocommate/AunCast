@@ -284,3 +284,40 @@ private bool CleanupStaleSlots()
 - `OnPlayerJoined` でも同じ走査を呼び、`OnPlayerLeft` のシリアライズロスト時の
   フォールバックにする
 - 自オブジェクトの掃除以外は他オブジェクトに任せる（責務分離）
+
+## 7. N 個配置 subscriber 群への AunCastEventBus 配信
+
+シーン内に複数配置されうる `VideoMeshScreen` / `VideoUiScreen` / `WallControlPanel`
+のような購読者へ publisher から通知するときは、publisher 側に具象型配列を持たせず
+`AunCastEventBus` 経由で配信する。
+
+ルール:
+- Bus は backing `UdonBehaviour[]` の subscriber 配列だけを持ち、具象型を知らない
+- 配信は `SendCustomEvent(eventName)` で行い、イベント名は `AunCastEventBus` の
+  `public const string` に集約する
+- `SendCustomEvent` で渡せない bool / enum などの離散値は、値ごとにイベントを分ける
+  （例: `OnPortablePanelShown`）
+- Texture のように値そのものが必要な場合だけ、Bus 上の
+  `[System.NonSerialized] public` フィールドへ格納し、subscriber が pull する
+- `AunCastSettingsInspector` の再配線処理だけが subscriber の具象型を集め、backing
+  `UdonBehaviour` に変換してから
+  Bus 配列と各 `eventBus` 参照を `SerializedObject` / `FindProperty` 経由で設定する
+
+### プレハブ運用と自動再配線
+
+`WallControlPanel.prefab` などの prefab に `eventBus` フィールドを焼き込むことは
+シーン依存のため不可能。新規 prefab をシーンに配置した直後は `eventBus = null`
+だが、以下の経路で配線が反映される:
+
+1. **手動**: `AunCastSettings` Inspector の **「AunCastEventBus 参照を再配線」
+   ボタン** を押下
+2. **Play モード遷移時** (`AunCastAutoRewire`): `playModeStateChanged` の
+   `ExitingEditMode` で開いている全シーンに対して再配線
+3. **ビルド・アップロード時** (`AunCastBuildCallback`): `IProcessSceneWithReport`
+   で VRC SDK のシーンビルド処理直前に再配線
+
+`SetObjectProperty` / `SetObjectArrayProperty` の差分検知により、配線が既に最新の
+場合は no-op になるので、これらの自動経路がユーザーの手動編集を無闇に上書きする
+ことはない。ただし subscriber 配列をシーン内全件より少なく絞った手動編集は
+**毎回シーン内全件に戻される** ことに注意（バスの意味論として「シーン内 subscriber
+全件に配信する」を維持しているため）。

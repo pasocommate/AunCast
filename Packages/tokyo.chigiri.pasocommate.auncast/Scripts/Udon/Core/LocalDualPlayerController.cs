@@ -43,7 +43,7 @@ namespace PasocomMate.AunCast
 
         [Header("UI Notification")]
         [SerializeField] private StaffControlPanel staffPanel;
-        [SerializeField] private WallControlPanel[] wallPanels;
+        [SerializeField] private AunCastEventBus eventBus;
 
         // =================================================================
         //  Inspector パラメータ (Design Section 20)
@@ -202,13 +202,8 @@ namespace PasocomMate.AunCast
         {
             if (_localState == _lastReportedLocalState) return;
             _lastReportedLocalState = _localState;
-            if (wallPanels != null)
-            {
-                for (int i = 0; i < wallPanels.Length; i++)
-                {
-                    if (wallPanels[i] != null) wallPanels[i].OnLocalStateChanged();
-                }
-            }
+            if (eventBus != null)
+                eventBus.PublishLocalStateChanged();
         }
 
         /// <summary>非オーナーがオーナーの _ownerPlaying=true 同期を待ち、到達したら再生を再開する。</summary>

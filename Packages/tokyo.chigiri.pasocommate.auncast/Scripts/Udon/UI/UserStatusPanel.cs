@@ -19,10 +19,7 @@ namespace PasocomMate.AunCast
         [Header("References")]
         [SerializeField] private LocalDualPlayerController controller;
         [SerializeField] private ResyncCoordinator coordinator;
-        [Tooltip("複数設置された WallControlPanel。SetMenuVisible 時に全てへ通知する。")]
-        [SerializeField] private WallControlPanel[] wallPanels;
-        [Tooltip("旧シーン互換用の単一参照。wallPanels 未設定時のみフォールバック使用。")]
-        [SerializeField] private WallControlPanel wallPanel;
+        [SerializeField] private AunCastEventBus eventBus;
 
         [Header("UI Elements")]
         [SerializeField] private TMP_Text stateText;
@@ -744,25 +741,13 @@ namespace PasocomMate.AunCast
                 SendCustomEventDelayedSeconds(nameof(OnDissolveOutComplete), dissolveDuration);
             }
 
-            NotifyWallPanelVisibilityChanged(visible);
+            if (visible) NotifyPortablePanelShownIfNeeded();
         }
 
-        private void NotifyWallPanelVisibilityChanged(bool visible)
+        private void NotifyPortablePanelShownIfNeeded()
         {
-            // wallPanels が設定されていれば配列を尊重する。要素が全て null の場合でも
-            // wallPanel への暗黙フォールバックはしない（明示設定を優先するため）。
-            if (wallPanels != null && wallPanels.Length > 0)
-            {
-                foreach (var panel in wallPanels)
-                {
-                    if (panel == null) continue;
-                    panel.OnPortablePanelVisibilityChanged(visible);
-                }
-                return;
-            }
-
-            if (wallPanel != null)
-                wallPanel.OnPortablePanelVisibilityChanged(visible);
+            if (eventBus != null)
+                eventBus.PublishPortablePanelShown();
         }
 
         public void OnDissolveOutComplete()

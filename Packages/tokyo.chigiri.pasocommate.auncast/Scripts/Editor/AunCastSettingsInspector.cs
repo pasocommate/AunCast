@@ -31,6 +31,8 @@ namespace PasocomMate.AunCast.Internal
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
         private const string GENERATED_SPEAKER_CONTAINER_A_NAME = "AunCastSpeakerRefs_A";
         private const string GENERATED_SPEAKER_CONTAINER_B_NAME = "AunCastSpeakerRefs_B";
+        private const string AUNCAST_EVENT_HUB_NAME = "AunCastEventHub";
+        private const string AUNCAST_EVENT_BUS_ASSET_GUID = "86f742d2e8954336a9cd87f1e4527d80";
         private const string EDITOR_ONLY_TAG = "EditorOnly";
 
         private const double SPEAKER_CACHE_POLL_INTERVAL_SEC = 3.0;
@@ -222,12 +224,15 @@ namespace PasocomMate.AunCast.Internal
 
         private void OnEnable()
         {
-            // Inspector が開かれた瞬間に一度だけ壁パネル参照を自動再配線する。
+            // Inspector が開かれた瞬間に一度だけ既存の EventBus / 壁パネル参照を自動再配線する。
             // OnInspectorGUI から呼ぶと毎フレーム走り、手動で変更した参照を
-            // 上書きしてしまうので OnEnable に限定する。
+            // 上書きしてしまうので OnEnable に限定する。Hub の新規作成は手動ボタン時のみ行う。
+            // SetObjectProperty / SetObjectArrayProperty は値が完全一致のときに false を返すので、
+            // 既に整合している場合は ApplyUdonSerializedChanges が呼ばれず、ユーザーの手動編集を
+            // 上書きしない。
             var settings = target as PasocomMate.AunCast.AunCastSettings;
             if (settings != null)
-                RewireWallPanelReferences(settings.transform, recordUndo: false, writeLog: false);
+                RewireEventHubAndConsumers(settings.transform, recordUndo: false, writeLog: false);
 
             EditorSceneManager.sceneDirtied += OnSceneDirtied;
             Undo.postprocessModifications += OnPostprocessModifications;
@@ -304,24 +309,28 @@ namespace PasocomMate.AunCast.Internal
         {
             EditorGUILayout.LabelField("壁パネル配線", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "AunCast 配下の WallControlPanel / UserStatusPanel の参照を再配線します。",
+                "AunCast 配下の AunCastEventBus / WallControlPanel / UserStatusPanel / スクリーン購読者を再配線します。",
                 MessageType.None);
             using (new EditorGUI.DisabledScope(root == null))
             {
-                if (!GUILayout.Button("WallControlPanel参照を再配線", GUILayout.Height(24)))
+                if (!GUILayout.Button("AunCastEventBus参照を再配線", GUILayout.Height(24)))
                     return;
 
-                RewireWallPanelReferences(root, recordUndo: true, writeLog: true);
+                RewireEventHubAndConsumers(root, recordUndo: true, writeLog: true);
             }
         }
 
-        private static void RewireWallPanelReferences(Transform root, bool recordUndo, bool writeLog)
+        internal static void RewireEventHubAndConsumers(Transform root, bool recordUndo, bool writeLog)
         {
             if (root == null) return;
 
             var controller = root.GetComponentInChildren<LocalDualPlayerController>(true);
             var staffPanel = root.GetComponentInChildren<StaffControlPanel>(true);
             var portablePanel = root.GetComponentInChildren<UserStatusPanel>(true);
+            var eventBus = FindOrCreateEventBus(root, createIfMissing: recordUndo, writeLog: writeLog);
+            var switchers = root.GetComponentsInChildren<PlaybackSwitcher>(true);
+            var meshScreens = root.GetComponentsInChildren<VideoMeshScreen>(true);
+            var uiScreens = root.GetComponentsInChildren<VideoUiScreen>(true);
             var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);
             var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
 
@@ -330,6 +339,46 @@ namespace PasocomMate.AunCast.Internal
                 if (writeLog)
                     Debug.LogWarning("[AunCast] 再配線を中止しました。LocalDualPlayerController / StaffControlPanel / UserStatusPanel のいずれかが見つかりません。");
                 return;
+            }
+
+            int busUpdated = 0;
+            if (eventBus != null)
+            {
+                // subscriber は Bus 側フィールド型 (UdonBehaviour[]) に合わせて
+                // backing UdonBehaviour 配列へ変換してから注入する。
+                var videoTextureSubscribers = BuildVideoTextureSubscribers(meshScreens, uiScreens);
+                var localStateSubscribers = ToUdonSubscribers(wallPanels);
+                var portablePanelShownSubscribers = ToUdonSubscribers(wallPanels);
+                var so = new SerializedObject(eventBus);
+                bool changed = false;
+                changed |= SetObjectArrayProperty(so, "videoTextureSubscribers", videoTextureSubscribers);
+                changed |= SetObjectArrayProperty(so, "localStateSubscribers", localStateSubscribers);
+                changed |= SetObjectArrayProperty(so, "portablePanelShownSubscribers", portablePanelShownSubscribers);
+                if (changed && ApplyUdonSerializedChanges(eventBus, so, "Rewire AunCastEventBus Subscribers", recordUndo))
+                    busUpdated++;
+            }
+
+            int publisherUpdated = 0;
+            if (eventBus != null)
+            {
+                foreach (var switcher in switchers)
+                {
+                    if (switcher == null) continue;
+                    var so = new SerializedObject(switcher);
+                    bool changed = SetObjectProperty(so, "eventBus", eventBus);
+                    if (changed && ApplyUdonSerializedChanges(switcher, so, "Rewire PlaybackSwitcher EventBus", recordUndo))
+                        publisherUpdated++;
+                }
+
+                var controllers = root.GetComponentsInChildren<LocalDualPlayerController>(true);
+                foreach (var ctrl in controllers)
+                {
+                    if (ctrl == null) continue;
+                    var so = new SerializedObject(ctrl);
+                    bool changed = SetObjectProperty(so, "eventBus", eventBus);
+                    if (changed && ApplyUdonSerializedChanges(ctrl, so, "Rewire LocalDualPlayerController EventBus", recordUndo))
+                        publisherUpdated++;
+                }
             }
 
             int wallUpdated = 0;
@@ -341,59 +390,139 @@ namespace PasocomMate.AunCast.Internal
                 changed |= SetObjectProperty(so, "controller", controller);
                 changed |= SetObjectProperty(so, "staffPanel", staffPanel);
                 changed |= SetObjectProperty(so, "portablePanel", portablePanel);
+                if (eventBus != null)
+                    changed |= SetObjectProperty(so, "eventBus", eventBus);
 
-                if (!changed) continue;
-                if (recordUndo)
-                    Undo.RecordObject(wall, "Rewire WallControlPanel References");
-                bool wallApplied = recordUndo
-                    ? so.ApplyModifiedProperties()
-                    : so.ApplyModifiedPropertiesWithoutUndo();
-                if (!wallApplied) continue;
-
-                UdonSharpEditorUtility.CopyProxyToUdon(wall);
-                EditorUtility.SetDirty(wall);
-                PrefabUtility.RecordPrefabInstancePropertyModifications(wall);
-                var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(wall);
-                if (udon != null)
-                {
-                    EditorUtility.SetDirty(udon);
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
-                }
-                wallUpdated++;
+                if (changed && ApplyUdonSerializedChanges(wall, so, "Rewire WallControlPanel References", recordUndo))
+                    wallUpdated++;
             }
 
-            WallControlPanel fallbackWall = wallPanels.Length > 0 ? wallPanels[0] : null;
             int userUpdated = 0;
-            foreach (var user in userPanels)
+            if (eventBus != null)
             {
-                if (user == null) continue;
-                var so = new SerializedObject(user);
-                bool changed = false;
-                changed |= SetObjectArrayProperty(so, "wallPanels", wallPanels);
-                changed |= SetObjectProperty(so, "wallPanel", fallbackWall);
-
-                if (!changed) continue;
-                if (recordUndo)
-                    Undo.RecordObject(user, "Rewire UserStatusPanel Wall References");
-                bool userApplied = recordUndo
-                    ? so.ApplyModifiedProperties()
-                    : so.ApplyModifiedPropertiesWithoutUndo();
-                if (!userApplied) continue;
-
-                UdonSharpEditorUtility.CopyProxyToUdon(user);
-                EditorUtility.SetDirty(user);
-                PrefabUtility.RecordPrefabInstancePropertyModifications(user);
-                var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(user);
-                if (udon != null)
+                foreach (var user in userPanels)
                 {
-                    EditorUtility.SetDirty(udon);
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+                    if (user == null) continue;
+                    var so = new SerializedObject(user);
+                    bool changed = SetObjectProperty(so, "eventBus", eventBus);
+
+                    if (changed && ApplyUdonSerializedChanges(user, so, "Rewire UserStatusPanel EventBus", recordUndo))
+                        userUpdated++;
                 }
-                userUpdated++;
+            }
+
+            int screenUpdated = 0;
+            if (eventBus != null)
+            {
+                foreach (var mesh in meshScreens)
+                {
+                    if (mesh == null) continue;
+                    var so = new SerializedObject(mesh);
+                    bool changed = SetObjectProperty(so, "eventBus", eventBus);
+                    if (changed && ApplyUdonSerializedChanges(mesh, so, "Rewire VideoMeshScreen EventBus", recordUndo))
+                        screenUpdated++;
+                }
+                foreach (var ui in uiScreens)
+                {
+                    if (ui == null) continue;
+                    var so = new SerializedObject(ui);
+                    bool changed = SetObjectProperty(so, "eventBus", eventBus);
+                    if (changed && ApplyUdonSerializedChanges(ui, so, "Rewire VideoUiScreen EventBus", recordUndo))
+                        screenUpdated++;
+                }
             }
 
             if (writeLog)
-                Debug.Log($"[AunCast] 壁パネル参照を再配線しました。WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件");
+                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件");
+        }
+
+        private static AunCastEventBus FindOrCreateEventBus(Transform root, bool createIfMissing, bool writeLog)
+        {
+            if (root == null) return null;
+
+            var eventBus = root.GetComponentInChildren<AunCastEventBus>(true);
+            if (eventBus != null)
+            {
+                if (UdonSharpEditorUtility.GetBackingUdonBehaviour(eventBus) != null)
+                    return eventBus;
+
+                if (!createIfMissing)
+                    return null;
+
+                if (writeLog)
+                    Debug.LogWarning("[AunCast] backing UdonBehaviour のない AunCastEventBus を検出したため作り直します。", eventBus);
+                UdonSharpUndo.DestroyImmediate(eventBus);
+                eventBus = null;
+            }
+            if (!createIfMissing) return null;
+
+            if (LoadAssetByGuid<UnityEngine.Object>(AUNCAST_EVENT_BUS_ASSET_GUID) == null)
+            {
+                if (writeLog)
+                    Debug.LogWarning("[AunCast] AunCastEventBus.asset が見つからないため、AunCastEventHub を作成できません。");
+                return null;
+            }
+
+            Transform hubTransform = root.Find(AUNCAST_EVENT_HUB_NAME);
+            GameObject hubObject;
+            if (hubTransform != null)
+            {
+                hubObject = hubTransform.gameObject;
+            }
+            else
+            {
+                hubObject = new GameObject(AUNCAST_EVENT_HUB_NAME);
+                Undo.RegisterCreatedObjectUndo(hubObject, "Create AunCastEventHub");
+                hubObject.transform.SetParent(root, false);
+            }
+
+            eventBus = UdonSharpUndo.AddComponent<AunCastEventBus>(hubObject);
+            if (eventBus == null) return null;
+
+            EditorUtility.SetDirty(eventBus);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(eventBus);
+            var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(eventBus);
+            if (udon != null)
+            {
+                EditorUtility.SetDirty(udon);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+            }
+            return eventBus;
+        }
+
+        private static VRC.Udon.UdonBehaviour[] BuildVideoTextureSubscribers(
+            VideoMeshScreen[] meshScreens,
+            VideoUiScreen[] uiScreens)
+        {
+            var subscribers = new List<VRC.Udon.UdonBehaviour>();
+            int meshCount = meshScreens != null ? meshScreens.Length : 0;
+            for (int i = 0; i < meshCount; i++)
+                AddBackingUdonBehaviour(subscribers, meshScreens[i]);
+
+            int uiCount = uiScreens != null ? uiScreens.Length : 0;
+            for (int i = 0; i < uiCount; i++)
+                AddBackingUdonBehaviour(subscribers, uiScreens[i]);
+
+            return subscribers.ToArray();
+        }
+
+        private static VRC.Udon.UdonBehaviour[] ToUdonSubscribers(WallControlPanel[] wallPanels)
+        {
+            var subscribers = new List<VRC.Udon.UdonBehaviour>();
+            int count = wallPanels != null ? wallPanels.Length : 0;
+            for (int i = 0; i < count; i++)
+                AddBackingUdonBehaviour(subscribers, wallPanels[i]);
+            return subscribers.ToArray();
+        }
+
+        private static void AddBackingUdonBehaviour(
+            List<VRC.Udon.UdonBehaviour> subscribers,
+            UdonSharp.UdonSharpBehaviour component)
+        {
+            if (subscribers == null || component == null) return;
+            var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(component);
+            if (udon != null)
+                subscribers.Add(udon);
         }
 
         private void DrawAvProSpeakerSetupTools(Transform root, PasocomMate.AunCast.AunCastSettings settings)
@@ -796,18 +925,34 @@ namespace PasocomMate.AunCast.Internal
             SerializedObject so,
             string undoName)
         {
-            if (component == null || so == null) return;
+            ApplyUdonSerializedChanges(component, so, undoName, recordUndo: true);
+        }
 
-            Undo.RecordObject(component, undoName);
-            if (!so.ApplyModifiedProperties()) return;
+        private static bool ApplyUdonSerializedChanges(
+            UdonSharp.UdonSharpBehaviour component,
+            SerializedObject so,
+            string undoName,
+            bool recordUndo)
+        {
+            if (component == null || so == null) return false;
+
+            if (recordUndo)
+                Undo.RecordObject(component, undoName);
+            bool applied = recordUndo
+                ? so.ApplyModifiedProperties()
+                : so.ApplyModifiedPropertiesWithoutUndo();
+            if (!applied) return false;
 
             UdonSharpEditorUtility.CopyProxyToUdon(component);
             EditorUtility.SetDirty(component);
             PrefabUtility.RecordPrefabInstancePropertyModifications(component);
             var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(component);
-            if (udon == null) return;
-            EditorUtility.SetDirty(udon);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+            if (udon != null)
+            {
+                EditorUtility.SetDirty(udon);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
+            }
+            return true;
         }
 
         private static void DisableAudioSources(AudioSource[] audioSources)

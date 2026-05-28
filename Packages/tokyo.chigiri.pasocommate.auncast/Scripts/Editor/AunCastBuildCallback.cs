@@ -21,6 +21,11 @@ namespace PasocomMate.AunCast.Internal
             var settings = FindInScene<AunCastSettings>(scene);
             if (settings == null) return;
 
+            // ビルド・アップロード前に EventBus / publisher / subscriber の参照を最新化する。
+            // recordUndo: false なので新規 Hub の自動作成は走らず、既存配線の整合更新のみ。
+            AunCastSettingsInspector.RewireEventHubAndConsumers(
+                settings.transform, recordUndo: false, writeLog: false);
+
             int capacity = settings.instanceCapacity;
             if (capacity <= 0)
             {

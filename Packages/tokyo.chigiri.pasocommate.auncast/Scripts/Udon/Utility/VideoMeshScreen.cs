@@ -11,6 +11,8 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class VideoMeshScreen : UdonSharpBehaviour
     {
+        [SerializeField] private AunCastEventBus eventBus;
+
         [Tooltip("このレンダラーのシェーダーがビデオテクスチャに使用するパラメーター名")]
         /// <summary>シェーダーごとにテクスチャプロパティ名が異なるため、設定で切り替え可能にしている。</summary>
         public string texParam = "_EmissionMap";
@@ -53,8 +55,14 @@ namespace PasocomMate.AunCast
             RestoreMaterialTextures();
         }
 
+        public void OnVideoTextureChanged()
+        {
+            if (eventBus != null)
+                UpdateVideoTexture(eventBus.videoTexture);
+        }
+
         /// <summary>テクスチャをレンダラーのマテリアルに適用する。変化がなければスキップして負荷を抑える。</summary>
-        public void UpdateVideoTexture(Texture renderTexture)
+        private void UpdateVideoTexture(Texture renderTexture)
         {
             if (renderTexture == lastRenderTexture)
                 return;

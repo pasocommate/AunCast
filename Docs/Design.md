@@ -318,7 +318,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 
 責務:
 - `playerManagerA` / `playerManagerB` のロール（Active/Standby）保持と `_activeIsA` の管理
-- スクリーン群（`VideoMeshScreen[]` / `VideoUiScreen[]`）への RenderTexture ソース切替（`UpdateRenderTexture` / `TryUpdateRenderTextureFromManager`）。配信は内部の `BroadcastVideoTexture` がループで全要素に適用する
+- `AunCastEventBus` への RenderTexture ソース配信（`UpdateRenderTexture` / `TryUpdateRenderTextureFromManager`）。実際のスクリーン群（`VideoMeshScreen` / `VideoUiScreen`）は Bus の購読者として更新される
 - クロスフェード（`crossfadeDurationSec`、等パワーパニング cos/sin カーブで各 `VideoPlayerManager` の `_fadeGain` を制御）
 - AudioLink 入力ソースの切替（`audioLinkBehaviour.SetProgramVariable("audioSource", ...)` 経由）
 - ロール交換 (`CompleteSwitchRoles`) 後のリセット
@@ -438,6 +438,15 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 ### M. Debug / Telemetry View
 開発・テスト用。任意実装。`SyncDebugDisplay` コンポーネントが補助情報を提供する。
 
+### N. AunCastEventBus
+シーン内に N 個配置されうる購読者群へ、publisher が具象型を知らずに配信するローカル PubSub ハブ。AunCast ルート直下の `AunCastEventHub` に配置する。
+
+責務:
+- `VideoTextureChanged`: `PlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`VideoMeshScreen` / `VideoUiScreen` へ `OnVideoTextureChanged` を通知する
+- `LocalStateChanged`: `LocalDualPlayerController` の FSM 状態変化を `WallControlPanel` へ通知する
+- `PortablePanelShown`: `UserStatusPanel` 表示時に `WallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
+- 購読者配列は backing `UdonBehaviour[]` で保持し、配信は `SendCustomEvent(eventName)` で行う
+
 ---
 
 ## 9.2 コンポーネント関係図
@@ -454,6 +463,7 @@ flowchart TB
         PA[VRCAVProVideoPlayer A]
         PB[VRCAVProVideoPlayer B]
         Audio[AudioSilenceDetector A/B]
+        Bus[AunCastEventBus<br/>Local PubSub Hub]
         MeshScreen[VideoMeshScreen<br/>3D スクリーン]
         UiScreen[VideoUiScreen<br/>UI RawImage]
         AL[AudioLink]
@@ -463,10 +473,12 @@ flowchart TB
         Ctrl --> Mon
         Ctrl --> Sw
         Ctrl --> Cli
+        Ctrl --> Bus
         Sw --> VPM_A
         Sw --> VPM_B
-        Sw --> MeshScreen
-        Sw --> UiScreen
+        Sw --> Bus
+        Bus --> MeshScreen
+        Bus --> UiScreen
         Sw -.-> AL
         Sw --> Audio
         VPM_A --> PA
@@ -474,6 +486,7 @@ flowchart TB
         Mon --> VPM_A
         Mon --> VPM_B
         Viewer --> Ctrl
+        Viewer --> Bus
         Viewer --> HUD
     end
 
@@ -491,6 +504,7 @@ flowchart TB
     Ctrl --> PMon
     Wall --> Staff
     Wall --> Viewer
+    Bus --> Wall
     Staff --> Coord
     Viewer -.->|read| Coord
     Viewer --> Staff
@@ -1116,7 +1130,7 @@ sequenceDiagram
 
 ## 16.2 映像切替
 
-- `StandbyVerifying → Switching` 後、Standby の `VideoPlayerManager` から非 null のテクスチャを取得できた時点で、登録済みの全 `VideoMeshScreen` / `VideoUiScreen` のテクスチャソースを新系へ切り替える
+- `StandbyVerifying → Switching` 後、Standby の `VideoPlayerManager` から非 null のテクスチャを取得できた時点で、`AunCastEventBus` 経由で登録済みの全 `VideoMeshScreen` / `VideoUiScreen` のテクスチャソースを新系へ切り替える
 - テクスチャ未取得時は旧映像を保持し、null テクスチャをスクリーンへ配信しない。これにより切替時の白/黒フレームを避ける
 - 各 `VideoMeshScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`VideoUiScreen` は RawImage に直接テクスチャを設定する
 
@@ -1467,7 +1481,7 @@ void TickScheduler()
 
 ### 22.1 映像スクリーン
 
-3D スクリーン側は `VideoMeshScreen`、UI RawImage 側は `VideoUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、同一マテリアルを使うメッシュに `VideoMeshScreen` を追加して `PlaybackSwitcher.meshScreens` 配列にアサインするだけで、配信負荷を増やさずに複数スクリーンへ映像を出力できる。
+3D スクリーン側は `VideoMeshScreen`、UI RawImage 側は `VideoUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `VideoMeshScreen` / `VideoUiScreen` を追加し、AunCastSettings の `AunCastEventBus参照を再配線` を実行する。映像は `PlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
 
 ### 22.2 スタッフ操作パネル（StaffControlPanel、ポータブルパネル Staff ビュー）
 

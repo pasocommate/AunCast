@@ -18,8 +18,7 @@ namespace PasocomMate.AunCast
         [SerializeField] private VideoPlayerManager playerManagerB;
         [SerializeField] private AudioSilenceDetector silenceDetectorA;
         [SerializeField] private AudioSilenceDetector silenceDetectorB;
-        [SerializeField] private VideoMeshScreen[] meshScreens;
-        [SerializeField] private VideoUiScreen[] uiScreens;
+        [SerializeField] private AunCastEventBus eventBus;
         [SerializeField] private UdonSharpBehaviour audioLinkBehaviour;
 
         // =================================================================
@@ -403,25 +402,11 @@ namespace PasocomMate.AunCast
             return false;
         }
 
-        /// <summary>登録済みの全 MeshScreen / UiScreen にテクスチャを配信する。</summary>
+        /// <summary>AunCastEventBus 経由で全スクリーン購読者へテクスチャを配信する。</summary>
         private void BroadcastVideoTexture(Texture tex)
         {
-            if (meshScreens != null)
-            {
-                for (int i = 0; i < meshScreens.Length; i++)
-                {
-                    VideoMeshScreen s = meshScreens[i];
-                    if (s != null) s.UpdateVideoTexture(tex);
-                }
-            }
-            if (uiScreens != null)
-            {
-                for (int i = 0; i < uiScreens.Length; i++)
-                {
-                    VideoUiScreen s = uiScreens[i];
-                    if (s != null) s.UpdateVideoTexture(tex);
-                }
-            }
+            if (eventBus != null)
+                eventBus.PublishVideoTexture(tex);
         }
 
         /// <summary>タイムラインログをローカルのみ設定する。</summary>

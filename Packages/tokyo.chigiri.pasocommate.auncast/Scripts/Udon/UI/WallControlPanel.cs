@@ -23,6 +23,7 @@ namespace PasocomMate.AunCast
         [SerializeField] private StaffControlPanel staffPanel;
         [Tooltip("呼び出し対象の持ち運びパネル。Summon ボタンで表示する。")]
         [SerializeField] private UserStatusPanel portablePanel;
+        [SerializeField] private AunCastEventBus eventBus;
 
         [Header("View Crossfade")]
         [SerializeField] private CanvasGroup userCanvasGroup;
@@ -259,12 +260,10 @@ namespace PasocomMate.AunCast
         //  解錠後の自動切り替え
         // =================================================================
 
-        /// <summary>UserStatusPanel の表示状態が変わったときに呼ばれる。</summary>
-        /// <remarks>ポーリングではなく UserStatusPanel.SetMenuVisible から直接通知される。</remarks>
-        public void OnPortablePanelVisibilityChanged(bool visible)
+        /// <summary>UserStatusPanel が表示されたときに AunCastEventBus から呼ばれる。</summary>
+        public void OnPortablePanelShown()
         {
             if (!_isStaff) return;
-            if (!visible) return;
             _isNearWallPanel = true;
             SetViewTarget(VIEW_USER, false);
         }

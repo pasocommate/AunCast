@@ -11,6 +11,8 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class VideoUiScreen : UdonSharpBehaviour
     {
+        [SerializeField] private AunCastEventBus eventBus;
+
         /// <summary>同一 GameObject 上の RawImage をキャッシュ。</summary>
         private RawImage rawImage;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
@@ -35,8 +37,14 @@ namespace PasocomMate.AunCast
             }
         }
 
+        public void OnVideoTextureChanged()
+        {
+            if (eventBus != null)
+                UpdateVideoTexture(eventBus.videoTexture);
+        }
+
         /// <summary>テクスチャを RawImage に適用しアスペクト比フィットさせる。変化がなければスキップ。</summary>
-        public void UpdateVideoTexture(Texture renderTexture)
+        private void UpdateVideoTexture(Texture renderTexture)
         {
             if (renderTexture == lastRenderTexture)
                 return;
