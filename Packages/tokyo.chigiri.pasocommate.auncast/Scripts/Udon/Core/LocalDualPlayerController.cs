@@ -42,7 +42,8 @@ namespace PasocomMate.AunCast
         [SerializeField] private ResyncCoordinatorClient resyncClient;
 
         [Header("UI Notification")]
-        [SerializeField] private StaffControlPanel staffPanel;
+        [Tooltip("URL 変更を通知する先（StaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
+        [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
         [SerializeField] private AunCastEventBus eventBus;
 
         // =================================================================
@@ -802,7 +803,7 @@ namespace PasocomMate.AunCast
             _tlAction = "PLAY_VIDEO";
             LogMessage($"PlayVideo requested by local user (url={urlStr})");
             QueueSerialize();
-            if (staffPanel != null) staffPanel.OnUrlChanged();
+            if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnUrlChanged");
         }
 
         /// <summary>スタッフによる配信停止。オーナーシップ取得後に全プレイヤーを停止し同期する。</summary>
@@ -831,7 +832,7 @@ namespace PasocomMate.AunCast
             ResetFsmToIdle();
 
             QueueSerialize();
-            if (staffPanel != null) staffPanel.OnUrlChanged();
+            if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnUrlChanged");
         }
 
         /// <summary>FSM 状態・フラグをアイドルに一括リセットし、Coordinator への報告も行う。</summary>
@@ -912,8 +913,8 @@ namespace PasocomMate.AunCast
                 LogMessage($"Playing synced URL: {_syncedURL}");
             }
 
-            if ((stopReceived || urlChanged) && staffPanel != null)
-                staffPanel.OnUrlChanged();
+            if ((stopReceived || urlChanged) && staffNotifyTarget != null)
+                staffNotifyTarget.SendCustomEvent("OnUrlChanged");
         }
 
         // 遅れて参加したプレイヤーにデータを送る

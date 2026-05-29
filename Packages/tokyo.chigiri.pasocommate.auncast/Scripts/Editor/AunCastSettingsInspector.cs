@@ -432,8 +432,39 @@ namespace PasocomMate.AunCast.Internal
                 }
             }
 
+            // Core→UI の通知先（staffNotifyTarget）を StaffControlPanel へ配線する。
+            // SendCustomEvent による通知のため、フィールドは UdonSharpBehaviour 基底型で受ける。
+            int notifyUpdated = 0;
+            if (staffPanel != null)
+            {
+                foreach (var ctrl in root.GetComponentsInChildren<LocalDualPlayerController>(true))
+                {
+                    if (ctrl == null) continue;
+                    var so = new SerializedObject(ctrl);
+                    if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
+                        && ApplyUdonSerializedChanges(ctrl, so, "Rewire LocalDualPlayerController StaffNotifyTarget", recordUndo))
+                        notifyUpdated++;
+                }
+                foreach (var coord in root.GetComponentsInChildren<ResyncCoordinator>(true))
+                {
+                    if (coord == null) continue;
+                    var so = new SerializedObject(coord);
+                    if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
+                        && ApplyUdonSerializedChanges(coord, so, "Rewire ResyncCoordinator StaffNotifyTarget", recordUndo))
+                        notifyUpdated++;
+                }
+                foreach (var monitor in root.GetComponentsInChildren<PlaybackMonitor>(true))
+                {
+                    if (monitor == null) continue;
+                    var so = new SerializedObject(monitor);
+                    if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
+                        && ApplyUdonSerializedChanges(monitor, so, "Rewire PlaybackMonitor StaffNotifyTarget", recordUndo))
+                        notifyUpdated++;
+                }
+            }
+
             if (writeLog)
-                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件");
+                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / 通知先: {notifyUpdated}件");
         }
 
         private static AunCastEventBus FindOrCreateEventBus(Transform root, bool createIfMissing, bool writeLog)

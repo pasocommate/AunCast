@@ -26,8 +26,6 @@ namespace PasocomMate.AunCast
         // =================================================================
         /// <summary>Owner 側で全スロットを管理する Coordinator 本体。</summary>
         [SerializeField] private ResyncCoordinator coordinator;
-        /// <summary>FSM 状態遷移の判断に使うローカルコントローラ。</summary>
-        [SerializeField] private LocalDualPlayerController controller;
 
         // =================================================================
         //  Inspector パラメータ

@@ -24,8 +24,8 @@ namespace PasocomMate.AunCast
         [SerializeField] private bool debugLoggingEnabled = false;
 
         [Header("References")]
-        [Tooltip("同期変数の更新を通知する UI パネル（描画再更新用）")]
-        [SerializeField] private StaffControlPanel staffPanel;
+        [Tooltip("同期変数の更新を通知する先（StaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
+        [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
         [Tooltip("スロット→プレイヤー ID 対応の参照元。OnPlayerLeft で残留ビットを掃除するときに使う。")]
         [SerializeField] private ResyncCoordinator coordinator;
 
@@ -301,7 +301,7 @@ namespace PasocomMate.AunCast
         /// <summary>StaffControlPanel にステータス変化を通知して表示を更新させる。</summary>
         private void NotifyObservers()
         {
-            if (staffPanel != null) staffPanel.OnCoordinatorChanged();
+            if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnCoordinatorChanged");
         }
 
         // =====================================================================

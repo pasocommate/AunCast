@@ -16,7 +16,6 @@ namespace PasocomMate.AunCast
         // =================================================================
         [SerializeField] private VideoPlayerManager playerManagerA;
         [SerializeField] private VideoPlayerManager playerManagerB;
-        [SerializeField] private PlaybackSwitcher switcher;
 
         // =================================================================
         //  Inspector パラメータ

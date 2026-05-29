@@ -42,8 +42,8 @@ namespace PasocomMate.AunCast
         [Header("References")]
         /// <summary>各クライアントの再生状態を集約するモニタ。接続数上限の判断に使う。</summary>
         [SerializeField] private PlaybackMonitor playbackMonitor;
-        [Tooltip("同期変数の更新を通知する UI パネル（描画再更新用）")]
-        [SerializeField] private StaffControlPanel staffPanel;
+        [Tooltip("同期変数の更新を通知する先（StaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
+        [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
 
         // --- 同期変数: スロット管理 (Design Section 13.2) ---
         /// <summary>各スロットに割り当てられたプレイヤーの ID。0 = 空きスロット。</summary>
@@ -124,7 +124,7 @@ namespace PasocomMate.AunCast
         /// <summary>監視対象の UI パネルに再描画を促す。</summary>
         private void NotifyObservers()
         {
-            if (staffPanel != null) staffPanel.OnCoordinatorChanged();
+            if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnCoordinatorChanged");
         }
 
         // =====================================================================
