@@ -321,3 +321,33 @@ private bool CleanupStaleSlots()
 ことはない。ただし subscriber 配列をシーン内全件より少なく絞った手動編集は
 **毎回シーン内全件に戻される** ことに注意（バスの意味論として「シーン内 subscriber
 全件に配信する」を維持しているため）。
+
+## 8. 2 つの behaviour が相互参照する循環の片方向化
+
+2 つの UdonSharpBehaviour が互いを具象型フィールドで参照し合うと、型レベルの循環
+（ループ参照）になる。これは UdonSharp ではコンパイル/初期化順序の問題は起こさない
+（Inspector 配線のコンポーネント参照に過ぎない）が、結合度が上がりテスト・再利用・
+変更波及の面で不利になる。`AunCastEventBus`（§7）が複数購読者向けなのに対し、
+**1 対 1 の相互参照**はこのパターンで片方向化する。Core→UI の `staffNotifyTarget`
+や UI↔UI の `UserStatusPanel`↔`StaffControlPanel` がこの形。
+
+ルール:
+- **型循環は片辺だけ基底型化すれば切れる。** 両辺を基底型にする必要はない。
+  従属側（通知/命令を送るだけの辺）のフィールドを `StaffControlPanel` のような
+  具象型から `UdonSharpBehaviour` 基底型に変える。残した具象辺が「状態の所有者」になる。
+- **基底型辺は `SendCustomEvent(メソッド名)` で呼ぶ。** 引数なしの通知・命令のみ
+  送れる。呼び先メソッドは `public` であること。
+- **bool / enum などの値は、具象のまま残した逆辺から push してキャッシュする。**
+  基底型辺では値を渡せず（§7 のとおり `SetProgramVariable` 多用や「値ごとにイベント
+  分割」は避けたい）、クエリ（戻り値あり）も `SendCustomEvent` では呼べないため。
+  例: 解錠状態は所有者の `StaffControlPanel` が `viewerStatusPanel.SetStaffUnlocked(bool)`
+  （具象呼び出し）で `UserStatusPanel` に push し、UI 側は `_staffUnlocked` を読む。
+- **状態を変える箇所すべてで push する。** キャッシュ化前にライブクエリで成立して
+  いた経路（例: `OnPlayerJoined` の許可ユーザー自動解錠）を見落とすと、キャッシュが
+  stale になる。所有者側の状態変更点を網羅して push を入れる。
+- 既存の `staffNotifyTarget`（`LocalDualPlayerController` / `ResyncCoordinator` /
+  `PlaybackMonitor`）と同じ形。新規の 1 対 1 相互参照を作りそうになったら、まず
+  どちらを所有者にするか決め、従属辺を基底型 + `SendCustomEvent` にする。
+- 基底型化したフィールドはシーン/プレハブの参照が外れる場合があるため、変更後は
+  `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行し、Inspector で配線を
+  確認・必要なら再アサインする。

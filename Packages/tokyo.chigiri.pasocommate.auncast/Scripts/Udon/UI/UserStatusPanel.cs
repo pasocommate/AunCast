@@ -77,8 +77,11 @@ namespace PasocomMate.AunCast
         [SerializeField] private CanvasGroup userContentCanvasGroup;
         [Tooltip("Staff 側コンテンツの CanvasGroup")]
         [SerializeField] private CanvasGroup staffContentCanvasGroup;
-        [Tooltip("Staff ビューの UI ロジックを司る StaffControlPanel。解錠判定に使用する")]
-        [SerializeField] private StaffControlPanel staffControlPanel;
+        [Tooltip("Staff ビューの UI ロジックを司る StaffControlPanel。Staff ビューへの通知/命令専用（基底型参照で循環を断つ。解錠状態は SetStaffUnlocked で push されキャッシュする）")]
+        [SerializeField] private UdonSharpBehaviour staffControlPanel;
+
+        /// <summary>SCP から push される解錠状態のローカルキャッシュ。SCP を逆参照しないため保持する。</summary>
+        private bool _staffUnlocked;
         [Tooltip("Viewer/Staff 切替トグルボタン。解錠時のみ可視化される")]
         [SerializeField] private GameObject switchButton;
         [Tooltip("クロスフェードの遷移時間（秒）")]
@@ -296,7 +299,7 @@ namespace PasocomMate.AunCast
             _crossfadeCurrent = 0f;
             _crossfadeTarget = 0f;
             ApplyCrossfade();
-            OnStaffUnlockStateChanged();
+            ApplyStaffUnlockState();
         }
 
         private void OnDisable()
@@ -460,7 +463,7 @@ namespace PasocomMate.AunCast
         {
             if (_crossfadeTarget < 0.5f)
             {
-                if (staffControlPanel == null || !staffControlPanel.IsLocallyUnlocked()) return;
+                if (!_staffUnlocked) return;
                 _crossfadeTarget = 1f;
             }
             else
@@ -515,16 +518,24 @@ namespace PasocomMate.AunCast
         /// staffContentCanvasGroup.interactable で別途遮断される。</remarks>
         public bool IsStaffInteractable() { return !_staffLocked; }
 
-        /// <summary>StaffControlPanel の解錠状態が変わったときに呼ばれる。切替ボタンの表示とクロスフェードを更新する。</summary>
-        public void OnStaffUnlockStateChanged()
+        /// <summary>
+        /// SCP（基底型参照のため SendCustomEvent では bool を渡せない）から解錠状態が
+        /// 変わるたびに具象呼び出しで push される。ローカルにキャッシュして UI へ反映する。
+        /// </summary>
+        public void SetStaffUnlocked(bool unlocked)
         {
-            bool unlocked = staffControlPanel != null && staffControlPanel.IsLocallyUnlocked();
+            _staffUnlocked = unlocked;
+            ApplyStaffUnlockState();
+        }
 
-            if (switchButton != null && switchButton.activeSelf != unlocked)
-                switchButton.SetActive(unlocked);
+        /// <summary>キャッシュした解錠状態に応じて切替ボタンの表示とクロスフェードを更新する。</summary>
+        private void ApplyStaffUnlockState()
+        {
+            if (switchButton != null && switchButton.activeSelf != _staffUnlocked)
+                switchButton.SetActive(_staffUnlocked);
 
             // 未解錠に戻った場合は Viewer に強制復帰
-            if (!unlocked && _crossfadeTarget > 0f)
+            if (!_staffUnlocked && _crossfadeTarget > 0f)
             {
                 _crossfadeTarget = 0f;
                 _crossfadeActive = true;
@@ -623,7 +634,7 @@ namespace PasocomMate.AunCast
                 return;
             }
 
-            bool staffUnlocked = staffControlPanel != null && staffControlPanel.IsLocallyUnlocked();
+            bool staffUnlocked = _staffUnlocked;
 
             if (_crossfadeTarget < 0.5f && staffUnlocked)
             {
@@ -1030,7 +1041,7 @@ namespace PasocomMate.AunCast
                 return;
             }
 
-            bool staffUnlocked = staffControlPanel != null && staffControlPanel.IsLocallyUnlocked();
+            bool staffUnlocked = _staffUnlocked;
 
             if (staffUnlocked && _crossfadeTarget < 0.5f)
             {
@@ -1420,7 +1431,7 @@ namespace PasocomMate.AunCast
 
             // StaffControlPanel 側でロック状態と AND を取って個別ボタン alpha を計算する。
             if (staffControlPanel != null)
-                staffControlPanel.UpdateActionButtonsInteractable();
+                staffControlPanel.SendCustomEvent("UpdateActionButtonsInteractable");
         }
 
         /// <summary>個人 Resync リクエスト (FR-16)。</summary>
@@ -1566,11 +1577,11 @@ namespace PasocomMate.AunCast
             if (_debugIsMinId)
             {
                 if (staffControlPanel != null)
-                    staffControlPanel.SetLocalPasscodeUnlocked();
+                    staffControlPanel.SendCustomEvent("SetLocalPasscodeUnlocked");
                 _crossfadeTarget = 1f;
                 _crossfadeCurrent = 1f;
                 ApplyCrossfade();
-                OnStaffUnlockStateChanged();
+                ApplyStaffUnlockState();
                 SummonInFrontOfLocalPlayer();
             }
             else if (IsDesktopMode())

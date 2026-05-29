@@ -240,6 +240,9 @@ namespace PasocomMate.AunCast
                     {
                         _isStaff = true;
                         UpdateLockUI();
+                        // 解錠状態は USP がキャッシュするため、許可ユーザー自動解錠でも push が必須。
+                        if (viewerStatusPanel != null)
+                            viewerStatusPanel.SetStaffUnlocked(_isStaff);
                     }
                 }
             }
@@ -297,7 +300,7 @@ namespace PasocomMate.AunCast
             SyncUIFromState();
             UpdateActionButtonsInteractable();
             if (viewerStatusPanel != null)
-                viewerStatusPanel.OnStaffUnlockStateChanged();
+                viewerStatusPanel.SetStaffUnlocked(_isStaff);
         }
 
         /// <summary>統合パネル側が切替ボタンの可視判定などに使う。パスコード解錠済みか allowedUserNames 該当で true。</summary>
