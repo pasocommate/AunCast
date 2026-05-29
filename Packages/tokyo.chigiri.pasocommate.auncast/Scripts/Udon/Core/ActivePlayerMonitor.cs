@@ -78,7 +78,7 @@ namespace PasocomMate.AunCast
         // ドリフト監視（絶対ドリフト方式）
         /// <summary>EMA 平滑化された絶対ドリフト値（秒）。ジッターを吸収しつつ累積ずれを検出する。</summary>
         private float _driftAccumulator;
-        /// <summary>ドリフト基準点の実時間。ウォームアップ後に確定し、以降の経過時間差を測る起点。</summary>
+        /// <summary>ドリフト基準点の実時間。計測が（再）有効化されるたびに現在時刻で確定し、以降の経過時間差を測る起点。計測無効時は 0 にクリアする。</summary>
         private float _baseWallTime;
         /// <summary>ドリフト基準点のプレイヤー時間。壁時間との差分で再生速度のずれを検出する。</summary>
         private float _basePlayerTime;
@@ -222,13 +222,16 @@ namespace PasocomMate.AunCast
 
             // ドリフト計算（絶対ドリフト方式 + EMA 平滑化）
             // 壁時間の経過とプレイヤー時間の経過の差分を測り、再生速度のずれを検出する。
-            // EMA で平滑化することでネットワークジッターによる瞬間的な偏差を吸収する。
+            // 絶対方式によりサンプリングジッタの累積を避け、EMA で瞬間的な偏差を吸収する。
+            // 基準点は計測無効時に 0 へクリアするため、（再）有効化の瞬間は必ず取り直され、
+            // 平滑化前の rawDrift は 0 から始まる（計測中断中に生じたギャップを持ち越さない）。
+            // 有効区間中は無制限に積分するため、緩やかな遅れも累積として確実に検出できる。
             bool canMeasureDrift = isPlaying && _stablePlaybackStartedAt > 0f && now >= _driftWarmupUntil;
             if (canMeasureDrift)
             {
                 if (_baseWallTime <= 0f)
                 {
-                    // ウォームアップ終了直後: 安定した基準点を確定
+                    // 計測有効化の瞬間: 現在時刻で基準点を確定（rawDrift = 0 を保証）
                     _baseWallTime = now;
                     _basePlayerTime = currentPlayerTime;
                     _driftAccumulator = 0f;
@@ -244,7 +247,10 @@ namespace PasocomMate.AunCast
             }
             else
             {
+                // 計測無効: 累積と基準点をクリアし、次の有効化で基準点を取り直す
                 _driftAccumulator = 0f;
+                _baseWallTime = 0f;
+                _basePlayerTime = 0f;
             }
 
             _lastActiveTime = currentPlayerTime;

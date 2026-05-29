@@ -666,22 +666,27 @@ stateDiagram-v2
 
 ### 計算方法（絶対ドリフト方式）
 
-ウォームアップ終了時点の壁時計とプレイヤー時刻を基準点として記録し、以後は基準点からの経過時間の差を直接測定する。
+計測が有効化された時点の壁時計とプレイヤー時刻を基準点として記録し、以後は基準点からの経過時間の差を直接測定する（有効区間中は無制限に積分するため、緩やかな遅れも累積として確実に検出できる）。基準点は計測が無効な間（再生停止・バッファ中・ウォームアップ中）は 0 にクリアし、計測が（再）有効化される瞬間に必ず取り直す。これにより**平滑化前の `rawDrift` は計測開始時点で必ず 0 から始まり**、計測中断中に生じたギャップを持ち越さない。
 
 ```
-// ウォームアップ終了直後に一度だけ基準点を確定
+// 計測が（再）有効化された瞬間に基準点を確定（rawDrift = 0 を保証）
 _baseWallTime = now
 _basePlayerTime = currentPlayerTime
+_driftAccumulator = 0
 
 // 以後の各サンプルで絶対ドリフトを測定し EMA で平滑化
 rawDrift = (now - _baseWallTime) - (currentPlayerTime - _basePlayerTime)
 alpha = 1 - exp(-dt / driftSmoothingTimeConstant)
 _driftAccumulator = lerp(_driftAccumulator, rawDrift, alpha)
+
+// 計測が無効になったら基準点と累積をクリア（次の有効化で取り直す）
+if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulator = 0 }
 ```
 
 - `_driftAccumulator > 0`: プレイヤーがサーバー時間より遅れている（バッファアンダーラン方向）
 - `_driftAccumulator < 0`: プレイヤーがサーバー時間より進んでいる
 - `GetTime()` の巻き戻りが発生した場合は基準点をリセットする
+- 計測中断（`isPlaying == false` 等）を挟むと基準点を取り直すため、中断中のギャップはドリフトに計上されない（中断は別途スタール検出が担当する）
 
 ### 実装場所
 
