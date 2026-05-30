@@ -284,6 +284,10 @@ private bool CleanupStaleSlots()
 - `OnPlayerJoined` でも同じ走査を呼び、`OnPlayerLeft` のシリアライズロスト時の
   フォールバックにする
 - 自オブジェクトの掃除以外は他オブジェクトに任せる（責務分離）
+- PlaybackMonitor の人数サマリは、ビット配列全体ではなく
+  `coordinator.GetUserPlayerId(i) != 0` の割当済みスロットだけを数える。
+  未割当スロットの残留ビットを混ぜると、インジケーターに `■` が無いのに
+  `Playing` だけが 1 以上で残る表示不整合が起きる。
 
 ## 7. N 個配置 subscriber 群への AunCastEventBus 配信
 

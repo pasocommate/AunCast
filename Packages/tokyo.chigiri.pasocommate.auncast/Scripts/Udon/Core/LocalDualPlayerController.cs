@@ -846,8 +846,20 @@ namespace PasocomMate.AunCast
             _waitForSync = false;
             _awaitingActiveReboot = false;
             _pendingConnectingReport = false;
+            ReportPlaybackInactive();
             ReportConnecting(false);
             ReportError(false);
+        }
+
+        /// <summary>停止・リセット時に、次回定期報告を待たず再生中ビットを即時解除する。</summary>
+        private void ReportPlaybackInactive()
+        {
+            if (playbackMonitor == null || resyncClient.GetMySlotIndex() < 0) return;
+
+            playbackMonitor.ReportForSlot(resyncClient.GetMySlotIndex(), false);
+            _lastReportedPlaybackActive = false;
+            _hasReportedPlaybackActive = true;
+            _lastPlaybackReportAt = Time.time;
         }
 
         /// <summary>現在の URL で Active を再ロードする（Resync ではなく単純なリロード）。</summary>

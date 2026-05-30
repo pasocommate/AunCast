@@ -311,13 +311,13 @@ namespace PasocomMate.AunCast
         /// <summary>現在再生中のスロット総数を返す。ResyncCoordinator の同時接続上限判定に使用。</summary>
         public int GetPlayingEstimateCount()
         {
-            return CountBits(playbackActive);
+            return CountAssignedBits(playbackActive);
         }
 
         /// <summary>現在接続試行中のスロット総数を返す。接続上限スケジューリングに使用。</summary>
         public int GetConnectingEstimateCount()
         {
-            return CountBits(connectingActive);
+            return CountAssignedBits(connectingActive);
         }
 
         /// <summary>指定スロットが再生中か返す（StaffControlPanel のインジケータ表示用）。</summary>
@@ -352,6 +352,27 @@ namespace PasocomMate.AunCast
             int count = 0;
             for (int i = 0; i < packed.Length; i++)
                 count += _popcount[packed[i]];
+            return count;
+        }
+
+        /// <summary>
+        /// Coordinator で現在割り当て済みのスロットだけを数える。
+        /// 未割当スロットの残留ビットを Playing/Connecting サマリに混ぜないため。
+        /// </summary>
+        private int CountAssignedBits(byte[] packed)
+        {
+            if (packed == null) return 0;
+            if (coordinator == null) return CountBits(packed);
+
+            int count = 0;
+            int limit = Mathf.Min(maxPlayers, packed.Length * 8);
+            for (int i = 0; i < limit; i++)
+            {
+                // 立っているビットだけを対象にし、外部参照（GetUserPlayerId）の呼び出しを最小化する
+                if (!GetBit(packed, i)) continue;
+                if (coordinator.GetUserPlayerId(i) == 0) continue;
+                count++;
+            }
             return count;
         }
 
