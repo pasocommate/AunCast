@@ -203,9 +203,6 @@ namespace PasocomMate.AunCast
         private float _vrLookVertical;
         private float _vrStickUpHoldElapsed;
         private bool _vrStickHoldConsumed;
-        // グリップボタンの生押下状態。右スティックジェスチャー抑制に使用する。
-        private bool _vrLeftGrabPressed;
-        private bool _vrRightGrabPressed;
         // VRChat メニューの開閉状態（メニュー中はスティック系ジェスチャーを抑止する）
         private bool _isVRChatMenuOpen;
         // 片手ダブルトリガージェスチャー: 各手のトリガー前回 press-down 時刻
@@ -831,8 +828,6 @@ namespace PasocomMate.AunCast
 
         public override void InputGrab(bool value, UdonInputEventArgs args)
         {
-            if (args.handType == HandType.LEFT) _vrLeftGrabPressed = value;
-            else if (args.handType == HandType.RIGHT) _vrRightGrabPressed = value;
             if (value) TryStartGrab(args.handType);
             else TryEndGrab(args.handType);
         }
@@ -949,7 +944,9 @@ namespace PasocomMate.AunCast
         /// <summary>右スティックを上方向へ閾値を超えて一定秒数倒し続けたらメニューを開く。</summary>
         private void PollVrRightStickUpHold(VRCPlayerApi local)
         {
-            if (ShouldSuppressRightStickUpGesture(local))
+            if (_isVRChatMenuOpen
+                || _vrLookVertical < vrRightStickUpThreshold
+                || !IsHandInFrontOfHead(HandType.RIGHT, local))
             {
                 if (_vrStickUpHoldElapsed > 0f && hudProgress != null)
                     hudProgress.Hide();
@@ -1002,19 +999,6 @@ namespace PasocomMate.AunCast
 
             _vrHoldConsumed = true;
             TriggerSummonByGesture(local);
-        }
-
-        private bool ShouldSuppressRightStickUpGesture(VRCPlayerApi local)
-        {
-            return _isVRChatMenuOpen
-                || _vrLookVertical < vrRightStickUpThreshold
-                || IsAnyVrActionButtonPressed()
-                || !IsHandInFrontOfHead(HandType.RIGHT, local);
-        }
-
-        private bool IsAnyVrActionButtonPressed()
-        {
-            return _vrLeftUsePressed || _vrRightUsePressed || _vrLeftGrabPressed || _vrRightGrabPressed;
         }
 
         /// <summary>指定した手がヘッドの前方半球内にあるか判定する。</summary>
