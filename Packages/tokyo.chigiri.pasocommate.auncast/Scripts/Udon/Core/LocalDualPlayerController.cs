@@ -123,6 +123,7 @@ namespace PasocomMate.AunCast
         private bool _ranInit;
         private bool _hasReportedPlaybackActive;
         private bool _lastReportedPlaybackActive;
+        private int _initializedPlaybackMonitorSlot = -1;
 
         // FSM 状態変化通知用 (-1 = 未通知)
         private int _lastReportedLocalState = -1;
@@ -169,6 +170,7 @@ namespace PasocomMate.AunCast
                 return;
             }
             if (!resyncClient.TryEnsureSlotAssigned()) return;
+            InitializePlaybackMonitorSlotIfNeeded();
 
             // スロット確保直後の connecting レポート遅延送信
             if (_pendingConnectingReport)
@@ -435,6 +437,23 @@ namespace PasocomMate.AunCast
             _lastReportedPlaybackActive = isPlaying;
             _hasReportedPlaybackActive = true;
             _lastPlaybackReportAt = now;
+        }
+
+        /// <summary>スロット再利用時の残留ビットを引き継がないよう、割当直後に全状態を初期化する。</summary>
+        private void InitializePlaybackMonitorSlotIfNeeded()
+        {
+            if (playbackMonitor == null) return;
+
+            int slotIndex = resyncClient.GetMySlotIndex();
+            if (slotIndex < 0 || slotIndex == _initializedPlaybackMonitorSlot) return;
+
+            playbackMonitor.ReportForSlot(slotIndex, false);
+            playbackMonitor.ReportConnectingForSlot(slotIndex, false);
+            playbackMonitor.ReportErrorForSlot(slotIndex, false);
+            _initializedPlaybackMonitorSlot = slotIndex;
+            _lastReportedPlaybackActive = false;
+            _hasReportedPlaybackActive = true;
+            _lastPlaybackReportAt = Time.time;
         }
 
         private void ReportConnecting(bool isConnecting)

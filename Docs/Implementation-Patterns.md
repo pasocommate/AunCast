@@ -288,6 +288,10 @@ private bool CleanupStaleSlots()
   `coordinator.GetUserPlayerId(i) != 0` の割当済みスロットだけを数える。
   未割当スロットの残留ビットを混ぜると、インジケーターに `■` が無いのに
   `Playing` だけが 1 以上で残る表示不整合が起きる。
+- クライアントがスロット割当を初めて検出した直後は、PlaybackMonitor へ
+  Playing / Connecting / Error の 3 状態を明示的に初期報告する。
+  退室直後のスロットが同じ `OnPlayerJoined` 内で再利用されると、割当済み判定だけでは
+  以前の利用者が残したビットと新しい利用者の状態を区別できない。
 
 ## 7. N 個配置 subscriber 群への AunCastEventBus 配信
 
