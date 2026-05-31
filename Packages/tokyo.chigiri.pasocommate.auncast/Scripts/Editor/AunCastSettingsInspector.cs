@@ -1521,6 +1521,12 @@ namespace PasocomMate.AunCast.Internal
             float newCrossfade = SliderField("クロスフェード時間 [秒]", "crossfadeDurationSec",
                 "Active/Standby切替時のクロスフェード時間（秒）。",
                 settings.crossfadeDurationSec, 0f, 1f);
+            var newIdleScreenTexture = (Texture2D)EditorGUILayout.ObjectField(
+                L("停止中のスクリーン画像", "idleScreenTexture",
+                    "再生停止中にスクリーンへ表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。"),
+                settings.idleScreenTexture, typeof(Texture2D), false);
+            CopyFieldNameMenu("idleScreenTexture");
+            bool idleScreenTextureChanged = settings.idleScreenTexture != newIdleScreenTexture;
 
             if (!EditorGUI.EndChangeCheck()) return;
 
@@ -1528,6 +1534,7 @@ namespace PasocomMate.AunCast.Internal
             settings.maximumResolution = newResolution;
             settings.useLowLatency = newLowLatency;
             settings.crossfadeDurationSec = newCrossfade;
+            settings.idleScreenTexture = newIdleScreenTexture;
             EditorUtility.SetDirty(settings);
 
             foreach (var avPro in avProPlayers)
@@ -1543,6 +1550,8 @@ namespace PasocomMate.AunCast.Internal
             }
 
             ApplyCrossfadeSettingsToScene(root, settings);
+            if (idleScreenTextureChanged)
+                RewireEventHubAndConsumers(root, recordUndo: true, writeLog: false);
         }
 
         // ── UI / 操作 ──

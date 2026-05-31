@@ -21,6 +21,7 @@ namespace PasocomMate.AunCast
         private RawImage rawImage;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
         private Texture lastRenderTexture;
+        private bool _hasAppliedRenderTexture;
         /// <summary>起動時に RawImage へ割り当てられていた固定テクスチャ（停止時の復元先）。</summary>
         private Texture _initialTexture;
         /// <summary>アスペクト比計算のために Start 時に測定した親 RectTransform のサイズ。</summary>
@@ -41,6 +42,18 @@ namespace PasocomMate.AunCast
                         _uiContainerSize = parentRt.rect.size;
                 }
             }
+            UpdateVideoTexture(eventBus != null ? eventBus.videoTexture : null);
+        }
+
+        private void OnEnable()
+        {
+            if (rawImage != null)
+                UpdateVideoTexture(eventBus != null ? eventBus.videoTexture : null);
+        }
+
+        private void OnDisable()
+        {
+            _hasAppliedRenderTexture = false;
         }
 
         public void OnVideoTextureChanged()
@@ -52,7 +65,7 @@ namespace PasocomMate.AunCast
         /// <summary>テクスチャを RawImage に適用しアスペクト比フィットさせる。変化がなければスキップ。</summary>
         private void UpdateVideoTexture(Texture renderTexture)
         {
-            if (renderTexture == lastRenderTexture)
+            if (_hasAppliedRenderTexture && renderTexture == lastRenderTexture)
                 return;
 
             if (rawImage != null)
@@ -65,6 +78,7 @@ namespace PasocomMate.AunCast
                 rawImage.texture = display;
                 if (display != null && _uiContainerSize.x > 0f)
                     FitRawImageToAspect(display);
+                _hasAppliedRenderTexture = true;
             }
             else
             {

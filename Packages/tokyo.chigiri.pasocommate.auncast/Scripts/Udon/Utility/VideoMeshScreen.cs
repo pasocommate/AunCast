@@ -29,6 +29,7 @@ namespace PasocomMate.AunCast
         private Renderer targetRenderer;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
         private Texture lastRenderTexture;
+        private bool _hasAppliedRenderTexture;
         private float _lastMaterialWarnAt;
         private Material _restoreMaterial;
         private string _restoreParam0;
@@ -46,11 +47,19 @@ namespace PasocomMate.AunCast
         {
             targetRenderer = GetComponent<Renderer>();
             CacheRestoreStateIfNeeded(GetTargetMaterial());
+            UpdateVideoTexture(eventBus != null ? eventBus.videoTexture : null);
+        }
+
+        private void OnEnable()
+        {
+            if (_restoreMaterial != null)
+                UpdateVideoTexture(eventBus != null ? eventBus.videoTexture : null);
         }
 
         private void OnDisable()
         {
             RestoreMaterialTextures();
+            _hasAppliedRenderTexture = false;
         }
 
         private void OnDestroy()
@@ -67,7 +76,7 @@ namespace PasocomMate.AunCast
         /// <summary>テクスチャをレンダラーのマテリアルに適用する。変化がなければスキップして負荷を抑える。</summary>
         private void UpdateVideoTexture(Texture renderTexture)
         {
-            if (renderTexture == lastRenderTexture)
+            if (_hasAppliedRenderTexture && renderTexture == lastRenderTexture)
                 return;
 
             EnsureRenderer();
@@ -89,6 +98,7 @@ namespace PasocomMate.AunCast
                     {
                         ApplyTextureToMaterial(rendererMat, renderTexture);
                     }
+                    _hasAppliedRenderTexture = true;
                 }
             }
             else
