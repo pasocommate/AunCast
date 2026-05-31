@@ -47,6 +47,13 @@ namespace PasocomMate.AunCast
         [Tooltip("起動時のローカル再生デフォルト音量（0〜1）")]
         public float defaultVolume = 0.6f;
 
+        [Header("Default Playback")]
+        [Tooltip("Next URL 欄の初期値として表示する配信 URL。空欄なら未設定。")]
+        public VRCUrl defaultUrl = VRCUrl.Empty;
+
+        [Tooltip("インスタンスに最初のユーザーが Join した時点で defaultUrl を自動再生する")]
+        public bool autoPlayDefaultOnFirstJoin;
+
         [Header("Portable Panel Auto Dismiss")]
         // パネルから離れすぎたら自動で閉じる
         [Tooltip("ポータブルパネルからこの距離（m）以上離れると自動的に閉じる。0 で無効。")]

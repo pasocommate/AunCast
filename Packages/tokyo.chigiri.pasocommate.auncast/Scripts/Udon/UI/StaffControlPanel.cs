@@ -193,6 +193,7 @@ namespace PasocomMate.AunCast
             UpdateConcurrentEditVisibility();
             SyncUIFromState();
             UpdateNowPlayingDisplay();
+            PrefillNextUrlIfEmpty();
             _redrawDirty = true;
             _lastRepaintTime = 0f;
         }
@@ -269,6 +270,18 @@ namespace PasocomMate.AunCast
         /// <summary>nextUrlField の onValueChanged から呼ばれる。Next URL の有無で Promote ボタンを切替。</summary>
         public void OnNextUrlChanged()
         {
+            UpdateActionButtonsInteractable();
+        }
+
+        /// <summary>Next URL 欄が空のとき、controller のデフォルト URL を初期表示する（入力補助・同期なし）。</summary>
+        private void PrefillNextUrlIfEmpty()
+        {
+            if (nextUrlField == null || controller == null) return;
+            VRCUrl current = nextUrlField.GetUrl();
+            if (current != null && !string.IsNullOrEmpty(current.Get())) return;
+            VRCUrl def = controller.GetDefaultUrl();
+            if (def == null || string.IsNullOrEmpty(def.Get())) return;
+            nextUrlField.SetUrl(def);
             UpdateActionButtonsInteractable();
         }
 

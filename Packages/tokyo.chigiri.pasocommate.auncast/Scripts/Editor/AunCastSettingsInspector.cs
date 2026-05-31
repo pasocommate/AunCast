@@ -1572,6 +1572,12 @@ namespace PasocomMate.AunCast.Internal
             float newDefaultVolume = SliderField("初期音量", "defaultVolume",
                 "各ユーザーの起動時ローカル再生デフォルト音量（0〜1）。",
                 settings.defaultVolume, 0f, 1f);
+            string newDefaultUrl = TextField("デフォルト配信 URL", "defaultUrl",
+                "Next URL 欄の初期値。インスタンス最初の Join 時の自動再生にも使用する。空欄で無効。",
+                settings.defaultUrl != null ? settings.defaultUrl.Get() : "");
+            bool newAutoPlayDefault = ToggleField("最初の Join で自動再生", "autoPlayDefaultOnFirstJoin",
+                "インスタンスに最初のユーザーが Join した時点で、デフォルト配信 URL を自動再生する。",
+                settings.autoPlayDefaultOnFirstJoin);
 
             EditorGUILayout.LabelField(L("VR 呼び出しジェスチャー初期値", "defaultSummonGesture",
                 "VR モードで HUD を呼び出すジェスチャーの初期有効設定。"));
@@ -1635,6 +1641,8 @@ namespace PasocomMate.AunCast.Internal
             Undo.RecordObject(settings, "Change AunCast UI Settings");
             settings.instanceCapacity = newCapacity;
             settings.defaultVolume = newDefaultVolume;
+            settings.defaultUrl = new VRC.SDKBase.VRCUrl(newDefaultUrl);
+            settings.autoPlayDefaultOnFirstJoin = newAutoPlayDefault;
             settings.defaultSummonGesture = newSummonGesture;
             settings.defaultDesktopSummonGesture = newDesktopSummonGesture;
             settings.gestureHoldDuration = newHold;
@@ -1832,6 +1840,16 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(controllers, so =>
             {
                 SetFloatProperty(so, "defaultVolume", settings.defaultVolume);
+                // VRCUrl は内部 string フィールド経由で設定する（VRCUrl は [Serializable] のインライン値型）
+                var defaultUrlProp = so.FindProperty("defaultUrl");
+                if (defaultUrlProp != null)
+                {
+                    var urlInner = defaultUrlProp.FindPropertyRelative("url");
+                    if (urlInner != null)
+                        urlInner.stringValue = settings.defaultUrl != null ? settings.defaultUrl.Get() : "";
+                }
+                var autoPlayProp = so.FindProperty("autoPlayDefaultOnFirstJoin");
+                if (autoPlayProp != null) autoPlayProp.boolValue = settings.autoPlayDefaultOnFirstJoin;
             });
         }
 

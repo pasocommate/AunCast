@@ -64,6 +64,13 @@ namespace PasocomMate.AunCast
         [Tooltip("デフォルト音量（x^2 と Dr. Lex 指数カーブの lerp。0.6 で約 -13dB）")]
         [SerializeField] private float defaultVolume = 0.6f;
 
+        [Header("Default Playback")]
+        [Tooltip("Next URL 欄の初期値。インスタンス最初の Join 時の自動再生にも使用する。")]
+        [SerializeField] private VRCUrl defaultUrl = VRCUrl.Empty;
+
+        [Tooltip("インスタンスに最初のユーザーが Join した時点で defaultUrl を自動再生する")]
+        [SerializeField] private bool autoPlayDefaultOnFirstJoin;
+
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
@@ -143,6 +150,11 @@ namespace PasocomMate.AunCast
 
             QueueSerialize();
             LogMessage("LocalDualPlayerController initialized");
+
+            // インスタンス最初の参加者なら、デフォルト URL の自動再生を遅延スケジュールする。
+            // Owner 判定とネットワーク初期化が安定するよう数秒待ってから実行する。
+            if (autoPlayDefaultOnFirstJoin && defaultUrl != null && !string.IsNullOrEmpty(defaultUrl.Get()))
+                SendCustomEventDelayedSeconds("AutoPlayDefaultUrlIfFirstJoiner", AUTO_PLAY_DELAY_SEC);
         }
 
         /// <summary>メインループ: グローバルリブート確認→スロット確保→Coordinator ポーリング→FSM→無音検知の順で毎フレーム駆動。</summary>
@@ -942,6 +954,24 @@ namespace PasocomMate.AunCast
             RequestSerialization();
         }
 
+        // インスタンス最初の Join 時の自動再生の発火遅延（秒）。Owner 判定とネットワーク初期化の安定待ち。
+        private const float AUTO_PLAY_DELAY_SEC = 3.0f;
+
+        /// <summary>
+        /// インスタンス最初の参加者（起動時の Owner）のみが、未再生状態のとき defaultUrl を自動再生する。
+        /// Late Joiner は Owner でないため何もしない。Start からの遅延イベントで呼ばれる。
+        /// </summary>
+        public void AutoPlayDefaultUrlIfFirstJoiner()
+        {
+            if (!Networking.IsOwner(gameObject)) return;
+            if (_localState != STATE_IDLE) return;
+            if (_syncedURL != null && !string.IsNullOrEmpty(_syncedURL.Get())) return;
+            if (defaultUrl == null || string.IsNullOrEmpty(defaultUrl.Get())) return;
+
+            LogMessage("Auto-playing default URL on first join");
+            PlayVideoAsStaff(defaultUrl);
+        }
+
         // =================================================================
         //  音量
         // =================================================================
@@ -1036,6 +1066,9 @@ namespace PasocomMate.AunCast
             return activeMonitor.GetActivePlayerTime();
         }
         [PublicAPI] public VRCUrl GetCurrentURL() { return _syncedURL; }
+
+        /// <summary>Next URL 欄の初期値に使うデフォルト URL を返す（未設定なら空 URL）。</summary>
+        [PublicAPI] public VRCUrl GetDefaultUrl() { return defaultUrl; }
         [PublicAPI] public bool GetOwnerPlaying() { return _ownerPlaying; }
         [PublicAPI] public int GetConsecutiveFailCount() { return resyncClient.GetConsecutiveFailCount(); }
         [PublicAPI] public int GetConsecutiveStallCount() { return activeMonitor.GetConsecutiveStallCount(); }
