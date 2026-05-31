@@ -327,6 +327,8 @@ namespace PasocomMate.AunCast.Internal
             var controller = root.GetComponentInChildren<LocalDualPlayerController>(true);
             var staffPanel = root.GetComponentInChildren<StaffControlPanel>(true);
             var portablePanel = root.GetComponentInChildren<UserStatusPanel>(true);
+            var settings = root.GetComponent<PasocomMate.AunCast.AunCastSettings>();
+            var idleScreenTexture = settings != null ? settings.idleScreenTexture : null;
             var eventBus = FindOrCreateEventBus(root, createIfMissing: recordUndo, writeLog: writeLog);
             var switchers = root.GetComponentsInChildren<PlaybackSwitcher>(true);
             var meshScreens = root.GetComponentsInChildren<VideoMeshScreen>(true);
@@ -419,6 +421,8 @@ namespace PasocomMate.AunCast.Internal
                     if (mesh == null) continue;
                     var so = new SerializedObject(mesh);
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
+                    // 停止中の固定画像を AunCastSettings から転写する
+                    changed |= SetObjectProperty(so, "idleTexture", idleScreenTexture);
                     if (changed && ApplyUdonSerializedChanges(mesh, so, "Rewire VideoMeshScreen EventBus", recordUndo))
                         screenUpdated++;
                 }
@@ -427,6 +431,8 @@ namespace PasocomMate.AunCast.Internal
                     if (ui == null) continue;
                     var so = new SerializedObject(ui);
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
+                    // 停止中の固定画像を AunCastSettings から転写する
+                    changed |= SetObjectProperty(so, "idleTexture", idleScreenTexture);
                     if (changed && ApplyUdonSerializedChanges(ui, so, "Rewire VideoUiScreen EventBus", recordUndo))
                         screenUpdated++;
                 }

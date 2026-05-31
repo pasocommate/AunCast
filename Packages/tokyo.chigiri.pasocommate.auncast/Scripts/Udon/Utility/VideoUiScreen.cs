@@ -13,11 +13,16 @@ namespace PasocomMate.AunCast
     {
         [SerializeField] private AunCastEventBus eventBus;
 
+        [Tooltip("再生停止中に表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。")]
+        /// <summary>AunCastSettings の idleScreenTexture が再配線処理で転写される。</summary>
+        public Texture idleTexture;
+
         /// <summary>同一 GameObject 上の RawImage をキャッシュ。</summary>
         private RawImage rawImage;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
         private Texture lastRenderTexture;
-        private float _lastNullTextureWarnAt;
+        /// <summary>起動時に RawImage へ割り当てられていた固定テクスチャ（停止時の復元先）。</summary>
+        private Texture _initialTexture;
         /// <summary>アスペクト比計算のために Start 時に測定した親 RectTransform のサイズ。</summary>
         private Vector2 _uiContainerSize;
 
@@ -27,6 +32,7 @@ namespace PasocomMate.AunCast
             rawImage = GetComponent<RawImage>();
             if (rawImage != null)
             {
+                _initialTexture = rawImage.texture;
                 Transform parent = rawImage.transform.parent;
                 if (parent != null)
                 {
@@ -49,21 +55,16 @@ namespace PasocomMate.AunCast
             if (renderTexture == lastRenderTexture)
                 return;
 
-            if (renderTexture == null)
-            {
-                float now = Time.time;
-                if (now - _lastNullTextureWarnAt > 2.0f)
-                {
-                    _lastNullTextureWarnAt = now;
-                    LogWarning("UpdateVideoTexture received null texture");
-                }
-            }
-
             if (rawImage != null)
             {
-                rawImage.texture = renderTexture;
-                if (renderTexture != null && _uiContainerSize.x > 0f)
-                    FitRawImageToAspect(renderTexture);
+                // 停止中（null）はアイドル画像、未指定なら初期テクスチャへ復元して白飛びを防ぐ
+                Texture display = renderTexture;
+                if (display == null)
+                    display = idleTexture != null ? idleTexture : _initialTexture;
+
+                rawImage.texture = display;
+                if (display != null && _uiContainerSize.x > 0f)
+                    FitRawImageToAspect(display);
             }
             else
             {

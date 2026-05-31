@@ -21,11 +21,14 @@ namespace PasocomMate.AunCast
         /// <summary>マルチマテリアルのレンダラーで、どのスロットに適用するかを指定する。</summary>
         public int rendererIndex = 0;
 
+        [Tooltip("再生停止中に表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。")]
+        /// <summary>AunCastSettings の idleScreenTexture が再配線処理で転写される。</summary>
+        public Texture idleTexture;
+
         /// <summary>同一 GameObject 上のレンダラーをキャッシュ。</summary>
         private Renderer targetRenderer;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
         private Texture lastRenderTexture;
-        private float _lastNullTextureWarnAt;
         private float _lastMaterialWarnAt;
         private Material _restoreMaterial;
         private string _restoreParam0;
@@ -67,16 +70,6 @@ namespace PasocomMate.AunCast
             if (renderTexture == lastRenderTexture)
                 return;
 
-            if (renderTexture == null)
-            {
-                float now = Time.time;
-                if (now - _lastNullTextureWarnAt > 2.0f)
-                {
-                    _lastNullTextureWarnAt = now;
-                    LogWarning("UpdateVideoTexture received null texture");
-                }
-            }
-
             EnsureRenderer();
             if (targetRenderer)
             {
@@ -84,12 +77,18 @@ namespace PasocomMate.AunCast
                 if (rendererMat != null)
                 {
                     CacheRestoreStateIfNeeded(rendererMat);
-                    // 設定値を尊重しつつ、主要プロパティにも反映して表示失敗を避ける
-                    SetTextureIfPropertyExists(rendererMat, texParam, renderTexture);
-                    if (texParam != "_EmissionMap")
-                        SetTextureIfPropertyExists(rendererMat, "_EmissionMap", renderTexture);
-                    if (texParam != "_MainTex")
-                        SetTextureIfPropertyExists(rendererMat, "_MainTex", renderTexture);
+                    if (renderTexture == null)
+                    {
+                        // 停止中はアイドル画像を表示。未指定なら初期テクスチャへ復元して白飛びを防ぐ
+                        if (idleTexture != null)
+                            ApplyTextureToMaterial(rendererMat, idleTexture);
+                        else
+                            RestoreMaterialTextures();
+                    }
+                    else
+                    {
+                        ApplyTextureToMaterial(rendererMat, renderTexture);
+                    }
                 }
             }
             else
@@ -98,6 +97,16 @@ namespace PasocomMate.AunCast
             }
 
             lastRenderTexture = renderTexture;
+        }
+
+        /// <summary>設定値のプロパティを尊重しつつ、主要プロパティにも反映して表示失敗を避ける。</summary>
+        private void ApplyTextureToMaterial(Material mat, Texture texture)
+        {
+            SetTextureIfPropertyExists(mat, texParam, texture);
+            if (texParam != "_EmissionMap")
+                SetTextureIfPropertyExists(mat, "_EmissionMap", texture);
+            if (texParam != "_MainTex")
+                SetTextureIfPropertyExists(mat, "_MainTex", texture);
         }
 
         private void EnsureRenderer()
