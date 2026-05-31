@@ -146,5 +146,11 @@ namespace PasocomMate.AunCast
         [Header("Crossfade")]
         [Tooltip("クロスフェード時間（秒）")]
         public float crossfadeDurationSec = 0.1f;
+
+        [Header("Screen")]
+        // 再生していない間（停止中）にスクリーンへ表示する固定画像。
+        // 未指定の場合は、各スクリーンのマテリアル / RawImage に初期割り当てされていたテクスチャへ復元する。
+        [Tooltip("再生停止中にスクリーンへ表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。")]
+        public Texture2D idleScreenTexture;
     }
 }

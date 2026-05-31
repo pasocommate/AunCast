@@ -1488,6 +1488,8 @@ void TickScheduler()
 
 3D スクリーン側は `VideoMeshScreen`、UI RawImage 側は `VideoUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `VideoMeshScreen` / `VideoUiScreen` を追加し、AunCastSettings の `AunCastEventBus参照を再配線` を実行する。映像は `PlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
 
+停止中（`PlaybackSwitcher` が `null` テクスチャを配信した状態）は、各スクリーンを**アイドル画像**へ復元する。アイドル画像は `AunCastSettings.idleScreenTexture` で指定でき、再配線処理が各 `VideoMeshScreen` / `VideoUiScreen` の `idleTexture` へ転写する。未指定の場合は、`Start` 時にマテリアル / RawImage へ初期割り当てされていたテクスチャへ戻す。これにより、停止時に `null` テクスチャがそのまま残って白飛びする問題を防ぐ。
+
 ### 22.2 スタッフ操作パネル（StaffControlPanel、ポータブルパネル Staff ビュー）
 
 UserStatusPanel 内の Staff ビューとして動作する。パスコード解錠後に Viewer/Staff 切替ボタンで遷移できる。
