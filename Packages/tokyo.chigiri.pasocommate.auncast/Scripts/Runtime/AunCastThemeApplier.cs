@@ -225,13 +225,13 @@ namespace PasocomMate.AunCast
 
         private void ApplyAudioLinkMaterials(Transform root)
         {
-            foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
             {
-                var name = raw.gameObject.name;
-                if (name == "AL4BandHistory" && theme.al4BandHistoryMaterial != null)
-                    raw.material = theme.al4BandHistoryMaterial;
+                var name = img.gameObject.name;
+                if (name == "AL4BandHistory_Inner" && theme.al4BandHistoryMaterial != null)
+                    img.material = theme.al4BandHistoryMaterial;
                 else if (name == "ALAutoCorrelator" && theme.alAutoCorrelatorMaterial != null)
-                    raw.material = theme.alAutoCorrelatorMaterial;
+                    img.material = theme.alAutoCorrelatorMaterial;
             }
         }
 

@@ -142,6 +142,33 @@ namespace PasocomMate.AunCast.Tests
                 string.Join("\n", unchanged));
         }
 
+        [Test]
+        public void AudioLinkImages_ThemeMaterialsAreApplied()
+        {
+            _applier.theme = _themeA;
+            _applier.ApplyTheme(_instance.transform);
+
+            Assert.AreEqual(_themeA.al4BandHistoryMaterial, FindImage("AL4BandHistory_Inner").material);
+            Assert.AreEqual(_themeA.alAutoCorrelatorMaterial, FindImage("ALAutoCorrelator").material);
+        }
+
+        [Test]
+        public void AudioLinkImages_NullThemeMaterialsPreserveExistingMaterials()
+        {
+            _applier.theme = _themeA;
+            _applier.ApplyTheme(_instance.transform);
+            var al4BandHistoryMaterial = FindImage("AL4BandHistory_Inner").material;
+            var alAutoCorrelatorMaterial = FindImage("ALAutoCorrelator").material;
+
+            var theme = ScriptableObject.CreateInstance<AunCastTheme>();
+            _tempAssets.Add(theme);
+            _applier.theme = theme;
+            _applier.ApplyTheme(_instance.transform);
+
+            Assert.AreEqual(al4BandHistoryMaterial, FindImage("AL4BandHistory_Inner").material);
+            Assert.AreEqual(alAutoCorrelatorMaterial, FindImage("ALAutoCorrelator").material);
+        }
+
         // ── TMP_Text: color + font ──
 
         [Test]
@@ -297,6 +324,14 @@ namespace PasocomMate.AunCast.Tests
             foreach (var img in _instance.GetComponentsInChildren<Image>(true))
                 dict[GetPath(img.transform)] = img.material;
             return dict;
+        }
+
+        private Image FindImage(string name)
+        {
+            var image = _instance.GetComponentsInChildren<Image>(true)
+                .SingleOrDefault(img => img.gameObject.name == name);
+            Assert.IsNotNull(image, $"{name} の Image が見つかりません");
+            return image;
         }
 
         private Dictionary<string, Color> SnapshotTextColors()
