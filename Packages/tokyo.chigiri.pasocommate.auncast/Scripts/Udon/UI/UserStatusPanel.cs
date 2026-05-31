@@ -945,6 +945,7 @@ namespace PasocomMate.AunCast
         private void PollVrRightStickUpHold(VRCPlayerApi local)
         {
             if (_isVRChatMenuOpen
+                || _isGrabbing
                 || _vrLookVertical < vrRightStickUpThreshold
                 || !IsHandInFrontOfHead(HandType.RIGHT, local))
             {
