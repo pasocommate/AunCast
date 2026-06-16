@@ -16,6 +16,7 @@
 #include "AutoLight.cginc"
 
 float _TargetAspectRatio;
+float _IsVideoTexture;
 float4 _EmissionMap_TexelSize;
 
 half3 VideoEmission(float2 uv)
@@ -28,14 +29,14 @@ half3 VideoEmission(float2 uv)
     float currentAspectRatio = emissionRes.x / emissionRes.y;
 
     float visibility = 1.0;
+    bool isVideo = _IsVideoTexture > 0.5;
 
-    // If the aspect ratio does not match the target ratio, then we fit the UVs to maintain the aspect ratio while fitting the range 0-1
-    if (abs(currentAspectRatio - _TargetAspectRatio) > 0.001)
+    // ビデオテクスチャ時のみアスペクト比補正を適用（通常テクスチャは NPOT リサイズで比率がずれうる）
+    if (isVideo && abs(currentAspectRatio - _TargetAspectRatio) > 0.001)
     {
         float2 normalizedVideoRes = float2(emissionRes.x / _TargetAspectRatio, emissionRes.y);
         float2 correctiveScale;
-        
-        // Find which axis is greater, we will clamp to that
+
         if (normalizedVideoRes.x > normalizedVideoRes.y)
             correctiveScale = float2(1, normalizedVideoRes.y / normalizedVideoRes.x);
         else
@@ -43,26 +44,27 @@ half3 VideoEmission(float2 uv)
 
         uv = ((uv - 0.5) / correctiveScale) + 0.5;
 
-        // Antialiasing on UV clipping
         float2 uvPadding = (1 / emissionRes) * 0.1;
         float2 uvfwidth = fwidth(uv.xy);
         float2 maxFactor = smoothstep(uvfwidth + uvPadding + 1, uvPadding + 1, uv.xy);
         float2 minFactor = smoothstep(-uvfwidth - uvPadding, -uvPadding, uv.xy);
 
         visibility = maxFactor.x * maxFactor.y * minFactor.x * minFactor.y;
-
-        //if (any(uv <= 0) || any(uv >= 1))
-        //    return float3(0, 0, 0);
     }
 
+    // ビデオ RenderTexture は D3D で Y 反転されるため補正。通常テクスチャには不要
     #if UNITY_UV_STARTS_AT_TOP
-    uv = float2(uv.x, 1 - uv.y);
+    if (isVideo)
+        uv = float2(uv.x, 1 - uv.y);
     #endif
-    
+
     float3 texColor = tex2D(_EmissionMap, uv).rgb;
 
+    // ビデオテクスチャは sRGB 未タグの RenderTexture なので手動ガンマ補正が必要。
+    // sRGB タグ付きの通常テクスチャは GPU が自動変換するため、二重補正を避ける
 #ifndef UNITY_COLORSPACE_GAMMA
-    texColor = pow(texColor, 2.2f);
+    if (isVideo)
+        texColor = pow(texColor, 2.2f);
 #endif
 
     return texColor * _EmissionColor.rgb * visibility;

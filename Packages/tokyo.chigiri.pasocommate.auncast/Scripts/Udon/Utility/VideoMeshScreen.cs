@@ -88,7 +88,7 @@ namespace PasocomMate.AunCast
                     CacheRestoreStateIfNeeded(rendererMat);
                     if (renderTexture == null)
                     {
-                        // 停止中はアイドル画像を表示。未指定なら初期テクスチャへ復元して白飛びを防ぐ
+                        SetVideoTextureFlag(rendererMat, false);
                         if (idleTexture != null)
                             ApplyTextureToMaterial(rendererMat, idleTexture);
                         else
@@ -96,6 +96,7 @@ namespace PasocomMate.AunCast
                     }
                     else
                     {
+                        SetVideoTextureFlag(rendererMat, true);
                         ApplyTextureToMaterial(rendererMat, renderTexture);
                     }
                     _hasAppliedRenderTexture = true;
@@ -200,6 +201,13 @@ namespace PasocomMate.AunCast
                 _restoreMaterial.SetTexture(_restoreParam1, _restoreTex1);
             if (_restoreHas2 && _restoreMaterial.HasProperty(_restoreParam2))
                 _restoreMaterial.SetTexture(_restoreParam2, _restoreTex2);
+            SetVideoTextureFlag(_restoreMaterial, false);
+        }
+
+        private void SetVideoTextureFlag(Material mat, bool isVideo)
+        {
+            if (mat != null && mat.HasProperty("_IsVideoTexture"))
+                mat.SetFloat("_IsVideoTexture", isVideo ? 1f : 0f);
         }
 
         /// <summary>プロパティの存在を確認してからテクスチャを設定する。存在しないシェーダーへの誤設定を防ぐ。</summary>
