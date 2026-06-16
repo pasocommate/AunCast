@@ -3,6 +3,7 @@ using UdonSharp;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using VRC.SDK3.Persistence;
 using VRC.SDK3.Rendering;
 using VRC.SDKBase;
 using VRC.Udon.Common;
@@ -139,6 +140,10 @@ namespace PasocomMate.AunCast
         public const int DESKTOP_GESTURE_F5_DOUBLE_TAP = 2;
         public const int DESKTOP_GESTURE_ESC_HOLD = 4;
 
+        // PlayerData 永続化キー
+        private const string PLAYERDATA_VR_GESTURE = "AunCast-VrGesture";
+        private const string PLAYERDATA_DESKTOP_GESTURE = "AunCast-DesktopGesture";
+
         [Header("Haptic Feedback (VR)")]
         [Tooltip("VR でメニューを開いたときに両手へ送るハプティクスの再生時間（秒）。0 で無効化。")]
         [SerializeField] private float openHapticDuration = 0.1f;
@@ -187,6 +192,7 @@ namespace PasocomMate.AunCast
         private bool _lastAutoSilenceToggleState;
         private bool _timelineLoggingToggleInitialized;
         private bool _lastTimelineLoggingToggleState;
+        private bool _settingsResyncPending;
         // スタッフビュー誤操作防止ロック (#16)。初期状態は操作可能にする。
         private bool _staffLocked;
         private bool _inStaffView;
@@ -299,6 +305,16 @@ namespace PasocomMate.AunCast
             ApplyStaffUnlockState();
         }
 
+        public override void OnPlayerRestored(VRCPlayerApi player)
+        {
+            if (!player.isLocal) return;
+            if (PlayerData.HasKey(player, PLAYERDATA_VR_GESTURE))
+                summonGesture = PlayerData.GetInt(player, PLAYERDATA_VR_GESTURE);
+            if (PlayerData.HasKey(player, PLAYERDATA_DESKTOP_GESTURE))
+                desktopSummonGesture = PlayerData.GetInt(player, PLAYERDATA_DESKTOP_GESTURE);
+            _settingsResyncPending = true;
+        }
+
         private void OnDisable()
         {
             RestoreBackgroundDissolveThreshold();
@@ -409,6 +425,12 @@ namespace PasocomMate.AunCast
 
         private void Update()
         {
+            if (_settingsResyncPending)
+            {
+                _settingsResyncPending = false;
+                SyncLocalSettingsUI();
+            }
+
             VRCPlayerApi local = Networking.LocalPlayer;
             if (local != null)
             {
@@ -1050,10 +1072,10 @@ namespace PasocomMate.AunCast
                 summonGesture |= flag;
             else
                 summonGesture &= ~flag;
-            // 全て無効になるのを防ぐ
             if (summonGesture == 0)
                 summonGesture = flag;
             ResetGestureTimers();
+            PlayerData.SetInt(PLAYERDATA_VR_GESTURE, summonGesture);
         }
 
         public int GetSummonGesture() { return summonGesture; }
@@ -1067,6 +1089,7 @@ namespace PasocomMate.AunCast
             if (desktopSummonGesture == 0)
                 desktopSummonGesture = flag;
             ResetGestureTimers();
+            PlayerData.SetInt(PLAYERDATA_DESKTOP_GESTURE, desktopSummonGesture);
         }
 
         public int GetDesktopSummonGesture() { return desktopSummonGesture; }

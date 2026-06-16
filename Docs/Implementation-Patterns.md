@@ -359,3 +359,34 @@ private bool CleanupStaleSlots()
 - 基底型化したフィールドはシーン/プレハブの参照が外れる場合があるため、変更後は
   `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行し、Inspector で配線を
   確認・必要なら再アサインする。
+
+## 9. PlayerData 永続化パターン
+
+VRChat の `PlayerData` API を使い、ローカル設定をワールド再参加後も復元する。
+
+### キー命名規則
+
+`AunCast-PascalCase` 形式（例: `AunCast-Volume`, `AunCast-VrGesture`）。
+
+### 保存・復元の流れ
+
+1. **保存**: 設定変更時に `PlayerData.SetFloat(KEY, value)` / `SetInt` で書き込む。
+2. **復元**: `OnPlayerRestored(VRCPlayerApi player)` で `PlayerData.HasKey` →
+   `GetFloat` / `GetInt` で読み出し、ローカル状態に適用する。
+3. **UI 再同期**: `OnPlayerRestored` は全 `UdonSharpBehaviour` で同一フレーム内に
+   発火するため、コンポーネント間の実行順は保証されない。復元された値を UI に
+   反映するには `_pending` フラグを立て、**次フレームの `Update()`** で消費する。
+
+### 現在の永続化項目
+
+| キー | 型 | 保存元 | 復元先 |
+|------|----|--------|--------|
+| `AunCast-Volume` | float | `LocalDualPlayerController.SetVolumeLocal` | `LocalDualPlayerController.OnPlayerRestored` |
+| `AunCast-VrGesture` | int | `UserStatusPanel.SetSummonGestureFlag` | `UserStatusPanel.OnPlayerRestored` |
+| `AunCast-DesktopGesture` | int | `UserStatusPanel.SetDesktopSummonGestureFlag` | `UserStatusPanel.OnPlayerRestored` |
+
+### 制約
+
+- `VRCUrl` は Udon ランタイムで `new VRCUrl(string)` が使えないため、
+  PlayerData に文字列保存しても VRCUrl に復元できない
+  （`VRChat-Udon-Development-Notes.md` §1 参照）。

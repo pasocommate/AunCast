@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using UdonSharp;
 using UnityEngine;
 using VRC.SDK3.Components.Video;
+using VRC.SDK3.Persistence;
 using VRC.SDKBase;
 
 namespace PasocomMate.AunCast
@@ -84,6 +85,11 @@ namespace PasocomMate.AunCast
         [UdonSynced] private bool _ownerPlaying;
 
         // =================================================================
+        //  PlayerData 永続化キー
+        // =================================================================
+        private const string PLAYERDATA_VOLUME = "AunCast-Volume";
+
+        // =================================================================
         //  ローカル状態変数 (Design Section 13.4)
         // =================================================================
 
@@ -156,6 +162,16 @@ namespace PasocomMate.AunCast
             // Owner 判定とネットワーク初期化が安定するよう数秒待ってから実行する。
             if (autoPlayDefaultOnFirstJoin && defaultUrl != null && !string.IsNullOrEmpty(defaultUrl.Get()))
                 SendCustomEventDelayedSeconds("AutoPlayDefaultUrlIfFirstJoiner", AUTO_PLAY_DELAY_SEC);
+        }
+
+        public override void OnPlayerRestored(VRCPlayerApi player)
+        {
+            if (!player.isLocal) return;
+            if (PlayerData.HasKey(player, PLAYERDATA_VOLUME))
+            {
+                float vol = PlayerData.GetFloat(player, PLAYERDATA_VOLUME);
+                SetVolume(vol);
+            }
         }
 
         /// <summary>メインループ: グローバルリブート確認→スロット確保→Coordinator ポーリング→FSM→無音検知の順で毎フレーム駆動。</summary>
@@ -1018,6 +1034,7 @@ namespace PasocomMate.AunCast
         public void SetVolumeLocal(float volume)
         {
             SetVolume(volume);
+            PlayerData.SetFloat(PLAYERDATA_VOLUME, Mathf.Clamp01(volume));
         }
 
         // =================================================================

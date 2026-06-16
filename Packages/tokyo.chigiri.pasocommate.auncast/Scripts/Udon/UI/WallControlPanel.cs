@@ -96,6 +96,7 @@ namespace PasocomMate.AunCast
         private float _nearSqrDist;
         private float _farSqrDist;
         private bool _isNearWallPanel = true;
+        private bool _gestureRestorePending;
 
         private void Start()
         {
@@ -107,6 +108,12 @@ namespace PasocomMate.AunCast
             ApplyGestureGroupVisibility();
             SyncGestureToggles();
             UpdateUserButtonInteractable();
+        }
+
+        public override void OnPlayerRestored(VRCPlayerApi player)
+        {
+            if (!player.isLocal) return;
+            _gestureRestorePending = true;
         }
 
         public override void OnPlayerJoined(VRCPlayerApi player)
@@ -129,6 +136,12 @@ namespace PasocomMate.AunCast
         private void Update()
         {
             if (_crossfadeActive) UpdateCrossfade();
+
+            if (_gestureRestorePending)
+            {
+                _gestureRestorePending = false;
+                SyncGestureToggles();
+            }
 
             float now = Time.time;
             if (now - _lastSlowUpdateTime < SLOW_UPDATE_INTERVAL) return;
