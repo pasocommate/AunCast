@@ -1814,7 +1814,7 @@ PrefabInstance:
         type: 3}
       propertyPath: idleTexture
       value: 
-      objectReference: {fileID: 2800000, guid: b8ba3923a6094cd48b85425f47fd7450, type: 3}
+      objectReference: {fileID: 2800000, guid: 3d93b320164cba242b0bb7a78aa5aa51, type: 3}
     - target: {fileID: 85719424626777055, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
@@ -1895,7 +1895,7 @@ PrefabInstance:
         type: 3}
       propertyPath: publicVariablesUnityEngineObjects.Array.data[1]
       value: 
-      objectReference: {fileID: 2800000, guid: b8ba3923a6094cd48b85425f47fd7450, type: 3}
+      objectReference: {fileID: 2800000, guid: 3d93b320164cba242b0bb7a78aa5aa51, type: 3}
     - target: {fileID: 522601043806384100, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_Colors.m_DisabledColor.a
@@ -1955,7 +1955,7 @@ PrefabInstance:
         type: 3}
       propertyPath: idleTexture
       value: 
-      objectReference: {fileID: 2800000, guid: b8ba3923a6094cd48b85425f47fd7450, type: 3}
+      objectReference: {fileID: 2800000, guid: 3d93b320164cba242b0bb7a78aa5aa51, type: 3}
     - target: {fileID: 731579936077581875, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: serializationData.Prefab
@@ -2668,7 +2668,7 @@ PrefabInstance:
     - target: {fileID: 4408121560925559682, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: _syncMethod
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4408121560925559682, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
@@ -2759,7 +2759,7 @@ PrefabInstance:
         type: 3}
       propertyPath: idleScreenTexture
       value: 
-      objectReference: {fileID: 2800000, guid: b8ba3923a6094cd48b85425f47fd7450, type: 3}
+      objectReference: {fileID: 2800000, guid: 3d93b320164cba242b0bb7a78aa5aa51, type: 3}
     - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: defaultSummonGesture
@@ -2992,7 +2992,7 @@ PrefabInstance:
     - target: {fileID: 6293963138451541506, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: _syncMethod
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6303899231048617589, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
@@ -3105,7 +3105,7 @@ PrefabInstance:
         type: 3}
       propertyPath: publicVariablesUnityEngineObjects.Array.data[1]
       value: 
-      objectReference: {fileID: 2800000, guid: b8ba3923a6094cd48b85425f47fd7450, type: 3}
+      objectReference: {fileID: 2800000, guid: 3d93b320164cba242b0bb7a78aa5aa51, type: 3}
     - target: {fileID: 7042229008320831994, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: m_fontColor.a
@@ -3250,7 +3250,7 @@ PrefabInstance:
     - target: {fileID: 8231059202971838055, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: _syncMethod
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8485291155812932236, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}

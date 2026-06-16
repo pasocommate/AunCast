@@ -7,7 +7,7 @@ namespace PasocomMate.AunCast.Internal
     internal static class AunCastInspectorBanner
     {
         private const string LOGO_GUID = "0b03f41b908bc7d48b57b7f713e1e3f4";
-        private const string BANNER_BG_GUID = "113e351a1b05afd48b1027675bb3bf15";
+        private const string BANNER_BG_GUID = "f1aa0bc1b96b1e14da2341097235a11a";
 
         private static readonly Color BANNER_FALLBACK_COLOR = new Color(0.518f, 0.624f, 0.82f);
         private static readonly Color UPDATE_BADGE_BG_COLOR = new Color(0.85f, 0.15f, 0.15f);
