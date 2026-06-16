@@ -67,7 +67,8 @@ Assets/PackageMakerWindowData.asset*
 /[Uu]ser[Ss]ettings/
 
 # AI
-/.claude/
+/.claude/*
+!/.claude/commands/
 /.codex/
 
 # VRChat
