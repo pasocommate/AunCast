@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-06-16
+- PlayerData によるローカル設定の永続化
+- デフォルト配信 URL と初回 Join 時の自動再生
+- スクリーン: idle テクスチャの上下反転・ガンマ二重補正・黒帯を修正
+- スクリーン: idle テクスチャを Blank-AunCast.png に切り替え
+- UI: グラブ中に右スティック召喚ジェスチャーを抑制
+- 各種バグ修正
+
 ## [2.1.0] - 2026-05-29
 - WallControlPanel を検証シーンに追加
 - ドリフト計測中断時に基準点をクリアし再有効化時に取り直すよう修正
