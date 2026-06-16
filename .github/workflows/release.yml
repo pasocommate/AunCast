@@ -97,6 +97,12 @@ jobs:
           package-path: ${{ env.unityPackage }}
           include-files: metaList
       
+      # Extract release notes for this version from CHANGELOG.md
+      - name: Extract Release Notes
+        run: |
+          awk '/^## \[${{ env.version }}\]/{found=1; next} /^## \[/{if(found) exit} found' \
+            "${{ env.packagePath }}/CHANGELOG.md" > release_notes.txt
+
       # Publish the Release to GitHub
       - name: Make Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
@@ -106,6 +112,7 @@ jobs:
             ${{ env.unityPackage }}
             ${{ env.packagePath }}/package.json
           tag_name: ${{ env.tag }}
+          body_path: release_notes.txt
 
       - name: Evaluate vpm-listing dispatch condition
         id: listing_dispatch
