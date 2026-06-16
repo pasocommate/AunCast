@@ -115,8 +115,10 @@ Material:
     - _DissolveRadius: 1
     - _DissolveSoftness: 0.05
     - _DissolveThreshold: 0
+    - _FlipY: 0
     - _GRADIENT: 1
     - _GRADIENT_BLEND: 0
+    - _Gamma: 2.2
     - _GradientAngle: 0
     - _GradientRadius: 0.5
     - _MSDFPixelRange: 4
@@ -129,6 +131,7 @@ Material:
     - _USE_MSDF: 0
     - _UseBaseTex: 0
     - _UseMSDF: 0
+    - _UseMainTex: 0
     - _UseUIAlphaClip: 0
     - _VideoGamma: 0
     m_Colors:

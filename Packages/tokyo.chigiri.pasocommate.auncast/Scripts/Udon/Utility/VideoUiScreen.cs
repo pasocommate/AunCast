@@ -70,12 +70,13 @@ namespace PasocomMate.AunCast
 
             if (rawImage != null)
             {
-                // 停止中（null）はアイドル画像、未指定なら初期テクスチャへ復元して白飛びを防ぐ
+                bool isVideo = renderTexture != null;
                 Texture display = renderTexture;
                 if (display == null)
                     display = idleTexture != null ? idleTexture : _initialTexture;
 
                 rawImage.texture = display;
+                SetMaterialVideoParams(isVideo);
                 if (display != null && _uiContainerSize.x > 0f)
                     FitRawImageToAspect(display);
                 _hasAppliedRenderTexture = true;
@@ -86,6 +87,16 @@ namespace PasocomMate.AunCast
             }
 
             lastRenderTexture = renderTexture;
+        }
+
+        private void SetMaterialVideoParams(bool isVideo)
+        {
+            Material mat = rawImage.material;
+            if (mat == null) return;
+            if (mat.HasProperty("_Gamma"))
+                mat.SetFloat("_Gamma", isVideo ? 2.2f : 1f);
+            if (mat.HasProperty("_FlipY"))
+                mat.SetFloat("_FlipY", isVideo ? 1f : 0f);
         }
 
         /// <summary>映像のアスペクト比を保ちつつ、コンテナ内に収まるよう RawImage サイズを調整する。</summary>

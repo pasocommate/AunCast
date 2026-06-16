@@ -15,7 +15,7 @@ Material:
   - _CORNER_ROUND
   - _DISSOLVE_OFF
   - _MATCAP_ON
-  - _VIDEO_GAMMA
+  - _USE_MAINTEX
   m_InvalidKeywords:
   - _GRADIENT_NONE
   m_LightmapFlags: 4
@@ -117,7 +117,9 @@ Material:
     - _DissolveSoftness: 0
     - _DissolveThreshold: 0
     - _DstBlend: 0
+    - _FlipY: 0
     - _GRADIENT: 0
+    - _Gamma: 1
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -138,8 +140,8 @@ Material:
     - _StencilWriteMask: 255
     - _UVSec: 0
     - _UseMSDF: 0
+    - _UseMainTex: 1
     - _UseUIAlphaClip: 0
-    - _VideoGamma: 1
     - _ZWrite: 1
     m_Colors:
     - _BaseMatcapColor: {r: 1, g: 1, b: 1, a: 1}
