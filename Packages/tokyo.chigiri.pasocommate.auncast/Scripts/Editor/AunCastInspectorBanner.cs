@@ -65,6 +65,41 @@ namespace PasocomMate.AunCast.Internal
 
             Rect versionRect = new Rect(0f, logoRect.yMax + versionGap, fullWidth, versionHeight);
             DrawVersionLabel(ownerEditor, versionRect, hasVersionUpdate, latestVersion);
+
+            DrawLanguageSelector();
+        }
+
+        // 表示言語の手動トグル。Auto / 日本語 / English を切り替え、選択は EditorPrefs に保存される。
+        private static readonly GUIContent[] LANGUAGE_OPTIONS =
+        {
+            new GUIContent("Auto"),
+            new GUIContent("日本語"),
+            new GUIContent("English"),
+        };
+
+        private static void DrawLanguageSelector()
+        {
+            EditorGUILayout.Space(2f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+
+                var label = new GUIContent(AunCastEditorLocalization.Localize("表示言語", "Language"));
+                GUILayout.Label(label, EditorStyles.miniLabel,
+                    GUILayout.Width(EditorStyles.miniLabel.CalcSize(label).x + 4f));
+
+                int current = (int)AunCastEditorLocalization.Language;
+                EditorGUI.BeginChangeCheck();
+                int next = EditorGUILayout.Popup(current, LANGUAGE_OPTIONS, GUILayout.Width(90f));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    AunCastEditorLocalization.Language = (AunCastEditorLocalization.EditorLanguage)next;
+                    // 開いている全インスペクタへ即時反映する。
+                    UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
+                }
+
+                GUILayout.FlexibleSpace();
+            }
         }
 
         internal static string GetCurrentPackageName(Editor ownerEditor)

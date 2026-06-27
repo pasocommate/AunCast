@@ -456,7 +456,11 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 ### 文字列の切り替え
 
 - 言語判定は [`AunCastEditorLocalization.Localize(ja, en)`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastEditorLocalization.cs)
-  に集約する（`Application.systemLanguage` で日本語/英語を切り替え）。
+  に集約する。表示言語は `EditorLanguage`（`Auto` / `Japanese` / `English`）で、
+  `Auto` のみ `Application.systemLanguage` に追従する。
+  - 言語設定は個人のエディタ設定として **EditorPrefs**（マシン単位）に保存し、
+    バナー内の言語セレクタ（`AunCastInspectorBanner`）から手動切替できる。
+    切替時は `InternalEditorUtility.RepaintAllViews()` で全インスペクタへ即時反映する。
 - `LabelField` / `HelpBox` / `GUILayout.Button` / `DisplayDialog` 等の直接呼び出しは
   引数を `Localize(ja, en)` で包む。
 - ラベル付きフィールドは `AunCastSettingsInspector` のヘルパーに合わせる。
