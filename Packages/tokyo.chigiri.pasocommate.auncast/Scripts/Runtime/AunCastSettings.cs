@@ -138,10 +138,13 @@ namespace PasocomMate.AunCast
         public float localCooldownSec = 5.0f;
 
         [Tooltip("再試行の基本待機時間（秒）")]
-        public float baseCooldownSec = 15.0f;
+        public float baseCooldownSec = 5.0f;
+
+        [Tooltip("再試行間隔を連続失敗ごとに増やす倍率")]
+        public float retryCooldownMultiplier = 1.5f;
 
         [Tooltip("再試行の最大待機時間（秒）")]
-        public float maxRetryCooldownSec = 120.0f;
+        public float maxRetryCooldownSec = 90.0f;
 
         [Header("Crossfade")]
         [Tooltip("クロスフェード時間（秒）")]

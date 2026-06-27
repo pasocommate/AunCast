@@ -1270,8 +1270,8 @@ Failed → RetryWait → RequestPending（再試行）
 ```
 
 - `Failed` に遷移した時点で `_consecutiveFailCount` をインクリメントする
-- 再試行までの待機時間: `min(baseCooldownSec × 2^(_consecutiveFailCount - 1), maxRetryCooldownSec)`
-  - 例: 基本 15 秒、最大 120 秒 → 15s, 30s, 60s, 120s, 120s, ...
+- 再試行までの待機時間: `min(baseCooldownSec × retryCooldownMultiplier^(_consecutiveFailCount - 1), maxRetryCooldownSec)`
+  - 例: 基本 5 秒、倍率 1.5、最大 90 秒 → 5s, 7.5s, 11.25s, 16.875s, ...
 - 再試行時は **Active 側で直接再接続**を試みる（Standby 経由ではなく、切れている Active に URL を再発行）
   - これは Coordinator の Grant を必要としない緊急再接続であり、旧系が完全に死んでいるためリスクは低い
 - 直接再接続が成功した場合、`_consecutiveFailCount` をリセットし、通常の `ActivePlaying` に復帰する
@@ -1344,8 +1344,9 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `resyncCycleTimeoutSec` (45s)
 - `silenceSuppressSec` (150s)
 - `localCooldownSec` (5s)
-- `baseCooldownSec` (15s)
-- `maxRetryCooldownSec` (120s)
+- `baseCooldownSec` (5s)
+- `retryCooldownMultiplier` (1.5)
+- `maxRetryCooldownSec` (90s)
 
 ### ResyncCoordinator 側
 

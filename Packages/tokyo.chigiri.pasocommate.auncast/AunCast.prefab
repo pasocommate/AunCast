@@ -8866,8 +8866,9 @@ MonoBehaviour:
   runningTimeoutSec: 50
   resyncCycleTimeoutSec: 45
   localCooldownSec: 5
-  baseCooldownSec: 15
-  maxRetryCooldownSec: 120
+  baseCooldownSec: 5
+  retryCooldownMultiplier: 1.5
+  maxRetryCooldownSec: 90
   crossfadeDurationSec: 0.1
   idleScreenTexture: {fileID: 2800000, guid: 3d93b320164cba242b0bb7a78aa5aa51, type: 3}
 --- !u!114 &5986956631821098715
@@ -11591,8 +11592,9 @@ MonoBehaviour:
   resyncCycleTimeoutSec: 45
   silenceSuppressSec: 150
   localCooldownSec: 5
-  baseCooldownSec: 15
-  maxRetryCooldownSec: 120
+  baseCooldownSec: 5
+  retryCooldownMultiplier: 1.5
+  maxRetryCooldownSec: 90
   _timelineLogging: 0
 --- !u!114 &8231059202971838055
 MonoBehaviour:

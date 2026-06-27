@@ -44,10 +44,13 @@ namespace PasocomMate.AunCast
 
         [Header("Retry")]
         [Tooltip("再試行の基本待機時間（秒）")]
-        [SerializeField] private float baseCooldownSec = 15.0f;
+        [SerializeField] private float baseCooldownSec = 5.0f;
+
+        [Tooltip("再試行間隔を連続失敗ごとに増やす倍率")]
+        [SerializeField] private float retryCooldownMultiplier = 1.5f;
 
         [Tooltip("再試行の最大待機時間（秒）")]
-        [SerializeField] private float maxRetryCooldownSec = 120.0f;
+        [SerializeField] private float maxRetryCooldownSec = 90.0f;
 
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
@@ -346,6 +349,8 @@ namespace PasocomMate.AunCast
         public float GetLocalCooldownSec() { return localCooldownSec; }
         /// <summary>再試行の基本待機秒数。</summary>
         public float GetBaseCooldownSec() { return baseCooldownSec; }
+        /// <summary>連続失敗ごとのリトライ間隔倍率。</summary>
+        public float GetRetryCooldownMultiplier() { return Mathf.Clamp(retryCooldownMultiplier, 1.0f, 2.0f); }
         /// <summary>指数バックオフの上限秒数。</summary>
         public float GetMaxRetryCooldownSec() { return maxRetryCooldownSec; }
         /// <summary>無音検知による自動 Resync の抑制秒数。</summary>

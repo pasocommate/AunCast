@@ -25,6 +25,7 @@ namespace PasocomMate.AunCast.Internal
             // recordUndo: false なので新規 Hub の自動作成は走らず、既存配線の整合更新のみ。
             AunCastSettingsInspector.RewireEventHubAndConsumers(
                 settings.transform, recordUndo: false, writeLog: false);
+            AunCastSettingsInspector.ApplyResyncSettingsToScene(settings.transform, settings);
 
             int capacity = settings.instanceCapacity;
             if (capacity <= 0)

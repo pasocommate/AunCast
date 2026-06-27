@@ -1782,11 +1782,14 @@ namespace PasocomMate.AunCast.Internal
                 "LoadURL完了後、次のResyncを受け付けるまでの待機時間（秒）。",
                 settings.localCooldownSec, 0f, 60f);
             float newBase = SliderField("リトライ間隔（初回） [秒]", "baseCooldownSec",
-                "再試行の基本待機時間（秒）。失敗ごとに倍増する。",
-                settings.baseCooldownSec, 1f, 120f);
+                "リトライの基本待機時間（秒）。両系統の接続が失敗し続けると、この値からリトライ間隔倍率に従って増えていく（上限はリトライ間隔（上限））。レート制限による再接続待ちでは、倍増せずこの値で毎回待機する。",
+                settings.baseCooldownSec, 5f, 180f);
+            float newMultiplier = SliderField("リトライ間隔倍率", "retryCooldownMultiplier",
+                "両系統失敗時に、連続失敗ごとのリトライ間隔へ掛ける倍率。1.0 で固定間隔、2.0 で倍々。",
+                settings.retryCooldownMultiplier, 1f, 2f);
             float newMax = SliderField("リトライ間隔（上限） [秒]", "maxRetryCooldownSec",
-                "再試行の最大待機時間（秒）。倍増がこの値で頭打ちになる。",
-                settings.maxRetryCooldownSec, 1f, 300f);
+                "倍率に従って増えるリトライ間隔の頭打ち値（秒）。両系統失敗時のバックオフがこの値を超えない。",
+                settings.maxRetryCooldownSec, 5f, 180f);
             EditorGUI.indentLevel--;
 
             if (!EditorGUI.EndChangeCheck()) return;
@@ -1799,6 +1802,7 @@ namespace PasocomMate.AunCast.Internal
             settings.resyncCycleTimeoutSec = newCycle;
             settings.localCooldownSec = newLocal;
             settings.baseCooldownSec = newBase;
+            settings.retryCooldownMultiplier = newMultiplier;
             settings.maxRetryCooldownSec = Mathf.Max(newBase, newMax);
             EditorUtility.SetDirty(settings);
 
@@ -1903,7 +1907,7 @@ namespace PasocomMate.AunCast.Internal
             });
         }
 
-        private static void ApplyResyncSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        internal static void ApplyResyncSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             var coordinators = root.GetComponentsInChildren<ResyncCoordinator>(true);
             ApplyToUdonComponents(coordinators, so =>
@@ -1920,6 +1924,7 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "resyncCycleTimeoutSec", settings.resyncCycleTimeoutSec);
                 SetFloatProperty(so, "localCooldownSec", settings.localCooldownSec);
                 SetFloatProperty(so, "baseCooldownSec", settings.baseCooldownSec);
+                SetFloatProperty(so, "retryCooldownMultiplier", settings.retryCooldownMultiplier);
                 SetFloatProperty(so, "maxRetryCooldownSec", settings.maxRetryCooldownSec);
             });
         }

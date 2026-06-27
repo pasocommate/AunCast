@@ -38,6 +38,7 @@ namespace PasocomMate.AunCast.Internal
                 if (settings == null) continue;
                 AunCastSettingsInspector.RewireEventHubAndConsumers(
                     settings.transform, recordUndo: false, writeLog: false);
+                AunCastSettingsInspector.ApplyResyncSettingsToScene(settings.transform, settings);
             }
         }
     }

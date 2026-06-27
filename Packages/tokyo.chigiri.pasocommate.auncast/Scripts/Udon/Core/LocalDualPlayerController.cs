@@ -587,7 +587,7 @@ namespace PasocomMate.AunCast
             int failCount = resyncClient.GetConsecutiveFailCount() + 1;
             resyncClient.SetConsecutiveFailCount(failCount);
             float backoff = Mathf.Min(
-                resyncClient.GetBaseCooldownSec() * Mathf.Pow(2, failCount - 1),
+                resyncClient.GetBaseCooldownSec() * Mathf.Pow(resyncClient.GetRetryCooldownMultiplier(), failCount - 1),
                 resyncClient.GetMaxRetryCooldownSec());
             _retryWaitUntil = now + backoff;
 
@@ -780,8 +780,9 @@ namespace PasocomMate.AunCast
                     if (error == VideoError.RateLimited)
                     {
                         // レート制限 → 少し待ってリトライ（connecting は維持）
-                        _retryWaitUntil = Time.time + 6.0f;
-                        LogMessage("Active reboot rate limited, waiting 6s");
+                        float retryDelay = Mathf.Max(5.0f, resyncClient.GetBaseCooldownSec());
+                        _retryWaitUntil = Time.time + retryDelay;
+                        LogMessage($"Active reboot rate limited, waiting {retryDelay:F1}s");
                     }
                     else
                     {
@@ -893,6 +894,8 @@ namespace PasocomMate.AunCast
             _waitForSync = false;
             _awaitingActiveReboot = false;
             _pendingConnectingReport = false;
+            // 停止/リセット時はバックオフをクリアし、次回再生の初回リトライを base 間隔から始める
+            resyncClient.SetConsecutiveFailCount(0);
             ReportPlaybackInactive();
             ReportConnecting(false);
             ReportError(false);
