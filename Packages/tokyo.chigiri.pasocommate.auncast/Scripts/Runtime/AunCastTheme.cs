@@ -81,6 +81,12 @@ namespace PasocomMate.AunCast
         public Color inputTextColor = Color.white;
         public Color placeholderTextColor = new Color(0.60f, 0.60f, 0.60f, 1f);
 
+        [Header("Portable Panel Layout")]
+        [Tooltip("PortablePanel のコンテンツ設計サイズ（ContentScaler の SizeDelta）。X=幅、Y=高さ。"
+            + "ContentScaler 配下の UI はこの設計解像度で配置される。PortablePanel 本体と判定コライダーは、"
+            + "この値に ContentScaler のローカルスケールを掛けた値へ自動追従する。")]
+        public Vector2 portableContentSize = new Vector2(900f, 640f);
+
         [Header("HUD Progress (gesture long-press)")]
         [Tooltip("プログレス HUD の表示モード。false=バー、true=パイ。")]
         public bool hudProgressUsePieMode = true;

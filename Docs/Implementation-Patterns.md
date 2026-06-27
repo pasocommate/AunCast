@@ -475,3 +475,30 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 
 - ソースコメント、`Debug.Log` / `Debug.LogWarning`（コンソール出力）、
   `Undo.RecordObject` などの操作名。
+
+## 12. ContentScaler「設計キャンバス」パターンとサイズ追従
+
+パネル（`PortablePanel` / `WallControlPanel`）配下の `ContentScaler` は、
+**固定の設計解像度（PortablePanel は 900×640）を持つ単一キャンバス**であり、
+`localScale`（例: 0.1）でパネルのローカル単位へ縮小する役割を持つ。
+
+- `ContentScaler` の **Anchor は中央一点 (0.5,0.5) で固定**する。親へストレッチ追従
+  させると rect サイズが親に引っ張られ、さらに `localScale` が掛かってレイアウトが
+  破綻する。サイズの主従が「ContentScaler = マスター」であることを Anchor で表現している。
+- `ContentScaler` 直下の `Background` / `*ContentArea` はストレッチ (0,0)-(1,1) で
+  ContentScaler に完全追従する。よって**コンテンツの正サイズ＝`ContentScaler.sizeDelta`**。
+- パネル本体・判定コライダーは ContentScaler から導出する。不変条件:
+
+  ```
+  PortablePanel.sizeDelta = ContentScaler.sizeDelta × ContentScaler.localScale
+  BoxCollider.size        = (PortablePanel.sizeDelta.xy, z 据え置き)
+  ```
+
+- 設計サイズは `AunCastTheme.portableContentSize` に保持し、`AunCastThemeApplier`
+  （エディタ時セットアップ）が上記の追従を一括適用する。書き換えた RectTransform /
+  BoxCollider は `RecordPrefabInstancePropertyModifications` でプレハブオーバーライド
+  記録する。
+- 注意: ContentScaler 配下の**個別 UI（ボタン等）は絶対配置**のものが多く、設計サイズを
+  変えても自動リフローしない。アスペクト比を大きく変える場合は内部レイアウトの再調整が要る。
+- 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`UserStatusPanel`）
+  側で行い、`sizeDelta` は触らない。

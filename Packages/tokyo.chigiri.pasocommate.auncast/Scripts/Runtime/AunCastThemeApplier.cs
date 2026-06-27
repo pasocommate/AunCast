@@ -27,6 +27,7 @@ namespace PasocomMate.AunCast
             ApplyMaterials(root);
             ApplyFonts(root);
             ApplyAudioLinkMaterials(root);
+            ApplyPortableContentSize(root);
 
             const string pp = "PortablePanel/ContentScaler";
             const string staff = pp + "/PortableContentArea/StaffContent/StaffPadded";
@@ -131,8 +132,48 @@ namespace PasocomMate.AunCast
                 if (quadTf != null)
                     UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(quadTf);
             }
+
+            // ApplyPortableContentSize で書き換えた RectTransform / Collider のオーバーライドを記録
+            var panel = root.Find("PortablePanel");
+            if (panel != null)
+            {
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(panel);
+                var box = panel.GetComponent<BoxCollider>();
+                if (box != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(box);
+                var scaler = panel.Find("ContentScaler");
+                if (scaler != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(scaler);
+            }
         }
 #endif
+
+        /// <summary>
+        /// PortablePanel のコンテンツ設計サイズ（ContentScaler.sizeDelta）をテーマ値で設定し、
+        /// PortablePanel 本体とポインタ／グラブ判定コライダーをそれに追従させる。
+        /// ContentScaler 配下の Background / PortableContentArea はストレッチ配置のため自動追従する。
+        /// </summary>
+        private void ApplyPortableContentSize(Transform root)
+        {
+            var scaler = root.Find("PortablePanel/ContentScaler") as RectTransform;
+            var panel = root.Find("PortablePanel") as RectTransform;
+            if (scaler == null || panel == null) return;
+
+            Vector2 contentSize = theme.portableContentSize;
+            if (contentSize.x <= 0f || contentSize.y <= 0f) return;
+
+            scaler.sizeDelta = contentSize;
+
+            // PortablePanel 本体は ContentScaler のローカルスケール分だけ縮めた値に追従させる
+            Vector3 s = scaler.localScale;
+            Vector2 panelSize = new Vector2(contentSize.x * s.x, contentSize.y * s.y);
+            panel.sizeDelta = panelSize;
+
+            // ポインタ／グラブ判定の BoxCollider もパネル矩形（ローカル単位）に合わせる。Z は据え置き
+            var box = panel.GetComponent<BoxCollider>();
+            if (box != null)
+                box.size = new Vector3(panelSize.x, panelSize.y, box.size.z);
+        }
 
         private void ApplyMaterials(Transform root)
         {

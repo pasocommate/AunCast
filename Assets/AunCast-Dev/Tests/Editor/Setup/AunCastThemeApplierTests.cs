@@ -438,6 +438,43 @@ namespace PasocomMate.AunCast.Tests
                 AssertTextColor(path, _theme.placeholderTextColor, path + " placeholderTextColor");
         }
 
+        // ── PortablePanel コンテンツ設計サイズの追従テスト ──
+
+        [Test]
+        public void PortableContentSize_AppliedToContentScaler()
+        {
+            var scaler = (RectTransform)_instance.transform.Find("PortablePanel/ContentScaler");
+            Assert.IsNotNull(scaler, "ContentScaler が見つかりません");
+            Assert.AreEqual(_theme.portableContentSize.x, scaler.sizeDelta.x, 0.01f,
+                "ContentScaler.sizeDelta.x が portableContentSize に追従していません");
+            Assert.AreEqual(_theme.portableContentSize.y, scaler.sizeDelta.y, 0.01f,
+                "ContentScaler.sizeDelta.y が portableContentSize に追従していません");
+        }
+
+        [Test]
+        public void PortablePanel_FollowsContentSize()
+        {
+            var scaler = (RectTransform)_instance.transform.Find("PortablePanel/ContentScaler");
+            var panel = (RectTransform)_instance.transform.Find("PortablePanel");
+            Assert.IsNotNull(scaler);
+            Assert.IsNotNull(panel);
+
+            var expected = new Vector2(
+                _theme.portableContentSize.x * scaler.localScale.x,
+                _theme.portableContentSize.y * scaler.localScale.y);
+            Assert.AreEqual(expected.x, panel.sizeDelta.x, 0.01f,
+                "PortablePanel.sizeDelta.x が ContentScaler サイズ×スケールに追従していません");
+            Assert.AreEqual(expected.y, panel.sizeDelta.y, 0.01f,
+                "PortablePanel.sizeDelta.y が ContentScaler サイズ×スケールに追従していません");
+
+            var box = panel.GetComponent<BoxCollider>();
+            if (box != null)
+            {
+                Assert.AreEqual(expected.x, box.size.x, 0.01f, "BoxCollider.size.x がパネル矩形に追従していません");
+                Assert.AreEqual(expected.y, box.size.y, 0.01f, "BoxCollider.size.y がパネル矩形に追従していません");
+            }
+        }
+
         // ── 全テーマプロパティが使われていることの検証 ──
 
         [Test]

@@ -55,6 +55,7 @@ MonoBehaviour:
   bodyTextColor: {r: 0.75, g: 0.75, b: 0.78, a: 1}
   inputTextColor: {r: 1, g: 1, b: 1, a: 1}
   placeholderTextColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  portableContentSize: {x: 900, y: 640}
   hudProgressUsePieMode: 1
   hudProgressLocalOffset: {x: 0, y: -0.18, z: 0.6}
   hudProgressBarSize: {x: 0.18, y: 0.018}
