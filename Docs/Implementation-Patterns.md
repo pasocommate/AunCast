@@ -420,3 +420,30 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 - `VRCUrl` は Udon ランタイムで `new VRCUrl(string)` が使えないため、
   PlayerData に文字列保存しても VRCUrl に復元できない
   （`VRChat-Udon-Development-Notes.md` §1 参照）。
+
+## 10. エディタ設定のプロジェクト単位永続化パターン
+
+ワールド制作者向けのエディタ状態（利用規約への同意など）を **プロジェクト単位** で
+保存する場合は、`ProjectSettings/` 配下へ直接シリアライズする。
+
+### 方針
+
+- 保存先は `ProjectSettings/<Name>.asset`。`InternalEditorUtility.SaveToSerializedFileAndForget`
+  / `LoadSerializedFileAndForget` で `ScriptableObject` を読み書きする。
+  - アセットDB に現れないため Project ビューや Inspector を汚さない。
+  - VCS にコミットすればチーム単位で共有できる（個人マシン単位なら `EditorPrefs`）。
+- 導入先ではパッケージ本体（`Packages/.../`）は書き込み不可。同意状態のような
+  プロジェクト固有の状態は **必ず導入先プロジェクトの `ProjectSettings/`** に書く。
+- 実装例: [`AunCastConsentStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastConsentStore.cs)。
+  メジャーバージョンを記録し、メジャー更新時のみ再同意を促す。
+
+### 同意ゲート（ソフト抑止）の作り方
+
+- カスタムエディタ（`AunCastSettingsInspector`）の `OnInspectorGUI` 冒頭で
+  `HasConsented` を判定し、未同意なら同意 UI のみ描画して **早期 return** する。
+- 規約 PDF は GUID 経由（`LoadAssetByGuid` → `AssetDatabase.OpenAsset`）で開く。
+  パス文字列リテラルは使わない。
+- 同意確定後に描画する UI 構成が変わるため、`GUIUtility.ExitGUI()` で当該フレームの
+  GUI をやり直す。
+- これは導線上の抑止であり実行時の動作は止めない。アップロード自体をブロックするには
+  VRCSDK の `IVRCSDKBuildRequestedCallback` で中断する必要がある（本実装は未対応）。

@@ -37,6 +37,12 @@ namespace PasocomMate.AunCast.Internal
 
         private const double SPEAKER_CACHE_POLL_INTERVAL_SEC = 3.0;
 
+        // 利用規約 PDF（VN3ライセンス）の GUID。パス文字列リテラルは使わず GUID で特定する。
+        private const string VN3_LICENSE_JA_GUID = "63ab57b266732074988fcf3b95489e05";
+        private const string VN3_LICENSE_EN_GUID = "10d1177e22c28e64bb6330fb48d1a183";
+
+        private bool _consentCheckbox;
+
         private bool _prevAlt;
         private bool _vpmVersionCheckRequested;
         private bool _vpmVersionCheckInProgress;
@@ -167,6 +173,11 @@ namespace PasocomMate.AunCast.Internal
             EnsureVpmVersionCheckStarted();
             PollVpmVersionCheck();
             AunCastInspectorBanner.Draw(this, _hasVersionUpdate, _latestVersion);
+
+            // 利用規約に未同意の間は設定 UI を描画せず、同意ゲートのみを表示する。
+            if (!DrawConsentGateIfNeeded())
+                return;
+
             DrawTmpFallbackFontWarning();
 
             var settings = (PasocomMate.AunCast.AunCastSettings)target;
@@ -220,6 +231,104 @@ namespace PasocomMate.AunCast.Internal
 
             // ── デバッグ ──
             DrawTimelineLoggingToggle(ldpcList, apmList, rccList, pbsList, rcList);
+        }
+
+        // ── 利用規約 同意ゲート ──
+
+        /// <summary>
+        /// 利用規約に同意済みなら true（設定 UI を続行）。未同意なら同意ゲートを描画して false。
+        /// </summary>
+        private bool DrawConsentGateIfNeeded()
+        {
+            string version = GetCurrentPackageVersion();
+            int major = GetMajorVersion(version);
+            if (AunCastConsentStore.HasConsented(major))
+                return true;
+
+            DrawConsentGate(version);
+            return false;
+        }
+
+        private static int GetMajorVersion(string version)
+        {
+            return TryParseVersion(version, out var parsed) ? parsed.Major : -1;
+        }
+
+        private void DrawConsentGate(string version)
+        {
+            EditorGUILayout.Space(8);
+
+            var titleStyle = new GUIStyle(EditorStyles.boldLabel) { fontSize = 13 };
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("利用規約への同意", "Terms of Use"),
+                titleStyle);
+
+            EditorGUILayout.HelpBox(
+                AunCastEditorLocalization.Localize(
+                    "AunCast を使用するには利用規約（VN3 ライセンス）への同意が必要です。下のボタンから規約全文を開いて内容を確認し、同意のうえ設定を続けてください。同意するまで設定項目は表示されません。",
+                    "Using AunCast requires agreement to the Terms of Use (VN3 License). Open the full terms with the buttons below, review them, then agree to continue. Settings stay hidden until you agree."),
+                MessageType.Warning);
+
+            EditorGUILayout.Space(4);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button(
+                    AunCastEditorLocalization.Localize("利用規約（日本語）を開く", "Open Terms (Japanese)"),
+                    GUILayout.Height(24)))
+                {
+                    OpenLicensePdf(VN3_LICENSE_JA_GUID);
+                }
+                if (GUILayout.Button(
+                    AunCastEditorLocalization.Localize("利用規約（English）を開く", "Open Terms (English)"),
+                    GUILayout.Height(24)))
+                {
+                    OpenLicensePdf(VN3_LICENSE_EN_GUID);
+                }
+            }
+
+            EditorGUILayout.Space(6);
+
+            // 規約を読んだうえでチェック→同意ボタン有効化、の二段階で誤クリックを防ぐ。
+            _consentCheckbox = EditorGUILayout.ToggleLeft(
+                AunCastEditorLocalization.Localize(
+                    "利用規約の内容を確認し、同意します。",
+                    "I have read and agree to the Terms of Use."),
+                _consentCheckbox);
+
+            EditorGUILayout.Space(4);
+
+            using (new EditorGUI.DisabledScope(!_consentCheckbox))
+            {
+                if (GUILayout.Button(
+                    AunCastEditorLocalization.Localize("同意して続行", "Agree and Continue"),
+                    GUILayout.Height(28)))
+                {
+                    AunCastConsentStore.SetConsented(GetMajorVersion(version), version);
+                    _consentCheckbox = false;
+                    // 描画する UI の構成が変わるため、現フレームの GUI を一旦やり直す。
+                    GUIUtility.ExitGUI();
+                }
+            }
+
+            EditorGUILayout.Space(8);
+        }
+
+        private static void OpenLicensePdf(string guid)
+        {
+            var asset = LoadAssetByGuid<UnityEngine.Object>(guid);
+            if (asset == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "AunCast",
+                    AunCastEditorLocalization.Localize(
+                        "利用規約ファイルが見つかりませんでした。",
+                        "Terms of Use file was not found."),
+                    "OK");
+                return;
+            }
+
+            AssetDatabase.OpenAsset(asset);
         }
 
         private void OnEnable()
