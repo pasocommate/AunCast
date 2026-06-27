@@ -147,6 +147,36 @@ private void PollXxxSlider()
 「スタッフが動かした直後の 1 フレームで同期値がまだ古く、UI を戻してしまう」
 フラッシュバック現象が起きる。
 
+### エディタ時の表示プレビュー同期
+
+`AunCastSettings` の値を変更したら、ランタイムフィールドへの転写
+（`ApplyXxxSettingsToScene`）と同時に、その値を表示する**素の UI コンポーネント**
+（TMP 数値表示/入力欄・`Slider`・`Toggle`）へも反映し、Play せずともシーン上の見た目を
+実値に揃える。これらは runtime では `Start` / `OnDeserialization` で初期化されるため、
+未反映だとエディタ上で旧値が見えてしまう。
+
+- **参照取得は backing UdonBehaviour の `publicVariables` を優先する**（取れなければ
+  プロキシの `SerializedObject.FindProperty` へフォールバック）。`UserStatusPanel` /
+  `StaffControlPanel` は `AunCast.prefab` 直下なのでプロキシの SerializeField でも解決できるが、
+  ネストプレハブ（`AunCast.prefab` 内の `WallControlPanel` 等）はプロキシの参照が
+  編集時に null へ解決されることがある。実行時が参照を解決するのと同じ
+  `GetBackingUdonBehaviour(panel).publicVariables.TryGetVariableValue(fieldName, out var v)`
+  で読めばネストの有無に関わらず確実。
+- 値の書き込み: `TMP_Text` は `.text`、`TMP_InputField` は `SetTextWithoutNotify`、
+  `Slider` は `SetValueWithoutNotify` で更新（`onValueChanged` を発火させない）。更新後は
+  `EditorUtility.SetDirty` + `PrefabUtility.RecordPrefabInstancePropertyModifications`。
+- TMP テキスト等は値を変えても編集時に自動再描画されないことがあるため、変更があったら
+  `InternalEditorUtility.RepaintAllViews()`（`RepaintUiViews`）で明示再描画する。
+- 実装は `AunCastSettingsInspector.SyncTextDisplay` / `SyncInputField` / `SyncSlider` と、
+  参照取得の `GetReferencedUiComponent` / 再描画の `RepaintUiViews`。
+
+> **対象外（ジェスチャートグル）**: ウォールパネルの呼び出しジェスチャートグルは編集時
+> プレビュー同期の対象にしていない。チェックマークがカスタム Graphic（UIPanel シェーダー系）で
+> 編集時にライブ再描画されにくく、かつ実行時は `WallControlPanel.SyncGestureToggles` が
+> `summonGesture` から `isOn` を上書きするため、トグルのシリアライズ値は実行時には使われない。
+> 設定値そのものは `ApplyUiSettingsToScene` の `summonGesture` / `desktopSummonGesture` 転写で
+> 正しく反映される。
+
 ## 5. UdonSynced 変更時の `.asset` 更新
 
 `[UdonSynced]` フィールドを追加 / 改名した後は、

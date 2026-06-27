@@ -1864,6 +1864,20 @@ namespace PasocomMate.AunCast.Internal
                 var autoPlayProp = so.FindProperty("autoPlayDefaultOnFirstJoin");
                 if (autoPlayProp != null) autoPlayProp.boolValue = settings.autoPlayDefaultOnFirstJoin;
             });
+
+            // 表示用 UI を実値へ揃える（Play せずとも見た目を一致させる）。
+            // 注: ウォールパネルのジェスチャートグルは編集時プレビュー同期の対象外。
+            // チェックマークがカスタム Graphic で編集時に再描画されにくく、かつ実行時は
+            // SyncGestureToggles が summonGesture から上書きするため、設定値自体は
+            // ApplyToUdonComponents の summonGesture 転写で正しく反映される。
+            bool changed = false;
+            foreach (var panel in userPanels)
+            {
+                if (panel == null) continue;
+                changed |= SyncSlider(panel, "volumeSlider", settings.defaultVolume);
+            }
+
+            if (changed) RepaintUiViews();
         }
 
         private static void ApplyPlaybackMonitorSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
@@ -1921,6 +1935,22 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "retryCooldownMultiplier", settings.retryCooldownMultiplier);
                 SetFloatProperty(so, "maxRetryCooldownSec", settings.maxRetryCooldownSec);
             });
+
+            // StaffControlPanel の数値表示/入力欄を実値へ揃える（Play せずとも見た目を一致させる）
+            string concurrentVal = settings.maxConcurrentResyncUsers.ToString();
+            string connectionVal = settings.maxConnectionLimit.ToString();
+            var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
+            bool changed = false;
+            foreach (var panel in staffPanels)
+            {
+                if (panel == null) continue;
+                changed |= SyncTextDisplay(panel, "concurrentLimitDisplayText", concurrentVal);
+                changed |= SyncInputField(panel, "concurrentLimitInput", concurrentVal);
+                changed |= SyncTextDisplay(panel, "connectionLimitDisplayText", connectionVal);
+                changed |= SyncInputField(panel, "connectionLimitInput", connectionVal);
+            }
+
+            if (changed) RepaintUiViews();
         }
 
         private static void ApplyToUdonComponents<T>(T[] components, Action<SerializedObject> apply)
@@ -1938,6 +1968,78 @@ namespace PasocomMate.AunCast.Internal
                 if (udon != null)
                     EditorUtility.SetDirty(udon);
             }
+        }
+
+        // ── AunCastSettings → 表示用 UI への反映 ──
+        // StaffControlPanel / UserStatusPanel / WallControlPanel が参照する素の UI
+        // コンポーネント（TMP / Slider / Toggle）へ設定値を編集時にも反映し、Play せずとも
+        // シーン上の表示を実値に揃える。
+
+        // パネルが参照する UI コンポーネントを取得する。
+        // プロキシ MonoBehaviour の SerializeField は AunCast.prefab にネストされた
+        // WallControlPanel のようなネストプレハブのインスタンスでは編集時に参照が解決されず
+        // null になることがある。実行時が参照を解決するのと同じ backing UdonBehaviour の
+        // publicVariables を優先して読み、取れない場合のみプロキシ側へフォールバックする。
+        private static T GetReferencedUiComponent<T>(UdonSharp.UdonSharpBehaviour panel, string fieldName)
+            where T : UnityEngine.Object
+        {
+            if (panel == null) return null;
+
+            var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(panel);
+            if (udon != null && udon.publicVariables != null
+                && udon.publicVariables.TryGetVariableValue(fieldName, out object value)
+                && value is T fromUdon)
+                return fromUdon;
+
+            // フォールバック: 非ネストのプロキシ（UserStatusPanel 等）はこちらで取れる
+            var so = new SerializedObject(panel);
+            var prop = so.FindProperty(fieldName);
+            if (prop != null && prop.propertyType == SerializedPropertyType.ObjectReference)
+                return prop.objectReferenceValue as T;
+            return null;
+        }
+
+        private static void MarkUiComponentDirty(UnityEngine.Object target)
+        {
+            EditorUtility.SetDirty(target);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
+        }
+
+        // UI 反映で値変更があったとき、シーン/ゲームビューを明示的に再描画して
+        // Play せずとも見た目を反映させる（TMP テキスト等は自動再描画されないことがある）。
+        private static void RepaintUiViews()
+        {
+            UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
+        }
+
+        private static bool SyncTextDisplay(UdonSharp.UdonSharpBehaviour panel, string fieldName, string value)
+        {
+            var text = GetReferencedUiComponent<TMP_Text>(panel, fieldName);
+            if (text == null || text.text == value) return false;
+            Undo.RecordObject(text, "Sync AunCast UI Display");
+            text.text = value;
+            MarkUiComponentDirty(text);
+            return true;
+        }
+
+        private static bool SyncInputField(UdonSharp.UdonSharpBehaviour panel, string fieldName, string value)
+        {
+            var input = GetReferencedUiComponent<TMP_InputField>(panel, fieldName);
+            if (input == null || input.text == value) return false;
+            Undo.RecordObject(input, "Sync AunCast UI Display");
+            input.SetTextWithoutNotify(value);
+            MarkUiComponentDirty(input);
+            return true;
+        }
+
+        private static bool SyncSlider(UdonSharp.UdonSharpBehaviour panel, string fieldName, float value)
+        {
+            var slider = GetReferencedUiComponent<UnityEngine.UI.Slider>(panel, fieldName);
+            if (slider == null || Mathf.Approximately(slider.value, value)) return false;
+            Undo.RecordObject(slider, "Sync AunCast UI Display");
+            slider.SetValueWithoutNotify(value);
+            MarkUiComponentDirty(slider);
+            return true;
         }
 
         private static void SetFloatProperty(SerializedObject so, string fieldName, float value)
