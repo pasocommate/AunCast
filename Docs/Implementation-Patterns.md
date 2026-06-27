@@ -428,14 +428,21 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 
 ### 方針
 
-- 保存先は `ProjectSettings/<Name>.asset`。`InternalEditorUtility.SaveToSerializedFileAndForget`
-  / `LoadSerializedFileAndForget` で `ScriptableObject` を読み書きする。
+- 保存先は `ProjectSettings/<Name>.asset`。**`ScriptableSingleton<T>` + `[FilePath(..., ProjectFolder)]`**
+  を使い、`Save(true)` で永続化する。
   - アセットDB に現れないため Project ビューや Inspector を汚さない。
   - VCS にコミットすればチーム単位で共有できる（個人マシン単位なら `EditorPrefs`）。
 - 導入先ではパッケージ本体（`Packages/.../`）は書き込み不可。同意状態のような
   プロジェクト固有の状態は **必ず導入先プロジェクトの `ProjectSettings/`** に書く。
-- 実装例: [`AunCastConsentStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastConsentStore.cs)。
+- 実装例: [`AunCastConsentData` / `AunCastConsentStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastConsentStore.cs)。
   メジャーバージョンを記録し、メジャー更新時のみ再同意を促す。
+
+> **落とし穴（重要）**: `private` ネスト型の `ScriptableObject` を
+> `InternalEditorUtility.SaveToSerializedFileAndForget` で保存すると、出力 YAML の
+> `m_Script` が `{fileID: 0}` になり型は `m_EditorClassIdentifier` でしか紐づかない。
+> この型解決はドメインリロード直後などに失敗することがあり、`LoadSerializedFileAndForget`
+> の戻り値が目的の型へキャストできず、**同意状態がたびたび既定値へ戻る**。
+> `ScriptableSingleton<T>` は型 `T` 経由でインスタンスを束縛するためこの問題を回避できる。
 
 ### 同意ゲート（ソフト抑止）の作り方
 
