@@ -208,7 +208,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - **グローバル Resync トリガー**: 全ユーザーの Resync を Coordinator のキューに一括投入する。同時実行数上限に基づきスタガリングで順次実行される
 - **強制リブート（Force Reboot）**: 全ユーザーの Active・Standby 両方のストリームを一旦切断し、Active で再接続する緊急機能。二重化による切替ではなく単純な全断→再接続のため、映像・音声の途切れが発生する。通常運用では使用しない
 - **同時 Resync 実行数上限**: スタッフがワールド内で変更できる（`maxConcurrentResyncUsers`、同期）
-- **CDN 総接続数上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。範囲: maxPlayers+1 ～ maxPlayers*2）
+- **CDN 総接続数上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
 - **モニタリング表示**: グローバル Resync の進捗状況（FR-14 参照）
 
 > **注記**: 「無音自動 Resync 切替」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから UserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
@@ -371,7 +371,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - グローバル Resync トリガーボタン (`OnGlobalResyncButtonPress`)
 - 強制リブート (`OnForceRebootButtonPress`)
 - 同時 Resync 実行数上限 (`maxConcurrentResyncUsers`) と CDN 総接続数上限 (`maxConnectionLimit`) のランタイム編集 UI（Display/Edit モード切替、±1/±10 ボタン）
-- モニタリング表示: インジケーター（色付き ■/□ でスロット状態を表示）、ユーザー数表示（Playing / In Instance / Capacity）
+- モニタリング表示: インジケーター（色付き ■/□ でスロット状態を表示）、ユーザー数表示（Playing / In Instance / Queued）
 - アクセス制御: 許可ユーザー名リスト (`allowedUserNames`) + WallControlPanel 経由のローカルパスコード解錠 (`SetLocalPasscodeUnlocked`)。同名ユーザー衝突時は最小 playerId を優先
 - 多言語ヘルプテキスト: ホバーに応じてボタン説明を表示 (`OnHoverXxx` → `helpTextField`)。日本語/英語をシステム言語 or 手動トグルで切替 (`OnLanguageChanged` / `ToggleLanguage`)
 - `OnCoordinatorChanged()` による通知駆動の再描画（デバウンス 0.2 秒 + 周期 1 秒フォールバック）
@@ -810,7 +810,7 @@ Coordinator はユーザーごとの状態を固定長配列で管理する。
 
 配列のインデックスには **スロット番号**（0〜`MAX_PLAYERS - 1`）を使用する。`VRCPlayerApi.playerId` は非連続で上限が大きいため、直接インデックスには使わない。
 
-- `MAX_PLAYERS`: Inspector で設定する配列長上限（推奨: 82。VRChat Group+ の上限）
+- `MAX_PLAYERS`: 同期スロット配列の固定長上限（82。VRChat Group+ の現行上限）
 - スロット割当: プレイヤーが Join した際、`userPlayerId[i] == 0` の空きスロットを先頭から探して割り当てる
 - スロット解放: `OnPlayerLeft` で該当スロットを初期化し、`userPlayerId[i] = 0` に戻す
 - スロット検索: ローカルクライアントは自身の `playerId` に対応するスロットをキャッシュする
@@ -844,7 +844,7 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 // --- グローバル制御 ---
 [UdonSynced] private short globalForceRebootSeq;    // 全断→リブートの発行回数（変更検知用）
 [UdonSynced] private byte maxConcurrentResyncUsers; // 同時 Resync 実行数上限（ランタイム変更可能）
-[UdonSynced] private byte maxConnectionLimit;       // CDN 総接続数上限（ランタイム変更可能、範囲: maxPlayers+1 ～ maxPlayers*2）
+[UdonSynced] private byte maxConnectionLimit;       // CDN 総接続数上限（ランタイム変更可能、配信サーバ側キャパシティ）
 ```
 
 > **命名注記**: 当初設計では `userState` を予定していたが、実装ではより限定的な意味を示す `resyncState` に改名されている（`PlaybackMonitor` 側に再生状態が分離されたため）。同様に getter は `GetResyncState(slotIndex)`。
@@ -872,7 +872,7 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 再生状態のモニタリングは別オブジェクト `PlaybackMonitor` で同期する。Coordinator と分離することで、頻繁な再生状態更新が Resync 制御の ownership と競合しない。
 
 ```csharp
-[UdonSynced] private byte[] playbackActive;    // ビットパック: 1 スロット = 1 ビット。byte[(maxPlayers+7)/8]
+[UdonSynced] private byte[] playbackActive;    // ビットパック: 1 スロット = 1 ビット。byte[(MAX_PLAYERS+7)/8]
 [UdonSynced] private byte[] connectingActive;  // 接続試行中（LoadURL 後〜再生開始前）
 [UdonSynced] private byte[] errorActive;       // エラー状態
 ```
@@ -909,7 +909,7 @@ ResyncCoordinator.OnPlayerLeft(VRCPlayerApi player):
 PlaybackMonitor.OnPlayerLeft(VRCPlayerApi player):
   // PlaybackMonitor 所有者: 自オブジェクトのビット 3 配列を掃除
   if !Networking.IsOwner(gameObject): return
-  foreach slot i in 0..maxPlayers:
+  foreach slot i in 0..MAX_PLAYERS:
     if no bit set in playback/connecting/error[i]: continue
     pid = coordinator.GetUserPlayerId(i)
     p = pid==0 ? null : VRCPlayerApi.GetPlayerById(pid)
@@ -1351,10 +1351,10 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 ### ResyncCoordinator 側
 
 - `maxConcurrentResyncUsers`（同期、ランタイム変更可能）
-- `maxConnectionLimit`（同期、ランタイム変更可能）
+- `maxConnectionLimit`（同期、ランタイム変更可能。配信サーバへの総接続数の上限）
 - `grantTimeoutSec` (10s)
 - `runningTimeoutSec` (50s、クライアント側サイクルタイムアウトより長く設定)
-- `maxPlayers` (82)
+- `MAX_PLAYERS` (82、同期スロット配列の固定長上限)
 - `debugLoggingEnabled`
 
 ### WallControlPanel 側
@@ -1501,7 +1501,7 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
 - **グローバル Resync トリガーボタン**: 全ユーザーの一斉 Resync を発行する（`OnGlobalResyncButtonPress`、詳細は Section 12.5）
 - **強制リブートボタン**: 全ユーザーの Active/Standby を全断→再接続する（`OnForceRebootButtonPress`、`globalForceRebootSeq` 同期）
 - **同時 Resync 実行数上限の編集**: `maxConcurrentResyncUsers` をワールド内で変更できる。Display/Edit モード切替式（Change → ±1 / ±10 → Apply/Cancel）
-- **CDN 総接続数上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI、範囲: maxPlayers+1 ～ maxPlayers*2）
+- **CDN 総接続数上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
 > **無音自動 Resync 切替について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく UserStatusPanel の Viewer ビューに配置している。
@@ -1514,7 +1514,7 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
   - 橙: 接続中 (connecting)
   - 赤: エラー
   - ■ = 再生中、□ = 停止
-- **ユーザー数表示** (`userCountText`): Playing (+connecting) / In Instance / Capacity
+- **ユーザー数表示** (`userCountText`): Playing (+connecting) / In Instance / Queued
 - **Now Playing 表示** (`nowPlayingText`): 現在再生中のストリーム URL
 
 #### アクセス制御

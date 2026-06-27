@@ -13,8 +13,8 @@ namespace PasocomMate.AunCast.Tests
             _coordinator = TestHelper.CreateComponent<ResyncCoordinator>();
             // 内部配列を初期化
             TestHelper.Invoke(_coordinator, "InitializeArrays");
-            int maxPlayers = TestHelper.Get<ResyncCoordinator, int>(_coordinator, "maxPlayers");
-            TestHelper.Set(_coordinator, "_ownerTimestamp", new float[maxPlayers]);
+            int slotCount = _coordinator.GetMaxPlayers();
+            TestHelper.Set(_coordinator, "_ownerTimestamp", new float[slotCount]);
         }
 
         [TearDown]
@@ -26,7 +26,6 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void RoundTrip_PreservesWithin100ms()
         {
-            int maxPlayers = TestHelper.Get<ResyncCoordinator, int>(_coordinator, "maxPlayers");
             var resyncState = TestHelper.Get<ResyncCoordinator, byte[]>(_coordinator, "resyncState");
             var ownerTimestamp = TestHelper.Get<ResyncCoordinator, float[]>(_coordinator, "_ownerTimestamp");
 

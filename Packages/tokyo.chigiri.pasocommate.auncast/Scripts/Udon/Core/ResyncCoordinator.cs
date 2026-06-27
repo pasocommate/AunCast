@@ -23,9 +23,6 @@ namespace PasocomMate.AunCast
 
         // --- Inspector パラメータ (Design Section 20) ---
         [Header("Coordinator Settings")]
-        [Tooltip("最大プレイヤー数（VRChat Group+ 上限: 82）")]
-        [SerializeField] private int maxPlayers = 82;
-
         [Tooltip("Grant 後の接続開始タイムアウト（秒）。ネットワーク同期遅延を考慮して長めに設定")]
         [SerializeField] private float grantTimeoutSec = 10.0f;
 
@@ -64,14 +61,20 @@ namespace PasocomMate.AunCast
         [SerializeField] private byte maxConcurrentResyncUsers = 10;
 
         [UdonSynced]
-        [Tooltip("配信サーバへの総接続数上限（スタッフが変更可能、0 = 無制限）")]
-        [SerializeField] private byte maxConnectionLimit = 0;
+        [Tooltip("配信サーバへの総接続数上限（スタッフが変更可能）")]
+        [SerializeField] private byte maxConnectionLimit = DEFAULT_CONNECTION_LIMIT;
 
         // --- Owner ローカル ---
         /// <summary>Owner だけが保持する高精度タイムスタンプ。同期用に圧縮して送る。</summary>
         private float[] _ownerTimestamp;
         private float _tickTimer;
         private const float TICK_INTERVAL = 1.0f;
+        // PlaybackMonitor.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
+        // PlaybackMonitor 側のビットパック配列長と Coordinator の配列長が食い違う。
+        private const int MAX_PLAYERS = 82;
+        private const int DEFAULT_CONNECTION_LIMIT = 100;
+        private const int MIN_CONNECTION_LIMIT = 1;
+        private const int MAX_CONNECTION_LIMIT = 255;
         /// <summary>待ち時間推定に使う平均 Resync 所要時間（経験値）。</summary>
         private const float AVG_RESYNC_DURATION_SEC = 8f;
         /// <summary>同一フレーム内の複数変更をバッチして 1 回の serialize にまとめるためのフラグ。</summary>
@@ -84,16 +87,14 @@ namespace PasocomMate.AunCast
         private void Start()
         {
             if (userPlayerId == null
-                || userPlayerId.Length != maxPlayers)
+                || userPlayerId.Length != MAX_PLAYERS)
                 InitializeArrays();
 
             if (_ownerTimestamp == null)
-                _ownerTimestamp = new float[maxPlayers];
+                _ownerTimestamp = new float[MAX_PLAYERS];
 
-            int minConn = maxPlayers + 1;
-            int maxConn = maxPlayers * 2;
-            if (maxConnectionLimit < minConn || maxConnectionLimit > maxConn)
-                maxConnectionLimit = (byte)maxConn;
+            if (maxConnectionLimit < MIN_CONNECTION_LIMIT)
+                maxConnectionLimit = DEFAULT_CONNECTION_LIMIT;
         }
 
         private void Update()
@@ -133,9 +134,9 @@ namespace PasocomMate.AunCast
 
         private void InitializeArrays()
         {
-            userPlayerId = new short[maxPlayers];
-            resyncState = new byte[maxPlayers];
-            userTimestampDelta = new ushort[maxPlayers];
+            userPlayerId = new short[MAX_PLAYERS];
+            resyncState = new byte[MAX_PLAYERS];
+            userTimestampDelta = new ushort[MAX_PLAYERS];
         }
 
         // =====================================================================
@@ -152,13 +153,13 @@ namespace PasocomMate.AunCast
         private void CompressTimestamps()
         {
             float max = float.MinValue;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (resyncState[i] == STATE_NONE) continue;
                 if (_ownerTimestamp[i] > max) max = _ownerTimestamp[i];
             }
             userTimestampOffset = (max == float.MinValue) ? 0f : max;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (resyncState[i] == STATE_NONE) { userTimestampDelta[i] = 0; continue; }
                 float delta = (userTimestampOffset - _ownerTimestamp[i]) * 10f;
@@ -219,7 +220,7 @@ namespace PasocomMate.AunCast
         {
             bool changed = false;
 
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 int state = resyncState[i];
                 if (state != STATE_GRANTED && state != STATE_RUNNING) continue;
@@ -248,7 +249,7 @@ namespace PasocomMate.AunCast
             int bestSlot = -1;
             float bestTime = float.MaxValue;
 
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (resyncState[i] == STATE_QUEUED && _ownerTimestamp[i] < bestTime)
                 {
@@ -263,7 +264,7 @@ namespace PasocomMate.AunCast
         private int CountGrantedOrRunning()
         {
             int count = 0;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (resyncState[i] == STATE_GRANTED || resyncState[i] == STATE_RUNNING)
                     count++;
@@ -358,10 +359,10 @@ namespace PasocomMate.AunCast
             short pid = (short)playerId;
 
             // 既に割当済みならスキップ
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
                 if (userPlayerId[i] == pid) return;
 
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == 0)
                 {
@@ -387,14 +388,14 @@ namespace PasocomMate.AunCast
 
             short playerId = (short)player.playerId;
 
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == playerId) return;
             }
 
             // 既にインスタンスにいないプレイヤーの残留スロットをクリーンアップ
             // （OnPlayerLeft のシリアライズがロストした場合のフォールバック）
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == 0) continue;
                 VRCPlayerApi existing = VRCPlayerApi.GetPlayerById(userPlayerId[i]);
@@ -406,7 +407,7 @@ namespace PasocomMate.AunCast
                 }
             }
 
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == 0)
                 {
@@ -428,7 +429,7 @@ namespace PasocomMate.AunCast
             if (userPlayerId == null) return;
 
             short playerId = (short)player.playerId;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == playerId)
                 {
@@ -458,12 +459,12 @@ namespace PasocomMate.AunCast
             if (!TryTakeOwnership()) return;
 
             if (_ownerTimestamp == null)
-                _ownerTimestamp = new float[maxPlayers];
+                _ownerTimestamp = new float[MAX_PLAYERS];
 
             float serverTime = GetServerTime();
             int total = 0;
 
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == 0) continue;
                 if (resyncState[i] != STATE_NONE) continue;
@@ -498,37 +499,37 @@ namespace PasocomMate.AunCast
         /// <summary>指定スロットの Resync 状態を返す。クライアント側が Grant 検知に使う。</summary>
         public int GetResyncState(int slotIndex)
         {
-            if (resyncState == null || slotIndex < 0 || slotIndex >= maxPlayers) return STATE_NONE;
+            if (resyncState == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return STATE_NONE;
             return resyncState[slotIndex];
         }
 
         /// <summary>指定スロットに割り当てられたプレイヤー ID を返す。</summary>
         public int GetUserPlayerId(int slotIndex)
         {
-            if (userPlayerId == null || slotIndex < 0 || slotIndex >= maxPlayers) return 0;
+            if (userPlayerId == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;
             return userPlayerId[slotIndex];
         }
 
         /// <summary>圧縮タイムスタンプを復元して返す。待ち時間推定や UI 表示に使う。</summary>
         public float GetUserTimestamp(int slotIndex)
         {
-            if (userTimestampDelta == null || slotIndex < 0 || slotIndex >= maxPlayers) return 0f;
+            if (userTimestampDelta == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0f;
             return userTimestampOffset - userTimestampDelta[slotIndex] * 0.1f;
         }
 
-        public int GetMaxPlayers() { return maxPlayers; }
+        public int GetMaxPlayers() { return MAX_PLAYERS; }
         public PlaybackMonitor GetPlaybackMonitor() { return playbackMonitor; }
         public int GetMaxConcurrentResyncUsers() { return maxConcurrentResyncUsers; }
         public int GetMaxConnectionLimit() { return maxConnectionLimit; }
-        public int GetMinConnectionLimit() { return maxPlayers + 1; }
-        public int GetMaxConnectionLimitCap() { return maxPlayers * 2; }
+        public int GetMinConnectionLimit() { return MIN_CONNECTION_LIMIT; }
+        public int GetMaxConnectionLimitCap() { return MAX_CONNECTION_LIMIT; }
         public int GetGlobalForceRebootSeq() { return globalForceRebootSeq; }
 
         public int GetQueuedCount()
         {
             if (resyncState == null) return 0;
             int count = 0;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
                 if (resyncState[i] == STATE_QUEUED) count++;
             return count;
         }
@@ -542,7 +543,7 @@ namespace PasocomMate.AunCast
         {
             if (userPlayerId == null) return 0;
             int count = 0;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
                 if (userPlayerId[i] != 0) count++;
             return count;
         }
@@ -560,12 +561,12 @@ namespace PasocomMate.AunCast
         /// <summary>指定スロットの推定待ち時間（秒）を返す。自分より前のキュー数と同時 Resync 数から概算する。</summary>
         public float EstimateWaitTime(int slotIndex)
         {
-            if (resyncState == null || slotIndex < 0 || slotIndex >= maxPlayers) return 0f;
+            if (resyncState == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0f;
             if (resyncState[slotIndex] != STATE_QUEUED) return 0f;
 
             float myTimestamp = GetUserTimestamp(slotIndex);
             int ahead = 0;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (i == slotIndex) continue;
                 if (resyncState[i] == STATE_QUEUED && GetUserTimestamp(i) < myTimestamp) ahead++;
@@ -585,7 +586,7 @@ namespace PasocomMate.AunCast
             if (resyncState == null) return 0f;
             int queued = 0;
             int active = 0;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 int s = resyncState[i];
                 if (s == STATE_QUEUED) queued++;
@@ -601,7 +602,7 @@ namespace PasocomMate.AunCast
         {
             if (userPlayerId == null) return -1;
             short pid = (short)playerId;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == pid) return i;
             }
@@ -621,7 +622,7 @@ namespace PasocomMate.AunCast
         public void SetMaxConnectionLimitRuntime(int value)
         {
             if (!TryTakeOwnership()) return;
-            maxConnectionLimit = (byte)Mathf.Clamp(value, maxPlayers + 1, maxPlayers * 2);
+            maxConnectionLimit = (byte)Mathf.Clamp(value, MIN_CONNECTION_LIMIT, MAX_CONNECTION_LIMIT);
             RequestSerialization();
             NotifyObservers();
         }
@@ -651,8 +652,8 @@ namespace PasocomMate.AunCast
 
         private bool ValidateSlotIndex(int slotIndex)
         {
-            return slotIndex >= 0 && slotIndex < maxPlayers
-                && resyncState != null && resyncState.Length == maxPlayers;
+            return slotIndex >= 0 && slotIndex < MAX_PLAYERS
+                && resyncState != null && resyncState.Length == MAX_PLAYERS;
         }
 
         private float GetServerTime()

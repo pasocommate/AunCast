@@ -1580,10 +1580,6 @@ namespace PasocomMate.AunCast.Internal
         {
             EditorGUILayout.LabelField("UI / 操作", EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
-
-            int newCapacity = IntSliderField("インスタンス定員", "instanceCapacity",
-                "インスタンスのユーザー数上限。0 の場合、ビルド時に VRC_SceneDescriptor の Capacity を自動使用する。",
-                settings.instanceCapacity, 0, 82);
             float newDefaultVolume = SliderField("初期音量", "defaultVolume",
                 "各ユーザーの起動時ローカル再生デフォルト音量（0〜1）。",
                 settings.defaultVolume, 0f, 1f);
@@ -1654,7 +1650,6 @@ namespace PasocomMate.AunCast.Internal
             }
 
             Undo.RecordObject(settings, "Change AunCast UI Settings");
-            settings.instanceCapacity = newCapacity;
             settings.defaultVolume = newDefaultVolume;
             settings.defaultUrl = new VRC.SDKBase.VRCUrl(newDefaultUrl);
             settings.autoPlayDefaultOnFirstJoin = newAutoPlayDefault;
@@ -1763,8 +1758,8 @@ namespace PasocomMate.AunCast.Internal
                 "同時Resync実行数の初期上限。",
                 settings.maxConcurrentResyncUsers, 1, 100);
             int newConnLimit = IntSliderField("最大接続数", "maxConnectionLimit",
-                "配信サーバへの総接続数の初期上限（0 = 無制限）。",
-                settings.maxConnectionLimit, 0, 200);
+                "配信サーバへの総接続数上限の既定値。",
+                settings.maxConnectionLimit, 1, 255);
             float newGrant = SliderField("接続開始待ち [秒]", "grantTimeoutSec",
                 "Resync許可後、接続が始まるまでの最大待機時間（秒）。",
                 settings.grantTimeoutSec, 1f, 60f);
@@ -1851,7 +1846,6 @@ namespace PasocomMate.AunCast.Internal
             var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
             ApplyToUdonComponents(staffPanels, so =>
             {
-                SetIntProperty(so, "instanceCapacity", settings.instanceCapacity);
                 SetStringArrayProperty(so, "allowedUserNames", settings.staffAllowedUserNames);
             });
 

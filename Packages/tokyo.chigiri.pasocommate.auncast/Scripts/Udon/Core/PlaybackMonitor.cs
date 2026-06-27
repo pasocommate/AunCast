@@ -16,10 +16,11 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class PlaybackMonitor : UdonSharpBehaviour
     {
-        [Header("Settings")]
-        [Tooltip("最大プレイヤー数（ResyncCoordinator と同じ値を設定）")]
-        [SerializeField] private int maxPlayers = 82;
+        // ResyncCoordinator.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
+        // 本クラスのビットパック配列長と Coordinator の配列長が食い違う。
+        private const int MAX_PLAYERS = 82;
 
+        [Header("Settings")]
         [Tooltip("デバッグログを有効にする")]
         [SerializeField] private bool debugLoggingEnabled = false;
 
@@ -36,7 +37,7 @@ namespace PasocomMate.AunCast
         /// <summary>同一フレーム内の複数 RPC を 1 回のシリアライズにまとめるためのダーティフラグ。</summary>
         private bool _serializationPending;
 
-        /// <summary>maxPlayers ビットを格納するのに必要なバイト数（ceil(maxPlayers/8)）。</summary>
+        /// <summary>MAX_PLAYERS ビットを格納するのに必要なバイト数（ceil(MAX_PLAYERS/8)）。</summary>
         private int _packedLength;
 
         /// <summary>0-255 の各値に対するセットビット数を事前計算したルックアップテーブル。CountBits で使用。</summary>
@@ -45,7 +46,7 @@ namespace PasocomMate.AunCast
         private void Start()
         {
             // ビットパック配列を確保（同期変数は null か長さ不一致なら再初期化）
-            _packedLength = (maxPlayers + 7) / 8;
+            _packedLength = (MAX_PLAYERS + 7) / 8;
             if (playbackActive == null || playbackActive.Length != _packedLength)
                 playbackActive = new byte[_packedLength];
             if (connectingActive == null || connectingActive.Length != _packedLength)
@@ -117,7 +118,7 @@ namespace PasocomMate.AunCast
             if (playbackActive == null || playbackActive.Length != _packedLength) return false;
 
             bool anyChanged = false;
-            for (int i = 0; i < maxPlayers; i++)
+            for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 // 3 配列とも 0 のスロットは検証不要
                 if (!GetSlotActive(i) && !GetSlotConnecting(i) && !GetSlotError(i)) continue;
@@ -294,7 +295,7 @@ namespace PasocomMate.AunCast
         /// <summary>リモートクライアントが同期データを受信した際、UI 再描画を通知する。</summary>
         public override void OnDeserialization()
         {
-            _packedLength = (maxPlayers + 7) / 8;
+            _packedLength = (MAX_PLAYERS + 7) / 8;
             NotifyObservers();
         }
 
@@ -323,21 +324,21 @@ namespace PasocomMate.AunCast
         /// <summary>指定スロットが再生中か返す（StaffControlPanel のインジケータ表示用）。</summary>
         public int GetPlaybackActive(int slotIndex)
         {
-            if (playbackActive == null || slotIndex < 0 || slotIndex >= maxPlayers) return 0;
+            if (playbackActive == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;
             return GetSlotActive(slotIndex) ? 1 : 0;
         }
 
         /// <summary>指定スロットが接続試行中か返す（StaffControlPanel のインジケータ表示用）。</summary>
         public int GetConnectingActive(int slotIndex)
         {
-            if (connectingActive == null || slotIndex < 0 || slotIndex >= maxPlayers) return 0;
+            if (connectingActive == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;
             return GetSlotConnecting(slotIndex) ? 1 : 0;
         }
 
         /// <summary>指定スロットがエラー状態か返す（StaffControlPanel のインジケータ表示用）。</summary>
         public int GetErrorActive(int slotIndex)
         {
-            if (errorActive == null || slotIndex < 0 || slotIndex >= maxPlayers) return 0;
+            if (errorActive == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;
             return GetSlotError(slotIndex) ? 1 : 0;
         }
 
@@ -365,7 +366,7 @@ namespace PasocomMate.AunCast
             if (coordinator == null) return CountBits(packed);
 
             int count = 0;
-            int limit = Mathf.Min(maxPlayers, packed.Length * 8);
+            int limit = Mathf.Min(MAX_PLAYERS, packed.Length * 8);
             for (int i = 0; i < limit; i++)
             {
                 // 立っているビットだけを対象にし、外部参照（GetUserPlayerId）の呼び出しを最小化する
@@ -379,7 +380,7 @@ namespace PasocomMate.AunCast
         /// <summary>スロット範囲と配列整合性を検証する。初期化前や不正インデックスからの保護。</summary>
         private bool ValidateSlot(int slotIndex)
         {
-            return slotIndex >= 0 && slotIndex < maxPlayers
+            return slotIndex >= 0 && slotIndex < MAX_PLAYERS
                 && playbackActive != null && playbackActive.Length == _packedLength
                 && connectingActive != null && connectingActive.Length == _packedLength
                 && errorActive != null && errorActive.Length == _packedLength;

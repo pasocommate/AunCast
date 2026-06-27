@@ -42,9 +42,6 @@ namespace PasocomMate.AunCast
         [Header("Monitoring Display")]
         [SerializeField] private TMP_Text indicatorText;
         [SerializeField] private TMP_Text userCountText;
-        [Tooltip("インスタンスのユーザー数上限（0 = 自動）")]
-        [SerializeField] private int instanceCapacity;
-
         [Header("CDN Concurrent Limit")]
         [SerializeField] private TMP_Text concurrentLimitDisplayText;
         [SerializeField] private GameObject concurrentDisplayGroup;
@@ -75,7 +72,6 @@ namespace PasocomMate.AunCast
 
         // OnPlayerJoined で allowedUserNames 該当、またはパスコード入力で true。ローカルのみ・同期なし。
         private bool _isStaff;
-        private int _indicatorMaxSlots;
         private string[] _indicatorHexColors;
 
         // インジケーター色インデックス。値がソートキーを兼ね、小さいほど上位（異常度高）に表示される。
@@ -128,7 +124,6 @@ namespace PasocomMate.AunCast
 
         private void OnEnable()
         {
-            _indicatorMaxSlots = instanceCapacity;
             _indicatorHexColors = new[]
             {
                 "#FF4444", // INDICATOR_COLOR_FAILED
@@ -145,10 +140,10 @@ namespace PasocomMate.AunCast
                 "Enter the next stream URL",
                 "Swap Playing URL with Next URL and start playback",
                 "Max simultaneous resyncs. Limits burst connections to the streaming server to reduce load",
-                "Max simultaneous connections to the streaming server (0: unlimited)",
+                "Max simultaneous connections to the streaming server",
                 "Currently playing stream URL. Hover to show who entered it",
                 "Connection status (■=playing □=stopped / white=ok blue=queued yellow=resyncing orange=connecting red=error)",
-                "Playing: streaming (+connecting) count / In Instance: current count / Capacity: max capacity",
+                "Playing: streaming (+connecting) count / In Instance: current count / Queued: waiting resync count",
                 "Adjust local playback volume",
                 "Re-sync local stream (no silent gap)",
                 "Reboot local stream (emergency, causes silent gap; use when Resync fails)",
@@ -169,10 +164,10 @@ namespace PasocomMate.AunCast
                 "次に再生するストリームURLを入力します",
                 "Playing URL と Next URL を入れ替えて再生を開始します",
                 "同時Resync数の上限。配信サーバへの連続的な新規接続を制限し、負荷を軽減します",
-                "配信サーバへの同時接続数の上限（0: 無制限）",
+                "配信サーバへの同時接続数の上限",
                 "現在再生中のストリームURL。ホバー中はURL入力者名を表示します",
                 "接続状態（■=再生中 □=停止 / 白=正常 青=待機 黄=Resync中 橙=接続中 赤=エラー）",
-                "Playing: 再生中(+新規接続中)の人数 / In Instance: 現在の人数 / Capacity: 収容上限",
+                "Playing: 再生中(+新規接続中)の人数 / In Instance: 現在の人数 / Queued: Resync待ち人数",
                 "ローカルの再生音量を調整します",
                 "ローカルのストリームを再同期します（無音区間が発生しません）",
                 "ローカルのストリームをリブートします（無音区間が発生します／Resyncで解決しない場合の緊急用）",
@@ -730,7 +725,7 @@ namespace PasocomMate.AunCast
                 : 0f;
             string thirdRow = displayEta > 0f
                 ? $"Resync ETA\n<size=28>{displayEta:F0}s</size>"
-                : $"Capacity\n<size=28>{(instanceCapacity > 0 ? instanceCapacity : 0)}</size>";
+                : $"Queued\n<size=28>{coordinator.GetQueuedCount()}</size>";
             userCountText.text =
                 $"Playing\n<size=28>{playing}</size>{connectingSuffix}\n\nIn Instance\n<size=28>{inInstance}</size>\n\n{thirdRow}";
         }
@@ -781,8 +776,7 @@ namespace PasocomMate.AunCast
                 sortKeys[i] = styleOrder * 10 + colorOrder;
             }
 
-            if (assigned > _indicatorMaxSlots) _indicatorMaxSlots = assigned;
-            int displaySlots = _indicatorMaxSlots;
+            int displaySlots = assigned;
 
             // 割当済みスロットのキーを先頭に詰め、その範囲だけ挿入ソート
             int writeIdx = 0;

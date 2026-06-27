@@ -13,7 +13,7 @@ namespace PasocomMate.AunCast.Tests
         {
             _coordinator = TestHelper.CreateComponent<ResyncCoordinator>();
             TestHelper.Invoke(_coordinator, "InitializeArrays");
-            _maxPlayers = TestHelper.Get<ResyncCoordinator, int>(_coordinator, "maxPlayers");
+            _maxPlayers = _coordinator.GetMaxPlayers();
             TestHelper.Set(_coordinator, "_ownerTimestamp", new float[_maxPlayers]);
         }
 

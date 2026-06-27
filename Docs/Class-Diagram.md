@@ -92,7 +92,7 @@ classDiagram
         ~[UdonSynced] short globalForceRebootSeq
         ~[UdonSynced] byte maxConcurrentResyncUsers
         ~[UdonSynced] byte maxConnectionLimit
-        -int maxPlayers
+        -const int MAX_PLAYERS = 82
         +[NetworkCallable] OnResyncRequest(int)
         +[NetworkCallable] OnReportRunning(int)
         +[NetworkCallable] OnReportSuccess(int)
@@ -131,7 +131,7 @@ classDiagram
         ~[UdonSynced] byte[] playbackActive
         ~[UdonSynced] byte[] connectingActive
         ~[UdonSynced] byte[] errorActive
-        -int maxPlayers
+        -const int MAX_PLAYERS = 82
         +[NetworkCallable] OnReportPlayback(int, int)
         +[NetworkCallable] OnReportError(int, int)
         +[NetworkCallable] OnReportConnecting(int, int)

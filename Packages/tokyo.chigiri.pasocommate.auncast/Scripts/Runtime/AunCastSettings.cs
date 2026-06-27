@@ -39,10 +39,6 @@ namespace PasocomMate.AunCast
         [Tooltip("デスクトップ: HUD のカメラローカル座標における配置オフセット（m）。Z は前方距離。")]
         public Vector3 hudDesktopLocalOffset = new Vector3(0f, -0.1f, 0.6f);
 
-        [Header("Instance")]
-        [Tooltip("インスタンスのユーザー数上限（0 = ビルド時に VRC_SceneDescriptor の Capacity を自動使用）")]
-        public int instanceCapacity;
-
         [Header("Volume")]
         [Tooltip("起動時のローカル再生デフォルト音量（0〜1）")]
         public float defaultVolume = 0.6f;
@@ -121,8 +117,8 @@ namespace PasocomMate.AunCast
         [Tooltip("同時 Resync 実行数の初期上限")]
         public byte maxConcurrentResyncUsers = 10;
 
-        [Tooltip("配信サーバへの総接続数の初期上限（0 = 無制限）")]
-        public byte maxConnectionLimit = 0;
+        [Tooltip("配信サーバへの総接続数上限の既定値")]
+        public byte maxConnectionLimit = 100;
 
         [Tooltip("Grant 後の接続開始タイムアウト（秒）")]
         public float grantTimeoutSec = 10.0f;

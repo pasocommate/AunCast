@@ -262,7 +262,7 @@ private bool CleanupStaleSlots()
     if (coordinator == null) return false;
 
     bool anyChanged = false;
-    for (int i = 0; i < maxPlayers; i++)
+    for (int i = 0; i < MAX_PLAYERS; i++)
     {
         if (!HasAnyBit(i)) continue;
         int pid = coordinator.GetUserPlayerId(i);

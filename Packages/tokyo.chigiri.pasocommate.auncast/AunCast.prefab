@@ -8072,9 +8072,9 @@ MonoBehaviour:
     <size=28>34</size>
 
 
-    Capacity
+    Queued
 
-    <size=28>56</size>'
+    <size=28>0</size>'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9d7d01127c58f5f4796c54f98cb2f0fa, type: 2}
   m_sharedMaterial: {fileID: 5422087251740708661, guid: 9d7d01127c58f5f4796c54f98cb2f0fa,
@@ -8423,7 +8423,6 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1380386101255781175}
-  maxPlayers: 82
   grantTimeoutSec: 10
   runningTimeoutSec: 50
   debugLoggingEnabled: 0
@@ -8431,7 +8430,7 @@ MonoBehaviour:
   playbackMonitor: {fileID: 5248972186758826917}
   staffNotifyTarget: {fileID: 8485291155812932236}
   maxConcurrentResyncUsers: 10
-  maxConnectionLimit: 0
+  maxConnectionLimit: 100
 --- !u!114 &1380386101255781175
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8837,7 +8836,6 @@ MonoBehaviour:
   gestureHudShowThreshold: 0.1
   hudVrLocalOffset: {x: 0, y: 0, z: 0.6}
   hudDesktopLocalOffset: {x: 0, y: -0.1, z: 0.6}
-  instanceCapacity: 0
   defaultVolume: 0.6
   defaultUrl:
     url: 
@@ -8861,7 +8859,7 @@ MonoBehaviour:
   driftSmoothingTimeConstant: 1.5
   driftWarmupSec: 5
   maxConcurrentResyncUsers: 10
-  maxConnectionLimit: 0
+  maxConnectionLimit: 100
   grantTimeoutSec: 10
   runningTimeoutSec: 50
   resyncCycleTimeoutSec: 45
@@ -15227,7 +15225,6 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 3744281964268659347}
-  maxPlayers: 82
   debugLoggingEnabled: 0
   staffNotifyTarget: {fileID: 8485291155812932236}
   coordinator: {fileID: 8200345231049393443}
@@ -17605,7 +17602,6 @@ MonoBehaviour:
   helpTextField: {fileID: 7136706143972660112}
   indicatorText: {fileID: 3963171657236632523}
   userCountText: {fileID: 2278575103092355664}
-  instanceCapacity: 0
   concurrentLimitDisplayText: {fileID: 4586715846898299294}
   concurrentDisplayGroup: {fileID: 744835454024197497}
   concurrentEditGroup: {fileID: 5065406981513894294}
