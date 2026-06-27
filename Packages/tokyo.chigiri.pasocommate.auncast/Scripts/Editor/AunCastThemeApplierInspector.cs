@@ -23,6 +23,15 @@ namespace PasocomMate.AunCast.Internal
         private const string USER_PADDED_PATH = USER_CONTENT_PATH + "/UserPadded";
         private const string STAFF_PADDED_PATH = STAFF_CONTENT_PATH + "/StaffPadded";
 
+        // 自動適用トグルの状態。シーンを汚さないようコンポーネントではなく EditorPrefs に保持する
+        private const string AUTO_APPLY_PREF_KEY = "AunCast.ThemeApplier.AutoApply";
+
+        private static bool AutoApplyEnabled
+        {
+            get => EditorPrefs.GetBool(AUTO_APPLY_PREF_KEY, false);
+            set => EditorPrefs.SetBool(AUTO_APPLY_PREF_KEY, value);
+        }
+
         private Editor _themeEditor;
         private bool _themeEditorExpanded;
 
@@ -63,20 +72,48 @@ namespace PasocomMate.AunCast.Internal
                         AunCastEditorLocalization.Localize("テーマを適用", "Apply Theme"), GUILayout.Height(32)))
                     {
                         RecordUndoTargets(applier.transform);
-                        applier.ApplyTheme(applier.transform);
-                        ApplyThemeToUdonProxies(applier.transform, applier.theme);
+                        ApplyAll(applier);
                         Debug.Log("[AunCast] テーマを適用しました");
                     }
                 }
+
+                EditorGUILayout.Space(2);
+                var autoApplyLabel = new GUIContent(
+                    AunCastEditorLocalization.Localize(
+                        "自動適用（編集時に即反映・Undo 不可）", "Auto Apply (on edit, no Undo)"),
+                    AunCastEditorLocalization.Localize(
+                        "ON にするとテーマ値の編集が即反映されますが、自動適用は Undo に記録されません。"
+                        + "元に戻せる形で適用したい場合は「テーマを適用」ボタンを使ってください。",
+                        "When enabled, theme edits apply instantly but auto-apply is NOT recorded in Undo. "
+                        + "Use the \"Apply Theme\" button if you need an undoable apply."));
+                EditorGUI.BeginChangeCheck();
+                bool auto = EditorGUILayout.ToggleLeft(autoApplyLabel, AutoApplyEnabled);
+                if (EditorGUI.EndChangeCheck())
+                    AutoApplyEnabled = auto;
             }
 
             EditorGUILayout.Space();
-            DrawDefaultInspector();
 
-            DrawInlineThemeEditor(applier);
+            // テーマ参照やインライン編集の変更を検知し、自動適用が ON なら即反映する
+            EditorGUI.BeginChangeCheck();
+            DrawDefaultInspector();
+            bool changed = EditorGUI.EndChangeCheck();
+
+            changed |= DrawInlineThemeEditor(applier);
+
+            if (changed && AutoApplyEnabled && applier.theme != null)
+                ApplyAll(applier);
         }
 
-        private void DrawInlineThemeEditor(PasocomMate.AunCast.AunCastThemeApplier applier)
+        /// <summary>テーマの見た目反映と Udon Proxy への反映をまとめて実行する。</summary>
+        private static void ApplyAll(PasocomMate.AunCast.AunCastThemeApplier applier)
+        {
+            applier.ApplyTheme(applier.transform);
+            ApplyThemeToUdonProxies(applier.transform, applier.theme);
+        }
+
+        /// <summary>インライン表示したテーマエディタを描画し、値が変更されたら true を返す。</summary>
+        private bool DrawInlineThemeEditor(PasocomMate.AunCast.AunCastThemeApplier applier)
         {
             if (applier.theme == null)
             {
@@ -85,7 +122,7 @@ namespace PasocomMate.AunCast.Internal
                     DestroyImmediate(_themeEditor);
                     _themeEditor = null;
                 }
-                return;
+                return false;
             }
 
             if (_themeEditor == null || _themeEditor.target != applier.theme)
@@ -100,15 +137,20 @@ namespace PasocomMate.AunCast.Internal
             _themeEditorExpanded = EditorGUILayout.Foldout(_themeEditorExpanded,
                 $"Theme: {applier.theme.name}", true, EditorStyles.foldoutHeader);
 
+            bool changed = false;
             if (_themeEditorExpanded)
             {
                 EditorGUI.indentLevel++;
                 EditorGUI.BeginChangeCheck();
                 _themeEditor.OnInspectorGUI();
                 if (EditorGUI.EndChangeCheck())
+                {
                     EditorUtility.SetDirty(applier.theme);
+                    changed = true;
+                }
                 EditorGUI.indentLevel--;
             }
+            return changed;
         }
 
         private static void SwitchContentView(Transform root, bool showStaff)
@@ -151,6 +193,20 @@ namespace PasocomMate.AunCast.Internal
                 targets.Add(mr);
             foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
                 targets.Add(raw);
+
+            // ApplyPortableContentSize で書き換える RectTransform / BoxCollider も Undo 対象に含める
+            var panel = root.Find("PortablePanel");
+            if (panel != null)
+            {
+                targets.Add(panel);
+                var box = panel.GetComponent<BoxCollider>();
+                if (box != null)
+                    targets.Add(box);
+                var scaler = panel.Find("ContentScaler");
+                if (scaler != null)
+                    targets.Add(scaler);
+            }
+
             Undo.RecordObjects(targets.ToArray(), "Apply AunCast Theme");
         }
 
