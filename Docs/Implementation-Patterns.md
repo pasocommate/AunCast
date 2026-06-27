@@ -447,3 +447,27 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   GUI をやり直す。
 - これは導線上の抑止であり実行時の動作は止めない。アップロード自体をブロックするには
   VRCSDK の `IVRCSDKBuildRequestedCallback` で中断する必要がある（本実装は未対応）。
+
+## 11. インスペクタのローカライズ規約
+
+カスタムエディタの **UI 表示文字列は日英両対応** とする。コメント・`Debug.Log`・
+`Undo` 名は対象外で、コメントは日本語のまま維持する（プロジェクト方針）。
+
+### 文字列の切り替え
+
+- 言語判定は [`AunCastEditorLocalization.Localize(ja, en)`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastEditorLocalization.cs)
+  に集約する（`Application.systemLanguage` で日本語/英語を切り替え）。
+- `LabelField` / `HelpBox` / `GUILayout.Button` / `DisplayDialog` 等の直接呼び出しは
+  引数を `Localize(ja, en)` で包む。
+- ラベル付きフィールドは `AunCastSettingsInspector` のヘルパーに合わせる。
+  `L(ja, en, fieldName, tooltipJa, tooltipEn)` が `GUIContent` を返し、
+  `SliderField` / `IntSliderField` / `ToggleField` / `TextField` も同じ
+  `(ja, en, fieldName, tooltipJa, tooltipEn, …)` 形を取る。
+  - **Alt 押下中は `fieldName`（backing フィールド名）を表示** する開発者補助を兼ねる。
+    フィールド名は英訳ではなく C# の変数名を渡す。
+- 補間を含む文字列も `Localize($"…{x}…", $"…{x}…")` の形で両言語化できる。
+
+### 対象外（日本語のまま）
+
+- ソースコメント、`Debug.Log` / `Debug.LogWarning`（コンソール出力）、
+  `Undo.RecordObject` などの操作名。

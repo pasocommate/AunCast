@@ -28,7 +28,9 @@ namespace PasocomMate.AunCast.Internal
         {
             if (UdonSharpGUI.DrawProgramSource(target, false)) return;
 
-            EditorGUILayout.HelpBox("このゲームオブジェクト上のビデオプレイヤーを直接変更しないでください。すべての変更はLocalDualPlayerControllerで行う必要があります。これらの設定を変更すると、動作が壊れます。", MessageType.Warning);
+            EditorGUILayout.HelpBox(AunCastEditorLocalization.Localize(
+                "このゲームオブジェクト上のビデオプレイヤーを直接変更しないでください。すべての変更はLocalDualPlayerControllerで行う必要があります。これらの設定を変更すると、動作が壊れます。",
+                "Do not modify the video player on this GameObject directly. All changes must be made via LocalDualPlayerController. Changing these settings will break behavior."), MessageType.Warning);
             EditorGUILayout.PropertyField(receiverProperty);
             EditorGUILayout.PropertyField(avProVideoProperty);
             EditorGUILayout.PropertyField(avProRendererProperty);

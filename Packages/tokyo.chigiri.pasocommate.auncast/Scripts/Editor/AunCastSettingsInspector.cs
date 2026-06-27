@@ -106,9 +106,12 @@ namespace PasocomMate.AunCast.Internal
             }
         }
 
-        private static GUIContent L(string label, string fieldName, string tooltip)
+        // 言語に応じてラベル/ツールチップを切り替える。Alt 押下中は backing フィールド名を表示する。
+        private static GUIContent L(string ja, string en, string fieldName, string tooltipJa, string tooltipEn)
         {
             bool alt = Event.current != null && Event.current.alt;
+            string label = AunCastEditorLocalization.Localize(ja, en);
+            string tooltip = AunCastEditorLocalization.Localize(tooltipJa, tooltipEn);
             return new GUIContent(alt ? fieldName : label, tooltip);
         }
 
@@ -119,31 +122,32 @@ namespace PasocomMate.AunCast.Internal
             rect.width = EditorGUIUtility.labelWidth;
             if (!rect.Contains(Event.current.mousePosition)) return;
             var menu = new GenericMenu();
-            menu.AddItem(new GUIContent($"変数名をコピー: {fieldName}"), false,
+            menu.AddItem(new GUIContent(AunCastEditorLocalization.Localize(
+                    $"変数名をコピー: {fieldName}", $"Copy field name: {fieldName}")), false,
                 () => EditorGUIUtility.systemCopyBuffer = fieldName);
             menu.ShowAsContext();
             Event.current.Use();
         }
 
-        private float SliderField(string label, string fieldName, string tooltip,
+        private float SliderField(string ja, string en, string fieldName, string tooltipJa, string tooltipEn,
             float value, float min, float max)
         {
-            float result = EditorGUILayout.Slider(L(label, fieldName, tooltip), value, min, max);
+            float result = EditorGUILayout.Slider(L(ja, en, fieldName, tooltipJa, tooltipEn), value, min, max);
             CopyFieldNameMenu(fieldName);
             return result;
         }
 
-        private int IntSliderField(string label, string fieldName, string tooltip,
+        private int IntSliderField(string ja, string en, string fieldName, string tooltipJa, string tooltipEn,
             int value, int min, int max)
         {
-            int result = EditorGUILayout.IntSlider(L(label, fieldName, tooltip), value, min, max);
+            int result = EditorGUILayout.IntSlider(L(ja, en, fieldName, tooltipJa, tooltipEn), value, min, max);
             CopyFieldNameMenu(fieldName);
             return result;
         }
 
-        private bool ToggleField(string label, string fieldName, string tooltip, bool value)
+        private bool ToggleField(string ja, string en, string fieldName, string tooltipJa, string tooltipEn, bool value)
         {
-            bool result = EditorGUILayout.Toggle(L(label, fieldName, tooltip), value);
+            bool result = EditorGUILayout.Toggle(L(ja, en, fieldName, tooltipJa, tooltipEn), value);
             CopyFieldNameMenu(fieldName);
             return result;
         }
@@ -154,9 +158,9 @@ namespace PasocomMate.AunCast.Internal
             return on ? flags | bit : flags & ~bit;
         }
 
-        private string TextField(string label, string fieldName, string tooltip, string value)
+        private string TextField(string ja, string en, string fieldName, string tooltipJa, string tooltipEn, string value)
         {
-            string result = EditorGUILayout.TextField(L(label, fieldName, tooltip), value ?? string.Empty);
+            string result = EditorGUILayout.TextField(L(ja, en, fieldName, tooltipJa, tooltipEn), value ?? string.Empty);
             CopyFieldNameMenu(fieldName);
             return result;
         }
@@ -195,7 +199,9 @@ namespace PasocomMate.AunCast.Internal
             if (totalCount == 0)
             {
                 EditorGUILayout.HelpBox(
-                    "AunCastコンポーネントが見つかりません。AunCast ルート配下で設定してください。",
+                    AunCastEditorLocalization.Localize(
+                        "AunCastコンポーネントが見つかりません。AunCast ルート配下で設定してください。",
+                        "No AunCast components were found. Configure them under the AunCast root."),
                     MessageType.Warning);
                 return;
             }
@@ -416,13 +422,19 @@ namespace PasocomMate.AunCast.Internal
 
         private static void DrawWallPanelReferenceTools(Transform root)
         {
-            EditorGUILayout.LabelField("壁パネル配線", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("壁パネル配線", "Wall Panel Wiring"),
+                EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "AunCast 配下の AunCastEventBus / WallControlPanel / UserStatusPanel / スクリーン購読者を再配線します。",
+                AunCastEditorLocalization.Localize(
+                    "AunCast 配下の AunCastEventBus / WallControlPanel / UserStatusPanel / スクリーン購読者を再配線します。",
+                    "Re-wires the AunCastEventBus / WallControlPanel / UserStatusPanel / screen subscribers under AunCast."),
                 MessageType.None);
             using (new EditorGUI.DisabledScope(root == null))
             {
-                if (!GUILayout.Button("AunCastEventBus参照を再配線", GUILayout.Height(24)))
+                if (!GUILayout.Button(
+                    AunCastEditorLocalization.Localize("AunCastEventBus参照を再配線", "Re-wire AunCastEventBus References"),
+                    GUILayout.Height(24)))
                     return;
 
                 RewireEventHubAndConsumers(root, recordUndo: true, writeLog: true);
@@ -673,9 +685,13 @@ namespace PasocomMate.AunCast.Internal
 
         private void DrawAvProSpeakerSetupTools(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            EditorGUILayout.LabelField("AVPro Speaker 配線", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("AVPro Speaker 配線", "AVPro Speaker Wiring"),
+                EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "シーン上の VRC AVPro Video Speaker + AudioSource を検出し、PlayerA/B 用に複製して参照を配線します。",
+                AunCastEditorLocalization.Localize(
+                    "シーン上の VRC AVPro Video Speaker + AudioSource を検出し、PlayerA/B 用に複製して参照を配線します。",
+                    "Detects VRC AVPro Video Speaker + AudioSource in the scene, duplicates them for Player A/B, and wires the references."),
                 MessageType.None);
 
             if (!TryResolveSpeakerSetupContext(root, out var context, out var resolveError))
@@ -691,7 +707,11 @@ namespace PasocomMate.AunCast.Internal
             List<string> validationErrors = _cachedSpeakerValidationErrors ?? new List<string>();
             if (validationErrors.Count == 0)
             {
-                EditorGUILayout.HelpBox("現在の PlayerA/B AudioSource 配線に重複やルーティング不整合はありません。", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    AunCastEditorLocalization.Localize(
+                        "現在の PlayerA/B AudioSource 配線に重複やルーティング不整合はありません。",
+                        "No duplicate or routing inconsistencies were found in the current Player A/B AudioSource wiring."),
+                    MessageType.Info);
             }
             else
             {
@@ -701,7 +721,9 @@ namespace PasocomMate.AunCast.Internal
 
             using (new EditorGUI.DisabledScope(candidates.Length == 0))
             {
-                if (!GUILayout.Button("AVPro Speaker 出力先セットアップを実行", GUILayout.Height(24)))
+                if (!GUILayout.Button(
+                    AunCastEditorLocalization.Localize("AVPro Speaker 出力先セットアップを実行", "Run AVPro Speaker Output Setup"),
+                    GUILayout.Height(24)))
                     return;
 
                 ExecuteSpeakerSetup(root, settings, context, candidates);
@@ -727,7 +749,9 @@ namespace PasocomMate.AunCast.Internal
             if (candidates == null || candidates.Length == 0)
                 return;
 
-            EditorGUILayout.LabelField("検出対象", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("検出対象", "Detected Targets"),
+                EditorStyles.miniBoldLabel);
             for (int i = 0; i < candidates.Length; i++)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
@@ -746,7 +770,8 @@ namespace PasocomMate.AunCast.Internal
             error = string.Empty;
             if (root == null)
             {
-                error = "AunCast ルートが見つかりません。";
+                error = AunCastEditorLocalization.Localize(
+                    "AunCast ルートが見つかりません。", "AunCast root was not found.");
                 return false;
             }
 
@@ -765,19 +790,23 @@ namespace PasocomMate.AunCast.Internal
 
             if (managerA == null || managerB == null)
             {
-                error = "VideoPlayerManager A/B が見つかりません。";
+                error = AunCastEditorLocalization.Localize(
+                    "VideoPlayerManager A/B が見つかりません。", "VideoPlayerManager A/B was not found.");
                 return false;
             }
             if (managerA.avProPlayer == null || managerB.avProPlayer == null)
             {
-                error = "VideoPlayerManager の avProPlayer 参照が不足しています。";
+                error = AunCastEditorLocalization.Localize(
+                    "VideoPlayerManager の avProPlayer 参照が不足しています。",
+                    "The avProPlayer reference on VideoPlayerManager is missing.");
                 return false;
             }
 
             var switcher = root.GetComponentInChildren<PlaybackSwitcher>(true);
             if (switcher == null)
             {
-                error = "PlaybackSwitcher が見つかりません。";
+                error = AunCastEditorLocalization.Localize(
+                    "PlaybackSwitcher が見つかりません。", "PlaybackSwitcher was not found.");
                 return false;
             }
 
@@ -836,7 +865,9 @@ namespace PasocomMate.AunCast.Internal
                     AudioSource source = aSources[i];
                     if (source == null)
                     {
-                        errors.Add($"PlayerA audioSources[{i}] が null です。");
+                        errors.Add(AunCastEditorLocalization.Localize(
+                            $"PlayerA audioSources[{i}] が null です。",
+                            $"PlayerA audioSources[{i}] is null."));
                         continue;
                     }
                     used.Add(source);
@@ -851,11 +882,15 @@ namespace PasocomMate.AunCast.Internal
                     AudioSource source = bSources[i];
                     if (source == null)
                     {
-                        errors.Add($"PlayerB audioSources[{i}] が null です。");
+                        errors.Add(AunCastEditorLocalization.Localize(
+                            $"PlayerB audioSources[{i}] が null です。",
+                            $"PlayerB audioSources[{i}] is null."));
                         continue;
                     }
                     if (used.Contains(source))
-                        errors.Add($"PlayerA/PlayerB で同一 AudioSource を共有しています: {GetHierarchyPath(source.transform)}");
+                        errors.Add(AunCastEditorLocalization.Localize(
+                            $"PlayerA/PlayerB で同一 AudioSource を共有しています: {GetHierarchyPath(source.transform)}",
+                            $"Player A/B share the same AudioSource: {GetHierarchyPath(source.transform)}"));
                     ValidateSpeakerBinding(errors, source, context.playerB, $"PlayerB audioSources[{i}]");
                 }
             }
@@ -872,20 +907,26 @@ namespace PasocomMate.AunCast.Internal
             if (source == null) return;
             if (expectedPlayer == null)
             {
-                errors.Add($"{label}: 期待する VRCAVProVideoPlayer が null です。");
+                errors.Add(AunCastEditorLocalization.Localize(
+                    $"{label}: 期待する VRCAVProVideoPlayer が null です。",
+                    $"{label}: The expected VRCAVProVideoPlayer is null."));
                 return;
             }
 
             Component speaker = FindSpeakerComponent(source.gameObject);
             if (speaker == null)
             {
-                errors.Add($"{label}: VRC AVPro Video Speaker がありません。({GetHierarchyPath(source.transform)})");
+                errors.Add(AunCastEditorLocalization.Localize(
+                    $"{label}: VRC AVPro Video Speaker がありません。({GetHierarchyPath(source.transform)})",
+                    $"{label}: No VRC AVPro Video Speaker found. ({GetHierarchyPath(source.transform)})"));
                 return;
             }
 
             if (!IsSpeakerRoutedTo(speaker, expectedPlayer))
             {
-                errors.Add($"{label}: Speaker の videoPlayer が想定先を向いていません。({GetHierarchyPath(source.transform)})");
+                errors.Add(AunCastEditorLocalization.Localize(
+                    $"{label}: Speaker の videoPlayer が想定先を向いていません。({GetHierarchyPath(source.transform)})",
+                    $"{label}: The Speaker's videoPlayer does not point to the expected target. ({GetHierarchyPath(source.transform)})"));
             }
         }
 
@@ -1611,11 +1652,14 @@ namespace PasocomMate.AunCast.Internal
             PasocomMate.AunCast.AunCastSettings settings,
             VRCAVProVideoPlayer[] avProPlayers)
         {
-            EditorGUILayout.LabelField("映像プレイヤー", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("映像プレイヤー", "Video Player"),
+                EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
 
             int newResolution = EditorGUILayout.IntPopup(
-                L("最大解像度", "maximumResolution", "AVProプレイヤーの最大解像度。"),
+                L("最大解像度", "Maximum Resolution", "maximumResolution",
+                    "AVProプレイヤーの最大解像度。", "Maximum resolution for the AVPro player."),
                 settings.maximumResolution,
                 new[] {
                     new GUIContent("360p"), new GUIContent("480p"), new GUIContent("720p"),
@@ -1624,15 +1668,16 @@ namespace PasocomMate.AunCast.Internal
                 new[] { 360, 480, 720, 1080, 1440, 2160 });
             CopyFieldNameMenu("maximumResolution");
 
-            bool newLowLatency = ToggleField("低遅延モード", "useLowLatency",
-                "AVProの低遅延モードを有効にする。", settings.useLowLatency);
+            bool newLowLatency = ToggleField("低遅延モード", "Low Latency Mode", "useLowLatency",
+                "AVProの低遅延モードを有効にする。", "Enables AVPro's low-latency mode.", settings.useLowLatency);
 
-            float newCrossfade = SliderField("クロスフェード時間 [秒]", "crossfadeDurationSec",
-                "Active/Standby切替時のクロスフェード時間（秒）。",
+            float newCrossfade = SliderField("クロスフェード時間 [秒]", "Crossfade Duration [s]", "crossfadeDurationSec",
+                "Active/Standby切替時のクロスフェード時間（秒）。", "Crossfade duration (seconds) when switching Active/Standby.",
                 settings.crossfadeDurationSec, 0f, 1f);
             var newIdleScreenTexture = (Texture2D)EditorGUILayout.ObjectField(
-                L("停止中のスクリーン画像", "idleScreenTexture",
-                    "再生停止中にスクリーンへ表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。"),
+                L("停止中のスクリーン画像", "Idle Screen Image", "idleScreenTexture",
+                    "再生停止中にスクリーンへ表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。",
+                    "Static image shown on the screen while playback is stopped. If unset, the originally assigned texture is restored."),
                 settings.idleScreenTexture, typeof(Texture2D), false);
             CopyFieldNameMenu("idleScreenTexture");
             bool idleScreenTextureChanged = settings.idleScreenTexture != newIdleScreenTexture;
@@ -1671,7 +1716,9 @@ namespace PasocomMate.AunCast.Internal
             var sp = serializedObject.FindProperty("staffAllowedUserNames");
             if (sp != null)
                 EditorGUILayout.PropertyField(sp,
-                    L("スタッフ許可ユーザー名", "staffAllowedUserNames", "パスコードなしでスタッフ権限を付与する VRChat ユーザー名リスト。"),
+                    L("スタッフ許可ユーザー名", "Staff Allowed User Names", "staffAllowedUserNames",
+                        "パスコードなしでスタッフ権限を付与する VRChat ユーザー名リスト。",
+                        "List of VRChat user names granted staff permission without a passcode."),
                     true);
             if (!EditorGUI.EndChangeCheck()) return;
             serializedObject.ApplyModifiedProperties();
@@ -1687,68 +1734,86 @@ namespace PasocomMate.AunCast.Internal
 
         private void DrawUiSettings(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            EditorGUILayout.LabelField("UI / 操作", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("UI / 操作", "UI / Controls"),
+                EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
-            float newDefaultVolume = SliderField("初期音量", "defaultVolume",
+            float newDefaultVolume = SliderField("初期音量", "Default Volume", "defaultVolume",
                 "各ユーザーの起動時ローカル再生デフォルト音量（0〜1）。",
+                "Default local playback volume (0-1) for each user at startup.",
                 settings.defaultVolume, 0f, 1f);
-            string newDefaultUrl = TextField("デフォルト配信 URL", "defaultUrl",
+            string newDefaultUrl = TextField("デフォルト配信 URL", "Default Stream URL", "defaultUrl",
                 "Next URL 欄の初期値。インスタンス最初の Join 時の自動再生にも使用する。空欄で無効。",
+                "Initial value of the Next URL field. Also used for auto-play on the first join to the instance. Empty to disable.",
                 settings.defaultUrl != null ? settings.defaultUrl.Get() : "");
-            bool newAutoPlayDefault = ToggleField("最初の Join で自動再生", "autoPlayDefaultOnFirstJoin",
+            bool newAutoPlayDefault = ToggleField("最初の Join で自動再生", "Auto-play on First Join", "autoPlayDefaultOnFirstJoin",
                 "インスタンスに最初のユーザーが Join した時点で、デフォルト配信 URL を自動再生する。",
+                "Auto-plays the default stream URL when the first user joins the instance.",
                 settings.autoPlayDefaultOnFirstJoin);
 
-            EditorGUILayout.LabelField(L("VR 呼び出しジェスチャー初期値", "defaultSummonGesture",
-                "VR モードで HUD を呼び出すジェスチャーの初期有効設定。"));
+            EditorGUILayout.LabelField(L("VR 呼び出しジェスチャー初期値", "Default VR Summon Gesture", "defaultSummonGesture",
+                "VR モードで HUD を呼び出すジェスチャーの初期有効設定。",
+                "Default enabled gestures for summoning the HUD in VR mode."));
             CopyFieldNameMenu("defaultSummonGesture");
             int newSummonGesture = settings.defaultSummonGesture;
             EditorGUI.indentLevel++;
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 2, L("右スティック上ホールド", "Hold Right Stick Up", ""));
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 1, L("両手トリガー長押し", "Hold Both Triggers", ""));
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 4, L("ダブルトリガー (L)", "Double-tap Trigger (L)", ""));
-            newSummonGesture = ToggleBitFlag(newSummonGesture, 8, L("ダブルトリガー (R)", "Double-tap Trigger (R)", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 2, L("右スティック上ホールド", "Hold Right Stick Up", "", "", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 1, L("両手トリガー長押し", "Hold Both Triggers", "", "", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 4, L("ダブルトリガー (L)", "Double-tap Trigger (L)", "", "", ""));
+            newSummonGesture = ToggleBitFlag(newSummonGesture, 8, L("ダブルトリガー (R)", "Double-tap Trigger (R)", "", "", ""));
             EditorGUI.indentLevel--;
 
-            EditorGUILayout.LabelField(L("デスクトップ呼び出しジェスチャー初期値", "defaultDesktopSummonGesture",
-                "デスクトップモードで HUD を呼び出すジェスチャーの初期有効設定。"));
+            EditorGUILayout.LabelField(L("デスクトップ呼び出しジェスチャー初期値", "Default Desktop Summon Gesture", "defaultDesktopSummonGesture",
+                "デスクトップモードで HUD を呼び出すジェスチャーの初期有効設定。",
+                "Default enabled gestures for summoning the HUD in desktop mode."));
             CopyFieldNameMenu("defaultDesktopSummonGesture");
             int newDesktopSummonGesture = settings.defaultDesktopSummonGesture;
             EditorGUI.indentLevel++;
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, L("Tab ダブルタップ", "Double-tap Tab", ""));
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, L("F5 ダブルタップ", "Double-tap F5", ""));
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, L("ESC 長押し", "Hold ESC", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, L("Tab ダブルタップ", "Double-tap Tab", "", "", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, L("F5 ダブルタップ", "Double-tap F5", "", "", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, L("ESC 長押し", "Hold ESC", "", "", ""));
             EditorGUI.indentLevel--;
-            float newHold = SliderField("ジェスチャー保持時間 [秒]", "gestureHoldDuration",
+            float newHold = SliderField("ジェスチャー保持時間 [秒]", "Gesture Hold Duration [s]", "gestureHoldDuration",
                 "長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。",
+                "Hold duration (seconds) for hold gestures. Applies to VR both-triggers / right-stick-up / desktop ESC.",
                 settings.gestureHoldDuration, 0.1f, 2f);
-            float newHudThreshold = SliderField("ジェスチャーHUD表示猶予 [秒]", "gestureHudShowThreshold",
+            float newHudThreshold = SliderField("ジェスチャーHUD表示猶予 [秒]", "Gesture HUD Show Delay [s]", "gestureHudShowThreshold",
                 "HUDプログレスを表示し始めるまでの猶予（秒）。",
+                "Delay (seconds) before the HUD progress starts to appear.",
                 settings.gestureHudShowThreshold, 0f, 0.3f);
             Vector3 newHudVrOffset = EditorGUILayout.Vector3Field(
-                L("HUD配置オフセット (VR)", "hudVrLocalOffset", "VR: 頭部ローカル座標における HUD オフセット（m）。(0,0,Z)で視界中央。"),
+                L("HUD配置オフセット (VR)", "HUD Offset (VR)", "hudVrLocalOffset",
+                    "VR: 頭部ローカル座標における HUD オフセット（m）。(0,0,Z)で視界中央。",
+                    "VR: HUD offset (m) in head-local coordinates. (0,0,Z) is the center of view."),
                 settings.hudVrLocalOffset);
             CopyFieldNameMenu("hudVrLocalOffset");
             Vector3 newHudDesktopOffset = EditorGUILayout.Vector3Field(
-                L("HUD配置オフセット (Desktop)", "hudDesktopLocalOffset", "デスクトップ: カメラローカル座標における HUD オフセット（m）。Z は前方距離。"),
+                L("HUD配置オフセット (Desktop)", "HUD Offset (Desktop)", "hudDesktopLocalOffset",
+                    "デスクトップ: カメラローカル座標における HUD オフセット（m）。Z は前方距離。",
+                    "Desktop: HUD offset (m) in camera-local coordinates. Z is the forward distance."),
                 settings.hudDesktopLocalOffset);
             CopyFieldNameMenu("hudDesktopLocalOffset");
 
-            float newDist = SliderField("パネル自動閉じ距離 [m]", "panelAutoDismissDistance",
+            float newDist = SliderField("パネル自動閉じ距離 [m]", "Panel Auto-dismiss Distance [m]", "panelAutoDismissDistance",
                 "ポータブルパネルからこの距離（m）以上離れると自動的に閉じる。0 で無効。",
+                "Auto-closes the portable panel when you move farther than this distance (m). 0 to disable.",
                 settings.panelAutoDismissDistance, 0f, 10f);
-            float newSight = SliderField("パネル視界外閉じ [秒]", "panelOutOfSightDismissSec",
+            float newSight = SliderField("パネル視界外閉じ [秒]", "Panel Out-of-sight Dismiss [s]", "panelOutOfSightDismissSec",
                 "ポータブルパネルが視界外に出てからこの秒数経過で自動的に閉じる。0 で無効。",
+                "Auto-closes the portable panel this many seconds after it leaves your field of view. 0 to disable.",
                 settings.panelOutOfSightDismissSec, 0f, 60f);
 
-            float newNear = SliderField("壁パネル近距離 [m]", "wallNearDistance",
+            float newNear = SliderField("壁パネル近距離 [m]", "Wall Panel Near Distance [m]", "wallNearDistance",
                 "この距離（m）以内に近づくとフルコンテンツ表示に切り替える（内側閾値）。",
+                "Switches to full-content display when you come within this distance (m) (inner threshold).",
                 settings.wallNearDistance, 0f, 10f);
-            float newFar = SliderField("壁パネル遠距離 [m]", "wallFarDistance",
+            float newFar = SliderField("壁パネル遠距離 [m]", "Wall Panel Far Distance [m]", "wallFarDistance",
                 "この距離（m）以上離れるとResyncのみ表示に切り替える（外側閾値）。",
+                "Switches to Resync-only display when you move farther than this distance (m) (outer threshold).",
                 settings.wallFarDistance, 0f, 10f);
-            string newUnlockPasscode = TextField("壁パネル解錠パスコード", "wallUnlockPasscode",
+            string newUnlockPasscode = TextField("壁パネル解錠パスコード", "Wall Panel Unlock Passcode", "wallUnlockPasscode",
                 "WallControlPanel の Staff ビュー解錠用 4 桁数字。空文字で無効。",
+                "4-digit number to unlock the Staff view of the WallControlPanel. Empty to disable.",
                 settings.wallUnlockPasscode);
             newUnlockPasscode = NormalizeWallUnlockPasscode(newUnlockPasscode);
 
@@ -1783,54 +1848,68 @@ namespace PasocomMate.AunCast.Internal
 
         private void DrawPlaybackMonitorSettings(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            EditorGUILayout.LabelField("再生監視", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("再生監視", "Playback Monitoring"),
+                EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
 
-            EditorGUILayout.LabelField("無音検知");
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("無音検知", "Silence Detection"));
             EditorGUI.indentLevel++;
-            float newRms = SliderField("RMS 閾値 [dBFS]", "silenceRmsThresholdDbfs",
+            float newRms = SliderField("RMS 閾値 [dBFS]", "RMS Threshold [dBFS]", "silenceRmsThresholdDbfs",
                 "無音判定RMS閾値。0 dBFS = フルスケール。",
+                "RMS threshold for silence detection. 0 dBFS = full scale.",
                 settings.silenceRmsThresholdDbfs, -96f, 0f);
-            float newSilenceConsec = SliderField("継続秒数 [秒]", "silenceConsecutiveSec",
+            float newSilenceConsec = SliderField("継続秒数 [秒]", "Consecutive Duration [s]", "silenceConsecutiveSec",
                 "無音がこの秒数継続したらResyncを発火する。",
+                "Fires a Resync when silence continues for this many seconds.",
                 settings.silenceConsecutiveSec, 0.5f, 30f);
-            float newSuppress = SliderField("抑止時間 [秒]", "silenceSuppressSec",
+            float newSuppress = SliderField("抑止時間 [秒]", "Suppress Duration [s]", "silenceSuppressSec",
                 "Resync後に無音検知を再有効化するまでの抑止時間（秒）。",
+                "Suppression time (seconds) before re-enabling silence detection after a Resync.",
                 settings.silenceSuppressSec, 0f, 600f);
-            float newPeakHold = SliderField("ピーク保持 [秒]", "silenceMeterPeakHoldSec",
+            float newPeakHold = SliderField("ピーク保持 [秒]", "Peak Hold [s]", "silenceMeterPeakHoldSec",
                 "RMSメーターのピーク値を保持する時間（秒）。",
+                "Time (seconds) the RMS meter holds its peak value.",
                 settings.silenceMeterPeakHoldSec, 0f, 5f);
-            float newPeakDecay = SliderField("ピーク減衰 [dB/秒]", "silenceMeterPeakDecayDbPerSec",
+            float newPeakDecay = SliderField("ピーク減衰 [dB/秒]", "Peak Decay [dB/s]", "silenceMeterPeakDecayDbPerSec",
                 "ピーク保持後にピークラインが下がる速度（dB/秒）。",
+                "Rate (dB/s) at which the peak line falls after the peak hold.",
                 settings.silenceMeterPeakDecayDbPerSec, 0f, 60f);
             EditorGUI.indentLevel--;
 
-            EditorGUILayout.LabelField("停止検知");
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("停止検知", "Stall Detection"));
             EditorGUI.indentLevel++;
-            float newStalled = SliderField("タイムアウト [秒]", "stalledTimeoutSec",
+            float newStalled = SliderField("タイムアウト [秒]", "Timeout [s]", "stalledTimeoutSec",
                 "停止判定の継続時間（秒）。",
+                "Duration (seconds) used to determine a stall.",
                 settings.stalledTimeoutSec, 0.5f, 30f);
-            float newInterval = SliderField("ポーリング間隔 [秒]", "monitorIntervalSec",
+            float newInterval = SliderField("ポーリング間隔 [秒]", "Polling Interval [s]", "monitorIntervalSec",
                 "Active Playerの監視ポーリング間隔（秒）。",
+                "Polling interval (seconds) for monitoring the Active player.",
                 settings.monitorIntervalSec, 0.01f, 1f);
-            float newAdvance = SliderField("前進判定閾値 [秒]", "minAdvanceThresholdSec",
+            float newAdvance = SliderField("前進判定閾値 [秒]", "Advance Threshold [s]", "minAdvanceThresholdSec",
                 "ポーリング間隔ごとの再生位置の変化量がこの値を超えたら「再生が前進した」と判定する。",
+                "If the playback position changes by more than this per polling interval, playback is considered to have advanced.",
                 settings.minAdvanceThresholdSec, 0f, 0.1f);
-            int newMinConsec = IntSliderField("最小連続前進回数 [回]", "minConsecutiveAdvances",
+            int newMinConsec = IntSliderField("最小連続前進回数 [回]", "Min Consecutive Advances", "minConsecutiveAdvances",
                 "生存確認に必要な連続前進回数。",
+                "Number of consecutive advances required to confirm liveness.",
                 settings.minConsecutiveAdvances, 1, 30);
             EditorGUI.indentLevel--;
 
-            EditorGUILayout.LabelField("ドリフト");
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("ドリフト", "Drift"));
             EditorGUI.indentLevel++;
-            float newDriftThreshold = SliderField("Resync閾値 [秒]", "driftResyncThresholdSec",
+            float newDriftThreshold = SliderField("Resync閾値 [秒]", "Resync Threshold [s]", "driftResyncThresholdSec",
                 "蓄積ドリフトがこの値を超えたら自動Resync。",
+                "Automatically Resyncs when accumulated drift exceeds this value.",
                 settings.driftResyncThresholdSec, 0.01f, 1f);
-            float newSmoothing = SliderField("平滑化時定数 [秒]", "driftSmoothingTimeConstant",
+            float newSmoothing = SliderField("平滑化時定数 [秒]", "Smoothing Time Constant [s]", "driftSmoothingTimeConstant",
                 "ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する。",
+                "Time constant (seconds) for the drift EMA. Larger values track more gradually.",
                 settings.driftSmoothingTimeConstant, 0.1f, 10f);
-            float newWarmup = SliderField("猶予時間 [秒]", "driftWarmupSec",
+            float newWarmup = SliderField("猶予時間 [秒]", "Warm-up Time [s]", "driftWarmupSec",
                 "安定再生開始直後にドリフト積算を抑制する猶予時間（秒）。",
+                "Grace time (seconds) that suppresses drift accumulation right after stable playback begins.",
                 settings.driftWarmupSec, 0f, 30f);
             EditorGUI.indentLevel--;
 
@@ -1858,41 +1937,52 @@ namespace PasocomMate.AunCast.Internal
 
         private void DrawResyncSettings(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            EditorGUILayout.LabelField("Resync制御", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("Resync制御", "Resync Control"),
+                EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
 
-            EditorGUILayout.LabelField("同時接続制限");
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("同時接続制限", "Concurrent Connection Limit"));
             EditorGUI.indentLevel++;
-            int newConcurrent = IntSliderField("同時Resync上限 [人]", "maxConcurrentResyncUsers",
+            int newConcurrent = IntSliderField("同時Resync上限 [人]", "Max Concurrent Resyncs", "maxConcurrentResyncUsers",
                 "同時Resync実行数の初期上限。",
+                "Initial upper limit on the number of concurrent Resyncs.",
                 settings.maxConcurrentResyncUsers, 1, 100);
-            int newConnLimit = IntSliderField("最大接続数", "maxConnectionLimit",
+            int newConnLimit = IntSliderField("最大接続数", "Max Connections", "maxConnectionLimit",
                 "配信サーバへの総接続数上限の既定値。",
+                "Default upper limit on the total number of connections to the streaming server.",
                 settings.maxConnectionLimit, 1, 255);
-            float newGrant = SliderField("接続開始待ち [秒]", "grantTimeoutSec",
+            float newGrant = SliderField("接続開始待ち [秒]", "Connection Start Wait [s]", "grantTimeoutSec",
                 "Resync許可後、接続が始まるまでの最大待機時間（秒）。",
+                "Maximum wait time (seconds) for a connection to start after a Resync is granted.",
                 settings.grantTimeoutSec, 1f, 60f);
-            float newRunning = SliderField("実行時間の上限 [秒]", "runningTimeoutSec",
+            float newRunning = SliderField("実行時間の上限 [秒]", "Max Run Time [s]", "runningTimeoutSec",
                 "1回のResync実行が許される最大時間（秒）。",
+                "Maximum time (seconds) allowed for a single Resync run.",
                 settings.runningTimeoutSec, 1f, 120f);
             EditorGUI.indentLevel--;
 
-            EditorGUILayout.LabelField("リトライ / クールダウン");
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("リトライ / クールダウン", "Retry / Cooldown"));
             EditorGUI.indentLevel++;
-            float newCycle = SliderField("切替完了タイムアウト [秒]", "resyncCycleTimeoutSec",
+            float newCycle = SliderField("切替完了タイムアウト [秒]", "Switch Completion Timeout [s]", "resyncCycleTimeoutSec",
                 "GRANTED後、Active/Standby切替が完了するまでの最大許容時間（秒）。",
+                "Maximum allowed time (seconds) for the Active/Standby switch to complete after GRANTED.",
                 settings.resyncCycleTimeoutSec, 1f, 120f);
-            float newLocal = SliderField("読込後の待機 [秒]", "localCooldownSec",
+            float newLocal = SliderField("読込後の待機 [秒]", "Post-load Wait [s]", "localCooldownSec",
                 "LoadURL完了後、次のResyncを受け付けるまでの待機時間（秒）。",
+                "Wait time (seconds) after LoadURL completes before the next Resync is accepted.",
                 settings.localCooldownSec, 0f, 60f);
-            float newBase = SliderField("リトライ間隔（初回） [秒]", "baseCooldownSec",
+            float newBase = SliderField("リトライ間隔（初回） [秒]", "Retry Interval (Initial) [s]", "baseCooldownSec",
                 "リトライの基本待機時間（秒）。両系統の接続が失敗し続けると、この値からリトライ間隔倍率に従って増えていく（上限はリトライ間隔（上限））。レート制限による再接続待ちでは、倍増せずこの値で毎回待機する。",
+                "Base retry wait time (seconds). If both pipelines keep failing to connect, it grows from this value by the retry interval multiplier (capped by Retry Interval (Max)). For rate-limited reconnection waits, it waits this value each time without multiplying.",
                 settings.baseCooldownSec, 5f, 180f);
-            float newMultiplier = SliderField("リトライ間隔倍率", "retryCooldownMultiplier",
+            float newMultiplier = SliderField("リトライ間隔倍率", "Retry Interval Multiplier", "retryCooldownMultiplier",
                 "両系統失敗時に、連続失敗ごとのリトライ間隔へ掛ける倍率。1.0 で固定間隔、2.0 で倍々。",
+                "Multiplier applied to the retry interval per consecutive failure when both pipelines fail. 1.0 keeps a fixed interval, 2.0 doubles each time.",
                 settings.retryCooldownMultiplier, 1f, 2f);
-            float newMax = SliderField("リトライ間隔（上限） [秒]", "maxRetryCooldownSec",
+            float newMax = SliderField("リトライ間隔（上限） [秒]", "Retry Interval (Max) [s]", "maxRetryCooldownSec",
                 "倍率に従って増えるリトライ間隔の頭打ち値（秒）。両系統失敗時のバックオフがこの値を超えない。",
+                "Cap (seconds) for the retry interval that grows by the multiplier. The backoff on both-pipeline failure does not exceed this value.",
                 settings.maxRetryCooldownSec, 5f, 180f);
             EditorGUI.indentLevel--;
 
@@ -2300,7 +2390,9 @@ namespace PasocomMate.AunCast.Internal
             PlaybackSwitcher[] pbsList,
             ResyncCoordinator[] rcList)
         {
-            EditorGUILayout.LabelField("デバッグ", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("デバッグ", "Debug"),
+                EditorStyles.boldLabel);
 
             bool anyOn = false;
             bool anyOff = false;
@@ -2315,8 +2407,9 @@ namespace PasocomMate.AunCast.Internal
             bool currentValue = anyOn && !anyOff;
 
             EditorGUI.showMixedValue = isMixed;
-            bool newValue = ToggleField("タイムラインログ", "_timelineLogging",
-                "全コンポーネントのタイムラインログ出力を一括で切り替える。", currentValue);
+            bool newValue = ToggleField("タイムラインログ", "Timeline Logging", "_timelineLogging",
+                "全コンポーネントのタイムラインログ出力を一括で切り替える。",
+                "Toggles timeline log output for all components at once.", currentValue);
             EditorGUI.showMixedValue = false;
 
             if (newValue != currentValue || (isMixed && !newValue))

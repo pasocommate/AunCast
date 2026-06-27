@@ -46,9 +46,11 @@ namespace PasocomMate.AunCast.Internal
                     bool hasPortable = root != null && root.Find(USER_CONTENT_PATH) != null;
                     using (new EditorGUI.DisabledScope(!hasPortable))
                     {
-                        if (GUILayout.Button("Show Viewer", GUILayout.Height(28)))
+                        if (GUILayout.Button(
+                            AunCastEditorLocalization.Localize("視聴者表示", "Show Viewer"), GUILayout.Height(28)))
                             SwitchContentView(root, showStaff: false);
-                        if (GUILayout.Button("Show Staff", GUILayout.Height(28)))
+                        if (GUILayout.Button(
+                            AunCastEditorLocalization.Localize("スタッフ表示", "Show Staff"), GUILayout.Height(28)))
                             SwitchContentView(root, showStaff: true);
                     }
                 }
@@ -57,7 +59,8 @@ namespace PasocomMate.AunCast.Internal
 
                 using (new EditorGUI.DisabledScope(applier.theme == null))
                 {
-                    if (GUILayout.Button("Apply Theme", GUILayout.Height(32)))
+                    if (GUILayout.Button(
+                        AunCastEditorLocalization.Localize("テーマを適用", "Apply Theme"), GUILayout.Height(32)))
                     {
                         RecordUndoTargets(applier.transform);
                         applier.ApplyTheme(applier.transform);
