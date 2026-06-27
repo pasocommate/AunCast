@@ -84,7 +84,8 @@ namespace PasocomMate.AunCast.Internal
             {
                 GUILayout.FlexibleSpace();
 
-                var label = new GUIContent(AunCastEditorLocalization.Localize("表示言語", "Language"));
+                // このラベル自体はどの言語設定でも読めるよう、常に両言語併記にする。
+                var label = new GUIContent("表示言語 / Language");
                 GUILayout.Label(label, EditorStyles.miniLabel,
                     GUILayout.Width(EditorStyles.miniLabel.CalcSize(label).x + 4f));
 
