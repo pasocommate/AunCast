@@ -144,6 +144,11 @@ namespace PasocomMate.AunCast
                 var scaler = panel.Find("ContentScaler");
                 if (scaler != null)
                     UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(scaler);
+                // FitVideoScreenToArea で書き換えた VideoScreen の sizeDelta も記録する
+                var videoScreen = panel.Find(
+                    "ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea/VideoScreen");
+                if (videoScreen != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(videoScreen);
             }
         }
 #endif
@@ -173,6 +178,54 @@ namespace PasocomMate.AunCast
             var box = panel.GetComponent<BoxCollider>();
             if (box != null)
                 box.size = new Vector3(panelSize.x, panelSize.y, box.size.z);
+
+            // パネルサイズ変更で VideoScreenArea が非 16:9 になっても、停止中スクリーン画像が
+            // 歪まないよう VideoScreen を内接させ直す（編集時プレビューを実行時と一致させる）。
+            FitVideoScreenToArea(root, scaler, contentSize);
+        }
+
+        /// <summary>
+        /// VideoScreen を「表示中テクスチャ（停止中は 16:9 の固定画像）の実アスペクト比」で
+        /// VideoScreenArea に最大内接させる。実行時は VideoUiScreen.FitRawImageToAspect が
+        /// 同じ処理を行うため、ここは ThemeApplier（IEditorOnly）のパネルリサイズ後に
+        /// 編集時プレビューを実行時と揃える目的で呼ぶ。
+        /// VideoScreen は中央（非ストレッチ）アンカー前提で sizeDelta を絶対サイズとして書く。
+        /// </summary>
+        private void FitVideoScreenToArea(Transform root, RectTransform scaler, Vector2 contentSize)
+        {
+            if (scaler == null) return;
+            const string areaPath =
+                "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea";
+            var area = root.Find(areaPath) as RectTransform;
+            if (area == null) return;
+            var screen = area.Find("VideoScreen") as RectTransform;
+            if (screen == null) return;
+            var raw = screen.GetComponent<RawImage>();
+            if (raw == null || raw.texture == null) return;
+
+            // VideoScreenArea のローカルサイズを階層の anchors/sizeDelta から解析的に算出する。
+            // 編集時は rect の更新タイミングが不定なため rect.size に頼らない。
+            // ContentScaler は中央アンカーなので rect.size == sizeDelta == contentSize。
+            // 以降は子要素ごとに size = size * (anchorMax - anchorMin) + sizeDelta を適用する。
+            var chain = new List<RectTransform>();
+            for (var t = area; t != null && t != scaler; t = t.parent as RectTransform)
+                chain.Add(t);
+            chain.Reverse();
+
+            Vector2 size = contentSize;
+            foreach (var t in chain)
+            {
+                Vector2 aMin = t.anchorMin, aMax = t.anchorMax, sd = t.sizeDelta;
+                size.x = size.x * (aMax.x - aMin.x) + sd.x;
+                size.y = size.y * (aMax.y - aMin.y) + sd.y;
+            }
+            if (size.x <= 0f || size.y <= 0f) return;
+
+            float texAspect = (float)raw.texture.width / raw.texture.height;
+            float areaAspect = size.x / size.y;
+            screen.sizeDelta = texAspect > areaAspect
+                ? new Vector2(size.x, size.x / texAspect)
+                : new Vector2(size.y * texAspect, size.y);
         }
 
         private void ApplyMaterials(Transform root)
@@ -197,7 +250,8 @@ namespace PasocomMate.AunCast
                     return theme.decal1Material;
                 if (name.Contains("Input") || name.Contains("Area"))
                     return theme.inputMaterial;
-                if (name.StartsWith("CloseButton") || name.StartsWith("SwitchViewButton"))
+                if (name.StartsWith("CloseButton") || name.StartsWith("SwitchViewButton")
+                    || name.StartsWith("StaffLockButton"))
                     return theme.buttonRoundMaterial;
                 if (name.Contains("Button") || name.Contains("Key") || name.Contains("Backspace"))
                     return theme.buttonRectMaterial;

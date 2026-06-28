@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: StaffControlPanel
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 0640187eaa23aa64cb1f28db01952abd,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 75f275c03adaf764688eb9fcce3a4d87,
     type: 2}
   udonAssembly: 
   assemblyError: 
@@ -1209,12 +1209,12 @@ MonoBehaviour:
     - Name: <UserType>k__BackingField
       Entry: 7
       Data: 77|System.RuntimeType, mscorlib
-    - Name:
+    - Name: 
       Entry: 1
       Data: System.Int32, mscorlib
-    - Name:
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
     - Name: <SystemType>k__BackingField
       Entry: 9
       Data: 77

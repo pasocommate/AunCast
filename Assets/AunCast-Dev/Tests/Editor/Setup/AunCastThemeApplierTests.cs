@@ -88,6 +88,7 @@ namespace PasocomMate.AunCast.Tests
             {
                 "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded/CloseButton/CloseButton_Inner",
                 "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded/SwitchViewButton/SwitchViewButton_Inner",
+                "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded/StaffLockButton/StaffLockButton_Inner",
             };
 
             foreach (var path in paths)

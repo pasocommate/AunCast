@@ -205,6 +205,11 @@ namespace PasocomMate.AunCast.Internal
                 var scaler = panel.Find("ContentScaler");
                 if (scaler != null)
                     targets.Add(scaler);
+                // FitVideoScreenToArea で書き換える VideoScreen の RectTransform も Undo 対象に含める
+                var videoScreen = panel.Find(
+                    "ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea/VideoScreen");
+                if (videoScreen != null)
+                    targets.Add(videoScreen);
             }
 
             Undo.RecordObjects(targets.ToArray(), "Apply AunCast Theme");
