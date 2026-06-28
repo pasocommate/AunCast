@@ -14,6 +14,24 @@ namespace PasocomMate.AunCast
     [DisallowMultipleComponent]
     public class AunCastThemeApplier : MonoBehaviour, IEditorOnly
     {
+        private static readonly string[] PortablePaddedPaths =
+        {
+            "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded",
+            "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded",
+            "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded",
+        };
+        private const string PortableTopBarPaddedPath =
+            "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
+        private static readonly string[] WallContentPaths =
+        {
+            "ContentScaler/WallContentArea/UserContent",
+            "ContentScaler/WallContentArea/StaffContent",
+            "ContentScaler/WallContentArea/SharedContent",
+            "ContentScaler/WallContentArea/ResyncOnlyContent",
+        };
+        private const string WallTopBarPaddedPath =
+            "ContentScaler/WallContentArea/TopBarPadded";
+
         public AunCastTheme theme;
 
         /// <summary>
@@ -27,7 +45,9 @@ namespace PasocomMate.AunCast
             ApplyMaterials(root);
             ApplyFonts(root);
             ApplyAudioLinkMaterials(root);
+            ApplyPortablePaddedMargins(root);
             ApplyPortableContentSize(root);
+            ApplyWallPanelLayout(root);
 
             const string pp = "PortablePanel/ContentScaler";
             const string staff = pp + "/PortableContentArea/StaffContent/StaffPadded";
@@ -145,13 +165,164 @@ namespace PasocomMate.AunCast
                 if (scaler != null)
                     UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(scaler);
                 // FitVideoScreenToArea で書き換えた VideoScreen の sizeDelta も記録する
+                foreach (var path in PortablePaddedPaths)
+                {
+                    var padded = root.Find(path);
+                    if (padded != null)
+                        UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(padded);
+                }
+                var topBarPadded = root.Find(PortableTopBarPaddedPath);
+                if (topBarPadded != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(topBarPadded);
                 var videoScreen = panel.Find(
                     "ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea/VideoScreen");
                 if (videoScreen != null)
                     UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(videoScreen);
             }
+
+            foreach (var wallRoot in CollectWallPanelRoots(root))
+            {
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(wallRoot);
+                var box = wallRoot.GetComponent<BoxCollider>();
+                if (box != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(box);
+                var scaler = wallRoot.Find("ContentScaler");
+                if (scaler != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(scaler);
+                foreach (var path in WallContentPaths)
+                {
+                    var content = wallRoot.Find(path);
+                    if (content != null)
+                        UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(content);
+                }
+                var topBar = wallRoot.Find(WallTopBarPaddedPath);
+                if (topBar != null)
+                    UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(topBar);
+            }
         }
 #endif
+
+        private void ApplyPortablePaddedMargins(Transform root)
+        {
+            foreach (var path in PortablePaddedPaths)
+            {
+                ApplyRectMargins(
+                    root,
+                    path,
+                    theme.portablePaddedHorizontalMargin,
+                    theme.portablePaddedTopMargin,
+                    theme.portablePaddedBottomMargin);
+            }
+
+            ApplyRectMargins(
+                root,
+                PortableTopBarPaddedPath,
+                theme.portableTopBarHorizontalMargin,
+                theme.portableTopBarVerticalMargin,
+                theme.portableTopBarVerticalMargin);
+        }
+
+        private void ApplyWallPanelLayout(Transform root)
+        {
+            foreach (var wallRoot in CollectWallPanelRoots(root))
+            {
+                ApplyWallContentSize(wallRoot);
+                ApplyWallContentMargins(wallRoot);
+            }
+        }
+
+        private void ApplyWallContentSize(Transform wallRoot)
+        {
+            var scaler = wallRoot.Find("ContentScaler") as RectTransform;
+            var panel = wallRoot as RectTransform;
+            if (scaler == null || panel == null) return;
+
+            Vector2 contentSize = theme.wallContentSize;
+            if (contentSize.x <= 0f || contentSize.y <= 0f) return;
+
+            scaler.sizeDelta = contentSize;
+
+            Vector3 s = scaler.localScale;
+            Vector2 panelSize = new Vector2(contentSize.x * s.x, contentSize.y * s.y);
+            panel.sizeDelta = panelSize;
+
+            var box = panel.GetComponent<BoxCollider>();
+            if (box != null)
+                box.size = new Vector3(panelSize.x, panelSize.y, box.size.z);
+        }
+
+        private void ApplyWallContentMargins(Transform wallRoot)
+        {
+            foreach (var path in WallContentPaths)
+            {
+                ApplyRectHorizontalAndBottomMargins(
+                    wallRoot,
+                    path,
+                    theme.wallContentHorizontalMargin,
+                    theme.wallContentBottomMargin);
+            }
+
+            ApplyRectHorizontalMargin(
+                wallRoot,
+                WallTopBarPaddedPath,
+                theme.wallContentHorizontalMargin);
+            ApplyRectTopMarginPreserveHeight(
+                wallRoot,
+                WallTopBarPaddedPath,
+                theme.wallTopBarTopMargin);
+        }
+
+        private static void ApplyRectMargins(
+            Transform root,
+            string path,
+            float horizontalMargin,
+            float topMargin,
+            float bottomMargin)
+        {
+            var rect = root.Find(path) as RectTransform;
+            if (rect == null) return;
+
+            rect.offsetMin = new Vector2(horizontalMargin, bottomMargin);
+            rect.offsetMax = new Vector2(-horizontalMargin, -topMargin);
+        }
+
+        private static void ApplyRectHorizontalAndBottomMargins(
+            Transform root,
+            string path,
+            float horizontalMargin,
+            float bottomMargin)
+        {
+            var rect = root.Find(path) as RectTransform;
+            if (rect == null) return;
+
+            rect.offsetMin = new Vector2(horizontalMargin, bottomMargin);
+            rect.offsetMax = new Vector2(-horizontalMargin, rect.offsetMax.y);
+        }
+
+        private static void ApplyRectHorizontalMargin(
+            Transform root,
+            string path,
+            float horizontalMargin)
+        {
+            var rect = root.Find(path) as RectTransform;
+            if (rect == null) return;
+
+            rect.offsetMin = new Vector2(horizontalMargin, rect.offsetMin.y);
+            rect.offsetMax = new Vector2(-horizontalMargin, rect.offsetMax.y);
+        }
+
+        private static void ApplyRectTopMarginPreserveHeight(
+            Transform root,
+            string path,
+            float topMargin)
+        {
+            var rect = root.Find(path) as RectTransform;
+            if (rect == null) return;
+
+            float delta = -topMargin - rect.offsetMax.y;
+            rect.offsetMax = new Vector2(rect.offsetMax.x, -topMargin);
+            rect.offsetMin = new Vector2(rect.offsetMin.x, rect.offsetMin.y + delta);
+        }
 
         /// <summary>
         /// PortablePanel のコンテンツ設計サイズ（ContentScaler.sizeDelta）をテーマ値で設定し、

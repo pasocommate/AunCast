@@ -479,6 +479,145 @@ namespace PasocomMate.AunCast.Tests
         // ── 全テーマプロパティが使われていることの検証 ──
 
         [Test]
+        public void PortablePaddedMargins_AppliedToPaddedContainers()
+        {
+            string[] paths =
+            {
+                "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded",
+                "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded",
+                "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded",
+            };
+
+            foreach (var path in paths)
+            {
+                var rect = (RectTransform)_instance.transform.Find(path);
+                Assert.IsNotNull(rect, $"RectTransform 縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {path}");
+                Assert.AreEqual(_theme.portablePaddedHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
+                Assert.AreEqual(_theme.portablePaddedHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
+                Assert.AreEqual(_theme.portablePaddedTopMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
+                Assert.AreEqual(_theme.portablePaddedBottomMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
+            }
+        }
+
+        [Test]
+        public void PortableTopBarPaddedMargins_AppliedIndependently()
+        {
+            const string path = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
+            var rect = (RectTransform)_instance.transform.Find(path);
+            Assert.IsNotNull(rect, $"RectTransform 縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {path}");
+            Assert.AreEqual(_theme.portableTopBarHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
+            Assert.AreEqual(_theme.portableTopBarHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
+            Assert.AreEqual(_theme.portableTopBarVerticalMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
+            Assert.AreEqual(_theme.portableTopBarVerticalMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
+        }
+
+        [Test]
+        public void WallContentSize_AppliedToContentScaler()
+        {
+            var theme = Object.Instantiate(_theme);
+            try
+            {
+                theme.wallContentSize = new Vector2(520f, 600f);
+                _applier.theme = theme;
+                _applier.ApplyTheme(_instance.transform);
+
+                var scaler = (RectTransform)_instance.transform.Find("WallControlPanel/ContentScaler");
+                Assert.IsNotNull(scaler, "WallControlPanel/ContentScaler が見つかりません");
+                Assert.AreEqual(theme.wallContentSize.x, scaler.sizeDelta.x, 0.01f,
+                    "WallControlPanel ContentScaler.sizeDelta.x が wallContentSize に追従していません");
+                Assert.AreEqual(theme.wallContentSize.y, scaler.sizeDelta.y, 0.01f,
+                    "WallControlPanel ContentScaler.sizeDelta.y が wallContentSize に追従していません");
+            }
+            finally
+            {
+                Object.DestroyImmediate(theme);
+                RestoreDefaultTheme();
+            }
+        }
+
+        [Test]
+        public void WallPanel_FollowsContentSize()
+        {
+            var theme = Object.Instantiate(_theme);
+            try
+            {
+                theme.wallContentSize = new Vector2(520f, 600f);
+                _applier.theme = theme;
+                _applier.ApplyTheme(_instance.transform);
+
+                var scaler = (RectTransform)_instance.transform.Find("WallControlPanel/ContentScaler");
+                var panel = (RectTransform)_instance.transform.Find("WallControlPanel");
+                Assert.IsNotNull(scaler);
+                Assert.IsNotNull(panel);
+
+                var expected = new Vector2(
+                    theme.wallContentSize.x * scaler.localScale.x,
+                    theme.wallContentSize.y * scaler.localScale.y);
+                Assert.AreEqual(expected.x, panel.sizeDelta.x, 0.01f,
+                    "WallControlPanel.sizeDelta.x が ContentScaler サイズ×スケールに追従していません");
+                Assert.AreEqual(expected.y, panel.sizeDelta.y, 0.01f,
+                    "WallControlPanel.sizeDelta.y が ContentScaler サイズ×スケールに追従していません");
+
+                var box = panel.GetComponent<BoxCollider>();
+                if (box != null)
+                {
+                    Assert.AreEqual(expected.x, box.size.x, 0.01f,
+                        "WallControlPanel BoxCollider.size.x がパネル矩形に追従していません");
+                    Assert.AreEqual(expected.y, box.size.y, 0.01f,
+                        "WallControlPanel BoxCollider.size.y がパネル矩形に追従していません");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(theme);
+                RestoreDefaultTheme();
+            }
+        }
+
+        [Test]
+        public void WallContentMargins_AppliedToWallContainers()
+        {
+            var theme = Object.Instantiate(_theme);
+            try
+            {
+                theme.wallContentHorizontalMargin = 52f;
+                theme.wallTopBarTopMargin = 44f;
+                theme.wallContentBottomMargin = 28f;
+                _applier.theme = theme;
+                _applier.ApplyTheme(_instance.transform);
+
+                const string topBarPath = "WallControlPanel/ContentScaler/WallContentArea/TopBarPadded";
+                var topBar = (RectTransform)_instance.transform.Find(topBarPath);
+                Assert.IsNotNull(topBar, $"RectTransform が見つかりません: {topBarPath}");
+                Assert.AreEqual(theme.wallContentHorizontalMargin, topBar.offsetMin.x, 0.01f, $"{topBarPath} left margin");
+                Assert.AreEqual(theme.wallContentHorizontalMargin, -topBar.offsetMax.x, 0.01f, $"{topBarPath} right margin");
+                Assert.AreEqual(theme.wallTopBarTopMargin, -topBar.offsetMax.y, 0.01f, $"{topBarPath} top margin");
+
+                string[] paths =
+                {
+                    "WallControlPanel/ContentScaler/WallContentArea/UserContent",
+                    "WallControlPanel/ContentScaler/WallContentArea/StaffContent",
+                    "WallControlPanel/ContentScaler/WallContentArea/SharedContent",
+                    "WallControlPanel/ContentScaler/WallContentArea/ResyncOnlyContent",
+                };
+
+                foreach (var path in paths)
+                {
+                    var rect = (RectTransform)_instance.transform.Find(path);
+                    Assert.IsNotNull(rect, $"RectTransform が見つかりません: {path}");
+                    Assert.AreEqual(theme.wallContentHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
+                    Assert.AreEqual(theme.wallContentHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
+                    Assert.AreEqual(theme.wallContentBottomMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(theme);
+                RestoreDefaultTheme();
+            }
+        }
+
+        [Test]
         public void AllThemeMaterials_AreApplied()
         {
             var usedMaterials = new HashSet<Material>();
@@ -561,6 +700,12 @@ namespace PasocomMate.AunCast.Tests
             var tmp = t.GetComponent<TMP_Text>();
             Assert.IsNotNull(tmp, $"TMP_Text が見つかりません: {label}");
             AssertColorEqual(expected, tmp.color, label);
+        }
+
+        private void RestoreDefaultTheme()
+        {
+            _applier.theme = _theme;
+            _applier.ApplyTheme(_instance.transform);
         }
 
         private static void AssertColorEqual(Color expected, Color actual, string label)

@@ -20,8 +20,11 @@ namespace PasocomMate.AunCast.Internal
     {
         private const string USER_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/UserContent";
         private const string STAFF_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/StaffContent";
+        private const string SHARED_CONTENT_PATH = "PortablePanel/ContentScaler/PortableContentArea/SharedContent";
         private const string USER_PADDED_PATH = USER_CONTENT_PATH + "/UserPadded";
         private const string STAFF_PADDED_PATH = STAFF_CONTENT_PATH + "/StaffPadded";
+        private const string SHARED_PADDED_PATH = SHARED_CONTENT_PATH + "/SharedPadded";
+        private const string TOP_BAR_PADDED_PATH = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
 
         // 自動適用トグルの状態。シーンを汚さないようコンポーネントではなく EditorPrefs に保持する
         private const string AUTO_APPLY_PREF_KEY = "AunCast.ThemeApplier.AutoApply";
@@ -206,13 +209,40 @@ namespace PasocomMate.AunCast.Internal
                 if (scaler != null)
                     targets.Add(scaler);
                 // FitVideoScreenToArea で書き換える VideoScreen の RectTransform も Undo 対象に含める
+                AddIfFound(targets, root, USER_PADDED_PATH);
+                AddIfFound(targets, root, STAFF_PADDED_PATH);
+                AddIfFound(targets, root, SHARED_PADDED_PATH);
+                AddIfFound(targets, root, TOP_BAR_PADDED_PATH);
                 var videoScreen = panel.Find(
                     "ContentScaler/PortableContentArea/UserContent/UserPadded/VideoScreenArea/VideoScreen");
                 if (videoScreen != null)
                     targets.Add(videoScreen);
             }
 
+            foreach (var wallPanel in root.GetComponentsInChildren<WallControlPanel>(true))
+            {
+                if (wallPanel == null) continue;
+
+                targets.Add(wallPanel.transform);
+                var box = wallPanel.GetComponent<BoxCollider>();
+                if (box != null)
+                    targets.Add(box);
+                AddIfFound(targets, wallPanel.transform, "ContentScaler");
+                AddIfFound(targets, wallPanel.transform, "ContentScaler/WallContentArea/TopBarPadded");
+                AddIfFound(targets, wallPanel.transform, "ContentScaler/WallContentArea/UserContent");
+                AddIfFound(targets, wallPanel.transform, "ContentScaler/WallContentArea/StaffContent");
+                AddIfFound(targets, wallPanel.transform, "ContentScaler/WallContentArea/SharedContent");
+                AddIfFound(targets, wallPanel.transform, "ContentScaler/WallContentArea/ResyncOnlyContent");
+            }
+
             Undo.RecordObjects(targets.ToArray(), "Apply AunCast Theme");
+        }
+
+        private static void AddIfFound(List<UnityEngine.Object> targets, Transform root, string path)
+        {
+            var target = root.Find(path);
+            if (target != null)
+                targets.Add(target);
         }
 
         public static void ApplyThemeToUdonProxies(Transform root, PasocomMate.AunCast.AunCastTheme theme)
