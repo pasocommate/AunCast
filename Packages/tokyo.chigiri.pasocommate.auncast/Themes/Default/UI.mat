@@ -7,20 +7,16 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Input
+  m_Name: UI
   m_Shader: {fileID: 4800000, guid: f2b6e8e4c48d4a4da2f6b38f6b4f1c3a, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _CORNER_OCTAGON
+  - _CORNER_SQUARE
   - _DISSOLVE_OFF
   - _MATCAP_ON
   m_InvalidKeywords:
-  - _BLINK_EASEINOUT
-  - _BORDERMATCAPFLIP_ON
-  - _BORDER_ON
-  - _GRADIENT_BLEND_MUL
-  - _GRADIENT_LINEAR
+  - _GRADIENT_NONE
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -40,10 +36,6 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BorderMatcapTex:
-        m_Texture: {fileID: 2800000, guid: ec80b68caccb2f343a5a3503f331a368, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MSDFTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -64,41 +56,33 @@ Material:
     - _AudioLinkKickEnvelope: 0
     - _AudioLinkKickGain: 24
     - _AudioLinkKickThreshold: 0.02
-    - _AudioLinkResponseCurve: 1
     - _AudioLinkShiftEnd: 0
     - _AudioLinkShiftStart: 0
     - _AudioLinkSource: 0
-    - _BaseMatcapBevel: 2
     - _BaseMatcapNormalStrength: 1
-    - _BaseMatcapStrength: 0
-    - _BaseMatcapTilt: 0.2
+    - _BaseMatcapTilt: 0.5
     - _BaseMatcapVertexColorInfluence: 0
-    - _BlinkOn: 0
-    - _BlinkPeriod: 2
-    - _BlinkSharpness: 0
     - _BlurOn: 0
     - _BlurRadius: 10
     - _BorderGap: 0
-    - _BorderMatcapBevel: 0.5
-    - _BorderMatcapFlip: 1
     - _BorderMatcapNormalStrength: 1
-    - _BorderMatcapStrength: 0
-    - _BorderMatcapTilt: -1
+    - _BorderMatcapTilt: 2
     - _BorderMatcapVertexColorInfluence: 0
     - _BorderRingCount: 1
     - _BorderVertexColorInfluence: 0
-    - _BorderWidth: 3
-    - _CORNER: 2
+    - _BorderWidth: 0
+    - _CORNER: 0
     - _ColorMask: 15
-    - _CornerSize: 4
+    - _CornerSize: 16
     - _DISSOLVE: 0
     - _DissolveAngle: 0
     - _DissolveEdgeVertexColorInfluence: 0
-    - _DissolveEdgeWidth: 0.05
     - _DissolveRadius: 0.5
-    - _DissolveSoftness: 0.1
+    - _DissolveSoftness: 0
     - _DissolveThreshold: 0
-    - _GRADIENT: 1
+    - _FlipY: 0
+    - _GRADIENT: 0
+    - _Gamma: 2.2
     - _GradientAngle: 0
     - _MSDFPixelRange: 4
     - _MatcapOn: 1
@@ -108,20 +92,17 @@ Material:
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
     - _UseMSDF: 0
+    - _UseMainTex: 0
     - _UseUIAlphaClip: 0
-    - _VideoGamma: 0
     m_Colors:
     - _BaseMatcapColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BorderColor: {r: 0, g: 0, b: 0, a: 1}
+    - _BorderColor: {r: 1, g: 1, b: 1, a: 1}
     - _BorderMatcapColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ColorBlink: {r: 1, g: 1, b: 1, a: 1}
     - _DissolveCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
-    - _DissolveEdgeColor: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveEdgeColor: {r: 1, g: 1, b: 1, a: 0}
     - _GradientCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
-    - _GradientColor1: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _GradientColor2: {r: 2, g: 2, b: 2, a: 1}
-    - _GradientRadius: {r: 0, g: 0.5, b: 1, a: 1}
+    - _GradientColor1: {r: 1, g: 1, b: 1, a: 1}
+    - _GradientColor2: {r: 1, g: 1, b: 1, a: 1}
     - _GradientRange: {r: 0, g: 0.5, b: 1, a: 1}
-    - _MSDFColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

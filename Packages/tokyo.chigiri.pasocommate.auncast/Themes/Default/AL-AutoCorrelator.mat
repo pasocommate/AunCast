@@ -7,11 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: AL4BandHistory
-  m_Shader: {fileID: 4800000, guid: 77628bf6cd4d2be4eabcfeb105b37dca, type: 3}
+  m_Name: AL-AutoCorrelator
+  m_Shader: {fileID: 4800000, guid: c77e3b3575894a94bb948f07a0948033, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _DRAWMODE_POLAR
   m_InvalidKeywords:
   - _BLINK_EASEINOUT
   - _BORDERMATCAPFLIP_ON
@@ -24,7 +25,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -37,8 +38,20 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AmplitudeHigh: 0.2
+    - _AmplitudeLow: 0.035
+    - _CenterX: 0.793
+    - _CenterY: 0.424
     - _ColorMask: 15
-    - _Sensitivity: 1
+    - _DrawMode: 1
+    - _EllipseReactivity: 0.5
+    - _FreqRangeMax: 0.25
+    - _HueShiftSpeed: 0.2
+    - _PolarOffsetX: 0.04
+    - _PolarOffsetY: 0.067
+    - _SaturationCurve: 1
+    - _SaturationMax: 0.67
+    - _SaturationMin: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -47,8 +60,5 @@ Material:
     - _UseUIAlphaClip: 0
     m_Colors:
     - _BackgroundColor: {r: 0, g: 0, b: 0, a: 0}
-    - _BassColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
-    - _HighColor: {r: 0, g: 0.5, b: 0, a: 0.5}
-    - _HighMidColor: {r: 0, g: 0, b: 0.5, a: 0.5}
-    - _LowMidColor: {r: 0.5, g: 0, b: 0, a: 0.5}
+    - _WaveformColor: {r: 1, g: 0.8325, b: 0.32999998, a: 1}
   m_BuildTextureStacks: []

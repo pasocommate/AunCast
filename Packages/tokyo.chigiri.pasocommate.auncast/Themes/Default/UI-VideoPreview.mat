@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: UI-VideoPreview
+  m_Shader: {fileID: 4800000, guid: f2b6e8e4c48d4a4da2f6b38f6b4f1c3a, type: 3}
+  m_Parent: {fileID: 2100000, guid: 3dd53dee12b600e48b12ae3c36fae19b, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _CORNER_ROUND
+  - _DISSOLVE_OFF
+  - _MATCAP_ON
+  - _USE_MAINTEX
+  m_InvalidKeywords:
+  - _GRADIENT_NONE
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseTex:
+        m_Texture: {fileID: 2800000, guid: a87b42f8054ae604984b7e41d3dbc096, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BorderMatcapTex:
+        m_Texture: {fileID: 2800000, guid: ec80b68caccb2f343a5a3503f331a368, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BaseMatcapTilt: 0.2
+    - _BorderMatcapTilt: -1
+    - _BorderWidth: 3
+    - _CORNER: 1
+    - _Gamma: 1
+    - _UseMainTex: 1
+    m_Colors:
+    - _BorderColor: {r: 0, g: 0, b: 0, a: 1}
+    - _BorderMatcapColor: {r: 0.7490196, g: 0.7490196, b: 0.7490196, a: 1}
+  m_BuildTextureStacks: []

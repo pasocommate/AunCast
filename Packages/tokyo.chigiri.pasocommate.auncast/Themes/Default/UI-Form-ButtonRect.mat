@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: UI-Form-ButtonRect
+  m_Shader: {fileID: 4800000, guid: f2b6e8e4c48d4a4da2f6b38f6b4f1c3a, type: 3}
+  m_Parent: {fileID: 2100000, guid: 252bef05bc4c3344685f4bfd9720c2a7, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _CORNER_OCTAGON
+  - _DISSOLVE_OFF
+  - _MATCAP_ON
+  m_InvalidKeywords:
+  - _BLINK_EASEINOUT
+  - _BORDER_ON
+  - _GRADIENT_BLEND_MUL
+  - _GRADIENT_LINEAR
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMatcapTex:
+        m_Texture: {fileID: 2800000, guid: a5c8129dcdb9f684595e2a242d878410, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BaseMatcapVertexColorInfluence: 0.9
+    - _BorderMatcapVertexColorInfluence: 0.6
+    - _BorderRingCount: 1.89
+    - _BorderVertexColorInfluence: 1
+    - _CORNER: 2
+    - _CornerSize: 4
+    m_Colors:
+    - _BaseMatcapColor: {r: 2, g: 2, b: 2, a: 1}
+    - _BorderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _BorderMatcapColor: {r: 1.5, g: 1.5, b: 1.5, a: 1}
+  m_BuildTextureStacks: []
