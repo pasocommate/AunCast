@@ -428,21 +428,27 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 
 ### 方針
 
-- 保存先は `ProjectSettings/<Name>.asset`。**`ScriptableSingleton<T>` + `[FilePath(..., ProjectFolder)]`**
-  を使い、`Save(true)` で永続化する。
+- 保存先は `ProjectSettings/<Name>.json`。**素のテキストを `File.WriteAllText` /
+  `File.ReadAllText` で直接読み書き**し、`JsonUtility` でシリアライズする。
   - アセットDB に現れないため Project ビューや Inspector を汚さない。
   - VCS にコミットすればチーム単位で共有できる（個人マシン単位なら `EditorPrefs`）。
+  - キャッシュは素の C# オブジェクトに持つ。ドメインリロードで `null` になり次回
+    ファイルから再構築されるため、`UnityEngine.Object` の寿命問題に巻き込まれない。
 - 導入先ではパッケージ本体（`Packages/.../`）は書き込み不可。同意状態のような
   プロジェクト固有の状態は **必ず導入先プロジェクトの `ProjectSettings/`** に書く。
-- 実装例: [`AunCastConsentData` / `AunCastConsentStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastConsentStore.cs)。
+- 実装例: [`AunCastConsentStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastConsentStore.cs)。
   メジャーバージョンを記録し、メジャー更新時のみ再同意を促す。
 
-> **落とし穴（重要）**: `private` ネスト型の `ScriptableObject` を
-> `InternalEditorUtility.SaveToSerializedFileAndForget` で保存すると、出力 YAML の
-> `m_Script` が `{fileID: 0}` になり型は `m_EditorClassIdentifier` でしか紐づかない。
-> この型解決はドメインリロード直後などに失敗することがあり、`LoadSerializedFileAndForget`
-> の戻り値が目的の型へキャストできず、**同意状態がたびたび既定値へ戻る**。
-> `ScriptableSingleton<T>` は型 `T` 経由でインスタンスを束縛するためこの問題を回避できる。
+> **落とし穴（重要）**: エディタ状態の永続化に Unity のシリアライズドファイル API
+> （`InternalEditorUtility.SaveToSerializedFileAndForget` や `ScriptableSingleton<T>`）を
+> 使うと、ドメインリロード直後に型解決が失敗してロード結果が目的の型へキャストできず、
+> **保存したはずの状態がたびたび既定値へ戻る**ことがある（特に `private` ネスト型の
+> `ScriptableObject` は `m_Script` が `{fileID: 0}` になり `m_EditorClassIdentifier` でしか
+> 紐づかず不安定）。この種の小さな状態は **`JsonUtility` + 素の File IO** で書くのが確実。
+>
+> なお同意状態を **コンポーネントのシリアライズフィールド** に持つ案もあるが、配布
+> プレハブ本体に値が焼き込まれると導入先全員が「同意済み」になりゲートが無効化される
+> リスクがあるため避けた。
 
 ### 同意ゲート（ソフト抑止）の作り方
 
