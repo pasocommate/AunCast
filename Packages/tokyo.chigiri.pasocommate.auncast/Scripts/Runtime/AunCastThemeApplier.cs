@@ -28,6 +28,7 @@ namespace PasocomMate.AunCast
             "ContentScaler/WallContentArea/StaffContent",
             "ContentScaler/WallContentArea/SharedContent",
             "ContentScaler/WallContentArea/ResyncOnlyContent",
+            "ContentScaler/WallContentArea/InformationContent",
         };
         private const string WallTopBarPaddedPath =
             "ContentScaler/WallContentArea/TopBarPadded";
@@ -435,7 +436,7 @@ namespace PasocomMate.AunCast
                 if (name.Contains("Input") || name.Contains("Area"))
                     return theme.inputMaterial;
                 if (name.StartsWith("CloseButton") || name.StartsWith("SwitchViewButton")
-                    || name.StartsWith("StaffLockButton"))
+                    || name.StartsWith("StaffLockButton") || name.StartsWith("InformationButton"))
                     return theme.buttonRoundMaterial;
                 if (name.Contains("Button") || name.Contains("Key") || name.Contains("Backspace"))
                     return theme.buttonRectMaterial;
@@ -607,6 +608,8 @@ namespace PasocomMate.AunCast
                 SetThemeImageColor(wallRoot, wall + "/SharedContent/SpawnPanelButton", theme.primaryColor);
                 SetThemeImageColor(wallRoot, wall + "/SharedContent/SwitchViewButton", theme.secondaryColor);
 
+                SetThemeImageColor(wallRoot, wall + "/TopBarPadded/InformationButton", theme.secondaryColor);
+
                 string wallUser = wall + "/UserContent";
                 SetThemeImageColor(wallRoot, wallUser + "/UserResyncButton", theme.primaryColor);
                 SetThemeImageColor(wallRoot, wallUser + "/UserRebootButton", theme.warningColor);
@@ -660,6 +663,9 @@ namespace PasocomMate.AunCast
                 SetThemeTextColor(wallRoot, resyncOnly + "/Label", theme.buttonLabelColor);
                 SetThemeTextColor(wallRoot, resyncOnly + "/TextLabel", theme.bodyTextColor);
                 SetThemeTextColor(wallRoot, wallUser + "/GestureLabel", theme.headingTextColor);
+
+                SetThemeTextColor(wallRoot, wall + "/TopBarPadded/InformationButton/InformationButton_Inner/Label", theme.buttonLabelColor);
+                SetThemeTextColor(wallRoot, wall + "/InformationContent/CopyrightText", theme.bodyTextColor);
             }
         }
 

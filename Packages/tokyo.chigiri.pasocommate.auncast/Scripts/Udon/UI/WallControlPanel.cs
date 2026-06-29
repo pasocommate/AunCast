@@ -30,6 +30,8 @@ namespace PasocomMate.AunCast
         [SerializeField] private CanvasGroup staffCanvasGroup;
         [SerializeField] private CanvasGroup sharedCanvasGroup;
         [SerializeField] private CanvasGroup resyncOnlyCanvasGroup;
+        [Tooltip("製品情報（Copyright / QR）を表示する InformationContent の CanvasGroup。")]
+        [SerializeField] private CanvasGroup informationCanvasGroup;
         [Tooltip("クロスフェードの遷移時間（秒）")]
         [SerializeField] private float crossfadeDuration = 0.25f;
 
@@ -37,6 +39,8 @@ namespace PasocomMate.AunCast
         [SerializeField] private Button resyncOnlyButton;
         [SerializeField] private TMP_Text switchViewButtonLabel;
         [SerializeField] private Button switchViewButton;
+        [Tooltip("InformationButton のアイコン表示用ラベル。情報表示中は閉じるアイコンに切り替える。")]
+        [SerializeField] private TMP_Text informationButtonLabel;
 
         [Header("Shared Buttons Layout")]
         [SerializeField] private bool disablePasscodeViewSwitchButton;
@@ -73,6 +77,8 @@ namespace PasocomMate.AunCast
         private const string SWITCH_ICON_TO_STAFF = "\ue899";   // Lock
         private const string SWITCH_ICON_TO_USER  = "\uf20b";   // AccountCircle
         private const string SWITCH_ICON_UNLOCKED = "\ue898";   // LockOpen
+        private const string INFO_ICON  = "\uf59b";           // InfoI（i のみ）
+        private const string CLOSE_ICON = "\ue5cd";           // Close（閉じる）
         // プレハブ SpawnPanelButton の offsetMax.x に対応
         private const float SPAWN_PANEL_BUTTON_RIGHT_DEFAULT = 94f;
         private const float SPAWN_PANEL_BUTTON_RIGHT_EXPANDED = 0f;
@@ -81,12 +87,16 @@ namespace PasocomMate.AunCast
         private const int VIEW_USER = 0;
         private const int VIEW_STAFF = 1;
         private const int VIEW_RESYNC_ONLY = 2;
+        private const int VIEW_INFORMATION = 3;
 
         private int _viewTarget = VIEW_USER;
+        // InformationContent を閉じたときに戻すビュー
+        private int _viewBeforeInformation = VIEW_USER;
         private float _userAlpha;
         private float _staffAlpha;
         private float _sharedAlpha;
         private float _resyncOnlyAlpha;
+        private float _informationAlpha;
 
         private string _passcodeBuffer = "";
         private bool _isStaff;
@@ -160,19 +170,24 @@ namespace PasocomMate.AunCast
             if (view == VIEW_USER)
                 SyncGestureToggles();
             UpdateSwitchViewButton();
+            UpdateInformationButtonIcon();
             if (instant)
             {
                 float u = view == VIEW_USER ? 1f : 0f;
                 float s = view == VIEW_STAFF ? 1f : 0f;
                 float r = view == VIEW_RESYNC_ONLY ? 1f : 0f;
-                float sh = view == VIEW_RESYNC_ONLY ? 0f : 1f;
+                float info = view == VIEW_INFORMATION ? 1f : 0f;
+                // Shared は User / Staff のときだけ表示する（ResyncOnly / Information では非表示）
+                float sh = view == VIEW_USER || view == VIEW_STAFF ? 1f : 0f;
                 _userAlpha = u;
                 _staffAlpha = s;
                 _resyncOnlyAlpha = r;
+                _informationAlpha = info;
                 _sharedAlpha = sh;
                 ApplyCanvasGroup(userCanvasGroup, u);
                 ApplyCanvasGroup(staffCanvasGroup, s);
                 ApplyCanvasGroup(resyncOnlyCanvasGroup, r);
+                ApplyCanvasGroup(informationCanvasGroup, info);
                 ApplyCanvasGroup(sharedCanvasGroup, sh);
             }
             else
@@ -186,12 +201,14 @@ namespace PasocomMate.AunCast
             float tu = _viewTarget == VIEW_USER ? 1f : 0f;
             float ts = _viewTarget == VIEW_STAFF ? 1f : 0f;
             float tr = _viewTarget == VIEW_RESYNC_ONLY ? 1f : 0f;
-            float tsh = _viewTarget == VIEW_RESYNC_ONLY ? 0f : 1f;
+            float tinfo = _viewTarget == VIEW_INFORMATION ? 1f : 0f;
+            float tsh = _viewTarget == VIEW_USER || _viewTarget == VIEW_STAFF ? 1f : 0f;
 
             bool changed = false;
             changed |= StepAlpha(ref _userAlpha, tu);
             changed |= StepAlpha(ref _staffAlpha, ts);
             changed |= StepAlpha(ref _resyncOnlyAlpha, tr);
+            changed |= StepAlpha(ref _informationAlpha, tinfo);
             changed |= StepAlpha(ref _sharedAlpha, tsh);
 
             if (changed)
@@ -199,6 +216,7 @@ namespace PasocomMate.AunCast
                 ApplyCanvasGroup(userCanvasGroup, _userAlpha);
                 ApplyCanvasGroup(staffCanvasGroup, _staffAlpha);
                 ApplyCanvasGroup(resyncOnlyCanvasGroup, _resyncOnlyAlpha);
+                ApplyCanvasGroup(informationCanvasGroup, _informationAlpha);
                 ApplyCanvasGroup(sharedCanvasGroup, _sharedAlpha);
             }
             else
@@ -327,6 +345,36 @@ namespace PasocomMate.AunCast
             }
 
             SetButtonInteractable(switchViewButton, !_isStaff);
+        }
+
+        // =================================================================
+        //  Information ビュー（Copyright / QR の表示切替）
+        // =================================================================
+
+        /// <summary>
+        /// InformationButton 押下。情報表示中なら元のビューへ戻し、そうでなければ
+        /// 現在のビューを記憶して InformationContent を表示する。
+        /// </summary>
+        public void OnInformationButtonPress()
+        {
+            if (_viewTarget == VIEW_INFORMATION)
+            {
+                SetViewTarget(_viewBeforeInformation, false);
+            }
+            else
+            {
+                _viewBeforeInformation = _viewTarget;
+                SetViewTarget(VIEW_INFORMATION, false);
+            }
+        }
+
+        /// <summary>情報表示中は閉じるアイコン、それ以外は i アイコンを表示する。</summary>
+        private void UpdateInformationButtonIcon()
+        {
+            if (informationButtonLabel == null) return;
+            informationButtonLabel.text = _viewTarget == VIEW_INFORMATION
+                ? CLOSE_ICON
+                : INFO_ICON;
         }
 
         public void OnResyncOnlyButtonPress()
