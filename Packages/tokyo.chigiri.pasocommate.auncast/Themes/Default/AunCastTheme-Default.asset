@@ -17,7 +17,8 @@ MonoBehaviour:
   buttonRectMaterial: {fileID: 2100000, guid: 468b55fc37f72d946be29efb36aeec98, type: 2}
   buttonRoundMaterial: {fileID: 2100000, guid: e6105f3fa0816b84e9eba1eb9437cef3, type: 2}
   inputMaterial: {fileID: 2100000, guid: 20a38ac6fdd31554ebefbe62ab3becc6, type: 2}
-  videoPreviewMaterial: {fileID: 2100000, guid: d58e02e0b57067949a5af32e8fb0424b, type: 2}
+  videoPreviewMaterial: {fileID: 2100000, guid: d58e02e0b57067949a5af32e8fb0424b,
+    type: 2}
   decal1Material: {fileID: 2100000, guid: 577dfb2a27372af48bd40ed218b10dae, type: 2}
   decal2Material: {fileID: 2100000, guid: d4c88f06f6c7d474f92e952cca366e6e, type: 2}
   handleMaterial: {fileID: 2100000, guid: 0e94381e434beed4d83196f0082fb0cf, type: 2}
@@ -57,15 +58,11 @@ MonoBehaviour:
   inputTextColor: {r: 1, g: 1, b: 1, a: 1}
   placeholderTextColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   portableContentSize: {x: 900, y: 640}
-  portablePaddedHorizontalMargin: 56
-  portablePaddedTopMargin: 88
-  portablePaddedBottomMargin: 40
-  portableTopBarHorizontalMargin: 24
-  portableTopBarVerticalMargin: 24
+  portableHorizontalMargin: 56
+  portableVerticalMargin: 40
   wallContentSize: {x: 480, y: 560}
   wallContentHorizontalMargin: 40
-  wallTopBarTopMargin: 32
-  wallContentBottomMargin: 32
+  wallVerticalMargin: 40
   hudProgressUsePieMode: 1
   hudProgressLocalOffset: {x: 0, y: -0.18, z: 0.6}
   hudProgressBarSize: {x: 0.18, y: 0.018}

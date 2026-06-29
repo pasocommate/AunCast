@@ -502,23 +502,23 @@ namespace PasocomMate.AunCast.Tests
             {
                 var rect = (RectTransform)_instance.transform.Find(path);
                 Assert.IsNotNull(rect, $"RectTransform 縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {path}");
-                Assert.AreEqual(_theme.portablePaddedHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
-                Assert.AreEqual(_theme.portablePaddedHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
-                Assert.AreEqual(_theme.portablePaddedTopMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
-                Assert.AreEqual(_theme.portablePaddedBottomMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
+                Assert.AreEqual(_theme.portableHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
+                Assert.AreEqual(_theme.portableHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
+                Assert.AreEqual(_theme.portableVerticalMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
+                Assert.AreEqual(_theme.portableVerticalMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
             }
         }
 
         [Test]
-        public void PortableTopBarPaddedMargins_AppliedIndependently()
+        public void PortableTopBarMargins_Applied()
         {
             const string path = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
             var rect = (RectTransform)_instance.transform.Find(path);
             Assert.IsNotNull(rect, $"RectTransform 縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {path}");
-            Assert.AreEqual(_theme.portableTopBarHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
-            Assert.AreEqual(_theme.portableTopBarHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
-            Assert.AreEqual(_theme.portableTopBarVerticalMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
-            Assert.AreEqual(_theme.portableTopBarVerticalMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
+            Assert.AreEqual(_theme.portableHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
+            Assert.AreEqual(_theme.portableHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
+            Assert.AreEqual(_theme.portableVerticalMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
+            Assert.AreEqual(_theme.portableVerticalMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
         }
 
         [Test]
@@ -591,8 +591,7 @@ namespace PasocomMate.AunCast.Tests
             try
             {
                 theme.wallContentHorizontalMargin = 52f;
-                theme.wallTopBarTopMargin = 44f;
-                theme.wallContentBottomMargin = 28f;
+                theme.wallVerticalMargin = 44f;
                 _applier.theme = theme;
                 _applier.ApplyTheme(_instance.transform);
 
@@ -601,7 +600,7 @@ namespace PasocomMate.AunCast.Tests
                 Assert.IsNotNull(topBar, $"RectTransform が見つかりません: {topBarPath}");
                 Assert.AreEqual(theme.wallContentHorizontalMargin, topBar.offsetMin.x, 0.01f, $"{topBarPath} left margin");
                 Assert.AreEqual(theme.wallContentHorizontalMargin, -topBar.offsetMax.x, 0.01f, $"{topBarPath} right margin");
-                Assert.AreEqual(theme.wallTopBarTopMargin, -topBar.offsetMax.y, 0.01f, $"{topBarPath} top margin");
+                Assert.AreEqual(theme.wallVerticalMargin, -topBar.offsetMax.y, 0.01f, $"{topBarPath} top margin");
 
                 string[] paths =
                 {
@@ -617,7 +616,7 @@ namespace PasocomMate.AunCast.Tests
                     Assert.IsNotNull(rect, $"RectTransform が見つかりません: {path}");
                     Assert.AreEqual(theme.wallContentHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
                     Assert.AreEqual(theme.wallContentHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
-                    Assert.AreEqual(theme.wallContentBottomMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
+                    Assert.AreEqual(theme.wallVerticalMargin, rect.offsetMin.y, 0.01f, $"{path} bottom margin");
                 }
             }
             finally

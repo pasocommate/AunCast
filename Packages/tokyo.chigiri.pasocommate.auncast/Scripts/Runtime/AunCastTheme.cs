@@ -88,20 +88,11 @@ namespace PasocomMate.AunCast
             + "この値に ContentScaler のローカルスケールを掛けた値へ自動追従する。")]
         public Vector2 portableContentSize = new Vector2(900f, 640f);
 
-        [Tooltip("UserPadded / StaffPadded / SharedPadded に一括適用する左右共通の余白。")]
-        public float portablePaddedHorizontalMargin = 56f;
+        [Tooltip("TopBarPadded / UserPadded / StaffPadded / SharedPadded に一括適用する左右共通の余白。")]
+        public float portableHorizontalMargin = 56f;
 
-        [Tooltip("UserPadded / StaffPadded / SharedPadded に一括適用する上余白。")]
-        public float portablePaddedTopMargin = 88f;
-
-        [Tooltip("UserPadded / StaffPadded / SharedPadded に一括適用する下余白。")]
-        public float portablePaddedBottomMargin = 40f;
-
-        [Tooltip("TopBarPadded に適用する左右共通の余白。")]
-        public float portableTopBarHorizontalMargin = 24f;
-
-        [Tooltip("TopBarPadded に適用する上下共通の余白。")]
-        public float portableTopBarVerticalMargin = 24f;
+        [Tooltip("TopBarPadded / UserPadded / StaffPadded / SharedPadded に一括適用する上下共通の余白。")]
+        public float portableVerticalMargin = 40f;
 
         [Header("Wall Panel Layout")]
         [Tooltip("WallControlPanel のコンテンツ設計サイズ（ContentScaler の SizeDelta）。X=幅、Y=高さ。")]
@@ -110,11 +101,8 @@ namespace PasocomMate.AunCast
         [Tooltip("TopBarPadded / UserContent / StaffContent / SharedContent / ResyncOnlyContent に一括適用する左右共通の余白。")]
         public float wallContentHorizontalMargin = 40f;
 
-        [Tooltip("TopBarPadded に適用する上余白。高さは維持する。")]
-        public float wallTopBarTopMargin = 32f;
-
-        [Tooltip("UserContent / StaffContent / SharedContent / ResyncOnlyContent に一括適用する下余白。上余白は維持する。")]
-        public float wallContentBottomMargin = 32f;
+        [Tooltip("TopBarPadded に適用する上余白、および UserContent / StaffContent / SharedContent / ResyncOnlyContent に一括適用する下余白。TopBar の高さは維持する。")]
+        public float wallVerticalMargin = 40f;
 
         [Header("HUD Progress (gesture long-press)")]
         [Tooltip("プログレス HUD の表示モード。false=バー、true=パイ。")]

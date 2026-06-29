@@ -215,17 +215,17 @@ namespace PasocomMate.AunCast
                 ApplyRectMargins(
                     root,
                     path,
-                    theme.portablePaddedHorizontalMargin,
-                    theme.portablePaddedTopMargin,
-                    theme.portablePaddedBottomMargin);
+                    theme.portableHorizontalMargin,
+                    theme.portableVerticalMargin,
+                    theme.portableVerticalMargin);
             }
 
             ApplyRectMargins(
                 root,
                 PortableTopBarPaddedPath,
-                theme.portableTopBarHorizontalMargin,
-                theme.portableTopBarVerticalMargin,
-                theme.portableTopBarVerticalMargin);
+                theme.portableHorizontalMargin,
+                theme.portableVerticalMargin,
+                theme.portableVerticalMargin);
         }
 
         private void ApplyWallPanelLayout(Transform root)
@@ -265,7 +265,7 @@ namespace PasocomMate.AunCast
                     wallRoot,
                     path,
                     theme.wallContentHorizontalMargin,
-                    theme.wallContentBottomMargin);
+                    theme.wallVerticalMargin);
             }
 
             ApplyRectHorizontalMargin(
@@ -275,7 +275,7 @@ namespace PasocomMate.AunCast
             ApplyRectTopMarginPreserveHeight(
                 wallRoot,
                 WallTopBarPaddedPath,
-                theme.wallTopBarTopMargin);
+                theme.wallVerticalMargin);
         }
 
         private static void ApplyRectMargins(
