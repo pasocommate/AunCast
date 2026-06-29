@@ -168,7 +168,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 80, y: -16}
+  m_AnchoredPosition: {x: 0, y: -16}
   m_SizeDelta: {x: 320, y: 20}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!1 &391883745388300236
@@ -4386,8 +4386,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -28}
-  m_SizeDelta: {x: -80, y: -120}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: -80, y: -64.00001}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &5573500652185814711
 CanvasGroup:
@@ -8112,11 +8112,11 @@ GameObject:
   - component: {fileID: 632535061885154905}
   m_Layer: 0
   m_Name: DecalDiamond
-  m_TagString: Untagged
+  m_TagString: EditorOnly
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &632535061885154905
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9432,6 +9432,7 @@ MonoBehaviour:
   controller: {fileID: 0}
   staffPanel: {fileID: 0}
   portablePanel: {fileID: 0}
+  eventBus: {fileID: 0}
   userCanvasGroup: {fileID: 5240029687952979616}
   staffCanvasGroup: {fileID: 2856132562752179806}
   sharedCanvasGroup: {fileID: 5573500652185814711}
