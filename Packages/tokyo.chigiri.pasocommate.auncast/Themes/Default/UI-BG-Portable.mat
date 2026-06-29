@@ -35,7 +35,8 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _CornerSize: 48
+    - _CornerSize: 32
+    - _DissolveThreshold: 0
     m_Colors:
     - _BaseMatcapColor: {r: 0.495, g: 0.495, b: 0.495, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 0.5019608}
