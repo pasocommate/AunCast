@@ -20,6 +20,7 @@ namespace PasocomMate.AunCast
         public Material buttonRectMaterial;
         public Material buttonRoundMaterial;
         public Material inputMaterial;
+        public Material videoPreviewMaterial;
         public Material decal1Material;
         public Material decal2Material;
         public Material handleMaterial;

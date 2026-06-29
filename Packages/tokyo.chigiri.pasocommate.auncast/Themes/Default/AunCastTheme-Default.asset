@@ -17,6 +17,7 @@ MonoBehaviour:
   buttonRectMaterial: {fileID: 2100000, guid: 468b55fc37f72d946be29efb36aeec98, type: 2}
   buttonRoundMaterial: {fileID: 2100000, guid: e6105f3fa0816b84e9eba1eb9437cef3, type: 2}
   inputMaterial: {fileID: 2100000, guid: 20a38ac6fdd31554ebefbe62ab3becc6, type: 2}
+  videoPreviewMaterial: {fileID: 2100000, guid: d58e02e0b57067949a5af32e8fb0424b, type: 2}
   decal1Material: {fileID: 2100000, guid: 577dfb2a27372af48bd40ed218b10dae, type: 2}
   decal2Material: {fileID: 2100000, guid: d4c88f06f6c7d474f92e952cca366e6e, type: 2}
   handleMaterial: {fileID: 2100000, guid: 0e94381e434beed4d83196f0082fb0cf, type: 2}

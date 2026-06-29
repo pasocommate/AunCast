@@ -25,6 +25,7 @@ namespace PasocomMate.AunCast.Internal
         private const string STAFF_PADDED_PATH = STAFF_CONTENT_PATH + "/StaffPadded";
         private const string SHARED_PADDED_PATH = SHARED_CONTENT_PATH + "/SharedPadded";
         private const string TOP_BAR_PADDED_PATH = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
+        private const string BACKGROUND_PATH = "PortablePanel/ContentScaler/Background";
 
         // 自動適用トグルの状態。シーンを汚さないようコンポーネントではなく EditorPrefs に保持する
         private const string AUTO_APPLY_PREF_KEY = "AunCast.ThemeApplier.AutoApply";
@@ -35,8 +36,17 @@ namespace PasocomMate.AunCast.Internal
             set => EditorPrefs.SetBool(AUTO_APPLY_PREF_KEY, value);
         }
 
+        // インラインテーマエディタの Fold 状態。Editor インスタンスは選択変更や再描画で
+        // 頻繁に作り直されるため、インスタンスフィールドではなく EditorPrefs に保持する
+        private const string THEME_EXPANDED_PREF_KEY = "AunCast.ThemeApplier.ThemeEditorExpanded";
+
+        private static bool ThemeEditorExpanded
+        {
+            get => EditorPrefs.GetBool(THEME_EXPANDED_PREF_KEY, false);
+            set => EditorPrefs.SetBool(THEME_EXPANDED_PREF_KEY, value);
+        }
+
         private Editor _themeEditor;
-        private bool _themeEditorExpanded;
 
         private void OnDisable()
         {
@@ -60,10 +70,10 @@ namespace PasocomMate.AunCast.Internal
                     {
                         if (GUILayout.Button(
                             AunCastEditorLocalization.Localize("視聴者表示", "Show Viewer"), GUILayout.Height(28)))
-                            SwitchContentView(root, showStaff: false);
+                            SwitchContentView(root, applier.theme, showStaff: false);
                         if (GUILayout.Button(
                             AunCastEditorLocalization.Localize("スタッフ表示", "Show Staff"), GUILayout.Height(28)))
-                            SwitchContentView(root, showStaff: true);
+                            SwitchContentView(root, applier.theme, showStaff: true);
                     }
                 }
 
@@ -137,11 +147,11 @@ namespace PasocomMate.AunCast.Internal
 
             EditorGUILayout.Space(8);
 
-            _themeEditorExpanded = EditorGUILayout.Foldout(_themeEditorExpanded,
+            ThemeEditorExpanded = EditorGUILayout.Foldout(ThemeEditorExpanded,
                 $"Theme: {applier.theme.name}", true, EditorStyles.foldoutHeader);
 
             bool changed = false;
-            if (_themeEditorExpanded)
+            if (ThemeEditorExpanded)
             {
                 EditorGUI.indentLevel++;
                 EditorGUI.BeginChangeCheck();
@@ -156,7 +166,7 @@ namespace PasocomMate.AunCast.Internal
             return changed;
         }
 
-        private static void SwitchContentView(Transform root, bool showStaff)
+        private static void SwitchContentView(Transform root, PasocomMate.AunCast.AunCastTheme theme, bool showStaff)
         {
             var userCg = root.Find(USER_CONTENT_PATH)?.GetComponent<CanvasGroup>();
             var staffCg = root.Find(STAFF_CONTENT_PATH)?.GetComponent<CanvasGroup>();
@@ -168,10 +178,16 @@ namespace PasocomMate.AunCast.Internal
             SetCanvasGroupVisible(userCg, !showStaff);
             SetCanvasGroupVisible(staffCg, showStaff);
 
-            var selectPath = showStaff ? STAFF_PADDED_PATH : USER_PADDED_PATH;
-            var selectTarget = root.Find(selectPath);
-            if (selectTarget != null)
-                Selection.activeGameObject = selectTarget.gameObject;
+            // 実行時の UserStatusPanel.OnSwitchViewButtonPress と同様に Background 色も切り替える
+            if (theme != null)
+            {
+                var bg = root.Find(BACKGROUND_PATH)?.GetComponent<Image>();
+                if (bg != null)
+                {
+                    Undo.RecordObject(bg, "Switch AunCast Content View");
+                    bg.color = showStaff ? theme.staffBackgroundColor : theme.userBackgroundColor;
+                }
+            }
         }
 
         private static void SetCanvasGroupVisible(CanvasGroup cg, bool visible)

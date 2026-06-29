@@ -219,6 +219,15 @@ namespace PasocomMate.AunCast.Tests
         }
 
         [Test]
+        public void PortableTopBarButtonColors_Applied()
+        {
+            var topBar = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
+            AssertImageColor(topBar + "/CloseButton", _theme.secondaryColor, "CloseButton");
+            AssertImageColor(topBar + "/SwitchViewButton", _theme.secondaryColor, "SwitchViewButton");
+            AssertImageColor(topBar + "/StaffLockButton", _theme.secondaryColor, "StaffLockButton");
+        }
+
+        [Test]
         public void DecalColor_Applied()
         {
             var titleDecal = _instance.transform.Find(
@@ -380,6 +389,7 @@ namespace PasocomMate.AunCast.Tests
                 shared + "/ResyncButton/Label",
                 topBar + "/CloseButton/Label",
                 topBar + "/SwitchViewButton/Label",
+                topBar + "/StaffLockButton/StaffLockButton_Inner/Label",
             };
             foreach (var path in paths)
                 AssertTextColor(path, _theme.buttonLabelColor, path + " buttonLabelColor");

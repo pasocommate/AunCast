@@ -55,7 +55,12 @@ namespace PasocomMate.AunCast
             const string shared = pp + "/PortableContentArea/SharedContent/SharedPadded";
             const string topBar = pp + "/PortableContentArea/TopBarPadded";
 
-            SetThemeImageColor(root, pp + "/Background", theme.userBackgroundColor);
+            // Background は現在のプレビュー表示（Viewer/Staff）に合わせた色を適用する。
+            // SwitchContentView と整合させ、スタッフ表示中の編集で視聴者色へ戻らないようにする。
+            Color backgroundColor = IsStaffViewVisible(root)
+                ? theme.staffBackgroundColor
+                : theme.userBackgroundColor;
+            SetThemeImageColor(root, pp + "/Background", backgroundColor);
 
             SetThemeImageColor(root, staff + "/PromoteNextButton", theme.warningColor);
             SetThemeImageColor(root, staff + "/StopButton", theme.dangerColor);
@@ -104,6 +109,7 @@ namespace PasocomMate.AunCast
 
             SetThemeImageColor(root, topBar + "/CloseButton", theme.secondaryColor);
             SetThemeImageColor(root, topBar + "/SwitchViewButton", theme.secondaryColor);
+            SetThemeImageColor(root, topBar + "/StaffLockButton", theme.secondaryColor);
 
             ApplyDecalColors(root);
             ApplyWallPanelTheme(root);
@@ -407,6 +413,13 @@ namespace PasocomMate.AunCast
                 if (mat != null)
                     img.material = mat;
             }
+
+            foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
+            {
+                var mat = ResolveRawImageMaterial(raw);
+                if (mat != null)
+                    raw.material = mat;
+            }
         }
 
         private Material ResolveImageMaterial(Image img)
@@ -456,6 +469,13 @@ namespace PasocomMate.AunCast
             return null;
         }
 
+        private Material ResolveRawImageMaterial(RawImage raw)
+        {
+            if (raw.gameObject.name == "VideoScreen")
+                return theme.videoPreviewMaterial;
+            return null;
+        }
+
 
         private void ApplyFonts(Transform root)
         {
@@ -501,6 +521,21 @@ namespace PasocomMate.AunCast
             }
         }
 
+
+        /// <summary>
+        /// 現在のプレビューがスタッフ表示かどうかを UserContent / StaffContent の
+        /// CanvasGroup アルファから判定する。両方未設定（等値）の場合は視聴者表示扱い。
+        /// </summary>
+        private static bool IsStaffViewVisible(Transform root)
+        {
+            const string pp = "PortablePanel/ContentScaler/PortableContentArea";
+            var userCg = root.Find(pp + "/UserContent")?.GetComponent<CanvasGroup>();
+            var staffCg = root.Find(pp + "/StaffContent")?.GetComponent<CanvasGroup>();
+            if (staffCg == null) return false;
+
+            float userAlpha = userCg != null ? userCg.alpha : 0f;
+            return staffCg.alpha > userAlpha;
+        }
 
         private static void SetThemeImageColor(Transform root, string path, Color color)
         {
@@ -689,6 +724,7 @@ namespace PasocomMate.AunCast
                 shared + "/ResyncButton/ResyncButton_Inner/CooldownLabel",
                 topBar + "/CloseButton/CloseButton_Inner/Label",
                 topBar + "/SwitchViewButton/SwitchViewButton_Inner/Label",
+                topBar + "/StaffLockButton/StaffLockButton_Inner/Label",
             };
 
             string[] bodyPaths =
