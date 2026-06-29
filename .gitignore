@@ -73,3 +73,6 @@ Assets/PackageMakerWindowData.asset*
 
 # VRChat
 /ClientSimStorage/
+
+# RenderMate 開発用リンク切替時の埋め込み実体の退避先（Tools/rendermate-dev-link.ps1）
+/_RenderMateEmbedded.bak/
