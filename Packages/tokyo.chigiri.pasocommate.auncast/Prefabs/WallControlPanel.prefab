@@ -8499,18 +8499,19 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "AunCast\n\xA9 2026 \u3064\u3064\u307F\u3061\u304E\u308A\nX: @chigiri_vrc\nhttps://chigiri.tokyo/"
+  m_text: "AunCast by PasocomMate\nX: @chigiri_vrc\nhttps://chigiri.tokyo/\n\n\xA9
+    2026 Chigiri Tsutsumi"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9d7d01127c58f5f4796c54f98cb2f0fa, type: 2}
-  m_sharedMaterial: {fileID: 5422087251740708661, guid: 9d7d01127c58f5f4796c54f98cb2f0fa,
+  m_fontAsset: {fileID: 11400000, guid: c69bb701418e6b441a398f17daa3f423, type: 2}
+  m_sharedMaterial: {fileID: -2803991915690094807, guid: c69bb701418e6b441a398f17daa3f423,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4291280831
+  m_fontColor: {r: 0.75, g: 0.75, b: 0.78, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -8535,11 +8536,11 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 1024
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
-  m_lineSpacing: 0
+  m_lineSpacing: 14
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
