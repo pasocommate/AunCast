@@ -1,12 +1,11 @@
 name: Deploy Manual (GitHub Pages)
 
-# Manual/ 配下や設定が変わったときだけビルドする
+# リリースタグ（x.y.z）を push したときにビルド・公開する（release.yml と同じトリガー）。
+# 手動で公開し直したいときは workflow_dispatch から実行する。
 on:
   push:
-    branches: [main]
-    paths:
-      - "Manual/**"
-      - ".github/workflows/docs.yml"
+    tags:
+      - "*.*.*"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +27,7 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
+          cache-dependency-path: Manual/requirements-docs.txt
       - run: pip install -r Manual/requirements-docs.txt
       - run: mkdocs build -f Manual/mkdocs.yml
       - uses: actions/upload-pages-artifact@v3
