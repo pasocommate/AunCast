@@ -45,14 +45,14 @@ nav:
   - 仕組みを理解する:
       - 再同期 (Resync) の仕組み: concepts/resync.md
       - 同時接続上限の管理: concepts/connection-limit.md
-  - 視聴者ガイド:
-      - パネルの呼び出しと操作: viewer/panel.md
-      - 状態表示の見方: viewer/status.md
+  - ワールド設置者ガイド:
+      - 導入とパラメータ設定: setup/install.md
   - スタッフガイド:
       - 操作パネルの使い方: staff/operations.md
       - モニタリングと上限調整: staff/monitoring.md
-  - ワールド設置者ガイド:
-      - 導入とパラメータ設定: setup/install.md
+  - 視聴者ガイド:
+      - パネルの呼び出しと操作: viewer/panel.md
+      - 状態表示の見方: viewer/status.md
   - リファレンス:
       - 用語集: reference/glossary.md
       - トラブルシューティング / FAQ: reference/troubleshooting.md
