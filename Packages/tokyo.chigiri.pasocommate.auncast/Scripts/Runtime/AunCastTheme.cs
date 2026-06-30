@@ -50,6 +50,9 @@ namespace PasocomMate.AunCast
         [Header("Input")]
         public Color inputBackgroundColor = new Color(0.156862f, 0.156862f, 0.156862f, 1f);
 
+        [Header("Display")]
+        public Color displayBackgroundColor = new Color(0.15686275f, 0.15686275f, 0.15686275f, 0.5019608f);
+
         [Header("Toggle")]
         public Color toggleBackgroundColor = new Color(0.156862f, 0.156862f, 0.156862f, 1f);
         public Color toggleCheckmarkColor = Color.white;

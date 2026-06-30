@@ -39,6 +39,7 @@ MonoBehaviour:
   dangerColor: {r: 1, g: 0, b: 0, a: 1}
   buttonLabelColor: {r: 1, g: 1, b: 1, a: 1}
   inputBackgroundColor: {r: 0.156862, g: 0.156862, b: 0.156862, a: 1}
+  displayBackgroundColor: {r: 0.15686275, g: 0.15686275, b: 0.15686275, a: 0.5019608}
   toggleBackgroundColor: {r: 0.156862, g: 0.156862, b: 0.156862, a: 1}
   toggleCheckmarkColor: {r: 1, g: 1, b: 1, a: 1}
   sliderBackgroundColor: {r: 0.15686275, g: 0.15686275, b: 0.15686275, a: 1}

@@ -88,8 +88,8 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, staff + "/NextURLInputField", theme.inputBackgroundColor);
             SetThemeImageColor(root, ceg + "/ConcurrentLimitInput", theme.inputBackgroundColor);
             SetThemeImageColor(root, cneg + "/ConnectionLimitInput", theme.inputBackgroundColor);
-            SetThemeImageColor(root, staff + "/NowPlayingArea", theme.inputBackgroundColor);
-            SetThemeImageColor(root, shared + "/HelpArea", theme.inputBackgroundColor);
+            SetThemeImageColor(root, staff + "/NowPlayingArea", theme.displayBackgroundColor);
+            SetThemeImageColor(root, shared + "/HelpArea", theme.displayBackgroundColor);
 
             SetThemeImageColor(root, viewer + "/AutoResyncToggle/Background", theme.toggleBackgroundColor);
             SetThemeTextColor(root, viewer + "/AutoResyncToggle/Background/Checkmark", theme.toggleCheckmarkColor);
@@ -133,6 +133,7 @@ namespace PasocomMate.AunCast
 
             foreach (var btn in root.GetComponentsInChildren<Button>(true))
                 btn.colors = theme.buttonTransitionColors;
+            SetThemeSelectableColors(root, staff + "/NextURLInputField");
 
             ApplyThemeTextColors(root);
 
@@ -152,6 +153,8 @@ namespace PasocomMate.AunCast
                 UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(tmp);
             foreach (var btn in root.GetComponentsInChildren<Button>(true))
                 UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(btn);
+            foreach (var selectable in root.GetComponentsInChildren<Selectable>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(selectable);
             var hudOverlay = root.Find("HudProgressOverlay");
             if (hudOverlay != null)
             {
@@ -551,6 +554,21 @@ namespace PasocomMate.AunCast
             }
             if (image != null)
                 image.color = color;
+        }
+
+        private void SetThemeSelectableColors(Transform root, string path)
+        {
+            var t = root.Find(path);
+            if (t == null) return;
+            var selectable = t.GetComponent<Selectable>();
+            if (selectable == null)
+            {
+                var inner = t.Find(t.name + "_Inner");
+                if (inner != null)
+                    selectable = inner.GetComponent<Selectable>();
+            }
+            if (selectable != null)
+                selectable.colors = theme.buttonTransitionColors;
         }
 
         private static void SetThemeTextColor(Transform root, string path, Color color)

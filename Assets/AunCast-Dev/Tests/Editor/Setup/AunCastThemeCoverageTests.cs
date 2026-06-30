@@ -385,6 +385,7 @@ namespace PasocomMate.AunCast.Tests
             theme.warningColor = Color.HSVToRGB((0.3f + s * 0.5f) % 1f, 0.8f, 0.8f);
             theme.dangerColor = Color.HSVToRGB((0.35f + s * 0.5f) % 1f, 0.8f, 0.8f);
             theme.inputBackgroundColor = Color.HSVToRGB((0.4f + s * 0.5f) % 1f, 0.8f, 0.8f);
+            theme.displayBackgroundColor = Color.HSVToRGB((0.425f + s * 0.5f) % 1f, 0.8f, 0.8f);
             theme.toggleBackgroundColor = Color.HSVToRGB((0.45f + s * 0.5f) % 1f, 0.8f, 0.8f);
             theme.toggleCheckmarkColor = Color.HSVToRGB((0.5f + s * 0.5f) % 1f, 0.8f, 0.8f);
             theme.sliderBackgroundColor = Color.HSVToRGB((0.55f + s * 0.5f) % 1f, 0.8f, 0.8f);

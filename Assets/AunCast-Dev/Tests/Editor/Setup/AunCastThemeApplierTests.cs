@@ -321,6 +321,21 @@ namespace PasocomMate.AunCast.Tests
         {
             var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
             AssertImageColor(staff + "/NextURLInputField", _theme.inputBackgroundColor, "NextURLInputField");
+            AssertImageColor(staff + "/ConcurrentEditGroup/ConcurrentLimitInput",
+                _theme.inputBackgroundColor, "ConcurrentLimitInput");
+            AssertImageColor(staff + "/ConnectionEditGroup/ConnectionLimitInput",
+                _theme.inputBackgroundColor, "ConnectionLimitInput");
+        }
+
+        [Test]
+        public void DisplayBackgroundColor_Applied()
+        {
+            var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
+            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
+            AssertImageColor(staff + "/NowPlayingArea",
+                _theme.displayBackgroundColor, "NowPlayingArea");
+            AssertImageColor(shared + "/HelpArea",
+                _theme.displayBackgroundColor, "HelpArea");
         }
 
         [Test]
@@ -336,6 +351,31 @@ namespace PasocomMate.AunCast.Tests
                 Assert.AreEqual(_theme.buttonTransitionColors.pressedColor, btn.colors.pressedColor,
                     $"buttonTransitionColors.pressedColor が不一致: {btn.gameObject.name}");
             }
+        }
+
+        [Test]
+        public void NextUrlInputFieldTransitionColors_Applied()
+        {
+            var t = _instance.transform.Find(
+                "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded/NextURLInputField/NextURLInputField_Inner");
+            Assert.IsNotNull(t, "NextURLInputField_Inner が見つかりません");
+
+            var selectable = t.GetComponent<Selectable>();
+            Assert.IsNotNull(selectable, "NextURLInputField_Inner に Selectable が見つかりません");
+            AssertColorEqual(_theme.buttonTransitionColors.normalColor, selectable.colors.normalColor,
+                "NextURLInputField normalColor");
+            AssertColorEqual(_theme.buttonTransitionColors.highlightedColor, selectable.colors.highlightedColor,
+                "NextURLInputField highlightedColor");
+            AssertColorEqual(_theme.buttonTransitionColors.pressedColor, selectable.colors.pressedColor,
+                "NextURLInputField pressedColor");
+            AssertColorEqual(_theme.buttonTransitionColors.selectedColor, selectable.colors.selectedColor,
+                "NextURLInputField selectedColor");
+            AssertColorEqual(_theme.buttonTransitionColors.disabledColor, selectable.colors.disabledColor,
+                "NextURLInputField disabledColor");
+            Assert.AreEqual(_theme.buttonTransitionColors.colorMultiplier, selectable.colors.colorMultiplier, 0.01f,
+                "NextURLInputField colorMultiplier が不一致");
+            Assert.AreEqual(_theme.buttonTransitionColors.fadeDuration, selectable.colors.fadeDuration, 0.01f,
+                "NextURLInputField fadeDuration が不一致");
         }
 
         [Test]
