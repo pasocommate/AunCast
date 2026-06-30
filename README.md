@@ -1,7 +1,7 @@
 # WORK IN PROGRESS
 
 正式リリースは7月上旬を予定しています。
-The official release is scheduled for June.
+The official release is scheduled for early July.
 
 -----
 
