@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.IO;
 using TMPro;
 using UdonSharpEditor;
 using UnityEditor;
@@ -20,7 +19,8 @@ namespace PasocomMate.AunCast.Internal
     [CustomEditor(typeof(PasocomMate.AunCast.AunCastSettings))]
     public class AunCastSettingsInspector : Editor
     {
-        private const string DEFAULT_VPM_LISTING_URL = "https://pasocommate.github.io/AunCast/index.json";
+        // 配布元の VPM リスティング（PasocomMate）。エディタのバージョン更新チェックで参照する。
+        private const string DEFAULT_VPM_LISTING_URL = "https://pasocommate.chigiri.tokyo/index.json";
         private const string TMP_FALLBACK_DEFAULT_FONT_GUID = "b0cf90c18247f154094021e2de9bf529";
         private const string TMP_FALLBACK_NOTO_FONT_GUID = "32134e5dc8c950c4cb5bb7deaae7d539";
         private const string TMP_FALLBACK_MENU_PATH = "Tools→TextMesh Pro VRC Fallback Font JPを設定";
@@ -50,7 +50,6 @@ namespace PasocomMate.AunCast.Internal
         private double _vpmVersionRequestStartTime;
         private bool _hasVersionUpdate;
         private string _latestVersion;
-        private string _vpmListingUrl;
         private bool _vpmSessionCacheLoaded;
 
         private bool _speakerCacheDirty = true;
@@ -1385,61 +1384,7 @@ namespace PasocomMate.AunCast.Internal
 
         private string GetVpmListingUrl()
         {
-            if (!string.IsNullOrEmpty(_vpmListingUrl)) return _vpmListingUrl;
-
-            _vpmListingUrl = DEFAULT_VPM_LISTING_URL;
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrEmpty(projectRoot)) return _vpmListingUrl;
-
-            string gitConfigPath = Path.Combine(projectRoot, ".git", "config");
-            if (!File.Exists(gitConfigPath)) return _vpmListingUrl;
-
-            string config = File.ReadAllText(gitConfigPath);
-            int remoteSectionIndex = config.IndexOf("[remote \"origin\"]", StringComparison.Ordinal);
-            if (remoteSectionIndex < 0) return _vpmListingUrl;
-
-            int urlLineIndex = config.IndexOf("url =", remoteSectionIndex, StringComparison.Ordinal);
-            if (urlLineIndex < 0) return _vpmListingUrl;
-
-            int lineEndIndex = config.IndexOf('\n', urlLineIndex);
-            if (lineEndIndex < 0) lineEndIndex = config.Length;
-            string remoteLine = config.Substring(urlLineIndex, lineEndIndex - urlLineIndex).Trim();
-            string remoteUrl = remoteLine.Substring("url =".Length).Trim();
-
-            if (!TryBuildGithubPagesIndexUrl(remoteUrl, out var indexUrl))
-                return _vpmListingUrl;
-
-            _vpmListingUrl = indexUrl;
-            return _vpmListingUrl;
-        }
-
-        private static bool TryBuildGithubPagesIndexUrl(string remoteUrl, out string indexUrl)
-        {
-            indexUrl = string.Empty;
-            if (string.IsNullOrEmpty(remoteUrl)) return false;
-
-            string normalized = remoteUrl.Trim();
-            const string httpsPrefix = "https://github.com/";
-            const string sshPrefix = "git@github.com:";
-            if (normalized.StartsWith(httpsPrefix, StringComparison.OrdinalIgnoreCase))
-                normalized = normalized.Substring(httpsPrefix.Length);
-            else if (normalized.StartsWith(sshPrefix, StringComparison.OrdinalIgnoreCase))
-                normalized = normalized.Substring(sshPrefix.Length);
-            else
-                return false;
-
-            if (normalized.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-                normalized = normalized.Substring(0, normalized.Length - 4);
-
-            string[] segments = normalized.Split('/');
-            if (segments.Length < 2) return false;
-
-            string owner = segments[0];
-            string repo = segments[1];
-            if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(repo)) return false;
-
-            indexUrl = $"https://{owner}.github.io/{repo}/index.json";
-            return true;
+            return DEFAULT_VPM_LISTING_URL;
         }
 
         private static bool TryExtractLatestVersionFromVpmListing(
