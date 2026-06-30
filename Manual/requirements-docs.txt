@@ -1,0 +1,5 @@
+# AunCast ユーザーマニュアル（mkdocs-shadcn）のビルド依存
+# ローカル確認（リポジトリルートから）:
+#   pip install -r Manual/requirements-docs.txt
+#   mkdocs serve -f Manual/mkdocs.yml
+mkdocs-shadcn

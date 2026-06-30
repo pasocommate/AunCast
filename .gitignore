@@ -62,6 +62,7 @@ crashlytics-build.properties
 Assets/PackageMakerWindowData.asset*
 .idea
 .vscode
+/Recordings/
 
 # Unity user-specific settings
 /[Uu]ser[Ss]ettings/
@@ -76,3 +77,6 @@ Assets/PackageMakerWindowData.asset*
 
 # RenderMate 開発用リンク切替時の埋め込み実体の退避先（Tools/rendermate-dev-link.ps1）
 /_RenderMateEmbedded.bak/
+
+# MkDocs（ユーザーマニュアル）のローカルビルド出力
+/Manual/site/

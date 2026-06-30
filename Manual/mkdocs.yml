@@ -1,0 +1,58 @@
+site_name: AunCast ユーザーマニュアル
+site_description: VRChat 向け低遅延ライブ配信プレイヤー AunCast のユーザーマニュアル
+site_author: Chigiri Tsutsumi
+site_url: https://pasocommate.github.io/AunCast/
+
+repo_name: pasocommate/AunCast
+repo_url: https://github.com/pasocommate/AunCast
+edit_uri: edit/main/Manual/src/
+
+# マニュアル本文は Manual/src/ に置く（このファイルからの相対パス）
+docs_dir: src
+
+copyright: © Chigiri Tsutsumi (pasocommate)
+
+theme:
+  name: shadcn
+  show_title: true
+  show_stargazers: false
+  topbar_sections: false
+  show_datetime: false
+  # アクセントカラー：Blank-AunCast の藤色（ラベンダー）を OKLCH で指定
+  accent: "oklch(62% 0.16 288)"
+  pygments_style:
+    light: shadcn-light
+    dark: github-dark
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - はじめに: index.md
+  - 仕組みを理解する:
+      - 再同期 (Resync) の仕組み: concepts/resync.md
+      - 同時接続上限の管理: concepts/connection-limit.md
+  - 視聴者ガイド:
+      - パネルの呼び出しと操作: viewer/panel.md
+      - 状態表示の見方: viewer/status.md
+  - スタッフガイド:
+      - 操作パネルの使い方: staff/operations.md
+      - モニタリングと上限調整: staff/monitoring.md
+  - ワールド設置者ガイド:
+      - 導入とパラメータ設定: setup/install.md
+  - リファレンス:
+      - 用語集: reference/glossary.md
+      - トラブルシューティング / FAQ: reference/troubleshooting.md
