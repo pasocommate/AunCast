@@ -25,6 +25,10 @@
   - Slider / Toggle など UI の状態を全クライアント間で同期する
 - 汎用的な学びがあれば `Docs/Implementation-Patterns.md` へ追記する。VRChat API の罠は `VRChat-Udon-Development-Notes.md` 側に集約する。
 
+## マニュアル（`Manual/`）を編集するとき
+
+`Manual/` 配下（MkDocs ユーザーマニュアル）を追加・編集する際は、[Manual/STYLE.md](Manual/STYLE.md) の執筆スタイルガイドに必ず従うこと（想定読者・トーン、音声優先の前提、用語統一、日本語タイポグラフィ、構成方針など）。新しい執筆方針が決まったら同ファイルへ追記する。
+
 ## 作業時の原則（プロジェクト固有）
 
 - 新しい `[UdonSynced]` 変数を追加した後、または既存の同期スキーマを変更した後は、`Tools > UdonSharp > Refresh All UdonSharp Programs` を実行して `.asset` を更新する。
