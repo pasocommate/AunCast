@@ -51,9 +51,8 @@ nav:
   - くわしい仕組み:
       - 再同期 (Resync) の仕組み: concepts/resync.md
       - 同時接続上限の管理: concepts/connection-limit.md
-  - ワールド制作者ガイド:
-      - 導入とパラメータ設定: setup/install.md
   - スタッフガイド:
+      - 設定と調整: staff/settings.md
       - 操作パネルの使い方: staff/operations.md
       - モニタリングと上限調整: staff/monitoring.md
       - 配信・運用上の注意: staff/streaming.md

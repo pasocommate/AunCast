@@ -114,10 +114,10 @@ namespace PasocomMate.AunCast
         public float driftWarmupSec = 5.0f;
 
         [Header("Resync Coordinator")]
-        [Tooltip("同時 Resync 実行数の初期上限")]
+        [Tooltip("同時Resync上限の初期値")]
         public byte maxConcurrentResyncUsers = 10;
 
-        [Tooltip("配信サーバへの総接続数上限の既定値")]
+        [Tooltip("配信サーバへの同時接続上限の既定値")]
         public byte maxConnectionLimit = 100;
 
         [Tooltip("Grant 後の接続開始タイムアウト（秒）")]

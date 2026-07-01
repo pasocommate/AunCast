@@ -820,7 +820,7 @@ MonoBehaviour:
       Data: 56|UnityEngine.TooltipAttribute, UnityEngine.CoreModule
     - Name: tooltip
       Entry: 1
-      Data: "\u540C\u6642 Resync \u5B9F\u884C\u6570\u4E0A\u9650\uFF08\u30B9\u30BF\u30C3\u30D5\u304C\u5909\u66F4\u53EF\u80FD\uFF09"
+      Data: "\u540C\u6642Resync\u4E0A\u9650\uFF08\u30B9\u30BF\u30C3\u30D5\u304C\u5909\u66F4\u53EF\u80FD\uFF09"
     - Name: 
       Entry: 8
       Data: 
@@ -889,7 +889,7 @@ MonoBehaviour:
       Data: 61|UnityEngine.TooltipAttribute, UnityEngine.CoreModule
     - Name: tooltip
       Entry: 1
-      Data: "\u914D\u4FE1\u30B5\u30FC\u30D0\u3078\u306E\u7DCF\u63A5\u7D9A\u6570\u4E0A\u9650\uFF08\u30B9\u30BF\u30C3\u30D5\u304C\u5909\u66F4\u53EF\u80FD\uFF09"
+      Data: "\u914D\u4FE1\u30B5\u30FC\u30D0\u3078\u306E\u540C\u6642\u63A5\u7D9A\u4E0A\u9650\uFF08\u30B9\u30BF\u30C3\u30D5\u304C\u5909\u66F4\u53EF\u80FD\uFF09"
     - Name: 
       Entry: 8
       Data: 

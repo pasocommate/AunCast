@@ -163,8 +163,8 @@ namespace PasocomMate.AunCast
                 "全ユーザーのストリームをリブートします（無音区間が発生します／Resyncで解決しない場合の緊急用）",
                 "次に再生するストリームURLを入力します",
                 "Playing URL と Next URL を入れ替えて再生を開始します",
-                "同時Resync数の上限。配信サーバへの連続的な新規接続を制限し、負荷を軽減します",
-                "配信サーバへの同時接続数の上限",
+                "同時Resync上限。配信サーバへの連続的な新規接続を制限し、負荷を軽減します",
+                "配信サーバへの同時接続上限",
                 "現在再生中のストリームURL。ホバー中はURL入力者名を表示します",
                 "接続状態（■=再生中 □=停止 / 白=正常 青=待機 黄=Resync中 橙=接続中 赤=エラー）",
                 "Playing: 再生中(+新規接続中)の人数 / In Instance: 現在の人数 / Queued: Resync待ち人数",
@@ -723,9 +723,9 @@ namespace PasocomMate.AunCast
             float displayEta = _globalEtaBase > 0f
                 ? Mathf.Max(0f, _globalEtaBase - (now - _globalEtaCapturedAt))
                 : 0f;
-            string thirdRow = displayEta > 0f
-                ? $"Resync ETA\n<size=28>{displayEta:F0}s</size>"
-                : $"Queued\n<size=28>{coordinator.GetQueuedCount()}</size>";
+            int queued = coordinator.GetQueuedCount();
+            string etaSuffix = displayEta > 0f ? $" {displayEta:F0}s" : "";
+            string thirdRow = $"Queued\n<size=28>{queued}</size>{etaSuffix}";
             userCountText.text =
                 $"Playing\n<size=28>{playing}</size>{connectingSuffix}\n\nIn Instance\n<size=28>{inInstance}</size>\n\n{thirdRow}";
         }

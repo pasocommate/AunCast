@@ -32,7 +32,7 @@
 - 待機系を先に接続し、`GetTime()` 前進を確認してから切り替える
 - 切替トリガーは「音が出たこと」ではなく「新系ストリームが前進していること」とする
 - Resync 実行は即時ではなく予約制とし、世界全体でスケジュールする
-- 予約キューと同時実行数の管理は Coordinator が担い、CDN 同時接続上限を超えないよう制御する
+- 予約キューと同時Resync上限の管理は Coordinator が担い、CDN 同時接続上限を超えないよう制御する
 - 個別の異常検知による自動 Resync に加え、スタッフ操作や無音区間検知によるグローバル Resync をサポートする
 
 ---
@@ -93,7 +93,7 @@
 - Resync 中は一時的に 2 ストリーム接続になる
 - CDN（VRCDN 等）にはプランごとの同時接続上限がある。本設計では **100 接続上限プラン** を前提とする
   - 80 人インスタンスで全員が通常再生中 → 残り接続枠は 20
-  - 安全マージンを考慮し、同時 Resync 実行数の上限は **10〜15** とする
+  - 安全マージンを考慮し、同時Resync上限は **10〜15** とする
   - この制約が Coordinator による集中管理を必要とする主要因である
 
 ## 5.3 品質上の制約
@@ -127,7 +127,7 @@
 
 1. 通常は Active Player のみを表に出して再生する
 2. 異常検知時に Resync Request を発行する
-3. Coordinator が予約・同時実行上限・クールダウンを考慮して Grant する
+3. Coordinator が予約・同時Resync上限・クールダウンを考慮して Grant する
 4. Grant されたクライアントは Standby Player で接続開始
 5. `OnVideoReady` / `OnVideoPlay` / `GetTime()` 前進を確認
 6. 新系が生きていると確認できたら切り替える
@@ -158,7 +158,7 @@
 各ユーザーは同時に 1 件までしか Resync Request を持てない。
 
 ### FR-05: Grant 制御
-Coordinator は世界全体の同時実行数と各ユーザーのクールダウン状態を考慮し、Grant の可否を決定しなければならない。
+Coordinator は世界全体の同時Resync上限と各ユーザーのクールダウン状態を考慮し、Grant の可否を決定しなければならない。
 
 ### FR-06: 新系接続
 Grant 後、クライアントは Standby Player に対して指定 URL で接続を開始しなければならない。
@@ -205,10 +205,10 @@ Resync の発動方法は以下の 3 種類を含む。
 
 - **URL 入力欄**: ストリーム URL を入力・変更する。入力された URL は全クライアントに同期される
 - **強制停止ボタン**: 全ユーザーの再生を即座に停止する
-- **グローバル Resync トリガー**: 全ユーザーの Resync を Coordinator のキューに一括投入する。同時実行数上限に基づきスタガリングで順次実行される
+- **グローバル Resync トリガー**: 全ユーザーの Resync を Coordinator のキューに一括投入する。同時Resync上限に基づきスタガリングで順次実行される
 - **強制リブート（Force Reboot）**: 全ユーザーの Active・Standby 両方のストリームを一旦切断し、Active で再接続する緊急機能。二重化による切替ではなく単純な全断→再接続のため、映像・音声の途切れが発生する。通常運用では使用しない
-- **同時 Resync 実行数上限**: スタッフがワールド内で変更できる（`maxConcurrentResyncUsers`、同期）
-- **CDN 総接続数上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
+- **同時Resync上限**: スタッフがワールド内で変更できる（`maxConcurrentResyncUsers`、同期）
+- **CDN 同時接続上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
 - **モニタリング表示**: グローバル Resync の進捗状況（FR-14 参照）
 
 > **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから UserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
@@ -254,7 +254,7 @@ Resync リクエストが長時間応答なし、または `GetTime()` が長時
 レート制限違反を極力避けること。各ユーザーへの URL 処理間隔は仕様下限より少し長く取る。
 
 ### NFR-02: 負荷制御
-世界全体で同時 Resync 実行ユーザー数に上限を設けること。
+世界全体の同時Resync上限を設けること。
 
 ### NFR-03: 一貫性
 状態の真実は同期変数に置き、イベントは補助通知に留めること。
@@ -343,7 +343,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 責務:
 - スロット管理（Join / Leave 対応、`OnRequestSlot` フォールバック）
 - Request キュー管理 (`OnResyncRequest` / `OnReportRunning` / `OnReportSuccess` / `OnReportFail` / `OnCancelSlot`)
-- Grant 判定（同時実行数制御、`maxConcurrentResyncUsers` / `maxConnectionLimit`）
+- Grant 判定（同時Resync上限による制御、`maxConcurrentResyncUsers` / `maxConnectionLimit`）
 - タイムアウト監視（`grantTimeoutSec` / `runningTimeoutSec`）
 - グローバル Resync (`TriggerGlobalResync`) と強制リブート (`TriggerGlobalForceReboot`) の発行
 - owner 変更後の状態継続
@@ -370,7 +370,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - 強制停止ボタン (`OnStopButtonPress`)
 - グローバル Resync トリガーボタン (`OnGlobalResyncButtonPress`)
 - 強制リブート (`OnForceRebootButtonPress`)
-- 同時 Resync 実行数上限 (`maxConcurrentResyncUsers`) と CDN 総接続数上限 (`maxConnectionLimit`) のランタイム編集 UI（Display/Edit モード切替、±1/±10 ボタン）
+- 同時Resync上限 (`maxConcurrentResyncUsers`) と CDN 同時接続上限 (`maxConnectionLimit`) のランタイム編集 UI（Display/Edit モード切替、±1/±10 ボタン）
 - モニタリング表示: インジケーター（色付き ■/□ でスロット状態を表示）、ユーザー数表示（Playing / In Instance / Queued）
 - アクセス制御: 許可ユーザー名リスト (`allowedUserNames`) + WallControlPanel 経由のローカルパスコード解錠 (`SetLocalPasscodeUnlocked`)。同名ユーザー衝突時は最小 playerId を優先
 - 多言語ヘルプテキスト: ホバーに応じてボタン説明を表示 (`OnHoverXxx` → `helpTextField`)。日本語/英語をシステム言語 or 手動トグルで切替 (`OnLanguageChanged` / `ToggleLanguage`)
@@ -739,7 +739,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 3. 最も早く待機を始めたユーザー
 4. 必要なら優先度調整
 
-## 12.4 同時実行制御
+## 12.4 同時Resync上限制御
 
 - Granted + Running の合計が `maxConcurrentResyncUsers` 未満のときだけ Grant 可能
 - Grant 後、ユーザーは `Running` になるまで `grantTimeoutSec` (10s) 以内に開始報告すること
@@ -781,7 +781,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 #### 表示項目
 - 割当済みユーザー数 / 再生中ユーザー数
-- 現在 Resync 実行中（Granted + Running）のユーザー数 / 同時実行上限
+- 現在 Resync 実行中（Granted + Running）のユーザー数 / 同時Resync上限
 - 予約待機中（Queued）のユーザー数
 
 #### オブジェクト仕様
@@ -843,8 +843,8 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 
 // --- グローバル制御 ---
 [UdonSynced] private short globalForceRebootSeq;    // 全断→リブートの発行回数（変更検知用）
-[UdonSynced] private byte maxConcurrentResyncUsers; // 同時 Resync 実行数上限（ランタイム変更可能）
-[UdonSynced] private byte maxConnectionLimit;       // CDN 総接続数上限（ランタイム変更可能、配信サーバ側キャパシティ）
+[UdonSynced] private byte maxConcurrentResyncUsers; // 同時Resync上限（ランタイム変更可能）
+[UdonSynced] private byte maxConnectionLimit;       // CDN 同時接続上限（ランタイム変更可能、配信サーバ側キャパシティ）
 ```
 
 > **命名注記**: 当初設計では `userState` を予定していたが、実装ではより限定的な意味を示す `resyncState` に改名されている（`PlaybackMonitor` 側に再生状態が分離されたため）。同様に getter は `GetResyncState(slotIndex)`。
@@ -1351,7 +1351,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 ### ResyncCoordinator 側
 
 - `maxConcurrentResyncUsers`（同期、ランタイム変更可能）
-- `maxConnectionLimit`（同期、ランタイム変更可能。配信サーバへの総接続数の上限）
+- `maxConnectionLimit`（同期、ランタイム変更可能。配信サーバへの同時接続上限）
 - `grantTimeoutSec` (10s)
 - `runningTimeoutSec` (50s、クライアント側サイクルタイムアウトより長く設定)
 - `MAX_PLAYERS` (82、同期スロット配列の固定長上限)
@@ -1500,8 +1500,8 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
 - **強制停止ボタン**: 再生を即座に停止する（`OnStopButtonPress`）
 - **グローバル Resync トリガーボタン**: 全ユーザーの一斉 Resync を発行する（`OnGlobalResyncButtonPress`、詳細は Section 12.5）
 - **強制リブートボタン**: 全ユーザーの Active/Standby を全断→再接続する（`OnForceRebootButtonPress`、`globalForceRebootSeq` 同期）
-- **同時 Resync 実行数上限の編集**: `maxConcurrentResyncUsers` をワールド内で変更できる。Display/Edit モード切替式（Change → ±1 / ±10 → Apply/Cancel）
-- **CDN 総接続数上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
+- **同時Resync上限の編集**: `maxConcurrentResyncUsers` をワールド内で変更できる。Display/Edit モード切替式（Change → ±1 / ±10 → Apply/Cancel）
+- **CDN 同時接続上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
 > **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく UserStatusPanel の Viewer ビューに配置している。
@@ -1607,7 +1607,7 @@ float output = adjustedVolume * _fadeGain;
 - 失敗理由
 
 #### Coordinator 表示
-- 同時実行数
+- 同時Resync上限
 - Queue 件数
 - User ごとの状態
 - 次回 Grant 可能時刻
@@ -1631,7 +1631,7 @@ float output = adjustedVolume * _fadeGain;
 - Standby 接続失敗時の解放
 - owner 変更時の継続
 - Late Joiner の状態復元
-- 同時実行数上限が効く
+- 同時Resync上限が効く
 - 連続 Request の波状発生時に破綻しない
 
 ## 23.3 実機試験観点
@@ -1705,7 +1705,7 @@ float output = adjustedVolume * _fadeGain;
 - 切替判定は音量ではなく `GetTime()` 前進 + `IsPlaying` で行う
 - 切替時は音声クロスフェード（`VideoPlayerManager` の `AudioSource.volume` 制御）で滑らかに移行する
 - Resync は即時実行ではなく予約制とし、CDN 同時接続上限（100 接続プラン前提）を超えないよう制御する
-- 世界全体の同時実行数とクールダウンを Coordinator が管理する
+- 世界全体の同時Resync上限とクールダウンを Coordinator が管理する
 - スタッフによる手動グローバル Resync と、無音区間検知による自動グローバル Resync をサポートする
 - 観客は拡張メニューで自身の再生状態・ドリフト・Resync 待ち時間を確認できる
 - 真実の状態は同期変数で保持し、owner 変更や Late Joiner に耐える

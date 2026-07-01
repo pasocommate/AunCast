@@ -22,3 +22,16 @@ h1, h2, h3, h4, h5, h6,
 body, p, li, td, th, blockquote, summary, figcaption {
   letter-spacing: normal !important;
 }
+
+/* Admonition のタイトルと本文が同じ行に詰まるため、タイトルを独立行にする */
+.admonition > .admonition-title,
+.admonition > p.admonition-title {
+  display: block !important;
+  margin-bottom: 0.45rem !important;
+}
+
+.admonition > .admonition-title + *,
+.admonition > p.admonition-title + * {
+  display: block !important;
+  margin-top: 0 !important;
+}

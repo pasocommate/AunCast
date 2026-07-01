@@ -18,7 +18,7 @@ AunCast は、VRChat ワールド向けの低遅延ライブ配信プレイヤ�
 
 - 2 系統プレイヤー（Active/Standby）での切替運用
 - `GetTime()` 前進確認ベースの Resync 判定
-- `ResyncCoordinator` による予約制御と同時実行数制限
+- `ResyncCoordinator` による予約制御と同時Resync上限による制御
 - スタッフ向け操作パネル（URL 更新、全体 Resync、停止、接続制限調整）
 - 視聴者向け状態表示とローカル設定 UI（音量、Silence Resync など）
 

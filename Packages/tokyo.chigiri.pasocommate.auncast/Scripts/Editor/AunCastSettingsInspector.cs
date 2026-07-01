@@ -1893,9 +1893,9 @@ namespace PasocomMate.AunCast.Internal
                 "同時Resync実行数の初期上限。",
                 "Initial upper limit on the number of concurrent Resyncs.",
                 settings.maxConcurrentResyncUsers, 1, 100);
-            int newConnLimit = IntSliderField("最大接続数", "Max Connections", "maxConnectionLimit",
-                "配信サーバへの総接続数上限の既定値。",
-                "Default upper limit on the total number of connections to the streaming server.",
+            int newConnLimit = IntSliderField("同時接続上限", "Max Connections", "maxConnectionLimit",
+                "配信サーバへの同時接続上限の既定値。",
+                "Default upper limit on simultaneous connections to the streaming server.",
                 settings.maxConnectionLimit, 1, 255);
             float newGrant = SliderField("接続開始待ち [秒]", "Connection Start Wait [s]", "grantTimeoutSec",
                 "Resync許可後、接続が始まるまでの最大待機時間（秒）。",

@@ -57,11 +57,11 @@ namespace PasocomMate.AunCast
 
         // --- 同期変数: ランタイム変更可能パラメータ ---
         [UdonSynced]
-        [Tooltip("同時 Resync 実行数上限（スタッフが変更可能）")]
+        [Tooltip("同時Resync上限（スタッフが変更可能）")]
         [SerializeField] private byte maxConcurrentResyncUsers = 10;
 
         [UdonSynced]
-        [Tooltip("配信サーバへの総接続数上限（スタッフが変更可能）")]
+        [Tooltip("配信サーバへの同時接続上限（スタッフが変更可能）")]
         [SerializeField] private byte maxConnectionLimit = DEFAULT_CONNECTION_LIMIT;
 
         // --- Owner ローカル ---
@@ -183,7 +183,7 @@ namespace PasocomMate.AunCast
             // 同時 Resync 枠: maxConcurrentResyncUsers から既に走っている数を引いた残り
             int available = maxConcurrentResyncUsers - CountGrantedOrRunning();
 
-            // 総接続数上限による制約
+            // 同時接続上限による制約
             // Resync 中のユーザーは Active 側 + Standby 側で 2 接続を消費するため、
             // PlaybackMonitor のカウント（1 スロット 1 ビット）に加え
             // GRANTED/RUNNING 分のスタンバイ接続を上乗せする
@@ -618,7 +618,7 @@ namespace PasocomMate.AunCast
             NotifyObservers();
         }
 
-        /// <summary>スタッフが総接続数上限をランタイムで変更する。</summary>
+        /// <summary>スタッフが同時接続上限をランタイムで変更する。</summary>
         public void SetMaxConnectionLimitRuntime(int value)
         {
             if (!TryTakeOwnership()) return;
