@@ -27,6 +27,9 @@ theme:
 plugins:
   - search
 
+extra_css:
+  - assets/stylesheets/extra.css
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -50,6 +53,7 @@ nav:
   - スタッフガイド:
       - 操作パネルの使い方: staff/operations.md
       - モニタリングと上限調整: staff/monitoring.md
+      - 配信・運用上の注意: staff/streaming.md
   - 視聴者ガイド:
       - パネルの呼び出しと操作: viewer/panel.md
       - 状態表示の見方: viewer/status.md

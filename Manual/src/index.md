@@ -42,7 +42,7 @@ AunCast は、この問題を解決するために他のプレイヤーにはな
 | あなたは… | 読むべきページ |
 |---|---|
 | ワールドに導入する **設置者（制作者）** | [導入とパラメータ設定](setup/install.md) |
-| 配信を運営する **スタッフ** | [操作パネルの使い方](staff/operations.md) → [モニタリングと上限調整](staff/monitoring.md) |
+| 配信を運営する **スタッフ** | [操作パネルの使い方](staff/operations.md) → [モニタリングと上限調整](staff/monitoring.md) → [配信・運用上の注意](staff/streaming.md) |
 | ワールドに来た **視聴者（観客）** | [パネルの呼び出しと操作](viewer/panel.md) → [状態表示の見方](viewer/status.md) |
 | 用語や困りごとを調べたい | [用語集](reference/glossary.md) / [トラブルシューティング / FAQ](reference/troubleshooting.md) |
 
