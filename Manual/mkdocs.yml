@@ -1,5 +1,5 @@
 site_name: AunCast ユーザーマニュアル
-site_description: VRChat 向け低遅延ライブ配信プレイヤー AunCast のユーザーマニュアル
+site_description: VRChat 向け低遅延ライブ配信システム AunCast のユーザーマニュアル
 site_author: Chigiri Tsutsumi
 site_url: https://pasocommate.github.io/AunCast/
 
@@ -45,16 +45,19 @@ markdown_extensions:
 
 nav:
   - はじめに: index.md
-  - 仕組みを理解する:
+  - 動作原理: overview.md
+  - 開発の背景: background.md
+  - クイックスタート: quickstart.md
+  - くわしい仕組み:
       - 再同期 (Resync) の仕組み: concepts/resync.md
       - 同時接続上限の管理: concepts/connection-limit.md
-  - ワールド設置者ガイド:
+  - ワールド制作者ガイド:
       - 導入とパラメータ設定: setup/install.md
   - スタッフガイド:
       - 操作パネルの使い方: staff/operations.md
       - モニタリングと上限調整: staff/monitoring.md
       - 配信・運用上の注意: staff/streaming.md
-  - 視聴者ガイド:
+  - 観客ガイド:
       - パネルの呼び出しと操作: viewer/panel.md
       - 状態表示の見方: viewer/status.md
   - リファレンス:
