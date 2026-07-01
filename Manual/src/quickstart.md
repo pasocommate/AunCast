@@ -6,7 +6,7 @@
 
 ## スタッフ：導入・初期設定 {#setup}
 
-1. **[VCCにリスティングを追加](vcc://vpm/addRepo?url=https://pasocommate.chigiri.tokyo/index.json)**：このリンクを開き、PasocomMate リスティングを登録します。うまく開けない場合は、VCCの **Settings → Packages → Add Repository** より以下のリスティングURLを登録します。
+1. **[VCCにリスティングを追加](vcc://vpm/addRepo?url=https://pasocommate.chigiri.tokyo/index.json)**：このリンクを開き、PasocomMate リスティングを登録します。うまく開けない場合は、VCCの **Settings → Packages → Add Repository** より次のリスティングURLを登録します。
 
     ```
     https://pasocommate.chigiri.tokyo/index.json
@@ -17,10 +17,10 @@
 4. スクリーン（`Screen`）、スピーカー（`PlayerA/AudioSource`, `PlayerB/AudioSource`）、壁パネル（`WallControlPanel`）などの位置を調整します。壁パネルを複数箇所から操作したい場合は、`WallControlPanel` を複製配置します。手元パネル（`PortablePanel`）はどこに置いても構いません。
 5. AunCast ルートを選択し、**`AunCastSettings`** コンポーネントのインスペクタで**利用規約に同意**します。日本語フォントの警告が表示されたら `Tools → TextMesh Pro VRC Fallback Font JPを設定` を実行します。
 6. **`AunCastSettings`** コンポーネントのインスペクタで、スタッフ用の **壁パネル解錠パスコード** と、必要に応じて **スタッフ許可ユーザー名**（VRChat ディスプレイネーム）を設定します。
-7. オプション：**`AunCastSettings`** で、**同時接続上限**（Connections）を配信プランの同時接続上限以下に設定します。**同時Resync上限**（Concurrent）は、配信プランの上限からインスタンス収容上限を引いた値以下にします。余裕を見て、やや小さめの値に設定してください。ただし、小さすぎるとResyncの順番待ちが溜まって滞る場合があります（[接続上限の設定](staff/settings.md#connection-limits)）。
+7. オプション：**`AunCastSettings`** で、**同時接続上限**（Connections）を配信プランの同時接続上限以下に設定します。**同時Resync上限**（Concurrent）は、配信プランの上限からインスタンス収容上限を引いた値以下にします。余裕を見て、やや小さめの値に設定してください。ただし、小さすぎるとResyncの順番待ちが溜まって滞る場合があります（[接続上限の設定](guide/settings.md#connection-limits)）。
 8. オプション：既存の **VRC AVPro Video Speaker＋AudioSource** がある場合は、位置・音量を調整してから **AVPro Speaker 配線 →「AVPro Speaker 出力先セットアップを実行」** を押します。
 
-[→ 設定と調整（詳細）](staff/settings.md)
+[→ 設定と調整（詳細）](guide/settings.md)
 
 ---
 
@@ -31,9 +31,9 @@
 3. 手元パネルをスタッフ画面へ切り替えます。ジェスチャーをもう一度行うか、手元パネル右上の **⇔ボタン** を押します。
 4. **Next URL** に配信URLを入力し、右側の **↑↓ボタン** で配信を開始します。既に配信中のURLがある場合、送信後はそのURLが **Next URL** に戻ります。
 5. オプション：ライブの曲間やDJのMC前など、ドリフトを解消しておきたいタイミングで **Resync All** を押します（全員一斉ですが、順番待ちで順次処理されます）。通常、停止・ドリフト検知による自動Resyncでも補正されますが、演出上の区切りで全体を揃えたい場合に使います。
-6. 配信を終えたら **Stop All** で停止します。停止しないと、全員のインジケーターが赤のまま再接続を続けます（[理由](staff/streaming.md)）。
+6. 配信を終えたら **Stop All** で停止します。停止しないと、全員のインジケーターが赤のまま再接続を続けます（[理由](guide/streaming.md)）。
 
-[→ 操作パネル](staff/operations.md) / [モニタリングと上限調整](staff/monitoring.md) / [配信・運用上の注意](staff/streaming.md)
+[→ 操作パネル](guide/operations.md) / [モニタリングと上限調整](guide/monitoring.md) / [配信・運用上の注意](guide/streaming.md)
 
 ---
 
@@ -41,6 +41,6 @@
 
 1. **手元パネルを表示するには**：VRモードもデスクトップモードも、壁パネルの **Spawn Gesture** で選択したジェスチャー・キーバインドで呼び出されます。壁パネルの **Spawn Panel** をインタラクトしても呼び出すことができます。初期状態のジェスチャー・キーバインドは、VRは右スティック上方向長押し、デスクトップはTabキー２回押しです（ただし、スタッフが変更している場合もあります）。選択したジェスチャー・キーバインドはワールドごとに保存されます。
 2. **音声が途切れた・ズレた**ときは **Resync ボタン**を押します。しばらく待てば順番が回り、音声が途切れることなく復旧します（通常は自動検知でも復旧しますが、気になる場合は手動で実行できます）。
-3. どうしても復旧しない・順番が回ってこない場合は、**緊急リブート**（⚡ボタン）を使用します。これは、一般的なライブ配信再生システムで「Resync」と呼ばれている操作で、音声と映像が一時的に途切れます。本システムでは、独自の２系統方式の再同期を **Resync**、この全断→再接続を **Reboot** と呼び分けています。
+3. どうしても復旧しない・順番が回ってこない場合は、**Reboot ボタン**（⚡）を使用します。これは、一般的なライブ配信再生システムで「Resync」と呼ばれている操作で、音声と映像が一時的に途切れます。本システムでは、独自の２系統方式の再同期を **Resync**、この全断→再接続を **Reboot** と呼び分けています。
 
-[→ パネルの呼び出しと操作](viewer/panel.md) / [状態表示の見方](viewer/status.md)
+[→ 操作パネルの使い方](guide/operations.md) / [状態表示の見方](guide/status.md)

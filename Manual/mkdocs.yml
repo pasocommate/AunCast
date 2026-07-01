@@ -51,14 +51,12 @@ nav:
   - くわしい仕組み:
       - 再同期 (Resync) の仕組み: concepts/resync.md
       - 同時接続上限の管理: concepts/connection-limit.md
-  - スタッフガイド:
-      - 設定と調整: staff/settings.md
-      - 操作パネルの使い方: staff/operations.md
-      - モニタリングと上限調整: staff/monitoring.md
-      - 配信・運用上の注意: staff/streaming.md
-  - 観客ガイド:
-      - パネルの呼び出しと操作: viewer/panel.md
-      - 状態表示の見方: viewer/status.md
+  - 利用ガイド:
+      - 設定と調整: guide/settings.md
+      - 操作パネルの使い方: guide/operations.md
+      - 状態表示の見方: guide/status.md
+      - モニタリングと上限調整: guide/monitoring.md
+      - 配信・運用上の注意: guide/streaming.md
   - リファレンス:
       - 用語集: reference/glossary.md
       - トラブルシューティング / FAQ: reference/troubleshooting.md
