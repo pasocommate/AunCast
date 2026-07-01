@@ -211,7 +211,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - **CDN 総接続数上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
 - **モニタリング表示**: グローバル Resync の進捗状況（FR-14 参照）
 
-> **注記**: 「無音自動 Resync 切替」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから UserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
+> **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから UserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
 
 以下のパラメータはワールド制作時にコンポーネント側（Inspector）で設定する。
 
@@ -241,7 +241,7 @@ Resync リクエストが長時間応答なし、または `GetTime()` が長時
 - 無音検出連続時間ゲージ（抑制中はグレーアウト）
 - 現在のローカル状態テキスト（再生中 / Resync 待機中 / Resync 実行中 / Cooldown 中 + Stall/Fail カウント + エラーメッセージ）
 - ローカル音量スライダー（`SetVolumeLocal` でクライアントローカルに適用、同期不要）
-- 無音自動 Resync 切替トグル（`SetAutoSilenceResyncEnabled`、クライアントローカル）
+- Silence Resync トグル（`SetAutoSilenceResyncEnabled`、クライアントローカル）
 - 閉じるボタン
 - Staff ビューへの切替（パスコード解錠時のみ）
 - VR ジェスチャー長押し中の視界プログレス HUD 表示
@@ -280,7 +280,7 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 責務:
 - ローカル状態機械 (`_localState`) の管理と TickStateMachine
 - URL の同期・適用 (`_syncedURL`, `_syncedUrlSubmitterName`, `_syncedVideoIdx`, `_ownerPlaying`)
-- ローカル音量 (`_localVolume`) と無音自動 Resync フラグ (`_autoSilenceResyncEnabled`) の保持
+- ローカル音量 (`_localVolume`) と Silence Resync フラグ (`_autoSilenceResyncEnabled`) の保持
 - 無音検知ポーリング (`PollSilenceDetection`): 全 audible プレイヤーの RMS を確認し、連続無音で個人 Resync 発行
 - サブコンポーネント (`ActivePlayerMonitor`, `PlaybackSwitcher`, `ResyncCoordinatorClient`, `PlaybackMonitor`) への委譲・調停
 - `VideoPlayerManager` のコールバックハブ（`OnManagerVideoReady` / `OnManagerVideoStart` / `OnManagerVideoError` 等）
@@ -359,7 +359,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - Resync リクエスト送出 (`SendCustomNetworkEvent` + `[NetworkCallable]`) と再送（3 秒間隔）
 - リクエスト理由 (`REQUEST_REASON_FAILURE` / `REQUEST_REASON_MANUAL` / `REQUEST_REASON_SILENCE`) の保持
 - Cooldown / RetryWait のローカル管理
-- 無音自動 Resync の適格判定 (`IsSilenceAutoResyncEligible`: 最後の Resync 完了から `silenceSuppressSec` 経過後に有効)
+- Silence Resync の適格判定 (`IsSilenceAutoResyncEligible`: 最後の Resync 完了から `silenceSuppressSec` 経過後に有効)
 - グローバル強制リブートの検知 (`PollGlobalForceReboot`: `globalForceRebootSeq` の変化を監視)
 
 ### H. StaffControlPanel（ポータブルパネルの Staff ビューとして統合）
@@ -400,7 +400,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示
 - サイレンスゲージ（`silenceGauge`）: 無音検出の連続時間を表示。抑制中はグレーアウト
 - ローカル音量スライダー (`volumeSlider` → `SetVolumeLocal`)
-- 無音自動 Resync 切替トグル (`autoSilenceResyncToggle` → `SetAutoSilenceResyncEnabled`)
+- Silence Resync トグル (`autoSilenceResyncToggle` → `SetAutoSilenceResyncEnabled`)
 - Resync ボタンのクールダウン / ETA 表示（`_resyncCooldownLabel`）
 - **VR ジェスチャー呼び出し**: 複数方式を同時有効可能（ビットフラグ制御）
   - 片手ダブルトリガー (`GESTURE_DOUBLE_TRIGGER`、デフォルト有効)
@@ -952,7 +952,7 @@ private int _localState;                       // ローカル状態（10.1 参�
 private bool _activeIsA = true;                // PlaybackSwitcher と同期させる
 
 // --- ローカル設定（同期しない） ---
-private bool _autoSilenceResyncEnabled = true; // 無音自動 Resync 切替
+private bool _autoSilenceResyncEnabled = true; // Silence Resync 切替
 private float _localVolume;                    // ローカル音量
 private float _combinedSilenceDuration;        // 全 audible プレイヤーの無音連続時間
 
@@ -1504,7 +1504,7 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
 - **CDN 総接続数上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
-> **無音自動 Resync 切替について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく UserStatusPanel の Viewer ビューに配置している。
+> **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく UserStatusPanel の Viewer ビューに配置している。
 
 #### モニタリング表示
 - **インジケーター** (`indicatorText`): 全スロットを色付き ■/□ でリッチテキスト表示。色分け:
@@ -1539,7 +1539,7 @@ VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポ
 - **ドリフトゲージ** (`headroomGauge`): 蓄積ドリフトのしきい値に対する割合をスライダーで表示
 - **サイレンスゲージ** (`silenceGauge`): 無音検出の連続時間をスライダーで表示。`silenceSuppressSec` 中はグレーアウト
 - **ローカル音量スライダー**: `volumeSlider` → `controller.SetVolumeLocal()` を呼ぶ。同期不要のローカル設定
-- **無音自動 Resync 切替トグル**: `autoSilenceResyncToggle` → `controller.SetAutoSilenceResyncEnabled()` を呼ぶ。コンテンツに意図的な無音が多い場合に各観客がオフにできる
+- **Silence Resync トグル**: `autoSilenceResyncToggle` → `controller.SetAutoSilenceResyncEnabled()` を呼ぶ。コンテンツに意図的な無音が多い場合に各観客がオフにできる
 - **閉じるボタン**: パネルを非表示にする
 
 #### VR ジェスチャー呼び出し
@@ -1686,7 +1686,7 @@ float output = adjustedVolume * _fadeGain;
 9. owner 変更と Late Joiner の確認
 10. グローバル Resync（手動トリガー） + `StaffControlPanel`（停止・Resync・強制リブート・上限編集）を実装
 11. `WallControlPanel`（パスコード解錠 + Summon）を実装
-12. 観客向けステータスパネル（Resync ボタン・ドリフト表示・音量・無音自動 Resync 切替）を実装
+12. 観客向けステータスパネル（Resync ボタン・ドリフト表示・音量・Silence Resync）を実装
 13. `AudioSilenceDetector`（GetOutputData 方式の RMS）→ グローバル Resync 自動トリガーを実装
 14. AudioLink 接続を実装
 15. 長時間テスト（30 / 60 / 120 分）としきい値調整

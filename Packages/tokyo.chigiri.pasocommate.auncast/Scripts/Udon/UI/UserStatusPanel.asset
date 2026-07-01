@@ -888,7 +888,7 @@ MonoBehaviour:
       Data: 60|UnityEngine.HeaderAttribute, UnityEngine.CoreModule
     - Name: header
       Entry: 1
-      Data: Auto Silence Resync
+      Data: Silence Resync
     - Name: 
       Entry: 8
       Data: 

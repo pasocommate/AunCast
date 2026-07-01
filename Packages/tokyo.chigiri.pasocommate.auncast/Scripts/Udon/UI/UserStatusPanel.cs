@@ -44,7 +44,7 @@ namespace PasocomMate.AunCast
         [Header("Volume")]
         [SerializeField] private Slider volumeSlider;
 
-        [Header("Auto Silence Resync")]
+        [Header("Silence Resync")]
         [SerializeField] private Toggle autoSilenceResyncToggle;
 
         [Header("Staff Controls")]
@@ -1306,7 +1306,7 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
-        //  ローカル設定 UI (Volume / Auto Silence Resync / Timeline Logging)
+        //  ローカル設定 UI (Volume / Silence Resync / Timeline Logging)
         // =================================================================
 
         private void SyncLocalSettingsUI()

@@ -283,8 +283,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -21, y: 0}
-  m_SizeDelta: {x: -42, y: 0}
+  m_AnchoredPosition: {x: -16, y: 0}
+  m_SizeDelta: {x: -32, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7827303264509557126
 CanvasRenderer:
@@ -314,7 +314,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: \uf417 Auto Resync
+  m_text: \uebf3 Silence Resync
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9d7d01127c58f5f4796c54f98cb2f0fa, type: 2}
   m_sharedMaterial: {fileID: 5422087251740708661, guid: 9d7d01127c58f5f4796c54f98cb2f0fa,
@@ -352,7 +352,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: -1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4458,7 +4458,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4291280831
   m_fontColor: {r: 0.75, g: 0.75, b: 0.78, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -6948,7 +6948,7 @@ GameObject:
   - component: {fileID: 3797668686708607294}
   - component: {fileID: 9042545149543833348}
   m_Layer: 0
-  m_Name: AutoResyncToggle
+  m_Name: SilenceResyncToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6973,7 +6973,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 16, y: 155}
-  m_SizeDelta: {x: 240, y: 38}
+  m_SizeDelta: {x: 256, y: 38}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &3797668686708607294
 MonoBehaviour:
@@ -11217,8 +11217,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 96, y: 122}
-  m_SizeDelta: {x: -224, y: 32}
+  m_AnchoredPosition: {x: 72, y: 122}
+  m_SizeDelta: {x: -176, y: 32}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &7728028533970668149
 MonoBehaviour:

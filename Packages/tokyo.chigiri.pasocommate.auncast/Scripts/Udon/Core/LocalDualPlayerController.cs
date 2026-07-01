@@ -1041,10 +1041,10 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
-        //  無音自動 Resync トグル
+        //  Silence Resync トグル
         // =================================================================
 
-        /// <summary>無音検知による自動 Resync の有効/無効を切り替える（UI トグル用）。</summary>
+        /// <summary>Silence Resync の有効/無効を切り替える（UI トグル用）。</summary>
         [PublicAPI]
         public void SetAutoSilenceResyncEnabled(bool enabled)
         {

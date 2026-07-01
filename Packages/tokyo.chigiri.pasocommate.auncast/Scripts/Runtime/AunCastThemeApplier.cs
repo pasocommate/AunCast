@@ -91,8 +91,8 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, staff + "/NowPlayingArea", theme.displayBackgroundColor);
             SetThemeImageColor(root, shared + "/HelpArea", theme.displayBackgroundColor);
 
-            SetThemeImageColor(root, viewer + "/AutoResyncToggle/Background", theme.toggleBackgroundColor);
-            SetThemeTextColor(root, viewer + "/AutoResyncToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+            SetThemeImageColor(root, viewer + "/SilenceResyncToggle/Background", theme.toggleBackgroundColor);
+            SetThemeTextColor(root, viewer + "/SilenceResyncToggle/Background/Checkmark", theme.toggleCheckmarkColor);
             ApplyToggleTheme(root, staff + "/TimelineLoggingToggle");
 
             SetThemeImageColor(root, shared + "/VolumeSlider/Background", theme.sliderBackgroundColor);
@@ -718,7 +718,7 @@ namespace PasocomMate.AunCast
                 staff + "/ConnectionMaxLabel",
                 viewer + "/HeadroomGaugeLabel",
                 viewer + "/SilenceGaugeLabel",
-                viewer + "/AutoResyncToggle/Label",
+                viewer + "/SilenceResyncToggle/Label",
                 staff + "/TimelineLoggingToggle/Label",
                 shared + "/VolumeLabel",
             };

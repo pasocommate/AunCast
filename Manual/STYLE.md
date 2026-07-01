@@ -37,7 +37,7 @@
 | 過負荷 | パンク |
 | 現用系統 / 予備系統 | いま流している側 / 予備の側 |
 
-- **UI ラベル・インスペクタ表示名は実物どおり**に書く：Resync / Reboot / Stop All / Resync All / Connections / Concurrent / Drift / Audio Level / Auto Resync / Volume、および AunCastSettings の各表示名（最大接続数・同時Resync上限 等）。
+- **UI ラベル・インスペクタ表示名は実物どおり**に書く：Resync / Reboot / Stop All / Resync All / Connections / Concurrent / Drift / Audio Level / Silence Resync / Volume、および AunCastSettings の各表示名（最大接続数・同時Resync上限 等）。
 - **「プレイヤー」単独では書かない**：VRChat のユーザーを指す場合は **観客** または **VRChat ユーザー**、映像・音声の再生機構を指す場合は **再生系統** または **ビデオプレイヤー** と書く。`Player A/B` のような実オブジェクト名を書く場合も、必要に応じて「A/B再生系統」を添える。
 - **Resync と Reboot の呼び分け**：本システム独自の 2 系統方式の再同期を **Resync**、全断→再接続を **Reboot** と呼ぶ（一般的なライブ配信再生システムが「Resync」と呼ぶ操作は、本システムの Reboot に相当する）。
 - **再同期(Resync) の定義**：ドリフト（再生位置のズレ）を検出して再接続し、再生位置を **なるべく揃える** 処理。全員を厳密に一致させるものではない。この復旧を **自動化** するのが本システムの目的。
