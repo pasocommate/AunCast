@@ -37,7 +37,6 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 1. 音声出力の基準にする **VRC AVPro Video Speaker＋AudioSource** を用意し、**位置・空間音響（3D設定）・AudioSource の音量**を任意に設定します。既存のものがあれば、そのまま使用できます。
 2. `AunCastSettings` の **AVPro Speaker 配線** セクションを確認します。シーン上のスピーカーが **「検出対象」** に一覧表示されます。
 
-    <!--@ph スクリーンショット: AunCastSettings インスペクタの「AVPro Speaker 配線」セクション。「検出対象」の一覧にスピーカーが表示されている状態。可能であれば配線不整合の赤色表示例も別カットで撮る（その場合は inspector-avpro-speaker-error.png として本文に追記）。-->
     ![AVPro Speaker 配線セクション](../assets/inspector-avpro-speaker.png){ width="360" }
 
 3. **「AVPro Speaker 出力先セットアップを実行」** を押します。

@@ -10,7 +10,6 @@
 
 ## `AunCastSettings` インスペクタの構成
 
-<!--@ph スクリーンショット: AunCast ルートオブジェクト選択時の AunCastSettings インスペクタ全体。下記のセクション見出し（壁パネル配線〜デバッグ）が確認できる状態で撮影する。縦長になる場合はセクションを折りたたんだ状態でよい。-->
 ![AunCastSettings インスペクタ](../assets/inspector-auncast-settings.png){ width="360" }
 
 **`AunCastSettings`** コンポーネントのインスペクタは、次のセクションから構成されます。
