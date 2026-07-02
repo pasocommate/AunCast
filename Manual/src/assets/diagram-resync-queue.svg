@@ -1,0 +1,67 @@
+<svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans JP','Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif">
+  <defs>
+    <marker id="arrowg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#888"/>
+    </marker>
+    <marker id="arrowp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7b68c9"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="898" height="428" rx="14" fill="#f8f8fc" stroke="#dcdce6"/>
+  <text x="450" y="38" text-anchor="middle" font-size="17" font-weight="bold" fill="#333">再同期の順番待ち：予約制のしくみ</text>
+
+  <!-- コーディネーター -->
+  <rect x="330" y="58" width="240" height="54" rx="10" fill="#5a4aa8"/>
+  <text x="450" y="81" text-anchor="middle" font-size="14.5" font-weight="bold" fill="#fff">コーディネーター</text>
+  <text x="450" y="100" text-anchor="middle" font-size="10.5" fill="#ded8f5">（順番を管理する仕組み）</text>
+  <text x="450" y="134" text-anchor="middle" font-size="12" fill="#555">「同時Resync上限」を超えない範囲で、並んだ順に実行許可を出す</text>
+
+  <line x1="392" y1="112" x2="278" y2="170" stroke="#7b68c9" stroke-dasharray="4 3" marker-end="url(#arrowp)"/>
+  <line x1="508" y1="112" x2="648" y2="170" stroke="#7b68c9" stroke-dasharray="4 3" marker-end="url(#arrowp)"/>
+
+  <!-- 順番待ちの列 -->
+  <text x="230" y="184" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#444">順番待ちの列</text>
+  <text x="78" y="228" text-anchor="middle" font-size="14" fill="#999">…</text>
+  <g fill="#d8d2f0" stroke="#7b68c9" stroke-width="1.5">
+    <circle cx="106" cy="222" r="13"/>
+    <circle cx="140" cy="222" r="13"/>
+    <circle cx="174" cy="222" r="13"/>
+    <circle cx="208" cy="222" r="13"/>
+    <circle cx="242" cy="222" r="13"/>
+    <circle cx="276" cy="222" r="13"/>
+    <circle cx="310" cy="222" r="13"/>
+    <circle cx="344" cy="222" r="13"/>
+  </g>
+
+  <!-- 実行許可の矢印 -->
+  <line x1="372" y1="222" x2="596" y2="222" stroke="#888" stroke-width="2" marker-end="url(#arrowg)"/>
+  <text x="484" y="207" text-anchor="middle" font-size="12" fill="#555">実行許可</text>
+
+  <!-- 実行枠 -->
+  <text x="715" y="184" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#444">実行枠（同時Resync上限）</text>
+  <g>
+    <rect x="614" y="196" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="656" y="196" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="698" y="196" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="740" y="196" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="782" y="196" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="614" y="238" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="656" y="238" width="34" height="34" rx="4" fill="#2f9e8f"/>
+    <rect x="698" y="238" width="34" height="34" rx="4" fill="#fff" stroke="#2f9e8f" stroke-dasharray="3 3"/>
+    <rect x="740" y="238" width="34" height="34" rx="4" fill="#fff" stroke="#2f9e8f" stroke-dasharray="3 3"/>
+    <rect x="782" y="238" width="34" height="34" rx="4" fill="#fff" stroke="#2f9e8f" stroke-dasharray="3 3"/>
+  </g>
+  <rect x="614" y="286" width="12" height="12" rx="2" fill="#2f9e8f"/>
+  <text x="632" y="296" font-size="10.5" fill="#666">実行中（接続を２本使用）</text>
+  <rect x="614" y="304" width="12" height="12" rx="2" fill="#fff" stroke="#2f9e8f" stroke-dasharray="3 3"/>
+  <text x="632" y="314" font-size="10.5" fill="#666">空き枠</text>
+
+  <!-- 完了して枠が空く（循環） -->
+  <path d="M 606 262 C 520 330, 470 330, 386 246" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#arrowg)"/>
+  <text x="498" y="352" text-anchor="middle" font-size="12" fill="#555">完了すると枠が空き、次の観客へ順番が回る</text>
+
+  <!-- 例 -->
+  <rect x="170" y="376" width="560" height="34" rx="8" fill="#efedf8"/>
+  <text x="450" y="398" text-anchor="middle" font-size="12" fill="#555">例：同時接続上限100・80名が視聴中 → 同時Resync上限10名で順次処理</text>
+</svg>

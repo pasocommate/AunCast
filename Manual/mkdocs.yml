@@ -48,17 +48,21 @@ markdown_extensions:
 nav:
   - はじめに: index.md
   - 動作原理: overview.md
-  - 開発の背景: background.md
   - クイックスタート: quickstart.md
+  - 開発の背景: background.md
   - くわしい仕組み:
       - 再同期 (Resync) の仕組み: concepts/resync.md
       - 同時接続上限の管理: concepts/connection-limit.md
-  - 利用ガイド:
-      - 設定と調整: guide/settings.md
-      - 操作パネルの使い方: guide/operations.md
-      - 状態表示の見方: guide/status.md
-      - モニタリングと上限調整: guide/monitoring.md
-      - 配信・運用上の注意: guide/streaming.md
-  - リファレンス:
-      - 用語集: reference/glossary.md
-      - トラブルシューティング / FAQ: reference/troubleshooting.md
+  - セットアップガイド:
+      - 設定と調整: setup/settings.md
+      - 複製配置と再配線: setup/replication.md
+  - 運用ガイド:
+      - 壁パネル: operation/wall-panel.md
+      - 手元パネル：観客ビュー: operation/panel-viewer.md
+      - 手元パネル：スタッフビュー: operation/panel-staff.md
+      - モニタリングと上限調整: operation/monitoring.md
+      - 配信・運用上の注意: operation/streaming.md
+  - 付録:
+      - 用語集: appendix/glossary.md
+      - トラブルシューティング / FAQ: appendix/troubleshooting.md
+      - クレジット: appendix/credits.md

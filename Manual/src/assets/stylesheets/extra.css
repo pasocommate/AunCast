@@ -64,6 +64,23 @@ header img[alt="icon"] {
   filter: none;
 }
 
+/* 狭幅ヘッダーの Menu テキストをフッターと同じロゴタイプに置き換える */
+#menu-button > span:not(.sr-only) {
+  width: clamp(8rem, 34vw, 10rem);
+  height: 2rem;
+  color: transparent;
+  overflow: hidden;
+  background-image: url("../auncast-logo-typo.svg");
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: contain;
+  filter: invert(1);
+}
+
+.dark #menu-button > span:not(.sr-only) {
+  filter: none;
+}
+
 /* フッター中央に AunCast のロゴタイプとクレジットを横並びで表示する */
 .auncast-footer {
   display: flex;
@@ -116,6 +133,11 @@ header {
 
 .dark header {
   --header-overlay: rgb(0 0 0 / 0.5);
+}
+
+/* 左サイドバー上部のフェードが先頭項目に重なり、影のように見えるため無効化する */
+[data-slot="sidebar"] > .absolute.top-8.z-10.h-8 {
+  display: none;
 }
 
 /* ページ遷移のクロスフェードを無効化する。
