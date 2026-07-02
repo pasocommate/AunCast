@@ -10,33 +10,33 @@ namespace PasocomMate.AunCast
     [DisallowMultipleComponent]
     public class AunCastSettings : MonoBehaviour, IEditorOnly
     {
-        // AVPro の出力解像度上限。帯域・GPU 負荷のトレードオフで決める
-        [Tooltip("AVPro の最大解像度（px）")]
+        // AVProの出力解像度上限。帯域・GPU負荷のトレードオフで決める
+        [Tooltip("AVProの最大解像度（px）")]
         public int maximumResolution = 720;
 
-        // AVPro の低遅延モード。ライブ配信向けだがデコードが不安定になりうる
-        [Tooltip("AVPro の低遅延モードを有効にする")]
+        // AVProの低遅延モード。ライブ配信向けだがデコードが不安定になりうる
+        [Tooltip("AVProの低遅延モードを有効にする")]
         public bool useLowLatency = true;
 
         [Header("Gesture HUD")]
-        [Tooltip("VR 呼び出しジェスチャーの初期設定（ビットフラグ）。1=両手トリガー、2=右スティック上、4=左手ダブルトリガー、8=右手ダブルトリガー。")]
+        [Tooltip("VR呼び出しジェスチャーの初期設定（ビットフラグ）。1=両手トリガー、2=右スティック上、4=左手ダブルトリガー、8=右手ダブルトリガー。")]
         public int defaultSummonGesture = 2;
 
-        [Tooltip("デスクトップ呼び出しジェスチャーの初期設定（ビットフラグ）。1=Tab ダブルタップ、2=F5 ダブルタップ、4=ESC 長押し。")]
+        [Tooltip("デスクトップ呼び出しジェスチャーの初期設定（ビットフラグ）。1=Tabダブルタップ、2=F5ダブルタップ、4=ESC長押し。")]
         public int defaultDesktopSummonGesture = 1;
 
         // 誤操作防止のための長押し判定時間
-        [Tooltip("長押しジェスチャーの保持時間（秒）。VR 両手トリガー / 右スティック上 / デスクトップ ESC に共通適用。")]
+        [Tooltip("長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。")]
         public float gestureHoldDuration = 0.8f;
 
-        // 瞬間的な押下で HUD がちらつかないよう表示を遅延させる
-        [Tooltip("HUD プログレスを表示し始めるまでの猶予（秒）。誤押下でちらつかないようにこれを過ぎてから表示する。")]
+        // 瞬間的な押下でHUDがちらつかないよう表示を遅延させる
+        [Tooltip("HUDプログレスを表示し始めるまでの猶予（秒）。誤押下でちらつかないようにこれを過ぎてから表示する。")]
         public float gestureHudShowThreshold = 0.1f;
 
-        [Tooltip("VR: HUD の頭部ローカル座標における配置オフセット（m）。(0,0,Z) で視界中央、Y を下げると視界下部に配置。")]
+        [Tooltip("VR: HUDの頭部ローカル座標における配置オフセット（m）。(0,0,Z)で視界中央、Yを下げると視界下部に配置。")]
         public Vector3 hudVrLocalOffset = new Vector3(0f, 0f, 0.6f);
 
-        [Tooltip("デスクトップ: HUD のカメラローカル座標における配置オフセット（m）。Z は前方距離。")]
+        [Tooltip("デスクトップ: HUDのカメラローカル座標における配置オフセット（m）。Zは前方距離。")]
         public Vector3 hudDesktopLocalOffset = new Vector3(0f, -0.1f, 0.6f);
 
         [Header("Volume")]
@@ -44,10 +44,10 @@ namespace PasocomMate.AunCast
         public float defaultVolume = 0.6f;
 
         [Header("Default Playback")]
-        [Tooltip("Next URL 欄の初期値として表示する配信 URL。空欄なら未設定。")]
+        [Tooltip("Next URL欄の初期値として表示する配信URL。空欄なら未設定。")]
         public VRCUrl defaultUrl = VRCUrl.Empty;
 
-        [Tooltip("インスタンスに最初のユーザーが Join した時点で defaultUrl を自動再生する")]
+        [Tooltip("インスタンスに最初のユーザーがJoinした時点で defaultUrl を自動再生する")]
         public bool autoPlayDefaultOnFirstJoin;
 
         [Header("Portable Panel Auto Dismiss")]
@@ -75,7 +75,7 @@ namespace PasocomMate.AunCast
         public string[] staffAllowedUserNames = new string[0];
 
         [Header("Silence Detection")]
-        [Tooltip("無音判定 RMS 閾値 (dBFS)")]
+        [Tooltip("無音判定RMS閾値 (dBFS)")]
         public float silenceRmsThresholdDbfs = -60f;
 
         [Tooltip("無音判定の継続時間（秒）")]
@@ -107,7 +107,7 @@ namespace PasocomMate.AunCast
         [Tooltip("蓄積ドリフトがこの値（秒）を超えたら自動 Resync")]
         public float driftResyncThresholdSec = 0.1f;
 
-        [Tooltip("ドリフト EMA の時定数（秒）。大きいほど緩やかに追従する")]
+        [Tooltip("ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する")]
         public float driftSmoothingTimeConstant = 1.5f;
 
         [Tooltip("安定再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
@@ -130,7 +130,7 @@ namespace PasocomMate.AunCast
         [Tooltip("GRANTED 後、切替完了までの最大許容時間（秒）")]
         public float resyncCycleTimeoutSec = 45.0f;
 
-        [Tooltip("LoadURL 完了後のクールダウン（秒）")]
+        [Tooltip("LoadURL完了後のクールダウン（秒）")]
         public float localCooldownSec = 5.0f;
 
         [Tooltip("再試行の基本待機時間（秒）")]

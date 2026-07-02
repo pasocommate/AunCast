@@ -219,7 +219,7 @@ namespace PasocomMate.AunCast.Internal
 
             EditorGUILayout.Space(8);
 
-            // ── UI / 操作 ──
+            // ── UI/操作 ──
             DrawUiSettings(root, settings);
 
             EditorGUILayout.Space(8);
@@ -1653,7 +1653,7 @@ namespace PasocomMate.AunCast.Internal
                 RewireEventHubAndConsumers(root, recordUndo: true, writeLog: false);
         }
 
-        // ── UI / 操作 ──
+        // ── UI/操作 ──
 
         private void DrawStaffNamesField(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
@@ -1680,24 +1680,24 @@ namespace PasocomMate.AunCast.Internal
         private void DrawUiSettings(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             EditorGUILayout.LabelField(
-                AunCastEditorLocalization.Localize("UI / 操作", "UI / Controls"),
+                AunCastEditorLocalization.Localize("UI/操作", "UI / Controls"),
                 EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
             float newDefaultVolume = SliderField("初期音量", "Default Volume", "defaultVolume",
                 "各ユーザーの起動時ローカル再生デフォルト音量（0〜1）。",
                 "Default local playback volume (0-1) for each user at startup.",
                 settings.defaultVolume, 0f, 1f);
-            string newDefaultUrl = TextField("デフォルト配信 URL", "Default Stream URL", "defaultUrl",
-                "Next URL 欄の初期値。インスタンス最初の Join 時の自動再生にも使用する。空欄で無効。",
+            string newDefaultUrl = TextField("デフォルト配信URL", "Default Stream URL", "defaultUrl",
+                "Next URL欄の初期値。インスタンス最初のJoin時の自動再生にも使用する。空欄で無効。",
                 "Initial value of the Next URL field. Also used for auto-play on the first join to the instance. Empty to disable.",
                 settings.defaultUrl != null ? settings.defaultUrl.Get() : "");
-            bool newAutoPlayDefault = ToggleField("最初の Join で自動再生", "Auto-play on First Join", "autoPlayDefaultOnFirstJoin",
-                "インスタンスに最初のユーザーが Join した時点で、デフォルト配信 URL を自動再生する。",
+            bool newAutoPlayDefault = ToggleField("最初のJoinで自動再生", "Auto-play on First Join", "autoPlayDefaultOnFirstJoin",
+                "インスタンスに最初のユーザーがJoinした時点で、デフォルト配信URLを自動再生する。",
                 "Auto-plays the default stream URL when the first user joins the instance.",
                 settings.autoPlayDefaultOnFirstJoin);
 
-            EditorGUILayout.LabelField(L("VR 呼び出しジェスチャー初期値", "Default VR Summon Gesture", "defaultSummonGesture",
-                "VR モードで HUD を呼び出すジェスチャーの初期有効設定。",
+            EditorGUILayout.LabelField(L("VR呼び出しジェスチャー初期値", "Default VR Summon Gesture", "defaultSummonGesture",
+                "VRモードでHUDを呼び出すジェスチャーの初期有効設定。",
                 "Default enabled gestures for summoning the HUD in VR mode."));
             CopyFieldNameMenu("defaultSummonGesture");
             int newSummonGesture = settings.defaultSummonGesture;
@@ -1709,14 +1709,14 @@ namespace PasocomMate.AunCast.Internal
             EditorGUI.indentLevel--;
 
             EditorGUILayout.LabelField(L("デスクトップ呼び出しジェスチャー初期値", "Default Desktop Summon Gesture", "defaultDesktopSummonGesture",
-                "デスクトップモードで HUD を呼び出すジェスチャーの初期有効設定。",
+                "デスクトップモードでHUDを呼び出すジェスチャーの初期有効設定。",
                 "Default enabled gestures for summoning the HUD in desktop mode."));
             CopyFieldNameMenu("defaultDesktopSummonGesture");
             int newDesktopSummonGesture = settings.defaultDesktopSummonGesture;
             EditorGUI.indentLevel++;
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, L("Tab ダブルタップ", "Double-tap Tab", "", "", ""));
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, L("F5 ダブルタップ", "Double-tap F5", "", "", ""));
-            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, L("ESC 長押し", "Hold ESC", "", "", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 1, L("Tabダブルタップ", "Double-tap Tab", "", "", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 2, L("F5ダブルタップ", "Double-tap F5", "", "", ""));
+            newDesktopSummonGesture = ToggleBitFlag(newDesktopSummonGesture, 4, L("ESC長押し", "Hold ESC", "", "", ""));
             EditorGUI.indentLevel--;
             float newHold = SliderField("ジェスチャー保持時間 [秒]", "Gesture Hold Duration [s]", "gestureHoldDuration",
                 "長押しジェスチャーの保持時間（秒）。VR両手トリガー / 右スティック上 / デスクトップESCに共通適用。",
@@ -1728,13 +1728,13 @@ namespace PasocomMate.AunCast.Internal
                 settings.gestureHudShowThreshold, 0f, 0.3f);
             Vector3 newHudVrOffset = EditorGUILayout.Vector3Field(
                 L("HUD配置オフセット (VR)", "HUD Offset (VR)", "hudVrLocalOffset",
-                    "VR: 頭部ローカル座標における HUD オフセット（m）。(0,0,Z)で視界中央。",
+                    "VR: 頭部ローカル座標におけるHUDオフセット（m）。(0,0,Z)で視界中央。",
                     "VR: HUD offset (m) in head-local coordinates. (0,0,Z) is the center of view."),
                 settings.hudVrLocalOffset);
             CopyFieldNameMenu("hudVrLocalOffset");
             Vector3 newHudDesktopOffset = EditorGUILayout.Vector3Field(
                 L("HUD配置オフセット (Desktop)", "HUD Offset (Desktop)", "hudDesktopLocalOffset",
-                    "デスクトップ: カメラローカル座標における HUD オフセット（m）。Z は前方距離。",
+                    "デスクトップ: カメラローカル座標におけるHUDオフセット（m）。Zは前方距離。",
                     "Desktop: HUD offset (m) in camera-local coordinates. Z is the forward distance."),
                 settings.hudDesktopLocalOffset);
             CopyFieldNameMenu("hudDesktopLocalOffset");
@@ -1800,8 +1800,8 @@ namespace PasocomMate.AunCast.Internal
 
             EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("無音検知", "Silence Detection"));
             EditorGUI.indentLevel++;
-            float newRms = SliderField("RMS 閾値 [dBFS]", "RMS Threshold [dBFS]", "silenceRmsThresholdDbfs",
-                "無音判定RMS閾値。0 dBFS = フルスケール。",
+            float newRms = SliderField("RMS閾値 [dBFS]", "RMS Threshold [dBFS]", "silenceRmsThresholdDbfs",
+                "無音判定RMS閾値。0dBFS = フルスケール。",
                 "RMS threshold for silence detection. 0 dBFS = full scale.",
                 settings.silenceRmsThresholdDbfs, -96f, 0f);
             float newSilenceConsec = SliderField("継続秒数 [秒]", "Consecutive Duration [s]", "silenceConsecutiveSec",
