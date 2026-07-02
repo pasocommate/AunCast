@@ -307,6 +307,16 @@ PrefabInstance:
       objectReference: {fileID: 8300000, guid: eeebc8dbd36aa7d4bb46c133c2a4bfe8, type: 3}
     - target: {fileID: 842115020977551490, guid: 5785b8e73ac64415883e43271846cadf,
         type: 3}
+      propertyPath: enableInstability
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 842115020977551490, guid: 5785b8e73ac64415883e43271846cadf,
+        type: 3}
+      propertyPath: meanTimeBetweenStalls
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 842115020977551490, guid: 5785b8e73ac64415883e43271846cadf,
+        type: 3}
       propertyPath: slideImages.Array.size
       value: 1
       objectReference: {fileID: 0}
