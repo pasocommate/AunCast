@@ -42,8 +42,8 @@ Material:
     - _BorderMatcapTilt: -1
     - _BorderWidth: 3
     - _CORNER: 1
-    - _FlipY: 0
-    - _Gamma: 1
+    - _FlipY: 1
+    - _Gamma: 2.2
     - _UseMainTex: 1
     m_Colors:
     - _BorderColor: {r: 0, g: 0, b: 0, a: 1}
