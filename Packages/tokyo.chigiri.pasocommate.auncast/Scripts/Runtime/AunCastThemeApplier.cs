@@ -527,6 +527,22 @@ namespace PasocomMate.AunCast
 
 
         /// <summary>
+        /// 現在シーンに表示中のビュー（viewer/staff）を読み取り、それに合った Background 色を適用する。
+        /// Play 停止直後にエディタ側から呼ばれ、実行時のクロスフェードで書き換わった Background 色を
+        /// 「表示中ビューにふさわしい色」へ整合させる目的で使う。
+        /// </summary>
+        public void SyncBackgroundColorToCurrentView()
+        {
+            if (theme == null) return;
+
+            Transform root = transform;
+            Color backgroundColor = IsStaffViewVisible(root)
+                ? theme.staffBackgroundColor
+                : theme.userBackgroundColor;
+            SetThemeImageColor(root, "PortablePanel/ContentScaler/Background", backgroundColor);
+        }
+
+        /// <summary>
         /// 現在のプレビューがスタッフ表示かどうかを UserContent / StaffContent の
         /// CanvasGroup アルファから判定する。両方未設定（等値）の場合は視聴者表示扱い。
         /// </summary>
