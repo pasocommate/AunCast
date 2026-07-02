@@ -10,10 +10,11 @@ edit_uri: edit/main/Manual/src/
 # マニュアル本文は Manual/src/ に置く（このファイルからの相対パス）
 docs_dir: src
 
-copyright: © Chigiri Tsutsumi (pasocommate)
+copyright: © 2026 Chigiri Tsutsumi
 
 theme:
   name: shadcn
+  custom_dir: overrides
   icon: assets/auncast-logo-mark.svg
   show_title: true
   show_stargazers: false

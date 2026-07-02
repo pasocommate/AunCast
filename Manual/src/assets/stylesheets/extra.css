@@ -54,65 +54,75 @@ header img[alt="icon"] {
   width: 2.25rem;
   height: 2.25rem;
   max-width: none;
+  /* ロゴSVGは fill:white 固定。<img> 読み込みのため CSS color では変えられないので、
+     ライトモードでは反転して黒くし、明るい背景でも見えるようにする */
+  filter: invert(1);
 }
 
-/* ヘッダーはライト／ダークいずれのページテーマでも常にダーク配色にする。
-   テーマ既定の .dark と同じ CSS 変数値をヘッダー要素へ上書きし、
-   ヘッダー内で var(--background) などを参照する子要素すべてに継承させる。 */
-header {
-  --background: oklch(14.5% 0 0);
-  --foreground: oklch(98.5% 0 0);
-  --card: oklch(20.5% 0 0);
-  --card-foreground: oklch(98.5% 0 0);
-  --popover: oklch(26.9% 0 0);
-  --popover-foreground: oklch(98.5% 0 0);
-  --primary: oklch(92.2% 0 0);
-  --primary-foreground: oklch(20.5% 0 0);
-  --secondary: oklch(26.9% 0 0);
-  --secondary-foreground: oklch(98.5% 0 0);
-  --muted: oklch(26.9% 0 0);
-  --muted-foreground: oklch(70.8% 0 0);
-  --accent: oklch(37.1% 0 0);
-  --accent-foreground: oklch(98.5% 0 0);
-  --border: oklch(100% 0 0 / 0.1);
-  --input: oklch(100% 0 0 / 0.15);
-  --ring: oklch(55.6% 0 0);
+/* ダークモードは背景が暗いので白のロゴをそのまま使う */
+.dark header img[alt="icon"] {
+  filter: none;
+}
 
-  color: var(--foreground);
+/* フッター中央に AunCast のロゴタイプとクレジットを横並びで表示する */
+.auncast-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+}
+
+.auncast-footer-logo {
+  flex: 0 0 auto;
+  width: clamp(8rem, 14vw, 10rem);
+  height: auto;
+  display: block;
+  margin-top: -0.1rem;
+  filter: invert(1);
+}
+
+.dark .auncast-footer-logo {
+  filter: none;
+}
+
+.auncast-footer-text {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .auncast-footer-logo {
+    width: 8rem;
+  }
 }
 
 /* ヘッダー背景：横ループ可能なボケ光素材を敷き詰める
    中央を見せ、上下ははみ出す前提。
-   画像の手前に薄い黒レイヤーを重ね、少しだけ暗くする（多重背景の先頭が前面）。 */
+   画像の手前にオーバーレイを 50% 重ねる（多重背景の先頭が前面）。
+   ライトモードは白、ダークモードは黒を混ぜて素材をなじませる。 */
 header {
+  --header-overlay: rgb(255 255 255 / 0.5);
   background-image:
-    linear-gradient(rgba(42.6%, 54.4%, 75.6%, 0.3), rgba(21.3%, 27.2%, 37.8%, 0.3)),
+    linear-gradient(var(--header-overlay), var(--header-overlay)),
     url("../header-background.jpg");
   background-repeat: repeat, repeat-x;
   background-size: auto, 80%;
   background-position: center, center;
 }
 
-/* ヘッダー内の検索欄（ダイアログを開くトリガーボタン）を半透明の黒地にし、
-   文字色はライト／ダークいずれのモードでも白に固定する */
-header button[data-slot="dialog-trigger"] {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  /* ダークモード時のボーダー色（dark:border-input = --input）に固定 */
-  border-color: oklch(100% 0 0 / 0.15);
+.dark header {
+  --header-overlay: rgb(0 0 0 / 0.5);
 }
 
-/* ヘッダー内のセパレーター（縦罫線）はライトモード時の色（--border）に固定 */
-header [data-slot="separator"] {
-  background-color: oklch(92.2% 0 0);
-}
-
-/* タイトル／GitHub／テーマ切替などヘッダー内ボタンの hover 背景を、
-   ダークモード時の見た目（dark:hover:bg-accent/50 = accent の 50%）に固定する。
-   --accent はヘッダーでダーク値へ上書き済み。 */
-header a[data-slot="button"]:hover,
-header button[data-slot="button"]:hover {
-  background-color: color-mix(in oklab, var(--accent) 50%, transparent);
-  /* hover:text-accent-foreground をダーク時の色（白）に固定 */
-  color: oklch(98.5% 0 0);
+/* ページ遷移のクロスフェードを無効化する。
+   shadcn テーマはネイティブのクロスドキュメント View Transitions
+   (@view-transition { navigation: auto }) で遷移をクロスフェードするが、
+   フェード終端で旧ページが一瞬ちらつく描画ずれが出るため無効化する。
+   base.css より後に読み込まれるので navigation を none で上書きできる。 */
+@view-transition {
+  navigation: none;
 }
