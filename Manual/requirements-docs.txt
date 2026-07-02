@@ -3,3 +3,8 @@
 #   pip install -r Manual/requirements-docs.txt
 #   mkdocs serve -f Manual/mkdocs.yml
 mkdocs-shadcn
+
+# click 8.2 以降は mkdocs 1.6.1 の --livereload/--no-livereload 定義と非互換で、
+# `mkdocs serve` のライブリロードがデフォルト無効化される（監視が登録されず保存しても
+# リビルド・リロードされない）。8.2 未満に固定して回避する。
+click<8.2
