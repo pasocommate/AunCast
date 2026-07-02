@@ -35,3 +35,84 @@ body, p, li, td, th, blockquote, summary, figcaption {
   display: block !important;
   margin-top: 0 !important;
 }
+
+/* 画像を横並びにする（figure-row 内の img を折り返し可能な行として並べる） */
+.figure-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.figure-row img {
+  margin: 0;
+}
+
+/* ヘッダー左端のロゴアイコンをテーマ既定の size-5 (20px) より大きくする
+   `img { max-width: 100% }` がテーマ側の container (size-8 = 2rem) に幅を縛るため打ち消す */
+header img[alt="icon"] {
+  width: 2.25rem;
+  height: 2.25rem;
+  max-width: none;
+}
+
+/* ヘッダーはライト／ダークいずれのページテーマでも常にダーク配色にする。
+   テーマ既定の .dark と同じ CSS 変数値をヘッダー要素へ上書きし、
+   ヘッダー内で var(--background) などを参照する子要素すべてに継承させる。 */
+header {
+  --background: oklch(14.5% 0 0);
+  --foreground: oklch(98.5% 0 0);
+  --card: oklch(20.5% 0 0);
+  --card-foreground: oklch(98.5% 0 0);
+  --popover: oklch(26.9% 0 0);
+  --popover-foreground: oklch(98.5% 0 0);
+  --primary: oklch(92.2% 0 0);
+  --primary-foreground: oklch(20.5% 0 0);
+  --secondary: oklch(26.9% 0 0);
+  --secondary-foreground: oklch(98.5% 0 0);
+  --muted: oklch(26.9% 0 0);
+  --muted-foreground: oklch(70.8% 0 0);
+  --accent: oklch(37.1% 0 0);
+  --accent-foreground: oklch(98.5% 0 0);
+  --border: oklch(100% 0 0 / 0.1);
+  --input: oklch(100% 0 0 / 0.15);
+  --ring: oklch(55.6% 0 0);
+
+  color: var(--foreground);
+}
+
+/* ヘッダー背景：横ループ可能なボケ光素材を敷き詰める
+   中央を見せ、上下ははみ出す前提。
+   画像の手前に薄い黒レイヤーを重ね、少しだけ暗くする（多重背景の先頭が前面）。 */
+header {
+  background-image:
+    linear-gradient(rgba(42.6%, 54.4%, 75.6%, 0.3), rgba(21.3%, 27.2%, 37.8%, 0.3)),
+    url("../header-background.jpg");
+  background-repeat: repeat, repeat-x;
+  background-size: auto, 80%;
+  background-position: center, center;
+}
+
+/* ヘッダー内の検索欄（ダイアログを開くトリガーボタン）を半透明の黒地にし、
+   文字色はライト／ダークいずれのモードでも白に固定する */
+header button[data-slot="dialog-trigger"] {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  /* ダークモード時のボーダー色（dark:border-input = --input）に固定 */
+  border-color: oklch(100% 0 0 / 0.15);
+}
+
+/* ヘッダー内のセパレーター（縦罫線）はライトモード時の色（--border）に固定 */
+header [data-slot="separator"] {
+  background-color: oklch(92.2% 0 0);
+}
+
+/* タイトル／GitHub／テーマ切替などヘッダー内ボタンの hover 背景を、
+   ダークモード時の見た目（dark:hover:bg-accent/50 = accent の 50%）に固定する。
+   --accent はヘッダーでダーク値へ上書き済み。 */
+header a[data-slot="button"]:hover,
+header button[data-slot="button"]:hover {
+  background-color: color-mix(in oklab, var(--accent) 50%, transparent);
+  /* hover:text-accent-foreground をダーク時の色（白）に固定 */
+  color: oklch(98.5% 0 0);
+}
