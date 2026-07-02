@@ -75,6 +75,10 @@ Assets/PackageMakerWindowData.asset*
 # VRChat
 /ClientSimStorage/
 
+# AunCastMaterialGuard が Play 検証時に生成する一時マテリアル退避フォルダ
+# （通常は Play 停止時に自動削除。クラッシュ等で残った実体を追跡しないよう無視する）
+/Assets/AunCastMaterialGuardTemp/
+
 # RenderMate 開発用リンク切替時の埋め込み実体の退避先（Tools/rendermate-dev-link.ps1）
 /_RenderMateEmbedded.bak/
 
