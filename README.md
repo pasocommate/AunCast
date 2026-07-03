@@ -24,7 +24,7 @@
 
 VCC（VRChat Creator Companion）からインストールできます。
 
-1. **[VCC にリスティングを追加](vcc://vpm/addRepo?url=https://pasocommate.chigiri.tokyo/index.json)** をクリックして、PasocomMate リスティングを登録します。
+1. https://pasocommate.chigiri.tokyo/ を開いて **Add to VCC** をクリックし、VCCに PasocomMate リスティングを登録します。
 2. 対象プロジェクトの **Manage Project** で **AunCast** を追加します。
 
 詳しい手順は **[クイックスタート](https://pasocommate.github.io/AunCast/quickstart/)** をご覧ください。
