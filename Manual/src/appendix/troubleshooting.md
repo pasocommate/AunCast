@@ -1,78 +1,53 @@
-# トラブルシューティング / FAQ
+# 逆引きインデックス
 
-困りごとを立場別にまとめます。壁パネルと手元パネルの呼び出しは[壁パネル](../operation/wall-panel.md)、手元パネルの操作・表示は[手元パネル：観客ビュー](../operation/panel-viewer.md)、スタッフ操作は[手元パネル：スタッフビュー](../operation/panel-staff.md)を参照してください。
-
----
-
-## 観客向け
-
-### 音声が出ない・ズレている
-
-**Resync ボタン** が有効です。**Drift メーター** が蓄積している場合は、再同期でズレがリセットされます。あわせて、**Volume を０（消音）にしていないか** も確認してください。
-
-### 映像が停止した・カクつく
-
-まず **手元パネルの Resync ボタン** を押してください。順番待ちになっても、待てば再同期されます。復旧しない・順番が一向に回ってこない場合は **Reboot**（いったん音が途切れます）を試します。
-
-### 曲間や静かな場面で自動的に再同期される
-
-無音時の自動再同期が働いています。手元パネルの **[Silence Resync をオフ](../operation/panel-viewer.md#auto-silence)** にすると、無音を契機とする自動再同期のみを停止できます（再生停止時の自動再同期や、手動の Resync は引き続き使用できます）。
-
-### Resync ボタンが押せない
-
-何も再生していないとき（停止中など）は押せません。スタッフが配信を流しているか確認してください。再同期の直後は、しばらく押せない時間があります。
-
-### 「Retry Wait」や「Error: ...」が表示される
-
-接続できていない状態です。AunCast は少し待ってから自動で再接続を繰り返します。長引く場合は配信側の問題が考えられるため、スタッフに状況を伝えてください。
-
-### パネルの呼び出し方が分からない
-
-呼び出し方法は壁パネルの **Spawn Gesture** で選択できます（VRはスティックやトリガーの操作、デスクトップはTab / F5 / Escのいずれか）。壁パネルの **Spawn Panel** ボタンからも呼び出せます。詳しくは[壁パネル](../operation/wall-panel.md)を参照してください。
+「○○したい」「○○が起きている」から、該当するページへ案内します。
 
 ---
 
-## スタッフ向け
+## 観客として
 
-### スタッフ画面が開けない
-
-- **VRChat ディスプレイネーム**で許可されているか、または **壁パネルで暗証番号を解錠** したか確認します。
-- 解錠後は、手元パネルの **切り替えボタン** でスタッフ画面へ移動します。
-- 暗証番号の解錠は端末ごとです。別の端末では改めて解錠が必要です。
-
-### URLを変更しても再生されない
-
-- URLとして不正なフォーマットでないか確認します（不正なフォーマットは反映されません）。
-- **Playing** の欄に、意図したURLが反映されているか確認します。
-- 配信側が実際に配信を出しているか（配信サーバー・配信ソフトなど）を確認します。
-
-### エラー（赤）が増える
-
-配信サーバーへの負荷が高い可能性があります。**Concurrent≤（同時Resync上限）を下げて** ください。空き接続より大きく設定していないかも確認します（[上限調整](../operation/monitoring.md#limits)）。
-
-### Resync Allの完了が遅い
-
-順番待ちが多い状態です。配信サーバーに余裕があれば **Concurrent≤ を上げる** と速くなります。ただし上げすぎると失敗が増えるため、エラー（赤）を見ながら調整します。
-
-### 全員の再生がまとめて停止した
-
-配信元・配信サーバー・URLの問題が疑われます。**Playing** を確認し、必要ならURLを入れ直します。それでも復旧しない深刻な場合は、最終手段として **Reboot All**（全員途切れます）を使用します。
+| やりたいこと・起きていること | 参照先 |
+|---|---|
+| 手元パネルを呼び出したい | [壁パネル](../operation/wall-panel.md) |
+| 音声が出ない・ズレを直したい | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Volume](../operation/panel-viewer.md#volume音量) |
+| 映像が止まった・カクつく | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Reboot ボタン](../operation/panel-viewer.md#reboot-button) |
+| 自動で再同期されるのを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
+| 音量を変えたい | [Volume](../operation/panel-viewer.md#volume音量) |
+| 表示の意味を知りたい（Drift, Audio Level, ステータス等） | [表示の早見表](../operation/panel-viewer.md#表示の早見表) |
+| 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#再生ステータス表示サムネイルの下) |
+| Resync ボタンが押せない | [Resync ボタン](../operation/panel-viewer.md#resync-button) |
+| AunCast のバージョンを確認したい | 壁パネルの (i) ボタンで表示される製品情報に記載されています |
 
 ---
 
-## スタッフ向け（設定・配線）
+## スタッフとして（配信中）
 
-### 停止時に画面が白（黒）になる
+| やりたいこと・起きていること | 参照先 |
+|---|---|
+| スタッフ画面を解錠したい | [スタッフ画面を解錠する](../operation/panel-staff.md#unlock) |
+| 配信URLを変更したい | [配信URLを変更する](../operation/panel-staff.md#配信urlを変更する) |
+| 全員をまとめて再同期したい | [Resync All](../operation/panel-staff.md#global-resync) |
+| 全員の再生を止めたい | [Stop All](../operation/panel-staff.md#stop-all全員の再生を停止) |
+| 同時接続上限・同時Resync上限を調整したい | [上限の調整](../operation/monitoring.md#limits) |
+| エラー（赤）が増えている | [異常な状況への対処](../operation/monitoring.md#異常な状況への対処) |
+| Resync Allの完了が遅い | [増減の目安](../operation/monitoring.md#増減の目安) |
+| 全員の再生がまとめて止まった | [Reboot All](../operation/panel-staff.md#force-reboot) |
 
-停止中の待機用画像が設定されていません。`AunCastSettings.idleScreenTexture` を設定してください（[設定と調整](../setup/settings.md)）。
+---
 
-### スクリーンを増やしたのに映らない
+## スタッフとして（初期設定）
 
-スクリーンを追加したら、`AunCastSettings` の **「`AunCastEventBus` 参照を再配線」** を実行し、表示先を接続し直す必要があります（[複製配置と再配線](../setup/replication.md#screens)）。
-
-### 何名まで耐えられるか
-
-配信サーバーの上限しだいです。**Connection≤（同時接続上限）** を契約プランの値に合わせ、**Concurrent≤（同時Resync上限）** は空き接続から余裕を見て決めます。考え方は[同時接続上限の管理](../concepts/connection-limit.md)を参照してください。
+| やりたいこと・起きていること | 参照先 |
+|---|---|
+| 導入の最短手順を知りたい | [クイックスタート](../quickstart.md#setup) |
+| 接続上限を設定したい | [接続上限の設定](../setup/settings.md#connection-limits) |
+| 停止中の待機画像を設定したい | [設定と調整](../setup/settings.md) |
+| スクリーンを追加したい | [スクリーンを増やす](../setup/replication.md#screens) |
+| 壁パネルを追加したい | [壁パネルを増やす](../setup/replication.md#wall-panels) |
+| 音声出力を配線したい | [音声（AVPro Speaker 配線）](../setup/replication.md#speaker) |
+| 何名まで耐えられるか知りたい | [同時接続上限の管理](../concepts/connection-limit.md) |
+| 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#配信サーバーの選定) |
+| 配信のビットレートや遅延の目安を知りたい | [配信・運用上の注意](../operation/streaming.md) |
 
 ---
 
@@ -88,7 +63,7 @@
     再同期は予備系統を背後で準備してから切り替えるため **ほぼ途切れません**。リブートはいったんすべて停止して接続し直すため **途切れます**。
 
 ??? question "音量を変えると、他の観客にも反映されるのか？"
-    いいえ。Volume はローカル（自分の端末）のみの設定で、他の観客や配信そのものには影響しません。
+    いいえ。Volume はローカル（自分の端末）のみの設定で、他の観客や配信そのものには影響しません。スタッフ用の機能ではなく、観客自身が利用するための機能です。
 
 ??? question "ライブ配信ではなく録画動画でも使用できるか？"
     使用できますが、AunCast はライブ配信向けに設計されています。巻き戻しが可能な録画動画では、一般的な動画再生システムのほうが適する場面もあります。
@@ -98,4 +73,12 @@
 
 ---
 
-解決しない場合は、[Issue](https://github.com/pasocommate/AunCast/issues) もご確認ください。
+## 解決しない場合は
+
+上記で解決しない場合は、GitHub の Issue でご連絡ください。過去に同じ報告がないか確認したうえで、目的に合ったテンプレートを選んで投稿できます。
+
+- **[不具合報告](https://github.com/pasocommate/AunCast/issues/new?template=bug-report.yml)**：想定外の動作や再現可能な不具合
+- **[質問・相談](https://github.com/pasocommate/AunCast/issues/new?template=question.yml)**：マニュアルを読んでも解決しなかった疑問
+- **[機能要望](https://github.com/pasocommate/AunCast/issues/new?template=feature-request.yml)**：新しい機能や改善の提案
+
+[Issue 一覧はこちら](https://github.com/pasocommate/AunCast/issues)で確認できます。

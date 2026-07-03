@@ -4,11 +4,12 @@ AunCast の開発にあたり力を貸してくださった方々、およびオ
 
 ---
 
+<div class="author-profile" markdown>
+<div class="author-profile-text" markdown>
+
 ## 作者について
 
-自分自身もVRChatライブやってます。私が低遅延ライブやりたいので、ぜひ AunCast を導入したイベントワールドにお呼びください！
-
-![作者近影](../assets/author-thumb.jpg){ width="300" }
+私自身もVRChatライブやってます。私が低遅延ライブをやりたいので、AunCast を開発しました。ぜひ AunCast を導入したイベントワールドにお呼びください！
 
 **つつみちぎり**
 
@@ -17,17 +18,19 @@ AunCast の開発にあたり力を貸してくださった方々、およびオ
 - **YouTube**: [https://www.youtube.com/@chigiri](https://www.youtube.com/@chigiri)
 - **Booth**: [https://chigiri.booth.pm/](https://chigiri.booth.pm/)
 
+</div>
+<div class="author-profile-image" markdown>
+
+![作者近影](../assets/author-poster.jpg)
+
+</div>
+</div>
+
 ---
 
 ## Special Thanks
 
-- [DJ Mazzn1987](https://x.com/Mazzn1987_TRPG)
-- [のりお](https://x.com/norio_709)
-- [オジエド](https://x.com/Oedjed_jp)
-- [Keyholder](https://x.com/HolderKey68021)
-- [SUSABI](https://x.com/SUSABI_VRC)
-- [やっさん](https://x.com/yassann357)
-- [ぴちきょ](https://x.com/pichikyo)
+[DJ Mazzn1987](https://x.com/Mazzn1987_TRPG) / [のりお](https://x.com/norio_709) / [オジエド](https://x.com/Oedjed_jp) / [Keyholder](https://x.com/HolderKey68021) / [SUSABI](https://x.com/SUSABI_VRC) / [やっさん](https://x.com/yassann357) / [ぴちきょ](https://x.com/pichikyo) （敬称略）
 
 ---
 

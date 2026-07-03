@@ -64,6 +64,5 @@ nav:
       - モニタリングと上限調整: operation/monitoring.md
       - 配信・運用上の注意: operation/streaming.md
   - 付録:
-      - 用語集: appendix/glossary.md
-      - トラブルシューティング / FAQ: appendix/troubleshooting.md
+      - 逆引きインデックス: appendix/troubleshooting.md
       - クレジット: appendix/credits.md

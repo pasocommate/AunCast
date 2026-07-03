@@ -117,6 +117,15 @@ header img[alt="icon"] {
   }
 }
 
+/* ヘッダーのサイトタイトル右にバージョン番号を表示する */
+header h1::after {
+  content: "v3.0.0";
+  font-weight: 400;
+  font-size: 0.75em;
+  margin-left: 0.5em;
+  opacity: 0.6;
+}
+
 /* ヘッダー背景：横ループ可能なボケ光素材を敷き詰める
    中央を見せ、上下ははみ出す前提。
    画像の手前にオーバーレイを 50% 重ねる（多重背景の先頭が前面）。
@@ -147,4 +156,53 @@ header {
    base.css より後に読み込まれるので navigation を none で上書きできる。 */
 @view-transition {
   navigation: none;
+}
+
+/* 水平線の上下マージンを均等にする（テーマ未指定のためブラウザ既定に頼っていた） */
+article hr {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+/* hr 直後の h2 はテーマの margin-top（広幅時 80px）が hr の余白と合算されて
+   過大になるため、hr 側のマージンに任せて h2 の上マージンを消す */
+article .typography hr + h2 {
+  margin-top: 0;
+}
+
+/* 作者セクション: テキスト左・画像右の段組み */
+.author-profile {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.author-profile-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-profile-text > h2:first-child {
+  margin-top: 0;
+}
+
+.author-profile-image {
+  flex: 0 0 auto;
+  width: min(280px, 40%);
+}
+
+.author-profile-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+@media (max-width: 640px) {
+  .author-profile {
+    flex-direction: column-reverse;
+  }
+
+  .author-profile-image {
+    width: 100%;
+  }
 }
