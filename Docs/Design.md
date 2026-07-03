@@ -435,10 +435,7 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 - LateUpdate で頭部追従（`localOffset`）
 - 表示はローカル限定（同期なし）
 
-### M. Debug / Telemetry View
-開発・テスト用。任意実装。`SyncDebugDisplay` コンポーネントが補助情報を提供する。
-
-### N. AunCastEventBus
+### M. AunCastEventBus
 シーン内に N 個配置されうる購読者群へ、publisher が具象型を知らずに配信するローカル PubSub ハブ。AunCast ルート直下の `AunCastEventHub` に配置する。
 
 責務:

@@ -285,14 +285,6 @@ classDiagram
         +OnVideoTextureChanged()
     }
 
-    class SyncDebugDisplay {
-        <<None>>
-        -LocalDualPlayerController controller
-        -AudioSilenceDetector silenceDetectorA
-        -AudioSilenceDetector silenceDetectorB
-        +PostLateUpdate()
-    }
-
     %% ========================================
     %%  コンポジション / 依存関係
     %% ========================================
@@ -342,10 +334,6 @@ classDiagram
     %% Utility → EventBus 購読
     VideoMeshScreen --> AunCastEventBus : eventBus (購読)
     VideoUiScreen --> AunCastEventBus : eventBus (購読)
-
-    %% Debug
-    SyncDebugDisplay --> LocalDualPlayerController : controller
-    SyncDebugDisplay --> AudioSilenceDetector : silenceDetectorA/B
 ```
 
 > **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは StaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `UserStatusPanel`→`StaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`StaffControlPanel`→`UserStatusPanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
@@ -369,7 +357,6 @@ classDiagram
 | | `HudProgressOverlay` | VR ジェスチャー長押し中の HUD プログレス表示 |
 | **Utility** | `VideoMeshScreen` | MeshRenderer にビデオテクスチャを適用 |
 | | `VideoUiScreen` | RawImage にビデオテクスチャを適用 (アスペクト比フィット) |
-| | `SyncDebugDisplay` | A/B ドリフトのリアルタイムスクロールグラフ (開発用) |
 
 ## 同期モード一覧
 

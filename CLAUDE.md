@@ -40,7 +40,7 @@
 
 - 新しい UdonSharp スクリプト (`.cs`) を作成した場合、対応する `UdonSharpProgramAsset` (`.asset`) も必ずペアで作成すること。`.cs` のみだと UdonBehaviour の `programSource` が空になり、Inspector に "Selected U# behaviour program source reference is not valid." と表示されコンポーネントが動作しない。
   - `.asset` ファイルは同じディレクトリに同名で配置する（例: `VideoMeshScreen.cs` → `VideoMeshScreen.asset`）。
-  - テンプレート: 既存の `.asset` ファイル（例: `SyncDebugDisplay.asset`）を参考に、以下のフィールドを書き換えて作成する:
+  - テンプレート: 既存の `.asset` ファイル（例: `VideoMeshScreen.asset`）を参考に、以下のフィールドを書き換えて作成する:
     - `m_Name`: スクリプト名
     - `sourceCsScript` の `guid`: 対象 `.cs.meta` ファイル内の GUID
     - `behaviourSyncMode`: スクリプトの `[UdonBehaviourSyncMode]` に対応する値（0=Continuous, 1=Manual, 2=NoVariableSync）

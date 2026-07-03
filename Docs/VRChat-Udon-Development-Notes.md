@@ -110,7 +110,7 @@
 - `LoadURL()` を呼ぶと `IsPlaying` は**即座に true を返し始める**が、実際の再生（`GetTime()` が進行し始める瞬間）までには数秒〜十数秒の接続フェーズがある。
 - 症状: `IsPlaying && (serverTime - anchorServerTime)` で再生経過時間を計算すると、接続フェーズ分が誤って積算され、Gap 検知や進捗表示がズレる。
 - 対策: 実再生のアンカーは **`IsPlaying` ではなく `GetTime() > 0`（または 9.2 の前進 delta 観測）を基準に取る**。「再生開始」と「接続開始」は別イベントとして区別する。
-- 参考実装: `SyncDebugDisplay.PostLateUpdate` の `_hasPlayStartServerTime` アンカー取得ロジック。
+- 参考実装: `LocalDualPlayerController.IsActiveAlive`（`IsPlaying() && GetTime() > 0f` で実再生を判定）。
 
 ### 9.8 グループロール API は Udon 未露出
 - VRChat のグループロール（`GroupRole`）を Udon から取得する公式 API は存在しない（2026-04 時点で Canny に要望あり、未実装）。
