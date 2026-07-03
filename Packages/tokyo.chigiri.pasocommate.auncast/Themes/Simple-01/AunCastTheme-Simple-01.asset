@@ -30,7 +30,7 @@ MonoBehaviour:
   displayFont: {fileID: 11400000, guid: 9d7d01127c58f5f4796c54f98cb2f0fa, type: 2}
   bodyFont: {fileID: 11400000, guid: c69bb701418e6b441a398f17daa3f423, type: 2}
   userBackgroundColor: {r: 0.227451, g: 0.29803923, b: 0.34901962, a: 1}
-  staffBackgroundColor: {r: 0.3186, g: 0.2832, b: 0.354, a: 1}
+  staffBackgroundColor: {r: 0.40801248, g: 0.3137255, b: 0.49803922, a: 1}
   wallBackgroundColor: {r: 0.227451, g: 0.29803923, b: 0.34901962, a: 1}
   decalColor: {r: 1, g: 1, b: 1, a: 1}
   primaryColor: {r: 0, g: 0.53909135, b: 1, a: 1}

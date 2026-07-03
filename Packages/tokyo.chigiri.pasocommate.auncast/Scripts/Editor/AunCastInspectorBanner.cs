@@ -174,7 +174,7 @@ namespace PasocomMate.AunCast.Internal
                 fontSize = 11,
                 richText = true
             };
-            _bannerVersionStyle.normal.textColor = new Color(0.85f, 0.85f, 0.85f);
+            _bannerVersionStyle.normal.textColor = new Color(1f, 1f, 1f);
             return _bannerVersionStyle;
         }
 
