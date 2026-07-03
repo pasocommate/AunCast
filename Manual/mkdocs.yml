@@ -48,7 +48,7 @@ markdown_extensions:
 
 nav:
   - はじめに: index.md
-  - 動作原理: overview.md
+  - 動作原理: how-it-works.md
   - クイックスタート: quickstart.md
   - 開発の背景: background.md
   - くわしい仕組み:
@@ -58,11 +58,11 @@ nav:
       - 設定と調整: setup/settings.md
       - 複製配置と再配線: setup/replication.md
   - 運用ガイド:
-      - 壁パネル: operation/wall-panel.md
+      - 壁パネルと手元パネル: operation/panels.md
       - 手元パネル：観客ビュー: operation/panel-viewer.md
       - 手元パネル：スタッフビュー: operation/panel-staff.md
       - モニタリングと上限調整: operation/monitoring.md
       - 配信・運用上の注意: operation/streaming.md
   - 付録:
-      - 逆引きインデックス: appendix/troubleshooting.md
+      - 逆引きインデックス: appendix/reverse-index.md
       - クレジット: appendix/credits.md

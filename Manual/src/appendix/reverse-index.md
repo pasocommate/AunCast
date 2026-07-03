@@ -8,13 +8,13 @@
 
 | やりたいこと・起きていること | 参照先 |
 |---|---|
-| 手元パネルを呼び出したい | [壁パネル](../operation/wall-panel.md) |
-| 音声が出ない・ズレを直したい | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Volume](../operation/panel-viewer.md#volume音量) |
+| 手元パネルを呼び出したい | [壁パネルと手元パネル](../operation/panels.md) |
+| 音声が出ない・ズレを直したい | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Volume](../operation/panel-viewer.md#volume) |
 | 映像が止まった・カクつく | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Reboot ボタン](../operation/panel-viewer.md#reboot-button) |
-| 自動で再同期されるのを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
-| 音量を変えたい | [Volume](../operation/panel-viewer.md#volume音量) |
-| 表示の意味を知りたい（Drift, Audio Level, ステータス等） | [手元パネルの各部](../operation/panel-viewer.md#手元パネルの各部) |
-| 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#再生ステータス表示サムネイルの下) |
+| 自動的に再同期されるのを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
+| 音量を変えたい | [Volume](../operation/panel-viewer.md#volume) |
+| 表示の意味を知りたい（Drift, Audio Level, ステータス等） | [手元パネルの各部](../operation/panel-viewer.md#controls) |
+| 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#playback-status) |
 | Resync ボタンが押せない | [Resync ボタン](../operation/panel-viewer.md#resync-button) |
 | AunCast のバージョンを確認したい | 壁パネルの (i) ボタンで表示される製品情報に記載されています |
 
@@ -24,13 +24,13 @@
 
 | やりたいこと・起きていること | 参照先 |
 |---|---|
-| スタッフ画面を解錠したい | [スタッフ画面を解錠する](../operation/panel-staff.md#unlock) |
-| 配信URLを変更したい | [配信URLを変更する](../operation/panel-staff.md#配信urlを変更する) |
+| スタッフビューを解錠したい | [スタッフビューを解錠する](../operation/panel-staff.md#unlock) |
+| 配信URLを変更したい | [配信URLを変更する](../operation/panel-staff.md#change-url) |
 | 全員をまとめて再同期したい | [Resync All](../operation/panel-staff.md#global-resync) |
-| 全員の再生を止めたい | [Stop All](../operation/panel-staff.md#stop-all全員の再生を停止) |
+| 全員の再生を止めたい | [Stop All](../operation/panel-staff.md#stop-all) |
 | 同時接続上限・同時Resync上限を調整したい | [上限の調整](../operation/monitoring.md#limits) |
-| エラー（赤）が増えている | [異常な状況への対処](../operation/monitoring.md#異常な状況への対処) |
-| Resync Allの完了が遅い | [増減の目安](../operation/monitoring.md#増減の目安) |
+| エラー（赤）が増えている | [異常な状況への対処](../operation/monitoring.md#troubleshooting) |
+| Resync Allの完了が遅い | [増減の目安](../operation/monitoring.md#scaling-guide) |
 | 全員の再生がまとめて止まった | [Reboot All](../operation/panel-staff.md#force-reboot) |
 
 ---
@@ -46,7 +46,7 @@
 | 壁パネルを追加したい | [壁パネルを増やす](../setup/replication.md#wall-panels) |
 | 音声出力を配線したい | [音声（AVPro Speaker 配線）](../setup/replication.md#speaker) |
 | 何名まで耐えられるか知りたい | [同時接続上限の管理](../concepts/connection-limit.md) |
-| 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#配信サーバーの選定) |
+| 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#server-selection) |
 | 配信のビットレートや遅延の目安を知りたい | [配信・運用上の注意](../operation/streaming.md) |
 
 ---
