@@ -69,10 +69,10 @@ namespace PasocomMate.AunCast.Internal
                     using (new EditorGUI.DisabledScope(!hasPortable))
                     {
                         if (GUILayout.Button(
-                            AunCastEditorLocalization.Localize("視聴者表示", "Show Viewer"), GUILayout.Height(28)))
+                            AunCastEditorLocalization.Localize("観客ビューを表示", "Show As Viewer"), GUILayout.Height(28)))
                             SwitchContentView(root, applier.theme, showStaff: false);
                         if (GUILayout.Button(
-                            AunCastEditorLocalization.Localize("スタッフ表示", "Show Staff"), GUILayout.Height(28)))
+                            AunCastEditorLocalization.Localize("スタッフビューを表示", "Show As Staff"), GUILayout.Height(28)))
                             SwitchContentView(root, applier.theme, showStaff: true);
                     }
                 }
