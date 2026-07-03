@@ -65,7 +65,7 @@ MonoBehaviour:
   wallContentHorizontalMargin: 40
   wallVerticalMargin: 40
   hudProgressUsePieMode: 1
-  hudProgressLocalOffset: {x: 0, y: -0.18, z: 0.6}
+  hudProgressLocalOffset: {x: 0, y: 0, z: 0.6}
   hudProgressBarSize: {x: 0.18, y: 0.018}
   hudProgressPieDiameter: 0.09
   hudProgressPieRingThickness: 0.1
