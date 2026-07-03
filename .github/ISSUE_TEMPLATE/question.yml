@@ -1,0 +1,21 @@
+name: 質問・相談
+description: マニュアルを読んでも解決しなかった疑問や、運用についての相談
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ご質問ありがとうございます。[ユーザーマニュアル](https://pasocommate.github.io/AunCast/)や[逆引きインデックス](https://pasocommate.github.io/AunCast/appendix/troubleshooting/)もあわせてご確認ください。
+  - type: textarea
+    id: question
+    attributes:
+      label: 質問の内容
+      description: 困っていること、知りたいことを教えてください。
+      placeholder: "例：配信サーバーの同時接続上限が不明な場合、Connection≤ をどのくらいに設定すればよいか？"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: 背景・試したこと
+      description: 質問の背景や、すでに試した対処があれば教えてください。

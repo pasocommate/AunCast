@@ -1,0 +1,26 @@
+name: 機能要望
+description: 新しい機能や改善の提案
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ご提案ありがとうございます。どのような場面で必要になるかも添えていただけると、検討の参考になります。
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案の内容
+      description: どのような機能・改善を求めますか？
+      placeholder: "例：壁パネルに現在の接続人数を表示してほしい"
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 背景・動機
+      description: この機能が必要になる場面や、現状で困っていることを教えてください。
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 代替案
+      description: 現在の回避策や、他に考えられるアプローチがあれば教えてください。

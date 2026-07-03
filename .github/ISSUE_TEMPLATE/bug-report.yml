@@ -1,0 +1,63 @@
+name: 不具合報告
+description: AunCast の不具合や想定外の動作を報告する
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        不具合の報告ありがとうございます。以下の項目をできる範囲でご記入ください。
+  - type: textarea
+    id: summary
+    attributes:
+      label: 何が起きましたか？
+      description: 期待した動作と、実際に起きた動作を教えてください。
+      placeholder: "例：Resync ボタンを押しても再同期が始まらず、ステータスが「Retry Wait」のまま変わらない"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 同じ症状を再現するための手順を教えてください。
+      placeholder: |
+        1. 配信URLを設定して再生を開始
+        2. 5分ほど経過してから Resync を押す
+        3. ステータスが「Retry Wait」のまま変わらない
+  - type: dropdown
+    id: role
+    attributes:
+      label: 報告者の役割
+      options:
+        - ワールド制作（Unity での導入・設定）
+        - 運用（配信中のスタッフ操作）
+        - 観客（視聴中）
+    validations:
+      required: true
+  - type: input
+    id: auncast-version
+    attributes:
+      label: AunCast のバージョン
+      description: "壁パネルの (i) ボタンで表示される製品情報、AunCastSettings インスペクタ上部、VCC のパッケージ一覧のいずれかで確認できます。"
+      placeholder: "例：4.0.0"
+    validations:
+      required: true
+  - type: input
+    id: sdk-version
+    attributes:
+      label: VRChat SDK のバージョン
+      description: "VCC のパッケージ一覧で確認できます。ワールド制作での不具合の場合は必ずご記入ください。"
+      placeholder: "例：3.7.5"
+  - type: dropdown
+    id: platform
+    attributes:
+      label: プラットフォーム
+      options:
+        - VR（PC接続）
+        - デスクトップ（VRなし）
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: 補足情報
+      description: スクリーンショット、コンソールログ、関連する設定値など、参考になる情報があれば添付してください。
