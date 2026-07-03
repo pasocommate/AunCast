@@ -154,7 +154,7 @@ namespace PasocomMate.AunCast
                 "Silence Resync: automatically resync when silence is detected",
                 "Close this panel",
                 "Switch between local controls and staff controls",
-                "Output structured timeline logs for playback and resync diagnosis",
+                "Output structured timeline logs for playback and resync diagnosis (heavy load; keep off unless diagnosing)",
             };
             _helpTextsJa = new[]
             {
@@ -178,7 +178,7 @@ namespace PasocomMate.AunCast
                 "Silence Resync: 無音を検出した際に自動でResyncします",
                 "パネルを閉じます",
                 "ローカル操作パネルとスタッフ操作パネルを切り替えます",
-                "再生・Resync診断用の構造化タイムラインログを出力します",
+                "再生・Resync診断用の構造化タイムラインログを出力します（負荷が高いため、診断時以外はオフのままにしてください）",
             };
 
             string lang = VRCPlayerApi.GetCurrentLanguage();
