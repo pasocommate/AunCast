@@ -13,7 +13,7 @@
 | 映像が止まった・カクつく | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Reboot ボタン](../operation/panel-viewer.md#reboot-button) |
 | 自動で再同期されるのを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
 | 音量を変えたい | [Volume](../operation/panel-viewer.md#volume音量) |
-| 表示の意味を知りたい（Drift, Audio Level, ステータス等） | [表示の早見表](../operation/panel-viewer.md#表示の早見表) |
+| 表示の意味を知りたい（Drift, Audio Level, ステータス等） | [手元パネルの各部](../operation/panel-viewer.md#手元パネルの各部) |
 | 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#再生ステータス表示サムネイルの下) |
 | Resync ボタンが押せない | [Resync ボタン](../operation/panel-viewer.md#resync-button) |
 | AunCast のバージョンを確認したい | 壁パネルの (i) ボタンで表示される製品情報に記載されています |
