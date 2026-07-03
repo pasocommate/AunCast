@@ -5,6 +5,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-07-03
+- テーマ適用範囲を拡充（パネル余白・壁面サイズ・ビデオ画面・StaffLock・表示エリア背景色などをテーマから制御）
+- 新テーマ Flat を追加
+- ThemeApplier にライブ自動適用トグルを追加
+- インスペクタ UI を日英両対応化（表示言語の手動トグル付き）
+- 利用規約への同意ゲートをインスペクタに追加
+- AunCastSettings 編集時に UI 表示を実値へ同期
+- リトライ間隔を AunCastSettings で調整可能に
+- WallControlPanel に製品情報ビュー（QR コード・連絡先・バージョン付きコピーライト表記）を追加
+- 「Auto Resync」表記を「Silence Resync」に統一
+- DriftGraph（同期デバッグ表示）を廃止
+- ワールド定員管理を廃止し接続上限を既定値化
+- RenderMate v3 に対応
+- ユーザーマニュアル（MkDocs）を新設・整備
+- 同意状態が既定値へ戻る不具合、ビデオプレビューの FlipY/Gamma、Play 停止後の背景色整合など各種バグ修正
+
 ## [3.0.0] - 2026-06-16
 - PlayerData によるローカル設定の永続化
 - デフォルト配信 URL と初回 Join 時の自動再生
