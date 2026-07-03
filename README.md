@@ -1,105 +1,52 @@
-# WORK IN PROGRESS
-
-正式リリースは7月上旬を予定しています。
-The official release is scheduled for early July.
-
------
-
 ![AunCast Banner](Packages/tokyo.chigiri.pasocommate.auncast/Textures/Editor/auncast-banner.jpg)
 
 # AunCast
 
-AunCast は、VRChat ワールド向けの低遅延ライブ配信プレイヤーシステムです。  
-`VRCAVProVideoPlayer` を 2 系統（Active/Standby）で運用し、停止やドリフト発生時に Resync して視聴継続性を高めることを目的にしています。
+**AunCast** は、VRChat ワールド向けの **低遅延ライブ専用ビデオプレイヤー** です。  
+音楽ライブやDJイベントなど、アバターパフォーマンスに合わせて音声を配信するシーンで、**長時間にわたってズレず・途切れずに配信し続ける** ことを目指して開発されました。
 
-利用規約: [AunCast利用規約](Packages/tokyo.chigiri.pasocommate.auncast/LICENSE)
+## 特徴
 
-## 主な特徴
+- **観客向けパネル** — 再生状態の確認、音量調整、手動Resyncなどの機能を提供します。ジェスチャーでいつでも手元に呼び出せます。
+  
+  <img src="Manual/src/assets/portable-panel-viewer.png" alt="観客向けパネル" width="49%">
+- **スタッフ操作パネル** — URL更新、接続上限調整などをワールド内で操作できます。観客向けパネルとの切り替え表示が可能です。
+  
+  <img src="Manual/src/assets/portable-panel-staff.png" alt="スタッフ操作パネル" width="49%">
+- **２系統プレイヤーによるシームレスな再同期** — 現用＋予備の２系統を保持し、予備をバックグラウンドで接続してから切り替えます。ドリフト（ズレ）を解消するためのResync（再同期）を行う際に、音声の途切れを最小限に抑えます。
+  
+  ![Resyncの流れ（概念図）](Manual/src/assets/diagram-resync-switch.svg)
+- **予約制の再同期キュー** — 同時に再同期できる人数を制御し、配信サーバーの同時接続上限を超過させません。
+  
+  ![再同期の順番待ち（概念図）](Manual/src/assets/diagram-resync-queue.svg)
 
-- 2 系統プレイヤー（Active/Standby）での切替運用
-- `GetTime()` 前進確認ベースの Resync 判定
-- `ResyncCoordinator` による予約制御と同時Resync上限による制御
-- スタッフ向け操作パネル（URL 更新、全体 Resync、停止、接続制限調整）
-- 視聴者向け状態表示とローカル設定 UI（音量、Silence Resync など）
+## 導入
 
-詳細設計は [Docs/Design.md](Docs/Design.md) を参照してください。
+VCC（VRChat Creator Companion）からインストールできます。
+
+1. **[VCC にリスティングを追加](vcc://vpm/addRepo?url=https://pasocommate.chigiri.tokyo/index.json)** をクリックして、PasocomMate リスティングを登録します。
+2. 対象プロジェクトの **Manage Project** で **AunCast** を追加します。
+
+詳しい手順は **[クイックスタート](https://pasocommate.github.io/AunCast/quickstart/)** をご覧ください。
+
+## ドキュメント
+
+| ドキュメント | 対象 | 内容 |
+|---|---|---|
+| **[ユーザーマニュアル](https://pasocommate.github.io/AunCast/)** | ワールド制作者・イベントスタッフ | 導入手順、設定、運用ガイド、トラブルシューティング |
+| **[設計ドキュメント](Docs/Design.md)** | 開発者・AIエージェント | システム設計、状態遷移、同期モデル |
+| **[実装パターン](Docs/Implementation-Patterns.md)** | 開発者・AIエージェント | 同期変数、スタッフ権限操作、UI双方向追従のコーディングルール |
 
 ## 動作環境
 
-`Packages/tokyo.chigiri.pasocommate.auncast/package.json` に基づく情報です。
+- **Unity 2022.3**
+- **VRChat SDK - Worlds** 3.10.2 以上
+- **対応プラットフォーム**: PC（Windows）のみ
 
-- Unity: `2022.3`
-- Package name: `tokyo.chigiri.pasocommate.auncast`
-- Display name: `AunCast`
-- 依存 VPM パッケージ:
-  - `com.vrchat.worlds >=3.10.2`
-  - `net.narazaka.vrchat.tmp-fallback-fonts-jp >=1.0.0`
-  - `tokyo.chigiri.pasocommate.rendermate >=1.0.0 <2.0.0`
-
-## リポジトリ構成
-
-- `Packages/tokyo.chigiri.pasocommate.auncast/`
-  - AunCast 本体パッケージ
-  - `AunCast.prefab`、`Prefabs/WallControlPanel.prefab`
-  - Udon スクリプト群（`Scripts/Udon/*`）
-- `Assets/AunCast-Dev/AunCast-Verify.unity`
-  - 検証用シーン
-- `Docs/`
-  - 設計、実装パターン、QA、ローカル RTSP 検証手順
-
-## 主要コンポーネント
-
-- `LocalDualPlayerController`
-  - Active/Standby の 2 系統再生と切替制御
-- `ResyncCoordinator` / `ResyncCoordinatorClient`
-  - ワールド全体の Resync 要求キューと実行調停
-- `PlaybackSwitcher` / `PlaybackMonitor` / `ActivePlayerMonitor`
-  - 切替進行、状態監視、異常検知
-- `AudioSilenceDetector`
-  - 無音区間検知
-- `StaffControlPanel` / `UserStatusPanel` / `WallControlPanel`
-  - スタッフ操作 UI・視聴者 UI・壁面操作 UI
-
-## 導入・検証
-
-### このリポジトリで開発する場合
-
-1. リポジトリを clone する
-2. Unity Hub でプロジェクトを開く
-3. `Assets/AunCast-Dev/AunCast-Verify.unity` で動作確認する
-
-### ローカル RTSP で検証する場合
-
-- [Docs/Local-Test-Server.md](Docs/Local-Test-Server.md) を参照してください
-- MediaMTX + FFmpeg で `rtsp://` / `rtspt://` ストリームを作って検証できます
-
-## 開発ルール（要点）
-
-- 作業前に `CLAUDE.md` を確認
-- 同期変数・スタッフ権限操作・UI 追従は [Docs/Implementation-Patterns.md](Docs/Implementation-Patterns.md) のパターンに合わせる
-- `[UdonSynced]` を追加/変更した場合は `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行して `.asset` を更新
-
-## QA
-
-- 自動/手動の検証観点は [Docs/QA-Checklist.md](Docs/QA-Checklist.md)
-- テストコード（EditMode）: `Assets/AunCast-Dev/Tests/Editor/`
-
-## リリースとワークフロー
-
-- リリース作成: `.github/workflows/release.yml`（手動実行）
-- リポジトリ listing 再構築: `.github/workflows/build-listing.yml`
-
-`release.yml` では、以下を設定すると別リポジトリの listing ワークフローを自動起動できます。
-
-- Variables
-  - `VPM_LISTING_REPOSITORY`（`owner/repo` 形式）
-  - `VPM_LISTING_WORKFLOW`（省略時 `build-listing.yml`）
-  - `VPM_LISTING_REF`（省略時 `main`）
-- Secret
-  - `VPM_LISTING_REPO_TOKEN`（対象リポジトリの Actions 実行権限を持つトークン）
+その他の依存パッケージはVCCが自動的に解決します。
 
 ## ライセンス
 
-- 本体ライセンス（利用規約）: [Packages/tokyo.chigiri.pasocommate.auncast/LICENSE](Packages/tokyo.chigiri.pasocommate.auncast/LICENSE)
-- サードパーティ表記: [Packages/tokyo.chigiri.pasocommate.auncast/THIRD_PARTY_NOTICES.md](Packages/tokyo.chigiri.pasocommate.auncast/THIRD_PARTY_NOTICES.md)
-- VN3 ライセンス文書: [vn3license_ja.pdf](Packages/tokyo.chigiri.pasocommate.auncast/vn3license_ja.pdf), [vn3license_en.pdf](Packages/tokyo.chigiri.pasocommate.auncast/vn3license_en.pdf)
+- [利用規約](Packages/tokyo.chigiri.pasocommate.auncast/LICENSE)
+- [サードパーティ表記](Packages/tokyo.chigiri.pasocommate.auncast/THIRD_PARTY_NOTICES.md)
+- VN3 ライセンス: [日本語](Packages/tokyo.chigiri.pasocommate.auncast/vn3license_ja.pdf) / [English](Packages/tokyo.chigiri.pasocommate.auncast/vn3license_en.pdf)
