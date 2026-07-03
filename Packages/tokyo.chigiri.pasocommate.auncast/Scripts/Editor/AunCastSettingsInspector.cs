@@ -82,7 +82,6 @@ namespace PasocomMate.AunCast.Internal
             public readonly Transform playerRootA;
             public readonly Transform playerRootB;
             public readonly PlaybackSwitcher switcher;
-            public readonly SyncDebugDisplay syncDebugDisplay;
 
             public SpeakerSetupContext(
                 VideoPlayerManager managerA,
@@ -91,8 +90,7 @@ namespace PasocomMate.AunCast.Internal
                 VRCAVProVideoPlayer playerB,
                 Transform playerRootA,
                 Transform playerRootB,
-                PlaybackSwitcher switcher,
-                SyncDebugDisplay syncDebugDisplay)
+                PlaybackSwitcher switcher)
             {
                 this.managerA = managerA;
                 this.managerB = managerB;
@@ -101,7 +99,6 @@ namespace PasocomMate.AunCast.Internal
                 this.playerRootA = playerRootA;
                 this.playerRootB = playerRootB;
                 this.switcher = switcher;
-                this.syncDebugDisplay = syncDebugDisplay;
             }
         }
 
@@ -816,8 +813,7 @@ namespace PasocomMate.AunCast.Internal
                 managerB.avProPlayer,
                 managerA.transform,
                 managerB.transform,
-                switcher,
-                root.GetComponentInChildren<SyncDebugDisplay>(true));
+                switcher);
             return true;
         }
 
@@ -1009,11 +1005,8 @@ namespace PasocomMate.AunCast.Internal
 
                 AudioSilenceDetector detectorForA = newDetectorsA.Count > 0 ? newDetectorsA[0] : null;
                 AudioSilenceDetector detectorForB = newDetectorsB.Count > 0 ? newDetectorsB[0] : null;
-                AudioSource sourceForA = newSourcesA.Count > 0 ? newSourcesA[0] : null;
-                AudioSource sourceForB = newSourcesB.Count > 0 ? newSourcesB[0] : null;
 
                 ApplySilenceDetectorsToSwitcher(context.switcher, detectorForA, detectorForB);
-                ApplySourcesToSyncDebugDisplay(context.syncDebugDisplay, sourceForA, sourceForB, detectorForA, detectorForB);
 
                 EditorUtility.SetDirty(root.gameObject);
                 Debug.Log($"[AunCast] AVPro Speaker 出力先セットアップを完了しました。対象: {candidates.Length}件 / A:{newSourcesA.Count} / B:{newSourcesB.Count}");
@@ -1085,25 +1078,6 @@ namespace PasocomMate.AunCast.Internal
             changed |= SetObjectProperty(so, "silenceDetectorB", detectorB);
             if (changed)
                 ApplyUdonSerializedChanges(switcher, so, "Apply Silence Detectors to PlaybackSwitcher");
-        }
-
-        private static void ApplySourcesToSyncDebugDisplay(
-            SyncDebugDisplay syncDebugDisplay,
-            AudioSource audioSourceA,
-            AudioSource audioSourceB,
-            AudioSilenceDetector detectorA,
-            AudioSilenceDetector detectorB)
-        {
-            if (syncDebugDisplay == null) return;
-
-            var so = new SerializedObject(syncDebugDisplay);
-            bool changed = false;
-            changed |= SetObjectProperty(so, "audioSourceA", audioSourceA);
-            changed |= SetObjectProperty(so, "audioSourceB", audioSourceB);
-            changed |= SetObjectProperty(so, "silenceDetectorA", detectorA);
-            changed |= SetObjectProperty(so, "silenceDetectorB", detectorB);
-            if (changed)
-                ApplyUdonSerializedChanges(syncDebugDisplay, so, "Apply Audio Sources to SyncDebugDisplay");
         }
 
         private static void ApplyUdonSerializedChanges(

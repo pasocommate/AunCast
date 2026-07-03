@@ -68,9 +68,6 @@ namespace PasocomMate.AunCast.Tests
             // Silence ゲージのマーカー — ランタイム Udon がハードコードで色を設定
             if (path.EndsWith("SilenceThresholdMarker") || path.EndsWith("SilencePeakMarker"))
                 return true;
-            // DriftGraph — デバッグ専用 RawImage/テキスト、テーマ対象外
-            if (path.Contains("/DriftGraph"))
-                return true;
             return false;
         }
 
@@ -80,9 +77,6 @@ namespace PasocomMate.AunCast.Tests
                 return true;
             // HUD Quad — プロパティのみ変更、マテリアル参照は固定
             if (path.EndsWith("/Quad"))
-                return true;
-            // DriftGraph — デバッグ専用 RawImage、テーマ対象外
-            if (path.Contains("/DriftGraph"))
                 return true;
             // VideoScreen / TextureGrab / Screen — テーマ対象外
             if (path.EndsWith("/VideoScreen") || path.EndsWith("/TextureGrab") || path.EndsWith("/Screen"))
