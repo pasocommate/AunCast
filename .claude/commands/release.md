@@ -55,9 +55,13 @@ $ARGUMENTS が指定されている場合はそれを使う。未指定の場合
 
 変更点の内容はステップ 2 で確定したものをそのまま使う。
 
-### 5. package.json の更新
+### 5. バージョン番号の更新
 
-`Packages/tokyo.chigiri.pasocommate.auncast/package.json` の `version` フィールドを新バージョンに更新する。
+以下の３箇所を新バージョンに更新する:
+
+- `Packages/tokyo.chigiri.pasocommate.auncast/package.json` の `version` フィールド
+- `Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/UI/WallControlPanel.cs` の `PACKAGE_VERSION` 定数
+- `Manual/src/assets/stylesheets/extra.css` の `header h1::after` の `content` 値
 
 ### 6. コミット
 
@@ -74,6 +78,8 @@ v{前バージョン} からの主な変更点:
 
 コミット対象は以下のファイル:
 - `Packages/tokyo.chigiri.pasocommate.auncast/package.json`
+- `Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/UI/WallControlPanel.cs`
+- `Manual/src/assets/stylesheets/extra.css`
 - `Packages/tokyo.chigiri.pasocommate.auncast/CHANGELOG.md`
 
 CHANGELOG.md が新規作成の場合は `.meta` ファイルも含める。

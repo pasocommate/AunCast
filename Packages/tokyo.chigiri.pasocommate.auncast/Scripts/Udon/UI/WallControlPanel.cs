@@ -79,6 +79,14 @@ namespace PasocomMate.AunCast
         private const string SWITCH_ICON_UNLOCKED = "\ue898";   // LockOpen
         private const string INFO_ICON  = "\uf59b";           // InfoI（i のみ）
         private const string CLOSE_ICON = "\ue5cd";           // Close（閉じる）
+        public const string PACKAGE_VERSION = "3.0.0";
+        private const string COPYRIGHT_TEXT =
+            "AunCast v" + PACKAGE_VERSION
+            + "\nX: @chigiri_vrc"
+            + "\nhttps://chigiri.tokyo/"
+            + "\n"
+            + "\n© 2026 Chigiri Tsutsumi";
+
         // プレハブ SpawnPanelButton の offsetMax.x に対応
         private const float SPAWN_PANEL_BUTTON_RIGHT_DEFAULT = 94f;
         private const float SPAWN_PANEL_BUTTON_RIGHT_EXPANDED = 0f;
@@ -113,6 +121,7 @@ namespace PasocomMate.AunCast
             _nearSqrDist = wallNearDistance * wallNearDistance;
             _farSqrDist = wallFarDistance * wallFarDistance;
             ApplySharedButtonsLayout();
+            ApplyCopyrightText();
             UpdatePasscodeDisplay();
             SetViewTarget(VIEW_USER, true);
             ApplyGestureGroupVisibility();
@@ -366,6 +375,14 @@ namespace PasocomMate.AunCast
                 _viewBeforeInformation = _viewTarget;
                 SetViewTarget(VIEW_INFORMATION, false);
             }
+        }
+
+        private void ApplyCopyrightText()
+        {
+            var tf = transform.Find("ContentScaler/WallContentArea/InformationContent/CopyrightText");
+            if (tf == null) return;
+            var tmp = tf.GetComponent<TMP_Text>();
+            if (tmp != null) tmp.text = COPYRIGHT_TEXT;
         }
 
         /// <summary>情報表示中は閉じるアイコン、それ以外は i アイコンを表示する。</summary>
