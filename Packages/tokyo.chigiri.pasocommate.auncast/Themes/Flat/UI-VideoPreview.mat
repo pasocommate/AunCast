@@ -12,7 +12,7 @@ Material:
   m_Parent: {fileID: 2100000, guid: 9f21cc39915d54ac5ab7fe1139c279af, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _CORNER_ROUND
+  - _CORNER_SQUARE
   - _DISSOLVE_OFF
   - _USE_MAINTEX
   m_InvalidKeywords:

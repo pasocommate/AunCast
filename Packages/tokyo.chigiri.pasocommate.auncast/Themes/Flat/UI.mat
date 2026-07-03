@@ -12,7 +12,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _CORNER_ROUND
+  - _CORNER_SQUARE
   - _DISSOLVE_OFF
   m_InvalidKeywords:
   - _GRADIENT_NONE
@@ -70,9 +70,9 @@ Material:
     - _BorderRingCount: 1
     - _BorderVertexColorInfluence: 1
     - _BorderWidth: 0
-    - _CORNER: 1
+    - _CORNER: 0
     - _ColorMask: 15
-    - _CornerSize: 8
+    - _CornerSize: 0
     - _DISSOLVE: 0
     - _DissolveAngle: 0
     - _DissolveEdgeVertexColorInfluence: 0

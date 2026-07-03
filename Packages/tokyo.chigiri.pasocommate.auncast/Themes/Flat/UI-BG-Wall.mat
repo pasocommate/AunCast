@@ -7,12 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: UI-BG-Portable
+  m_Name: UI-BG-Wall
   m_Shader: {fileID: 4800000, guid: f2b6e8e4c48d4a4da2f6b38f6b4f1c3a, type: 3}
   m_Parent: {fileID: 2100000, guid: e43141e18e7e3a07b603ee018ea06f08, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _CORNER_ROUND
+  - _CORNER_SQUARE
   - _DISSOLVE_OFF
   m_InvalidKeywords:
   - _BLINKON_ON
@@ -32,8 +32,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats:
-    - _DissolveThreshold: 0
+    m_Floats: []
     m_Colors:
-    - _BaseMatcapColor: {r: 0.495, g: 0.495, b: 0.495, a: 1}
+    - _BaseMatcapColor: {r: 0.146, g: 0.146, b: 0.146, a: 1}
   m_BuildTextureStacks: []

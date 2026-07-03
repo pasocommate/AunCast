@@ -7,15 +7,16 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: UI-Form-ButtonRect
+  m_Name: UI-Form-Input
   m_Shader: {fileID: 4800000, guid: f2b6e8e4c48d4a4da2f6b38f6b4f1c3a, type: 3}
   m_Parent: {fileID: 2100000, guid: ca87dfad92ffb2d9f64ffc689e734578, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _CORNER_ROUND
+  - _CORNER_SQUARE
   - _DISSOLVE_OFF
   m_InvalidKeywords:
   - _BLINK_EASEINOUT
+  - _BORDERMATCAPFLIP_ON
   - _BORDER_ON
   - _GRADIENT_BLEND_MUL
   - _GRADIENT_NONE
@@ -28,17 +29,9 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs:
-    - _BaseMatcapTex:
-        m_Texture: {fileID: 2800000, guid: a5c8129dcdb9f684595e2a242d878410, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
+    m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _BaseMatcapVertexColorInfluence: 0.9
-    - _BorderMatcapVertexColorInfluence: 0.6
-    - _CornerSize: 4
-    m_Colors:
-    - _BaseMatcapColor: {r: 2, g: 2, b: 2, a: 1}
-    - _BorderMatcapColor: {r: 1.5, g: 1.5, b: 1.5, a: 1}
+    - _BorderMatcapTilt: -1
+    m_Colors: []
   m_BuildTextureStacks: []

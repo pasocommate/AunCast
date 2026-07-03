@@ -37,7 +37,8 @@ Material:
     m_Floats:
     - _BaseMatcapVertexColorInfluence: 0.9
     - _BorderMatcapVertexColorInfluence: 0.6
-    - _CornerSize: 12
+    - _CORNER: 1
+    - _CornerSize: 128
     m_Colors:
     - _BaseMatcapColor: {r: 2, g: 2, b: 2, a: 1}
     - _BorderMatcapColor: {r: 1.5, g: 1.5, b: 1.5, a: 1}
