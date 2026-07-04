@@ -1,15 +1,11 @@
 # クレジット
 
-AunCast の開発にあたり力を貸してくださった方々、およびオープンソースソフトウェアコミュニティの方々に感謝します。
-
----
-
 <div class="author-profile" markdown>
 <div class="author-profile-text" markdown>
 
 ## 作者について
 
-私自身もVRChatライブやってます。私が低遅延ライブをやりたいので、AunCast を開発しました。ぜひ AunCast を導入したイベントワールドにお呼びください！
+私自身もVRChatライブやってます。私が低遅延ライブをやりたいので、AunCast を開発しました。AunCast を導入したイベントへの出演依頼、お待ちしております！
 
 **つつみちぎり**
 
@@ -26,9 +22,15 @@ AunCast の開発にあたり力を貸してくださった方々、およびオ
 </div>
 </div>
 
+<div class="author-profile-video" markdown>
+<iframe src="https://www.youtube.com/embed/D6DIfEvAlqY" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
 ---
 
 ## Special Thanks
+
+AunCast の開発にあたり力を貸してくださったVRChatユーザーの皆様、およびオープンソースソフトウェアコミュニティの方々に感謝します。
 
 [DJ Mazzn1987](https://x.com/Mazzn1987_TRPG) / [のりお](https://x.com/norio_709) / [オジエド](https://x.com/Oedjed_jp) / [Keyholder](https://x.com/HolderKey68021) / [SUSABI](https://x.com/SUSABI_VRC) / [やっさん](https://x.com/yassann357) / [ぴちきょ](https://x.com/pichikyo) （敬称略）
 
