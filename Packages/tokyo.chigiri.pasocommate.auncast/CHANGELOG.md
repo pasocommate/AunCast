@@ -5,6 +5,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-07-04
+- 出力コンポーネントを `AunCast` プレフィックスに統一し、宣言モデルへ刷新（**破壊的変更**: コンポーネント名・配線手順が変わります）
+- 既存ワールドの移行支援を追加（コンポーネントの再配線・不要スピーカーの無効化などを含む）
+- シーンへ AunCast を配置するメニューを追加
+
 ## [3.1.0] - 2026-07-03
 - テーマ適用範囲を拡充（パネル余白・壁面サイズ・ビデオ画面・StaffLock・表示エリア背景色などをテーマから制御）
 - 新テーマ Flat を追加

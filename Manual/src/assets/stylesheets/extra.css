@@ -119,7 +119,7 @@ header img[alt="icon"] {
 
 /* ヘッダーのサイトタイトル右にバージョン番号を表示する */
 header h1::after {
-  content: "v3.1.0";
+  content: "v4.0.0";
   font-weight: 400;
   font-size: 0.75em;
   margin-left: 0.5em;
