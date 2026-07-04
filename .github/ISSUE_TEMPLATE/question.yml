@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ご質問ありがとうございます。[ユーザーマニュアル](https://pasocommate.github.io/AunCast/)や[逆引きインデックス](https://pasocommate.github.io/AunCast/appendix/troubleshooting/)もあわせてご確認ください。
+        ご質問ありがとうございます。[ユーザーマニュアル](https://pasocommate.chigiri.tokyo/auncast/)や[逆引きインデックス](https://pasocommate.chigiri.tokyo/auncast/appendix/troubleshooting/)もあわせてご確認ください。
   - type: textarea
     id: question
     attributes:

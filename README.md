@@ -27,13 +27,13 @@ VCC（VRChat Creator Companion）からインストールできます。
 1. https://pasocommate.chigiri.tokyo/ を開いて **Add to VCC** をクリックし、VCCに PasocomMate リスティングを登録します。
 2. 対象プロジェクトの **Manage Project** で **AunCast** を追加します。
 
-詳しい手順は **[クイックスタート](https://pasocommate.github.io/AunCast/quickstart/)** をご覧ください。
+詳しい手順は **[クイックスタート](https://pasocommate.chigiri.tokyo/auncast/quickstart/)** をご覧ください。
 
 ## ドキュメント
 
 | ドキュメント | 対象 | 内容 |
 |---|---|---|
-| **[ユーザーマニュアル](https://pasocommate.github.io/AunCast/)** | ワールド制作者・イベントスタッフ | 導入手順、設定、運用ガイド、トラブルシューティング |
+| **[ユーザーマニュアル](https://pasocommate.chigiri.tokyo/auncast/)** | ワールド制作者・イベントスタッフ | 導入手順、設定、運用ガイド、トラブルシューティング |
 | **[設計ドキュメント](Docs/Design.md)** | 開発者・AIエージェント | システム設計、状態遷移、同期モデル |
 | **[実装パターン](Docs/Implementation-Patterns.md)** | 開発者・AIエージェント | 同期変数、スタッフ権限操作、UI双方向追従のコーディングルール |
 
