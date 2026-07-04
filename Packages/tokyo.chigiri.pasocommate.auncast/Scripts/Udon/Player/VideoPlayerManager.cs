@@ -33,7 +33,7 @@ namespace PasocomMate.AunCast
         private Material avproFetchMaterial;
         private float _lastNullTextureWarnAt;
 
-        /// <summary>AudioSource ごとの初期音量。UI 音量・クロスフェードの最終出力に乗算して使う。</summary>
+        /// <summary>AudioSource ごとの基準音量。AunCastSpeaker.baseVolume を優先し、UI 音量・クロスフェードの最終出力に乗算して使う。</summary>
         private float[] _audioSourceBaseVolumes;
         private AudioSource[] _cachedAudioSourcesForBaseVolume;
 
@@ -285,7 +285,14 @@ namespace PasocomMate.AunCast
                     continue;
 
                 _cachedAudioSourcesForBaseVolume[i] = source;
-                _audioSourceBaseVolumes[i] = source != null ? source.volume : 1f;
+                if (source == null)
+                {
+                    _audioSourceBaseVolumes[i] = 1f;
+                    continue;
+                }
+
+                AunCastSpeaker speaker = source.GetComponent<AunCastSpeaker>();
+                _audioSourceBaseVolumes[i] = speaker != null ? speaker.GetBaseVolume() : source.volume;
             }
         }
 

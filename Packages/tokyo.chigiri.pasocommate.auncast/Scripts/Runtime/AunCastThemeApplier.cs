@@ -367,7 +367,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// VideoScreen を「表示中テクスチャ（停止中は 16:9 の固定画像）の実アスペクト比」で
-        /// VideoScreenArea に最大内接させる。実行時は VideoUiScreen.FitRawImageToAspect が
+        /// VideoScreenArea に最大内接させる。実行時は AunCastUiScreen.FitRawImageToAspect が
         /// 同じ処理を行うため、ここは ThemeApplier（IEditorOnly）のパネルリサイズ後に
         /// 編集時プレビューを実行時と揃える目的で呼ぶ。
         /// VideoScreen は中央（非ストレッチ）アンカー前提で sizeDelta を絶対サイズとして書く。

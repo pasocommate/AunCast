@@ -9958,7 +9958,7 @@ GameObject:
   - component: {fileID: 5388048645966391299}
   - component: {fileID: 1853117440773738386}
   m_Layer: 0
-  m_Name: WallControlPanel
+  m_Name: AunCastWallControlPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -28,12 +28,10 @@ namespace PasocomMate.AunCast.Internal
         private const string SESSION_KEY_VPM_CHECK_DONE = "AunCast.SettingsEditor.VpmCheckDone";
         private const string SESSION_KEY_VPM_HAS_UPDATE = "AunCast.SettingsEditor.VpmHasUpdate";
         private const string SESSION_KEY_VPM_LATEST_VERSION = "AunCast.SettingsEditor.VpmLatestVersion";
+        private const string SCREEN_COMPONENT_TYPE_NAME = "VRCAVProVideoScreen";
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
-        private const string GENERATED_SPEAKER_CONTAINER_A_NAME = "AunCastSpeakerRefs_A";
-        private const string GENERATED_SPEAKER_CONTAINER_B_NAME = "AunCastSpeakerRefs_B";
         private const string AUNCAST_EVENT_HUB_NAME = "AunCastEventHub";
         private const string AUNCAST_EVENT_BUS_ASSET_GUID = "86f742d2e8954336a9cd87f1e4527d80";
-        private const string EDITOR_ONLY_TAG = "EditorOnly";
 
         private const double SPEAKER_CACHE_POLL_INTERVAL_SEC = 3.0;
 
@@ -54,22 +52,52 @@ namespace PasocomMate.AunCast.Internal
 
         private bool _speakerCacheDirty = true;
         private double _speakerCacheTime;
-        private SpeakerCandidate[] _cachedSpeakerCandidates;
+        private MigrationCandidate[] _cachedMigrationCandidates;
         private List<string> _cachedSpeakerValidationErrors;
+        private readonly HashSet<string> _selectedMigrationTargets = new HashSet<string>();
+        private readonly Dictionary<string, int> _migrationSpeakerPlayerIndex = new Dictionary<string, int>();
 
-        private readonly struct SpeakerCandidate
+        // 接続先ポップアップの選択値。0/1 は playerIndex そのもの、2 は「自動複製」。
+        private const int MIGRATION_OPTION_AUTO_DUPLICATE = 2;
+
+        private enum MigrationCandidateKind
         {
+            Screen,
+            Speaker
+        }
+
+        private readonly struct MigrationCandidate
+        {
+            public readonly MigrationCandidateKind kind;
             public readonly GameObject gameObject;
             public readonly AudioSource audioSource;
-            public readonly Component speaker;
+            public readonly Component sourceComponent;
             public readonly string hierarchyPath;
+            public readonly string statusLabel;
+            public readonly string selectionKey;
+            public readonly int inferredPlayerIndex;
+            public readonly bool isTunnelLike;
 
-            public SpeakerCandidate(GameObject gameObject, AudioSource audioSource, Component speaker, string hierarchyPath)
+            public MigrationCandidate(
+                MigrationCandidateKind kind,
+                GameObject gameObject,
+                AudioSource audioSource,
+                Component sourceComponent,
+                string hierarchyPath,
+                string statusLabel,
+                string selectionKey,
+                int inferredPlayerIndex,
+                bool isTunnelLike)
             {
+                this.kind = kind;
                 this.gameObject = gameObject;
                 this.audioSource = audioSource;
-                this.speaker = speaker;
+                this.sourceComponent = sourceComponent;
                 this.hierarchyPath = hierarchyPath;
+                this.statusLabel = statusLabel;
+                this.selectionKey = selectionKey;
+                this.inferredPlayerIndex = inferredPlayerIndex;
+                this.isTunnelLike = isTunnelLike;
             }
         }
 
@@ -79,8 +107,6 @@ namespace PasocomMate.AunCast.Internal
             public readonly VideoPlayerManager managerB;
             public readonly VRCAVProVideoPlayer playerA;
             public readonly VRCAVProVideoPlayer playerB;
-            public readonly Transform playerRootA;
-            public readonly Transform playerRootB;
             public readonly PlaybackSwitcher switcher;
 
             public SpeakerSetupContext(
@@ -88,16 +114,12 @@ namespace PasocomMate.AunCast.Internal
                 VideoPlayerManager managerB,
                 VRCAVProVideoPlayer playerA,
                 VRCAVProVideoPlayer playerB,
-                Transform playerRootA,
-                Transform playerRootB,
                 PlaybackSwitcher switcher)
             {
                 this.managerA = managerA;
                 this.managerB = managerB;
                 this.playerA = playerA;
                 this.playerB = playerB;
-                this.playerRootA = playerRootA;
-                this.playerRootB = playerRootB;
                 this.switcher = switcher;
             }
         }
@@ -423,8 +445,8 @@ namespace PasocomMate.AunCast.Internal
                 EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 AunCastEditorLocalization.Localize(
-                    "AunCast 配下の AunCastEventBus / WallControlPanel / UserStatusPanel / スクリーン購読者を再配線します。",
-                    "Re-wires the AunCastEventBus / WallControlPanel / UserStatusPanel / screen subscribers under AunCast."),
+                    "AunCast 配下の中核参照と、同一シーン全体の AunCastScreen / AunCastUiScreen / AunCastSpeaker を再配線します。",
+                    "Re-wires core AunCast references plus all AunCastScreen / AunCastUiScreen / AunCastSpeaker components in the same scene."),
                 MessageType.None);
             using (new EditorGUI.DisabledScope(root == null))
             {
@@ -446,10 +468,14 @@ namespace PasocomMate.AunCast.Internal
             var portablePanel = root.GetComponentInChildren<UserStatusPanel>(true);
             var settings = root.GetComponent<PasocomMate.AunCast.AunCastSettings>();
             var idleScreenTexture = settings != null ? settings.idleScreenTexture : null;
+            Scene scene = root.gameObject.scene;
             var eventBus = FindOrCreateEventBus(root, createIfMissing: recordUndo, writeLog: writeLog);
             var switchers = root.GetComponentsInChildren<PlaybackSwitcher>(true);
-            var meshScreens = root.GetComponentsInChildren<VideoMeshScreen>(true);
-            var uiScreens = root.GetComponentsInChildren<VideoUiScreen>(true);
+            AutoAssignAudioLinkBehaviour(switchers, recordUndo);
+            var meshScreens = FindSceneComponents<AunCastScreen>(scene);
+            var uiScreens = FindSceneComponents<AunCastUiScreen>(scene);
+            var speakers = FindSceneComponents<AunCastSpeaker>(scene);
+            var audioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
             var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);
             var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
 
@@ -540,7 +566,7 @@ namespace PasocomMate.AunCast.Internal
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
                     // 停止中の固定画像を AunCastSettings から転写する
                     changed |= SetObjectProperty(so, "idleTexture", idleScreenTexture);
-                    if (changed && ApplyUdonSerializedChanges(mesh, so, "Rewire VideoMeshScreen EventBus", recordUndo))
+                    if (changed && ApplyUdonSerializedChanges(mesh, so, "Rewire AunCastScreen EventBus", recordUndo))
                         screenUpdated++;
                 }
                 foreach (var ui in uiScreens)
@@ -550,7 +576,7 @@ namespace PasocomMate.AunCast.Internal
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
                     // 停止中の固定画像を AunCastSettings から転写する
                     changed |= SetObjectProperty(so, "idleTexture", idleScreenTexture);
-                    if (changed && ApplyUdonSerializedChanges(ui, so, "Rewire VideoUiScreen EventBus", recordUndo))
+                    if (changed && ApplyUdonSerializedChanges(ui, so, "Rewire AunCastUiScreen EventBus", recordUndo))
                         screenUpdated++;
                 }
             }
@@ -586,8 +612,29 @@ namespace PasocomMate.AunCast.Internal
                 }
             }
 
+            int speakerUpdated = 0;
+            int tunnelUpdated = 0;
+            int sinkMutedUpdated = 0;
+            if (TryResolveSpeakerSetupContext(root, out var speakerContext, out _) && speakers != null)
+            {
+                speakerUpdated = RewireDeclaredSpeakers(settings, speakerContext, speakers, recordUndo, writeLog);
+                AudioSource tunnelInputA = FindFirstSpeakerSource(speakers, AunCastSpeaker.PLAYER_A);
+                AudioSource tunnelInputB = FindFirstSpeakerSource(speakers, AunCastSpeaker.PLAYER_B);
+                tunnelUpdated = RewireAudioOutputTunnels(audioOutputTunnels, tunnelInputA, tunnelInputB, recordUndo);
+
+                // トンネルがある場合、その入力になる内蔵シンクは「トンネル出力」経由でのみ鳴らすため、
+                // シンク自身は不可聴化する。GetOutputData は volume の影響を受ける（＝トンネルが読む信号は
+                // volume 反映済み）ため、volume ではなく空間ロールオフを 0 にして GetOutputData を保ったまま
+                // 直接音だけを消す（参考実装のカスタムロールオフ手法）。
+                if (audioOutputTunnels != null && audioOutputTunnels.Length > 0)
+                {
+                    if (MakeTunnelInputInaudible(tunnelInputA, recordUndo)) sinkMutedUpdated++;
+                    if (MakeTunnelInputInaudible(tunnelInputB, recordUndo)) sinkMutedUpdated++;
+                }
+            }
+
             if (writeLog)
-                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / 通知先: {notifyUpdated}件");
+                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / 通知先: {notifyUpdated}件");
         }
 
         private static AunCastEventBus FindOrCreateEventBus(Transform root, bool createIfMissing, bool writeLog)
@@ -645,8 +692,8 @@ namespace PasocomMate.AunCast.Internal
         }
 
         private static VRC.Udon.UdonBehaviour[] BuildVideoTextureSubscribers(
-            VideoMeshScreen[] meshScreens,
-            VideoUiScreen[] uiScreens)
+            AunCastScreen[] meshScreens,
+            AunCastUiScreen[] uiScreens)
         {
             var subscribers = new List<VRC.Udon.UdonBehaviour>();
             int meshCount = meshScreens != null ? meshScreens.Length : 0;
@@ -679,15 +726,136 @@ namespace PasocomMate.AunCast.Internal
                 subscribers.Add(udon);
         }
 
+        private static T[] FindSceneComponents<T>(Scene scene) where T : Component
+        {
+            if (!scene.IsValid()) return Array.Empty<T>();
+
+            T[] all = UnityEngine.Object.FindObjectsOfType<T>(true);
+            var list = new List<T>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                T component = all[i];
+                if (component == null) continue;
+                if (!component.gameObject.scene.IsValid() || component.gameObject.scene != scene) continue;
+                list.Add(component);
+            }
+
+            list.Sort((a, b) => string.Compare(
+                GetHierarchyPath(a != null ? a.transform : null),
+                GetHierarchyPath(b != null ? b.transform : null),
+                StringComparison.Ordinal));
+            return list.ToArray();
+        }
+
+        private static int RewireDeclaredSpeakers(
+            PasocomMate.AunCast.AunCastSettings settings,
+            SpeakerSetupContext context,
+            AunCastSpeaker[] speakers,
+            bool recordUndo,
+            bool writeLog)
+        {
+            var sourcesA = new List<AudioSource>();
+            var sourcesB = new List<AudioSource>();
+            AunCastSpeaker detectorA = null;
+            AunCastSpeaker detectorB = null;
+            // 同一系統の複数スピーカーは同じ波形（volume 比のみ差）を返すため、無音検知は 1 つで足りる。
+            // volume が最大のものを基準にする（低音量ほど GetOutputData の SN 比が悪く正規化が不安定なため）。
+            float bestVolumeA = -1f;
+            float bestVolumeB = -1f;
+            int updated = 0;
+
+            for (int i = 0; i < speakers.Length; i++)
+            {
+                AunCastSpeaker speaker = speakers[i];
+                if (speaker == null) continue;
+
+                AudioSource source = speaker.GetComponent<AudioSource>();
+                if (source == null)
+                {
+                    if (writeLog)
+                        Debug.LogWarning($"[AunCast] AunCastSpeaker に AudioSource がありません: {GetHierarchyPath(speaker.transform)}", speaker);
+                    continue;
+                }
+
+                updated += ConfigureAunCastSpeakerForSettings(speaker, settings, recordUndo) ? 1 : 0;
+
+                int playerIndex = speaker.GetPlayerIndex();
+                bool isPlayerB = playerIndex == AunCastSpeaker.PLAYER_B;
+                VRCAVProVideoPlayer targetPlayer = isPlayerB ? context.playerB : context.playerA;
+                Component avproSpeaker = EnsureSpeakerComponent(source.gameObject, recordUndo, writeLog);
+                if (avproSpeaker != null)
+                {
+                    updated += TrySetSpeakerVideoPlayer(avproSpeaker, targetPlayer, recordUndo) ? 1 : 0;
+                    updated += TrySetSpeakerMode(avproSpeaker, speaker.GetMode(), recordUndo) ? 1 : 0;
+                }
+
+                float speakerVolume = Mathf.Clamp01(speaker.baseVolume);
+                if (isPlayerB)
+                {
+                    sourcesB.Add(source);
+                    if (speakerVolume > bestVolumeB) { bestVolumeB = speakerVolume; detectorB = speaker; }
+                }
+                else
+                {
+                    sourcesA.Add(source);
+                    if (speakerVolume > bestVolumeA) { bestVolumeA = speakerVolume; detectorA = speaker; }
+                }
+            }
+
+            updated += ApplyAudioSourcesToManager(context.managerA, sourcesA.ToArray(), recordUndo) ? 1 : 0;
+            updated += ApplyAudioSourcesToManager(context.managerB, sourcesB.ToArray(), recordUndo) ? 1 : 0;
+            updated += ApplySilenceDetectorsToSwitcher(context.switcher, detectorA, detectorB, recordUndo) ? 1 : 0;
+            return updated;
+        }
+
+        private static AudioSource FindFirstSpeakerSource(AunCastSpeaker[] speakers, int playerIndex)
+        {
+            if (speakers == null) return null;
+            for (int i = 0; i < speakers.Length; i++)
+            {
+                AunCastSpeaker speaker = speakers[i];
+                if (speaker == null || speaker.GetPlayerIndex() != playerIndex) continue;
+                AudioSource source = speaker.GetComponent<AudioSource>();
+                if (source != null)
+                    return source;
+            }
+            return null;
+        }
+
+        private static int RewireAudioOutputTunnels(
+            AunCastAudioOutputTunnel[] tunnels,
+            AudioSource inputA,
+            AudioSource inputB,
+            bool recordUndo)
+        {
+            if (tunnels == null || tunnels.Length == 0) return 0;
+
+            int updated = 0;
+            for (int i = 0; i < tunnels.Length; i++)
+            {
+                AunCastAudioOutputTunnel tunnel = tunnels[i];
+                if (tunnel == null) continue;
+
+                var so = new SerializedObject(tunnel);
+                bool changed = false;
+                changed |= SetObjectProperty(so, "inputA", inputA);
+                changed |= SetObjectProperty(so, "inputB", inputB);
+                if (changed && ApplyUdonSerializedChanges(tunnel, so, "Rewire AunCastAudioOutputTunnel Inputs", recordUndo))
+                    updated++;
+            }
+
+            return updated;
+        }
+
         private void DrawAvProSpeakerSetupTools(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             EditorGUILayout.LabelField(
-                AunCastEditorLocalization.Localize("AVPro Speaker 配線", "AVPro Speaker Wiring"),
+                AunCastEditorLocalization.Localize("既存プレイヤー出力の変換", "Existing Player Output Migration"),
                 EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 AunCastEditorLocalization.Localize(
-                    "シーン上の VRC AVPro Video Speaker + AudioSource を検出し、PlayerA/B 用に複製して参照を配線します。",
-                    "Detects VRC AVPro Video Speaker + AudioSource in the scene, duplicates them for Player A/B, and wires the references."),
+                    "同一シーンの VRCAVProVideoScreen / VRCAVProVideoSpeaker を検出し、選択したものを AunCastScreen / AunCastSpeaker に変換します。オブジェクトの複製は行いません。",
+                    "Detects VRCAVProVideoScreen / VRCAVProVideoSpeaker components in the same scene and converts selected items to AunCastScreen / AunCastSpeaker. No objects are duplicated."),
                 MessageType.None);
 
             if (!TryResolveSpeakerSetupContext(root, out var context, out var resolveError))
@@ -696,65 +864,566 @@ namespace PasocomMate.AunCast.Internal
                 return;
             }
 
-            RefreshSpeakerCacheIfNeeded(root, context);
-            SpeakerCandidate[] candidates = _cachedSpeakerCandidates ?? Array.Empty<SpeakerCandidate>();
-            DrawSpeakerCandidateList(candidates);
+            RefreshMigrationCacheIfNeeded(root, context);
+            MigrationCandidate[] candidates = _cachedMigrationCandidates ?? Array.Empty<MigrationCandidate>();
+            DrawMigrationCandidateList(candidates);
 
             List<string> validationErrors = _cachedSpeakerValidationErrors ?? new List<string>();
-            if (validationErrors.Count == 0)
-            {
-                EditorGUILayout.HelpBox(
-                    AunCastEditorLocalization.Localize(
-                        "現在の PlayerA/B AudioSource 配線に重複やルーティング不整合はありません。",
-                        "No duplicate or routing inconsistencies were found in the current Player A/B AudioSource wiring."),
-                    MessageType.Info);
-            }
-            else
-            {
-                for (int i = 0; i < validationErrors.Count; i++)
-                    EditorGUILayout.HelpBox(validationErrors[i], MessageType.Error);
-            }
+            for (int i = 0; i < validationErrors.Count; i++)
+                EditorGUILayout.HelpBox(validationErrors[i], MessageType.Error);
 
             using (new EditorGUI.DisabledScope(candidates.Length == 0))
             {
-                if (!GUILayout.Button(
-                    AunCastEditorLocalization.Localize("AVPro Speaker 出力先セットアップを実行", "Run AVPro Speaker Output Setup"),
+                if (GUILayout.Button(
+                    AunCastEditorLocalization.Localize("選択した出力を AunCast 宣言へ変換", "Convert Selected Outputs to AunCast Declarations"),
                     GUILayout.Height(24)))
-                    return;
-
-                ExecuteSpeakerSetup(root, settings, context, candidates);
-                _speakerCacheDirty = true;
+                {
+                    ExecuteSelectedMigration(root, settings, context, candidates);
+                    _speakerCacheDirty = true;
+                }
             }
+
+            DrawResidualCleanupGuidance(root, context);
         }
 
-        private void RefreshSpeakerCacheIfNeeded(Transform root, SpeakerSetupContext context)
+        /// <summary>
+        /// 変換後に残っている旧プレイヤー由来のコンポーネント/オブジェクトを一覧提示する。
+        /// AunCast は自動削除・自動 EditorOnly 化を行わず、ユーザーに手動削除を案内するにとどめる。
+        /// </summary>
+        private void DrawResidualCleanupGuidance(Transform root, SpeakerSetupContext context)
+        {
+            if (root == null) return;
+            Scene scene = root.gameObject.scene;
+            if (!scene.IsValid()) return;
+
+            var residual = new List<string>();
+
+            // AunCast 内蔵の PlayerA/B を除いた VRCAVProVideoPlayer（旧プレイヤー本体の可能性）
+            Component[] players = FindSceneComponentsByTypeName(scene, "VRCAVProVideoPlayer");
+            for (int i = 0; i < players.Length; i++)
+            {
+                Component player = players[i];
+                if (player == null) continue;
+                if (context.playerA != null && player == (Component)context.playerA) continue;
+                if (context.playerB != null && player == (Component)context.playerB) continue;
+                residual.Add("VRCAVProVideoPlayer: " + GetHierarchyPath(player.transform));
+            }
+
+            // 未変換のまま残った VRCAVProVideoScreen / VRCAVProVideoSpeaker
+            Component[] screens = FindSceneComponentsByTypeName(scene, SCREEN_COMPONENT_TYPE_NAME);
+            for (int i = 0; i < screens.Length; i++)
+            {
+                Component screen = screens[i];
+                if (screen == null || screen.gameObject.GetComponent<AunCastScreen>() != null) continue;
+                if (IsInternalTextureGrabScreen(screen, context)) continue;
+                residual.Add("VRCAVProVideoScreen: " + GetHierarchyPath(screen.transform));
+            }
+
+            Component[] speakers = FindSceneComponentsByTypeName(scene, SPEAKER_COMPONENT_TYPE_NAME);
+            for (int i = 0; i < speakers.Length; i++)
+            {
+                Component speaker = speakers[i];
+                if (speaker == null) continue;
+                AudioSource source = speaker.GetComponent<AudioSource>();
+                // AunCastSpeaker と同居する VRCAVProVideoSpeaker は再配線が再利用するため残す（削除候補にしない）
+                if (source != null && source.GetComponent<AunCastSpeaker>() != null) continue;
+                residual.Add("VRCAVProVideoSpeaker: " + GetHierarchyPath(speaker.transform));
+            }
+
+            if (residual.Count == 0) return;
+
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField(
+                AunCastEditorLocalization.Localize("手動削除の候補", "Manual Cleanup Candidates"),
+                EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                AunCastEditorLocalization.Localize(
+                    "変換後に残っている旧プレイヤー由来のコンポーネント/オブジェクトです。AunCast は自動削除しません。不要であれば手動で削除してください。",
+                    "Old player-derived components/objects remaining after conversion. AunCast does not delete them automatically. Delete the unnecessary ones manually."),
+                MessageType.Warning);
+            for (int i = 0; i < residual.Count; i++)
+                EditorGUILayout.LabelField("• " + residual[i], EditorStyles.miniLabel);
+        }
+
+        private void RefreshMigrationCacheIfNeeded(Transform root, SpeakerSetupContext context)
         {
             double now = EditorApplication.timeSinceStartup;
             bool expired = now - _speakerCacheTime >= SPEAKER_CACHE_POLL_INTERVAL_SEC;
             if (!_speakerCacheDirty && !expired)
                 return;
 
-            _cachedSpeakerCandidates = CollectSpeakerCandidates(root, context);
+            _cachedMigrationCandidates = CollectMigrationCandidates(root, context);
             _cachedSpeakerValidationErrors = ValidateCurrentSpeakerRouting(context);
+            for (int i = 0; i < _cachedMigrationCandidates.Length; i++)
+            {
+                MigrationCandidate candidate = _cachedMigrationCandidates[i];
+                if (string.IsNullOrEmpty(candidate.selectionKey)) continue;
+                if (!_migrationSpeakerPlayerIndex.ContainsKey(candidate.selectionKey))
+                    _migrationSpeakerPlayerIndex[candidate.selectionKey] = candidate.inferredPlayerIndex;
+                _selectedMigrationTargets.Add(candidate.selectionKey);
+            }
+
             _speakerCacheDirty = false;
             _speakerCacheTime = now;
         }
 
-        private static void DrawSpeakerCandidateList(SpeakerCandidate[] candidates)
+        private void DrawMigrationCandidateList(MigrationCandidate[] candidates)
         {
             if (candidates == null || candidates.Length == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    AunCastEditorLocalization.Localize(
+                        "変換対象の AVPro スクリーン / スピーカーは見つかりませんでした。",
+                        "No AVPro screens / speakers were found for conversion."),
+                    MessageType.Info);
                 return;
+            }
 
             EditorGUILayout.LabelField(
-                AunCastEditorLocalization.Localize("検出対象", "Detected Targets"),
+                AunCastEditorLocalization.Localize("変換候補", "Conversion Candidates"),
                 EditorStyles.miniBoldLabel);
+
             for (int i = 0; i < candidates.Length; i++)
             {
+                MigrationCandidate candidate = candidates[i];
+                bool selected = _selectedMigrationTargets.Contains(candidate.selectionKey);
+
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.ObjectField(candidates[i].gameObject, typeof(GameObject), true);
-                EditorGUILayout.LabelField(candidates[i].hierarchyPath, EditorStyles.miniLabel);
+                string label = candidate.kind == MigrationCandidateKind.Screen
+                    ? AunCastEditorLocalization.Localize("スクリーン", "Screen")
+                    : AunCastEditorLocalization.Localize("スピーカー", "Speaker");
+                bool newSelected = EditorGUILayout.ToggleLeft(label, selected);
+                if (newSelected != selected)
+                {
+                    if (newSelected)
+                        _selectedMigrationTargets.Add(candidate.selectionKey);
+                    else
+                        _selectedMigrationTargets.Remove(candidate.selectionKey);
+                }
+
+                EditorGUILayout.ObjectField(candidate.gameObject, typeof(GameObject), true);
+                EditorGUILayout.LabelField(candidate.hierarchyPath, EditorStyles.miniLabel);
+                if (!string.IsNullOrEmpty(candidate.statusLabel))
+                    EditorGUILayout.LabelField(candidate.statusLabel, EditorStyles.miniLabel);
+
+                if (candidate.kind == MigrationCandidateKind.Speaker)
+                {
+                    int current = _migrationSpeakerPlayerIndex.TryGetValue(candidate.selectionKey, out int value)
+                        ? value
+                        : candidate.inferredPlayerIndex;
+                    int next = EditorGUILayout.Popup(
+                        AunCastEditorLocalization.Localize("接続先", "Player"),
+                        current,
+                        new[]
+                        {
+                            AunCastEditorLocalization.Localize("PlayerA", "Player A"),
+                            AunCastEditorLocalization.Localize("PlayerB", "Player B"),
+                            AunCastEditorLocalization.Localize("自動複製 (A/B)", "Auto-duplicate (A/B)"),
+                        });
+                    _migrationSpeakerPlayerIndex[candidate.selectionKey] = next;
+
+                    if (next == MIGRATION_OPTION_AUTO_DUPLICATE)
+                    {
+                        EditorGUILayout.HelpBox(
+                            AunCastEditorLocalization.Localize(
+                                "この AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA、複製を PlayerB に割り当てます。",
+                                "Duplicates this AudioSource right after itself in the same hierarchy, assigning the original to Player A and the copy to Player B."),
+                            MessageType.None);
+                    }
+
+                    if (candidate.isTunnelLike)
+                    {
+                        EditorGUILayout.HelpBox(
+                            AunCastEditorLocalization.Localize(
+                                "AudioOutputTunnel らしき構成を検出しました。ダミーシンクを通常スピーカーとして変換せず、AunCastAudioOutputTunnel へ差し替える前提で確認してください。直結出力よりリングバッファ分の遅延が増えます。",
+                                "An AudioOutputTunnel-like setup was detected. Do not convert the dummy sink as a normal speaker; review it as an AunCastAudioOutputTunnel migration. It adds ring-buffer latency compared with direct output."),
+                            MessageType.Warning);
+                    }
+                }
+
                 EditorGUILayout.EndVertical();
             }
+        }
+
+        private static MigrationCandidate[] CollectMigrationCandidates(Transform root, SpeakerSetupContext context)
+        {
+            var list = new List<MigrationCandidate>();
+            if (root == null || !root.gameObject.scene.IsValid()) return list.ToArray();
+
+            Scene scene = root.gameObject.scene;
+            Component[] screens = FindSceneComponentsByTypeName(scene, SCREEN_COMPONENT_TYPE_NAME);
+            for (int i = 0; i < screens.Length; i++)
+            {
+                Component screen = screens[i];
+                if (screen == null || screen.gameObject.GetComponent<AunCastScreen>() != null) continue;
+                if (IsInternalTextureGrabScreen(screen, context)) continue;
+                string path = GetHierarchyPath(screen.transform);
+                list.Add(new MigrationCandidate(
+                    MigrationCandidateKind.Screen,
+                    screen.gameObject,
+                    null,
+                    screen,
+                    path,
+                    string.Empty,
+                    "screen:" + path,
+                    AunCastSpeaker.PLAYER_A,
+                    false));
+            }
+
+            Component[] speakers = FindSceneComponentsByTypeName(scene, SPEAKER_COMPONENT_TYPE_NAME);
+            for (int i = 0; i < speakers.Length; i++)
+            {
+                Component speaker = speakers[i];
+                if (speaker == null) continue;
+                AudioSource source = speaker.GetComponent<AudioSource>();
+                if (source == null) continue;
+                if (source.gameObject.GetComponent<AunCastSpeaker>() != null) continue;
+
+                string path = GetHierarchyPath(source.transform);
+                bool isTunnelLike = IsAudioOutputTunnelLike(source);
+                string status = BuildSpeakerStatusLabel(source, isTunnelLike);
+                int inferredPlayerIndex = InferSpeakerPlayerIndex(speaker, context);
+                list.Add(new MigrationCandidate(
+                    MigrationCandidateKind.Speaker,
+                    source.gameObject,
+                    source,
+                    speaker,
+                    path,
+                    status,
+                    "speaker:" + path,
+                    inferredPlayerIndex,
+                    isTunnelLike));
+            }
+
+            list.Sort((a, b) => string.Compare(a.selectionKey, b.selectionKey, StringComparison.Ordinal));
+            return list.ToArray();
+        }
+
+        private void ExecuteSelectedMigration(
+            Transform root,
+            PasocomMate.AunCast.AunCastSettings settings,
+            SpeakerSetupContext context,
+            MigrationCandidate[] candidates)
+        {
+            if (candidates == null || candidates.Length == 0) return;
+
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("AunCast Output Migration");
+            int convertedScreens = 0;
+            int convertedSpeakers = 0;
+            try
+            {
+                for (int i = 0; i < candidates.Length; i++)
+                {
+                    MigrationCandidate candidate = candidates[i];
+                    if (!_selectedMigrationTargets.Contains(candidate.selectionKey)) continue;
+
+                    if (candidate.kind == MigrationCandidateKind.Screen)
+                    {
+                        if (ConvertScreenCandidate(candidate))
+                            convertedScreens++;
+                    }
+                    else if (candidate.kind == MigrationCandidateKind.Speaker)
+                    {
+                        int selection = _migrationSpeakerPlayerIndex.TryGetValue(candidate.selectionKey, out int selected)
+                            ? selected
+                            : candidate.inferredPlayerIndex;
+                        if (selection == MIGRATION_OPTION_AUTO_DUPLICATE)
+                            convertedSpeakers += ConvertSpeakerCandidateWithDuplicate(candidate, settings);
+                        else if (ConvertSpeakerCandidate(candidate, settings, selection))
+                            convertedSpeakers++;
+                    }
+                }
+
+                RewireEventHubAndConsumers(root, recordUndo: true, writeLog: false);
+                Debug.Log($"[AunCast] 出力変換を完了しました。Screen: {convertedScreens}件 / Speaker: {convertedSpeakers}件");
+            }
+            finally
+            {
+                Undo.CollapseUndoOperations(undoGroup);
+            }
+        }
+
+        private static bool ConvertScreenCandidate(MigrationCandidate candidate)
+        {
+            if (candidate.gameObject == null || candidate.sourceComponent == null) return false;
+
+            AunCastScreen screen = candidate.gameObject.GetComponent<AunCastScreen>();
+            if (screen == null)
+                screen = Undo.AddComponent<AunCastScreen>(candidate.gameObject);
+            if (screen == null) return false;
+
+            string textureProperty = ReadStringProperty(candidate.sourceComponent, "textureProperty");
+            if (string.IsNullOrEmpty(textureProperty))
+                textureProperty = GuessTextureProperty(candidate.gameObject);
+
+            var so = new SerializedObject(screen);
+            SetStringProperty(so, "textureProperty", textureProperty);
+            ApplyUdonSerializedChanges(screen, so, "Configure AunCastScreen");
+
+            Undo.DestroyObjectImmediate(candidate.sourceComponent);
+            return true;
+        }
+
+        private static bool ConvertSpeakerCandidate(
+            MigrationCandidate candidate,
+            PasocomMate.AunCast.AunCastSettings settings,
+            int playerIndex)
+        {
+            return ConvertSpeakerObject(candidate.gameObject, candidate.sourceComponent, candidate.audioSource, settings, playerIndex);
+        }
+
+        /// <summary>
+        /// 候補 AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA・複製を PlayerB に割り当てる。
+        /// 同じ位置に同じ設定の AudioSource を A/B 用に用意したいケース向け。変換できた件数（0〜2）を返す。
+        /// </summary>
+        private static int ConvertSpeakerCandidateWithDuplicate(
+            MigrationCandidate candidate,
+            PasocomMate.AunCast.AunCastSettings settings)
+        {
+            GameObject original = candidate.gameObject;
+            if (original == null || candidate.audioSource == null) return 0;
+
+            GameObject duplicate = UnityEngine.Object.Instantiate(original, original.transform.parent);
+            Undo.RegisterCreatedObjectUndo(duplicate, "Duplicate AunCast Speaker");
+            duplicate.name = original.name + " (B)";
+            duplicate.transform.SetSiblingIndex(original.transform.GetSiblingIndex() + 1);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(duplicate);
+
+            int converted = 0;
+            if (ConvertSpeakerObject(original, candidate.sourceComponent, candidate.audioSource, settings, AunCastSpeaker.PLAYER_A))
+                converted++;
+
+            AudioSource duplicateAudio = duplicate.GetComponent<AudioSource>();
+            Component duplicateSpeakerComponent = FindSpeakerComponent(duplicate);
+            if (ConvertSpeakerObject(duplicate, duplicateSpeakerComponent, duplicateAudio, settings, AunCastSpeaker.PLAYER_B))
+                converted++;
+
+            return converted;
+        }
+
+        private static bool ConvertSpeakerObject(
+            GameObject gameObject,
+            Component sourceSpeakerComponent,
+            AudioSource audioSource,
+            PasocomMate.AunCast.AunCastSettings settings,
+            int playerIndex)
+        {
+            if (gameObject == null || audioSource == null) return false;
+
+            AunCastSpeaker speaker = EnsureAunCastSpeaker(gameObject, settings);
+            if (speaker == null) return false;
+
+            var so = new SerializedObject(speaker);
+            SetIntProperty(so, "playerIndex", playerIndex == AunCastSpeaker.PLAYER_B ? AunCastSpeaker.PLAYER_B : AunCastSpeaker.PLAYER_A);
+            SetIntProperty(so, "mode", ReadIntProperty(sourceSpeakerComponent, "mode", AunCastSpeaker.MODE_STEREO));
+            SetFloatProperty(so, "baseVolume", Mathf.Clamp01(audioSource.volume));
+            SetFloatProperty(so, "silenceRmsThresholdDbfs", settings != null ? settings.silenceRmsThresholdDbfs : -60f);
+            SetFloatProperty(so, "silenceConsecutiveSec", settings != null ? settings.silenceConsecutiveSec : 2.0f);
+            ApplyUdonSerializedChanges(speaker, so, "Configure AunCastSpeaker");
+            return true;
+        }
+
+        private static Component[] FindSceneComponentsByTypeName(Scene scene, string typeName)
+        {
+            if (!scene.IsValid() || string.IsNullOrEmpty(typeName)) return Array.Empty<Component>();
+
+            Component[] all = UnityEngine.Object.FindObjectsOfType<Component>(true);
+            var list = new List<Component>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                Component component = all[i];
+                if (component == null) continue;
+                if (!component.gameObject.scene.IsValid() || component.gameObject.scene != scene) continue;
+                if (component.GetType().Name == typeName)
+                    list.Add(component);
+            }
+
+            return list.ToArray();
+        }
+
+        private static bool IsInternalTextureGrabScreen(Component screen, SpeakerSetupContext context)
+        {
+            if (screen == null) return false;
+            Renderer renderer = screen.GetComponent<Renderer>();
+            if (renderer == null) return false;
+            return IsManagerTextureRenderer(context.managerA, renderer)
+                   || IsManagerTextureRenderer(context.managerB, renderer);
+        }
+
+        private static bool IsManagerTextureRenderer(VideoPlayerManager manager, Renderer renderer)
+        {
+            return manager != null
+                   && renderer != null
+                   && manager.avProTextureRenderer == renderer;
+        }
+
+        private static string ReadStringProperty(Component component, string propertyName)
+        {
+            if (component == null) return string.Empty;
+            var so = new SerializedObject(component);
+            SerializedProperty prop = so.FindProperty(propertyName);
+            return prop != null && prop.propertyType == SerializedPropertyType.String
+                ? prop.stringValue
+                : string.Empty;
+        }
+
+        private static int ReadIntProperty(Component component, string propertyName, int fallback)
+        {
+            if (component == null) return fallback;
+            var so = new SerializedObject(component);
+            SerializedProperty prop = so.FindProperty(propertyName);
+            if (prop == null) return fallback;
+            if (prop.propertyType == SerializedPropertyType.Integer) return prop.intValue;
+            if (prop.propertyType == SerializedPropertyType.Enum) return prop.enumValueIndex;
+            return fallback;
+        }
+
+        private static string GuessTextureProperty(GameObject gameObject)
+        {
+            if (gameObject == null) return "_MainTex";
+            Renderer renderer = gameObject.GetComponent<Renderer>();
+            Material material = renderer != null ? renderer.sharedMaterial : null;
+            if (material == null) return "_MainTex";
+            if (material.HasProperty("_MainTex")) return "_MainTex";
+            if (material.HasProperty("_EmissionMap")) return "_EmissionMap";
+            if (material.HasProperty("_BaseMap")) return "_BaseMap";
+            if (material.HasProperty("_BaseColorMap")) return "_BaseColorMap";
+            return "_MainTex";
+        }
+
+        private static int InferSpeakerPlayerIndex(Component speaker, SpeakerSetupContext context)
+        {
+            if (speaker == null) return AunCastSpeaker.PLAYER_A;
+            var so = new SerializedObject(speaker);
+            SerializedProperty prop = so.FindProperty("videoPlayer");
+            if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference)
+                return AunCastSpeaker.PLAYER_A;
+            if (prop.objectReferenceValue == context.playerB)
+                return AunCastSpeaker.PLAYER_B;
+            return AunCastSpeaker.PLAYER_A;
+        }
+
+        private static string BuildSpeakerStatusLabel(AudioSource source, bool isTunnelLike)
+        {
+            if (source == null) return string.Empty;
+            var labels = new List<string>();
+            if (!source.gameObject.activeInHierarchy)
+                labels.Add(AunCastEditorLocalization.Localize("非アクティブ", "Inactive"));
+            if (!source.enabled)
+                labels.Add(AunCastEditorLocalization.Localize("AudioSource無効", "AudioSource disabled"));
+            if (source.volume <= 0.0001f)
+                labels.Add(AunCastEditorLocalization.Localize("volume 0", "volume 0"));
+            if (IsCustomRolloffSilent(source))
+                labels.Add(AunCastEditorLocalization.Localize("不可聴ロールオフ", "silent rolloff"));
+            if (isTunnelLike)
+                labels.Add(AunCastEditorLocalization.Localize("AudioOutputTunnel検知", "AudioOutputTunnel detected"));
+
+            string references = BuildAudioSourceReferenceLabel(source);
+            if (!string.IsNullOrEmpty(references))
+                labels.Add(references);
+
+            return labels.Count == 0
+                ? AunCastEditorLocalization.Localize("通常出力候補", "normal output candidate")
+                : string.Join(" / ", labels.ToArray());
+        }
+
+        private static bool IsCustomRolloffSilent(AudioSource source)
+        {
+            if (source == null) return false;
+            AnimationCurve curve = source.GetCustomCurve(AudioSourceCurveType.CustomRolloff);
+            if (curve == null || curve.length == 0) return false;
+            for (int i = 0; i < curve.length; i++)
+            {
+                if (curve.keys[i].value > 0.0001f)
+                    return false;
+            }
+            return true;
+        }
+
+        private static bool IsAudioOutputTunnelLike(AudioSource source)
+        {
+            if (source == null) return false;
+            Transform current = source.transform;
+            for (int depth = 0; current != null && depth < 3; depth++)
+            {
+                if (HasAudioOutputTunnelInChildren(current))
+                    return true;
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool HasAudioOutputTunnelInChildren(Transform root)
+        {
+            if (root == null) return false;
+            Component[] components = root.GetComponentsInChildren<Component>(true);
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null) continue;
+                if (IsAudioOutputTunnelComponent(component))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool IsAudioOutputTunnelComponent(Component component)
+        {
+            if (component == null || component.GetType().Name != "AudioOutputTunnel") return false;
+
+            var so = new SerializedObject(component);
+            bool hasInput = so.FindProperty("input") != null;
+            bool hasOutput =
+                so.FindProperty("leftOutput") != null
+                || so.FindProperty("rightOutput") != null
+                || so.FindProperty("stereoOutput") != null;
+            return hasInput || hasOutput;
+        }
+
+        private static string BuildAudioSourceReferenceLabel(AudioSource source)
+        {
+            if (source == null || !source.gameObject.scene.IsValid()) return string.Empty;
+
+            int references = 0;
+            Component[] components = UnityEngine.Object.FindObjectsOfType<Component>(true);
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null || component == source) continue;
+                if (!component.gameObject.scene.IsValid() || component.gameObject.scene != source.gameObject.scene) continue;
+                if (!SerializedObjectReferences(component, source)) continue;
+                references++;
+            }
+
+            if (references == 0) return string.Empty;
+            return AunCastEditorLocalization.Localize(
+                $"この AudioSource を参照するコンポーネント: {references} 件（A/B に分かれると単一入力の参照元は要対応）",
+                $"components referencing this AudioSource: {references} (single-input referrers need attention once split into A/B)");
+        }
+
+        private static bool SerializedObjectReferences(UnityEngine.Object owner, UnityEngine.Object target)
+        {
+            if (owner == null || target == null) return false;
+            try
+            {
+                var so = new SerializedObject(owner);
+                SerializedProperty prop = so.GetIterator();
+                bool enterChildren = true;
+                while (prop.NextVisible(enterChildren))
+                {
+                    enterChildren = false;
+                    if (prop.propertyType == SerializedPropertyType.ObjectReference
+                        && prop.objectReferenceValue == target)
+                        return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+            return false;
         }
 
         private static bool TryResolveSpeakerSetupContext(
@@ -811,39 +1480,8 @@ namespace PasocomMate.AunCast.Internal
                 managerB,
                 managerA.avProPlayer,
                 managerB.avProPlayer,
-                managerA.transform,
-                managerB.transform,
                 switcher);
             return true;
-        }
-
-        private static SpeakerCandidate[] CollectSpeakerCandidates(Transform root, SpeakerSetupContext context)
-        {
-            var list = new List<SpeakerCandidate>();
-            AudioSource[] audioSources = UnityEngine.Object.FindObjectsOfType<AudioSource>(true);
-            for (int i = 0; i < audioSources.Length; i++)
-            {
-                AudioSource audioSource = audioSources[i];
-                if (audioSource == null) continue;
-                GameObject go = audioSource.gameObject;
-                if (go == null) continue;
-                if (!go.activeInHierarchy) continue;
-                if (!go.scene.IsValid() || go.scene != root.gameObject.scene) continue;
-                if (IsUnderTransform(go.transform, context.playerRootA) || IsUnderTransform(go.transform, context.playerRootB))
-                    continue;
-                if (IsUnderGeneratedSpeakerContainer(go.transform))
-                    continue;
-                if (IsOriginalPrefabObjectUnderRoot(root, go))
-                    continue;
-
-                Component speaker = FindSpeakerComponent(go);
-                if (speaker == null) continue;
-
-                list.Add(new SpeakerCandidate(go, audioSource, speaker, GetHierarchyPath(go.transform)));
-            }
-
-            list.Sort((a, b) => string.Compare(a.hierarchyPath, b.hierarchyPath, StringComparison.Ordinal));
-            return list.ToArray();
         }
 
         private static List<string> ValidateCurrentSpeakerRouting(SpeakerSetupContext context)
@@ -925,159 +1563,30 @@ namespace PasocomMate.AunCast.Internal
             }
         }
 
-        private static void ExecuteSpeakerSetup(
-            Transform root,
-            PasocomMate.AunCast.AunCastSettings settings,
-            SpeakerSetupContext context,
-            SpeakerCandidate[] candidates)
+        private static bool ApplyAudioSourcesToManager(VideoPlayerManager manager, AudioSource[] sources, bool recordUndo = true)
         {
-            if (candidates == null || candidates.Length == 0) return;
-
-            int undoGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName("AunCast AVPro Speaker Setup");
-            try
-            {
-                AudioSource[] defaultA = context.managerA.audioSources;
-                AudioSource[] defaultB = context.managerB.audioSources;
-
-                ClearGeneratedSpeakerContainers(context.playerRootA, context.playerRootB);
-                Transform containerA = GetOrCreateGeneratedSpeakerContainer(context.playerRootA, GENERATED_SPEAKER_CONTAINER_A_NAME);
-                Transform containerB = GetOrCreateGeneratedSpeakerContainer(context.playerRootB, GENERATED_SPEAKER_CONTAINER_B_NAME);
-
-                var newSourcesA = new List<AudioSource>();
-                var newSourcesB = new List<AudioSource>();
-                var newDetectorsA = new List<AudioSilenceDetector>();
-                var newDetectorsB = new List<AudioSilenceDetector>();
-
-                for (int i = 0; i < candidates.Length; i++)
-                {
-                    SpeakerCandidate candidate = candidates[i];
-                    if (candidate.gameObject == null) continue;
-
-                    GameObject cloneA = CloneSpeakerSource(candidate.gameObject, containerA);
-                    GameObject cloneB = CloneSpeakerSource(candidate.gameObject, containerB);
-                    if (cloneA == null || cloneB == null) continue;
-
-                    AudioSource sourceA = cloneA.GetComponent<AudioSource>();
-                    AudioSource sourceB = cloneB.GetComponent<AudioSource>();
-                    if (sourceA == null || sourceB == null)
-                    {
-                        Debug.LogWarning($"[AunCast] AudioSource の複製に失敗したためスキップしました: {candidate.hierarchyPath}");
-                        continue;
-                    }
-
-                    Component speakerA = FindSpeakerComponent(cloneA);
-                    Component speakerB = FindSpeakerComponent(cloneB);
-                    if (!TrySetSpeakerVideoPlayer(speakerA, context.playerA) ||
-                        !TrySetSpeakerVideoPlayer(speakerB, context.playerB))
-                    {
-                        Debug.LogWarning($"[AunCast] Speaker の videoPlayer 再配線に失敗しました: {candidate.hierarchyPath}");
-                        continue;
-                    }
-
-                    AudioSilenceDetector detectorA = EnsureAudioSilenceDetector(sourceA.gameObject, settings);
-                    AudioSilenceDetector detectorB = EnsureAudioSilenceDetector(sourceB.gameObject, settings);
-
-                    newSourcesA.Add(sourceA);
-                    newSourcesB.Add(sourceB);
-                    if (detectorA != null) newDetectorsA.Add(detectorA);
-                    if (detectorB != null) newDetectorsB.Add(detectorB);
-
-                    SetGameObjectDisabledAndEditorOnly(candidate.gameObject);
-                }
-
-                if (newSourcesA.Count == 0 || newSourcesB.Count == 0)
-                {
-                    Debug.LogWarning("[AunCast] 複製先 AudioSource を作成できなかったため、配線を中止しました。");
-                    return;
-                }
-                if (newDetectorsA.Count == 0 || newDetectorsB.Count == 0)
-                {
-                    Debug.LogWarning("[AunCast] AudioSilenceDetector の生成に失敗したため、配線を中止しました。");
-                    return;
-                }
-
-                DisableAudioSources(defaultA);
-                DisableAudioSources(defaultB);
-
-                ApplyAudioSourcesToManager(context.managerA, newSourcesA.ToArray());
-                ApplyAudioSourcesToManager(context.managerB, newSourcesB.ToArray());
-
-                AudioSilenceDetector detectorForA = newDetectorsA.Count > 0 ? newDetectorsA[0] : null;
-                AudioSilenceDetector detectorForB = newDetectorsB.Count > 0 ? newDetectorsB[0] : null;
-
-                ApplySilenceDetectorsToSwitcher(context.switcher, detectorForA, detectorForB);
-
-                EditorUtility.SetDirty(root.gameObject);
-                Debug.Log($"[AunCast] AVPro Speaker 出力先セットアップを完了しました。対象: {candidates.Length}件 / A:{newSourcesA.Count} / B:{newSourcesB.Count}");
-            }
-            finally
-            {
-                Undo.CollapseUndoOperations(undoGroup);
-            }
-        }
-
-        private static void ClearGeneratedSpeakerContainers(Transform playerRootA, Transform playerRootB)
-        {
-            DestroyContainerIfExists(playerRootA, GENERATED_SPEAKER_CONTAINER_A_NAME);
-            DestroyContainerIfExists(playerRootB, GENERATED_SPEAKER_CONTAINER_B_NAME);
-        }
-
-        private static void DestroyContainerIfExists(Transform parent, string containerName)
-        {
-            if (parent == null) return;
-            Transform found = parent.Find(containerName);
-            if (found == null) return;
-            Undo.DestroyObjectImmediate(found.gameObject);
-        }
-
-        private static Transform GetOrCreateGeneratedSpeakerContainer(Transform parent, string containerName)
-        {
-            Transform existing = parent.Find(containerName);
-            if (existing != null) return existing;
-
-            var go = new GameObject(containerName);
-            Undo.RegisterCreatedObjectUndo(go, "Create AVPro Speaker Container");
-            go.transform.SetParent(parent, false);
-            return go.transform;
-        }
-
-        private static GameObject CloneSpeakerSource(GameObject source, Transform parent)
-        {
-            if (source == null || parent == null) return null;
-
-            GameObject clone = UnityEngine.Object.Instantiate(source);
-            Undo.RegisterCreatedObjectUndo(clone, "Duplicate AVPro Speaker Source");
-            clone.transform.SetParent(parent, true);
-            clone.name = source.name;
-            if (string.Equals(clone.tag, EDITOR_ONLY_TAG, StringComparison.Ordinal))
-                clone.tag = "Untagged";
-            EditorUtility.SetDirty(clone);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(clone);
-            return clone;
-        }
-
-        private static void ApplyAudioSourcesToManager(VideoPlayerManager manager, AudioSource[] sources)
-        {
-            if (manager == null) return;
+            if (manager == null) return false;
             var so = new SerializedObject(manager);
             if (SetObjectArrayProperty(so, nameof(VideoPlayerManager.audioSources), sources))
-                ApplyUdonSerializedChanges(manager, so, "Apply AudioSources to VideoPlayerManager");
+                return ApplyUdonSerializedChanges(manager, so, "Apply AudioSources to VideoPlayerManager", recordUndo);
+            return false;
         }
 
-        private static void ApplySilenceDetectorsToSwitcher(
+        private static bool ApplySilenceDetectorsToSwitcher(
             PlaybackSwitcher switcher,
-            AudioSilenceDetector detectorA,
-            AudioSilenceDetector detectorB)
+            AunCastSpeaker detectorA,
+            AunCastSpeaker detectorB,
+            bool recordUndo = true)
         {
-            if (switcher == null) return;
+            if (switcher == null) return false;
 
             var so = new SerializedObject(switcher);
             bool changed = false;
             changed |= SetObjectProperty(so, "silenceDetectorA", detectorA);
             changed |= SetObjectProperty(so, "silenceDetectorB", detectorB);
             if (changed)
-                ApplyUdonSerializedChanges(switcher, so, "Apply Silence Detectors to PlaybackSwitcher");
+                return ApplyUdonSerializedChanges(switcher, so, "Apply Silence Detectors to PlaybackSwitcher", recordUndo);
+            return false;
         }
 
         private static void ApplyUdonSerializedChanges(
@@ -1115,46 +1624,170 @@ namespace PasocomMate.AunCast.Internal
             return true;
         }
 
-        private static void DisableAudioSources(AudioSource[] audioSources)
-        {
-            if (audioSources == null) return;
-            for (int i = 0; i < audioSources.Length; i++)
-            {
-                AudioSource source = audioSources[i];
-                if (source == null) continue;
-                SetGameObjectDisabledAndEditorOnly(source.gameObject);
-            }
-        }
-
-        private static AudioSilenceDetector EnsureAudioSilenceDetector(
+        private static AunCastSpeaker EnsureAunCastSpeaker(
             GameObject gameObject,
-            PasocomMate.AunCast.AunCastSettings settings)
+            PasocomMate.AunCast.AunCastSettings settings,
+            bool recordUndo = true)
         {
             if (gameObject == null) return null;
 
-            var detector = gameObject.GetComponent<AudioSilenceDetector>();
+            var detector = gameObject.GetComponent<AunCastSpeaker>();
             if (detector == null)
-                detector = Undo.AddComponent<AudioSilenceDetector>(gameObject);
+                detector = recordUndo ? Undo.AddComponent<AunCastSpeaker>(gameObject) : gameObject.AddComponent<AunCastSpeaker>();
             if (detector == null) return null;
 
             var so = new SerializedObject(detector);
             SetFloatProperty(so, "silenceRmsThresholdDbfs", settings != null ? settings.silenceRmsThresholdDbfs : -60f);
             SetFloatProperty(so, "silenceConsecutiveSec", settings != null ? settings.silenceConsecutiveSec : 2.0f);
-            ApplyUdonSerializedChanges(detector, so, "Configure AudioSilenceDetector");
+            ApplyUdonSerializedChanges(detector, so, "Configure AunCastSpeaker", recordUndo);
             return detector;
         }
 
-        private static bool TrySetSpeakerVideoPlayer(Component speaker, VRCAVProVideoPlayer player)
+        private static bool ConfigureAunCastSpeakerForSettings(
+            AunCastSpeaker speaker,
+            PasocomMate.AunCast.AunCastSettings settings,
+            bool recordUndo)
+        {
+            if (speaker == null || settings == null) return false;
+            var so = new SerializedObject(speaker);
+            bool changed = false;
+            changed |= SetFloatPropertyIfChanged(so, "silenceRmsThresholdDbfs", settings.silenceRmsThresholdDbfs);
+            changed |= SetFloatPropertyIfChanged(so, "silenceConsecutiveSec", settings.silenceConsecutiveSec);
+            return changed && ApplyUdonSerializedChanges(speaker, so, "Configure AunCastSpeaker", recordUndo);
+        }
+
+        private static Component EnsureSpeakerComponent(GameObject gameObject, bool recordUndo, bool writeLog)
+        {
+            if (gameObject == null) return null;
+
+            Component speaker = FindSpeakerComponent(gameObject);
+            if (speaker != null) return speaker;
+
+            Type speakerType = FindComponentTypeByName(SPEAKER_COMPONENT_TYPE_NAME);
+            if (speakerType == null || !typeof(Component).IsAssignableFrom(speakerType))
+            {
+                if (writeLog)
+                    Debug.LogWarning("[AunCast] VRCAVProVideoSpeaker 型が見つからないため、AudioSource への Speaker 追加をスキップしました。");
+                return null;
+            }
+
+            Component added = recordUndo
+                ? Undo.AddComponent(gameObject, speakerType)
+                : gameObject.AddComponent(speakerType);
+            if (added == null) return null;
+
+            EditorUtility.SetDirty(added);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(added);
+            return added;
+        }
+
+        /// <summary>
+        /// トンネル入力になった内蔵シンクを不可聴化する。volume は GetOutputData に影響する（＝トンネルが読む
+        /// 信号を消してしまう）ため触らず、空間ブレンドを 3D にしてカスタムロールオフを全域 0 にすることで
+        /// 直接音のみを消す。既に不可聴なら何もしない（冪等）。
+        /// </summary>
+        private static bool MakeTunnelInputInaudible(AudioSource source, bool recordUndo)
+        {
+            if (source == null) return false;
+
+            bool alreadyInaudible = source.spatialBlend >= 0.999f
+                && source.rolloffMode == AudioRolloffMode.Custom
+                && IsCustomRolloffSilent(source);
+            if (alreadyInaudible) return false;
+
+            if (recordUndo)
+                Undo.RecordObject(source, "Mute AunCast Tunnel Input Sink");
+
+            source.spatialBlend = 1f;
+            source.rolloffMode = AudioRolloffMode.Custom;
+            source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, AnimationCurve.Constant(0f, 1f, 0f));
+
+            EditorUtility.SetDirty(source);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(source);
+            return true;
+        }
+
+        private static Type FindComponentTypeByName(string typeName)
+        {
+            if (string.IsNullOrEmpty(typeName)) return null;
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                Type[] types;
+                try
+                {
+                    types = assemblies[i].GetTypes();
+                }
+                catch
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < types.Length; j++)
+                {
+                    Type type = types[j];
+                    if (type == null) continue;
+                    if (type.Name == typeName)
+                        return type;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TrySetSpeakerVideoPlayer(Component speaker, VRCAVProVideoPlayer player, bool recordUndo = true)
         {
             if (speaker == null || player == null) return false;
             var so = new SerializedObject(speaker);
             SerializedProperty prop = so.FindProperty("videoPlayer");
             if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference)
                 return false;
+            if (prop.objectReferenceValue == player)
+                return false;
 
-            Undo.RecordObject(speaker, "Rewire AVPro Speaker videoPlayer");
+            if (recordUndo)
+                Undo.RecordObject(speaker, "Rewire AVPro Speaker videoPlayer");
             prop.objectReferenceValue = player;
-            if (!so.ApplyModifiedProperties()) return false;
+            bool applied = recordUndo ? so.ApplyModifiedProperties() : so.ApplyModifiedPropertiesWithoutUndo();
+            if (!applied) return false;
+
+            EditorUtility.SetDirty(speaker);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(speaker);
+            return true;
+        }
+
+        private static bool TrySetSpeakerMode(Component speaker, int mode, bool recordUndo)
+        {
+            if (speaker == null) return false;
+            var so = new SerializedObject(speaker);
+            SerializedProperty prop = so.FindProperty("mode");
+            if (prop == null) return false;
+
+            int clamped = Mathf.Clamp(mode, AunCastSpeaker.MODE_STEREO, AunCastSpeaker.MODE_RIGHT);
+            bool changed = false;
+            if (prop.propertyType == SerializedPropertyType.Enum)
+            {
+                if (prop.enumValueIndex != clamped)
+                {
+                    prop.enumValueIndex = clamped;
+                    changed = true;
+                }
+            }
+            else if (prop.propertyType == SerializedPropertyType.Integer)
+            {
+                if (prop.intValue != clamped)
+                {
+                    prop.intValue = clamped;
+                    changed = true;
+                }
+            }
+            if (!changed) return false;
+
+            if (recordUndo)
+                Undo.RecordObject(speaker, "Rewire AVPro Speaker mode");
+            bool applied = recordUndo ? so.ApplyModifiedProperties() : so.ApplyModifiedPropertiesWithoutUndo();
+            if (!applied) return false;
 
             EditorUtility.SetDirty(speaker);
             PrefabUtility.RecordPrefabInstancePropertyModifications(speaker);
@@ -1199,29 +1832,6 @@ namespace PasocomMate.AunCast.Internal
             return false;
         }
 
-        private static bool IsUnderGeneratedSpeakerContainer(Transform target)
-        {
-            if (target == null) return false;
-            Transform current = target;
-            while (current != null)
-            {
-                if (current.name == GENERATED_SPEAKER_CONTAINER_A_NAME || current.name == GENERATED_SPEAKER_CONTAINER_B_NAME)
-                    return true;
-                current = current.parent;
-            }
-
-            return false;
-        }
-
-        private static bool IsOriginalPrefabObjectUnderRoot(Transform root, GameObject gameObject)
-        {
-            if (root == null || gameObject == null) return false;
-            if (!IsUnderTransform(gameObject.transform, root)) return false;
-            if (!PrefabUtility.IsPartOfPrefabInstance(gameObject)) return false;
-            if (PrefabUtility.IsAddedGameObjectOverride(gameObject)) return false;
-            return true;
-        }
-
         private static string GetHierarchyPath(Transform target)
         {
             if (target == null) return "<null>";
@@ -1234,20 +1844,6 @@ namespace PasocomMate.AunCast.Internal
             }
 
             return string.Join("/", stack.ToArray());
-        }
-
-        private static void SetGameObjectDisabledAndEditorOnly(GameObject gameObject)
-        {
-            if (gameObject == null) return;
-
-            Undo.RecordObject(gameObject, "Disable and Tag EditorOnly");
-            if (gameObject.activeSelf)
-                gameObject.SetActive(false);
-            if (!string.Equals(gameObject.tag, EDITOR_ONLY_TAG, StringComparison.Ordinal))
-                gameObject.tag = EDITOR_ONLY_TAG;
-
-            EditorUtility.SetDirty(gameObject);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(gameObject);
         }
 
         private void EnsureVpmVersionCheckStarted()
@@ -2000,7 +2596,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void ApplyPlaybackMonitorSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            var detectors = root.GetComponentsInChildren<AudioSilenceDetector>(true);
+            var detectors = FindSceneComponents<AunCastSpeaker>(root.gameObject.scene);
             ApplyToUdonComponents(detectors, so =>
             {
                 SetFloatProperty(so, "silenceRmsThresholdDbfs", settings.silenceRmsThresholdDbfs);
@@ -2167,6 +2763,15 @@ namespace PasocomMate.AunCast.Internal
                 prop.floatValue = value;
         }
 
+        private static bool SetFloatPropertyIfChanged(SerializedObject so, string fieldName, float value)
+        {
+            var prop = so.FindProperty(fieldName);
+            if (prop == null) return false;
+            if (Mathf.Approximately(prop.floatValue, value)) return false;
+            prop.floatValue = value;
+            return true;
+        }
+
         private static void SetIntProperty(SerializedObject so, string fieldName, int value)
         {
             var prop = so.FindProperty(fieldName);
@@ -2256,40 +2861,26 @@ namespace PasocomMate.AunCast.Internal
             return new string(buffer, 0, count);
         }
 
-        private static void AutoAssignAudioLinkBehaviour(PlaybackSwitcher[] switchers)
+        private static void AutoAssignAudioLinkBehaviour(PlaybackSwitcher[] switchers, bool recordUndo = true)
         {
             if (switchers == null || switchers.Length == 0) return;
-
-            GameObject audioLinkObject = GameObject.Find("AudioLink");
-            if (audioLinkObject == null) return;
-
-            UdonSharp.UdonSharpBehaviour[] candidates = audioLinkObject.GetComponents<UdonSharp.UdonSharpBehaviour>();
-            UdonSharp.UdonSharpBehaviour audioLink = null;
-            for (int i = 0; i < candidates.Length; i++)
-            {
-                if (candidates[i] == null) continue;
-                if (candidates[i].GetType().Name == "AudioLink")
-                {
-                    audioLink = candidates[i];
-                    break;
-                }
-                if (audioLink == null)
-                    audioLink = candidates[i];
-            }
-            if (audioLink == null) return;
 
             for (int i = 0; i < switchers.Length; i++)
             {
                 PlaybackSwitcher switcher = switchers[i];
                 if (switcher == null) continue;
+                UdonSharp.UdonSharpBehaviour audioLink = FindAudioLinkBehaviour(switcher.gameObject.scene);
+                if (audioLink == null) continue;
 
                 var so = new SerializedObject(switcher);
                 var prop = so.FindProperty("audioLinkBehaviour");
                 if (prop == null || prop.objectReferenceValue != null) continue;
 
-                Undo.RecordObject(switcher, "Auto Assign AudioLink Behaviour");
+                if (recordUndo)
+                    Undo.RecordObject(switcher, "Auto Assign AudioLink Behaviour");
                 prop.objectReferenceValue = audioLink;
-                if (!so.ApplyModifiedProperties()) continue;
+                bool applied = recordUndo ? so.ApplyModifiedProperties() : so.ApplyModifiedPropertiesWithoutUndo();
+                if (!applied) continue;
 
                 UdonSharpEditorUtility.CopyProxyToUdon(switcher);
                 EditorUtility.SetDirty(switcher);
@@ -2300,6 +2891,24 @@ namespace PasocomMate.AunCast.Internal
                 EditorUtility.SetDirty(udon);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
             }
+        }
+
+        private static UdonSharp.UdonSharpBehaviour FindAudioLinkBehaviour(Scene scene)
+        {
+            if (!scene.IsValid()) return null;
+            UdonSharp.UdonSharpBehaviour fallback = null;
+            UdonSharp.UdonSharpBehaviour[] behaviours = UnityEngine.Object.FindObjectsOfType<UdonSharp.UdonSharpBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                UdonSharp.UdonSharpBehaviour behaviour = behaviours[i];
+                if (behaviour == null) continue;
+                if (!behaviour.gameObject.scene.IsValid() || behaviour.gameObject.scene != scene) continue;
+                if (behaviour.GetType().Name == "AudioLink")
+                    return behaviour;
+                if (fallback == null && behaviour.gameObject.name == "AudioLink")
+                    fallback = behaviour;
+            }
+            return fallback;
         }
 
         private void DrawTimelineLoggingToggle(

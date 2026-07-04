@@ -16,8 +16,8 @@ namespace PasocomMate.AunCast
         // =================================================================
         [SerializeField] private VideoPlayerManager playerManagerA;
         [SerializeField] private VideoPlayerManager playerManagerB;
-        [SerializeField] private AudioSilenceDetector silenceDetectorA;
-        [SerializeField] private AudioSilenceDetector silenceDetectorB;
+        [SerializeField] private AunCastSpeaker silenceDetectorA;
+        [SerializeField] private AunCastSpeaker silenceDetectorB;
         [SerializeField] private AunCastEventBus eventBus;
         [SerializeField] private UdonSharpBehaviour audioLinkBehaviour;
 
@@ -74,13 +74,13 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>Active 側に対応する無音検知器を返す。</summary>
-        public AudioSilenceDetector GetActiveSilenceDetector()
+        public AunCastSpeaker GetActiveSilenceDetector()
         {
             return _activeIsA ? silenceDetectorA : silenceDetectorB;
         }
 
         /// <summary>Standby 側に対応する無音検知器を返す。</summary>
-        public AudioSilenceDetector GetStandbySilenceDetector()
+        public AunCastSpeaker GetStandbySilenceDetector()
         {
             return _activeIsA ? silenceDetectorB : silenceDetectorA;
         }
@@ -89,15 +89,6 @@ namespace PasocomMate.AunCast
         public bool GetActiveIsA()
         {
             return _activeIsA;
-        }
-
-        // =================================================================
-        //  初期化
-        // =================================================================
-
-        private void Start()
-        {
-            DisableUnusedSilenceDetectors();
         }
 
         /// <summary>
@@ -127,33 +118,6 @@ namespace PasocomMate.AunCast
                 playerManagerB.SetFadeGain(0.0f);
             }
             _activeIsA = true;
-        }
-
-        private void DisableUnusedSilenceDetectors()
-        {
-            DisableUnusedSilenceDetectorsForManager(playerManagerA, silenceDetectorA, "A");
-            DisableUnusedSilenceDetectorsForManager(playerManagerB, silenceDetectorB, "B");
-        }
-
-        private void DisableUnusedSilenceDetectorsForManager(
-            VideoPlayerManager manager,
-            AudioSilenceDetector keepDetector,
-            string label)
-        {
-            if (manager == null || manager.audioSources == null) return;
-
-            for (int i = 0; i < manager.audioSources.Length; i++)
-            {
-                AudioSource source = manager.audioSources[i];
-                if (source == null) continue;
-
-                AudioSilenceDetector detector = source.GetComponent<AudioSilenceDetector>();
-                if (detector == null) continue;
-                if (detector == keepDetector) continue;
-                if (!detector.enabled) continue;
-
-                detector.enabled = false;
-            }
         }
 
         // =================================================================
@@ -461,14 +425,14 @@ namespace PasocomMate.AunCast
             {
                 return;
             }
-            AudioSilenceDetector activeDetector = GetActiveSilenceDetector();
+            AunCastSpeaker activeDetector = GetActiveSilenceDetector();
             if (activeDetector == null)
             {
                 LogWarning("SwitchAudioLinkSource failed: active detector is null");
                 return;
             }
             // SilenceDetector と AudioSource は同一 GameObject に配置される前提
-            AudioSource source = activeDetector.GetComponent<AudioSource>();
+            AudioSource source = activeDetector.GetAudioSource();
             if (source != null)
             {
                 audioLinkBehaviour.SetProgramVariable("audioSource", source);

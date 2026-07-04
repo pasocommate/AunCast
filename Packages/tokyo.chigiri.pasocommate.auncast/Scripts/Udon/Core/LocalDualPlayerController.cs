@@ -390,8 +390,8 @@ namespace PasocomMate.AunCast
             if (!activeMonitor.HasSeenPlayerTimeAdvance()) { _combinedSilenceDuration = 0f; return; }
             if (!resyncClient.IsSilenceAutoResyncEligible(now)) { _combinedSilenceDuration = 0f; return; }
 
-            AudioSilenceDetector activeDet = switcher.GetActiveSilenceDetector();
-            AudioSilenceDetector standbyDet = switcher.GetStandbySilenceDetector();
+            AunCastSpeaker activeDet = switcher.GetActiveSilenceDetector();
+            AunCastSpeaker standbyDet = switcher.GetStandbySilenceDetector();
             float threshold = activeDet != null ? activeDet.GetSilenceRmsThreshold() : 0.001f;
             float requiredSec = activeDet != null ? activeDet.GetSilenceConsecutiveSec() : 2f;
 
@@ -424,7 +424,7 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>指定プレイヤーの音量が閾値以上かを判定する（フェード中のミュート側を除外するため FadeGain も確認）。</summary>
-        private bool CheckPlayerAudible(VideoPlayerManager mgr, AudioSilenceDetector det, float threshold)
+        private bool CheckPlayerAudible(VideoPlayerManager mgr, AunCastSpeaker det, float threshold)
         {
             if (mgr == null || det == null) return false;
             if (mgr.GetFadeGain() <= 0f) return false;
@@ -1123,7 +1123,7 @@ namespace PasocomMate.AunCast
         /// <summary>無音判定に必要な連続秒数の設定値。</summary>
         [PublicAPI] public float GetSilenceThresholdSec()
         {
-            AudioSilenceDetector d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
+            AunCastSpeaker d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
             return d != null ? d.GetSilenceConsecutiveSec() : 2f;
         }
 
@@ -1137,7 +1137,7 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public float GetActiveRmsDbfsForMeter()
         {
-            AudioSilenceDetector d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
+            AunCastSpeaker d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
             if (d == null) return -96f;
             float dbfs = d.GetLastRmsDbfs();
             // GetOutputData は AudioSource.volume 適用後の出力を返すため、実適用ゲインで逆補正する (#10)
@@ -1156,7 +1156,7 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public float GetActiveSilenceThresholdDbfsForMeter()
         {
-            AudioSilenceDetector d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
+            AunCastSpeaker d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
             return d != null ? d.GetSilenceRmsThresholdDbfs() : -60f;
         }
 

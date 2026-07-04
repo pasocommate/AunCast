@@ -1,6 +1,7 @@
 
 using UdonSharp;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PasocomMate.AunCast
 {
@@ -9,13 +10,14 @@ namespace PasocomMate.AunCast
     /// sharedMaterials を更新するため、同一マテリアルアセットを共有する他のスクリーンにも自動反映される。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class VideoMeshScreen : UdonSharpBehaviour
+    public class AunCastScreen : UdonSharpBehaviour
     {
         [SerializeField] private AunCastEventBus eventBus;
 
         [Tooltip("このレンダラーのシェーダーがビデオテクスチャに使用するパラメーター名")]
         /// <summary>シェーダーごとにテクスチャプロパティ名が異なるため、設定で切り替え可能にしている。</summary>
-        public string texParam = "_EmissionMap";
+        [FormerlySerializedAs("texParam")]
+        public string textureProperty = "_EmissionMap";
 
         [Tooltip("ビデオテクスチャを設定するレンダラーのインデックス")]
         /// <summary>マルチマテリアルのレンダラーで、どのスロットに適用するかを指定する。</summary>
@@ -113,10 +115,10 @@ namespace PasocomMate.AunCast
         /// <summary>設定値のプロパティを尊重しつつ、主要プロパティにも反映して表示失敗を避ける。</summary>
         private void ApplyTextureToMaterial(Material mat, Texture texture)
         {
-            SetTextureIfPropertyExists(mat, texParam, texture);
-            if (texParam != "_EmissionMap")
+            SetTextureIfPropertyExists(mat, textureProperty, texture);
+            if (textureProperty != "_EmissionMap")
                 SetTextureIfPropertyExists(mat, "_EmissionMap", texture);
-            if (texParam != "_MainTex")
+            if (textureProperty != "_MainTex")
                 SetTextureIfPropertyExists(mat, "_MainTex", texture);
         }
 
@@ -154,10 +156,10 @@ namespace PasocomMate.AunCast
             if (_restoreMaterial != null) return;
 
             _restoreMaterial = mat;
-            CacheSingleTexture(mat, texParam);
-            if (texParam != "_EmissionMap")
+            CacheSingleTexture(mat, textureProperty);
+            if (textureProperty != "_EmissionMap")
                 CacheSingleTexture(mat, "_EmissionMap");
-            if (texParam != "_MainTex")
+            if (textureProperty != "_MainTex")
                 CacheSingleTexture(mat, "_MainTex");
         }
 
@@ -228,7 +230,7 @@ namespace PasocomMate.AunCast
 
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[AunCast/VideoMeshScreen] {message}", this);
+            Debug.LogWarning($"[AunCast/AunCastScreen] {message}", this);
         }
     }
 }

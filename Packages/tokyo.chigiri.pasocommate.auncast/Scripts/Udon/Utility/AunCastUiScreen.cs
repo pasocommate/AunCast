@@ -9,7 +9,7 @@ namespace PasocomMate.AunCast
     /// RawImage にビデオテクスチャを適用し、親 RectTransform に合わせてアスペクト比フィットさせる。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class VideoUiScreen : UdonSharpBehaviour
+    public class AunCastUiScreen : UdonSharpBehaviour
     {
         [SerializeField] private AunCastEventBus eventBus;
 
@@ -113,7 +113,7 @@ namespace PasocomMate.AunCast
 
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[AunCast/VideoUiScreen] {message}", this);
+            Debug.LogWarning($"[AunCast/AunCastUiScreen] {message}", this);
         }
     }
 }

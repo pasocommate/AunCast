@@ -182,7 +182,7 @@ MonoBehaviour:
       Data: 11|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.AudioSilenceDetector, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastSpeaker, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 

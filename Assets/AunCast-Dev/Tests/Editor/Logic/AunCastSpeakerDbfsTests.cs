@@ -2,14 +2,14 @@ using NUnit.Framework;
 
 namespace PasocomMate.AunCast.Tests
 {
-    public class AudioSilenceDetectorDbfsTests
+    public class AunCastSpeakerDbfsTests
     {
-        private AudioSilenceDetector _detector;
+        private AunCastSpeaker _detector;
 
         [SetUp]
         public void SetUp()
         {
-            _detector = TestHelper.CreateComponent<AudioSilenceDetector>();
+            _detector = TestHelper.CreateComponent<AunCastSpeaker>();
             TestHelper.Invoke(_detector, "Start");
         }
 
