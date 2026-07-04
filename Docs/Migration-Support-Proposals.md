@@ -94,6 +94,13 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 現状の `GameObject.Find("AudioLink")` + 型名一致によるランタイム探索は GameObject 名の変更に弱い。再配線処理でシーンの AudioLink を検出し `PlaybackSwitcher.audioLinkBehaviour` をシリアライズ配線しておく（ランタイム探索はフォールバックとして残す）。
 
+**【対応決定・2026-07-04】AudioLink 付属スピーカー（AudioLinkInput）の無効化＋EditorOnly 化**: `AudioLink.prefab` は `AudioLinkInput` 子オブジェクトに `AudioSource + VRCAVProVideoSpeaker` を同梱し、AudioLink の `audioSource` に配線している。AunCast はランタイムで `PlaybackSwitcher.SwitchAudioLinkSource()` が AudioLink の入力を Active スピーカーの `AudioSource` へ差し替えるため、この付属スピーカーは不要。従来はこれがセットアップ時に「スピーカー変換候補」として誤検出され、手動削除候補一覧にも並んでいた。対応として:
+
+- 変換候補・手動削除候補の双方から AudioLink 付属スピーカーを除外する（`IsAudioLinkOwnedSource`: 対象コンポーネントの祖先に AudioLink 型 or 名 `AudioLink` があるかで判定）。
+- 再配線時（`NeutralizeAudioLinkInputs`）に AudioLinkInput の GameObject を**無効化（SetActive false）＋EditorOnly タグ化**する。削除ではなく EditorOnly 化にするのは、削除だとシーン構造からの消失が混乱のもとになるため（エディタには残しつつビルド時に剥がす）。冪等。
+- あわせて、無効化した AudioLinkInput の**すぐ隣（同じ親・直後の兄弟）に注記オブジェクトを生成**する（`EnsureAudioLinkInputNote`）。名前は英語で `AudioLink's referenced audio source is managed automatically by AunCast`、EditorOnly・非アクティブ。エディタでヒエラルキーを見た制作者が「なぜ AudioLinkInput が無効なのか」を理解できるようにするための説明用マーカー。既存の注記があれば再生成しない（冪等）。
+- 提案 6/`DrawResidualCleanupGuidance` の「AunCast は自動削除・自動 EditorOnly 化を行わない」原則の**例外**。旧プレイヤー由来の残存物と異なり、AudioLink 入力は AunCast が完全に管理する対象であるため。
+
 ### 5.【提案】移行アシスタント（1〜3 の統合）
 
 **AunCastSettings インスペクタから起動する。** シーン内の VRCAVProVideoPlayer 構成を検出し、「検出結果一覧 → チェックして実行」形式で以下を一括実行する:

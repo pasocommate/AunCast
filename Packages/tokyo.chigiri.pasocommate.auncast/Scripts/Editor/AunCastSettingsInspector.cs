@@ -32,6 +32,9 @@ namespace PasocomMate.AunCast.Internal
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
         private const string AUNCAST_EVENT_HUB_NAME = "AunCastEventHub";
         private const string AUNCAST_EVENT_BUS_ASSET_GUID = "86f742d2e8954336a9cd87f1e4527d80";
+        // 無効化した AudioLinkInput の隣に置く注記オブジェクト名（英語・エディタ上の説明用）
+        private const string AUDIOLINK_INPUT_NOTE_NAME =
+            "AudioLink's referenced audio source is managed automatically by AunCast";
 
         private const double SPEAKER_CACHE_POLL_INTERVAL_SEC = 3.0;
 
@@ -472,6 +475,9 @@ namespace PasocomMate.AunCast.Internal
             var eventBus = FindOrCreateEventBus(root, createIfMissing: recordUndo, writeLog: writeLog);
             var switchers = root.GetComponentsInChildren<PlaybackSwitcher>(true);
             AutoAssignAudioLinkBehaviour(switchers, recordUndo);
+            // AudioLink 付属の内蔵スピーカー（AudioLinkInput）を無効化＋EditorOnly 化する。
+            // AunCast が AudioLink 入力をランタイムで差し替えるため付属スピーカーは不要（冪等）。
+            int audioLinkInputNeutralized = NeutralizeAudioLinkInputs(scene, recordUndo);
             var meshScreens = FindSceneComponents<AunCastScreen>(scene);
             var uiScreens = FindSceneComponents<AunCastUiScreen>(scene);
             var speakers = FindSceneComponents<AunCastSpeaker>(scene);
@@ -634,7 +640,7 @@ namespace PasocomMate.AunCast.Internal
             }
 
             if (writeLog)
-                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / 通知先: {notifyUpdated}件");
+                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / AudioLink入力無効化: {audioLinkInputNeutralized}件 / 通知先: {notifyUpdated}件");
         }
 
         private static AunCastEventBus FindOrCreateEventBus(Transform root, bool createIfMissing, bool writeLog)
@@ -889,6 +895,8 @@ namespace PasocomMate.AunCast.Internal
         /// <summary>
         /// 変換後に残っている旧プレイヤー由来のコンポーネント/オブジェクトを一覧提示する。
         /// AunCast は自動削除・自動 EditorOnly 化を行わず、ユーザーに手動削除を案内するにとどめる。
+        /// 例外として、AudioLink 付属の内蔵スピーカー（AunCast が入力を動的差し替えする対象）は
+        /// 再配線が無効化＋EditorOnly 化して処理するため、この手動削除候補からは除外する。
         /// </summary>
         private void DrawResidualCleanupGuidance(Transform root, SpeakerSetupContext context)
         {
@@ -927,6 +935,8 @@ namespace PasocomMate.AunCast.Internal
                 AudioSource source = speaker.GetComponent<AudioSource>();
                 // AunCastSpeaker と同居する VRCAVProVideoSpeaker は再配線が再利用するため残す（削除候補にしない）
                 if (source != null && source.GetComponent<AunCastSpeaker>() != null) continue;
+                // AudioLink 付属スピーカーは再配線が無効化＋EditorOnly 化して処理するため手動削除候補に含めない
+                if (IsAudioLinkOwnedSource(speaker)) continue;
                 residual.Add("VRCAVProVideoSpeaker: " + GetHierarchyPath(speaker.transform));
             }
 
@@ -1078,6 +1088,10 @@ namespace PasocomMate.AunCast.Internal
                 AudioSource source = speaker.GetComponent<AudioSource>();
                 if (source == null) continue;
                 if (source.gameObject.GetComponent<AunCastSpeaker>() != null) continue;
+                // AudioLink 付属の内蔵スピーカー（AudioLinkInput）は変換対象ではない。
+                // AunCast がランタイムで AudioLink 入力を Active スピーカーへ差し替えるため、
+                // 再配線が無効化＋EditorOnly 化して扱う（NeutralizeAudioLinkInputs 参照）。
+                if (IsAudioLinkOwnedSource(speaker)) continue;
 
                 string path = GetHierarchyPath(source.transform);
                 bool isTunnelLike = IsAudioOutputTunnelLike(source);
@@ -2909,6 +2923,121 @@ namespace PasocomMate.AunCast.Internal
                     fallback = behaviour;
             }
             return fallback;
+        }
+
+        /// <summary>
+        /// 指定コンポーネントが AudioLink 付属（AudioLink を持つ GameObject の配下）かどうかを判定する。
+        /// AudioLink.prefab の AudioLinkInput（AudioSource + VRCAVProVideoSpeaker）を、
+        /// 一般のスピーカー変換候補・手動削除候補から区別するために使う。
+        /// </summary>
+        private static bool IsAudioLinkOwnedSource(Component component)
+        {
+            if (component == null) return false;
+            Transform current = component.transform;
+            while (current != null)
+            {
+                // GameObject 名フォールバック（FindAudioLinkBehaviour と同じ基準）
+                if (current.gameObject.name == "AudioLink")
+                    return true;
+                Component[] behaviours = current.GetComponents<Component>();
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    Component behaviour = behaviours[i];
+                    if (behaviour != null && behaviour.GetType().Name == "AudioLink")
+                        return true;
+                }
+                current = current.parent;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// AudioLink 付属の内蔵スピーカー（AudioLinkInput）を無効化＋EditorOnly 化する。
+        /// AunCast は AudioLink の入力をランタイムで Active スピーカーへ差し替えるため、
+        /// 付属の VRCAVProVideoSpeaker + AudioSource は不要。削除は混乱のもとになるため、
+        /// GameObject を非アクティブ化しビルド時に剥がれる EditorOnly タグを付ける（冪等）。
+        /// 処理した件数を返す。
+        /// </summary>
+        private static int NeutralizeAudioLinkInputs(Scene scene, bool recordUndo)
+        {
+            if (!scene.IsValid()) return 0;
+            int count = 0;
+            Component[] speakers = FindSceneComponentsByTypeName(scene, SPEAKER_COMPONENT_TYPE_NAME);
+            for (int i = 0; i < speakers.Length; i++)
+            {
+                Component speaker = speakers[i];
+                if (speaker == null) continue;
+                if (!IsAudioLinkOwnedSource(speaker)) continue;
+                GameObject input = speaker.gameObject;
+                bool changed = NeutralizeGameObjectAsEditorOnly(input, recordUndo);
+                changed |= EnsureAudioLinkInputNote(input, recordUndo);
+                if (changed)
+                    count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// 無効化した AudioLinkInput のすぐ隣（同じ親・直後の兄弟）に、
+        /// 「AudioLink の参照先 AudioSource は AunCast が自動管理する」旨を示す注記オブジェクトを
+        /// EditorOnly・非アクティブ状態で作成する。既に存在すれば作成しない（冪等）。作成したら true。
+        /// </summary>
+        private static bool EnsureAudioLinkInputNote(GameObject input, bool recordUndo)
+        {
+            if (input == null) return false;
+            Transform parent = input.transform.parent;
+
+            // 既存の注記があれば作成しない（冪等）。注記が置かれる兄弟集合を走査する。
+            if (parent != null)
+            {
+                for (int i = 0; i < parent.childCount; i++)
+                    if (parent.GetChild(i).name == AUDIOLINK_INPUT_NOTE_NAME)
+                        return false;
+            }
+            else if (input.scene.IsValid())
+            {
+                GameObject[] roots = input.scene.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                    if (roots[i].name == AUDIOLINK_INPUT_NOTE_NAME)
+                        return false;
+            }
+
+            var note = new GameObject(AUDIOLINK_INPUT_NOTE_NAME);
+            if (recordUndo)
+                Undo.RegisterCreatedObjectUndo(note, "Create AudioLink Input Note");
+
+            if (parent != null)
+                note.transform.SetParent(parent, false);
+            else if (input.scene.IsValid())
+                SceneManager.MoveGameObjectToScene(note, input.scene);
+            // AudioSource（AudioLinkInput）の直後に並べる
+            note.transform.SetSiblingIndex(input.transform.GetSiblingIndex() + 1);
+
+            note.tag = "EditorOnly";
+            note.SetActive(false);
+            EditorUtility.SetDirty(note);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(note);
+            return true;
+        }
+
+        /// <summary>
+        /// GameObject を非アクティブ化し EditorOnly タグを付ける。既に両方満たしていれば何もしない（冪等）。
+        /// 変更があれば true を返す。
+        /// </summary>
+        private static bool NeutralizeGameObjectAsEditorOnly(GameObject go, bool recordUndo)
+        {
+            if (go == null) return false;
+            bool needsDisable = go.activeSelf;
+            bool needsTag = !go.CompareTag("EditorOnly");
+            if (!needsDisable && !needsTag) return false;
+
+            if (recordUndo)
+                Undo.RecordObject(go, "Neutralize AudioLink Input");
+            if (needsDisable) go.SetActive(false);
+            if (needsTag) go.tag = "EditorOnly";
+            EditorUtility.SetDirty(go);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(go);
+            return true;
         }
 
         private void DrawTimelineLoggingToggle(
