@@ -14,9 +14,9 @@
 2. ワールド内の任意の位置に配置し、サイズを調整します。
 3. `AunCastSettings` の **壁パネル配線** にある **「AunCastEventBus参照を再配線」** を押し、コンポーネントを関連付けます。
 
-別のシェーダー / マテリアルを使用する場合は、複製した `VideoMeshScreen` の以下の項目を合わせてください。
+別のシェーダー / マテリアルを使用する場合は、複製した `AunCastScreen` の以下の項目を合わせてください。
 
-- **テクスチャパラメータ名**（`texParam`、既定 `_EmissionMap`）… そのシェーダーが映像に使用するテクスチャプロパティ名
+- **テクスチャプロパティ名**（`textureProperty`、既定 `_EmissionMap`）… そのシェーダーが映像に使用するテクスチャプロパティ名
 - **レンダラーインデックス**（`rendererIndex`）… マルチマテリアルのどのスロットに適用するか
 
 !!! note "停止中の画像（アイドル画像）"
@@ -30,25 +30,29 @@
 2. ワールド内の任意の位置に配置します。
 3. `AunCastSettings` の **壁パネル配線** にある **「AunCastEventBus参照を再配線」** を押し、コンポーネントを関連付けます（`AunCastSettings` のインスペクタを開いた際にも自動的に再配線されます）。
 
-## 音声（AVPro Speaker 配線） {#speaker}
+## 音声（AunCastSpeaker 配線） {#speaker}
 
-AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため、音声出力にもそれぞれ専用の `AudioSource` が必要です。これは **AVPro Speaker 配線** ツールが半自動的に用意します。
+AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため、音声出力にもそれぞれ専用の `AudioSource` が必要です。使用する `AudioSource` に `AunCastSpeaker` を付け、接続先を `PlayerA` または `PlayerB` に指定してから再配線します。
 
 ### 手順
 
-1. 音声出力の基準にする **VRC AVPro Video Speaker + AudioSource** を用意し、**位置・空間音響（3D設定）・AudioSource の音量**を任意に設定します。既存のものがあれば、そのまま使用できます。
-2. `AunCastSettings` の **AVPro Speaker 配線** セクションを確認します。シーン上のスピーカーが **「検出対象」** に一覧表示されます。
+1. 音声出力に使う `AudioSource` を用意し、位置・空間音響（3D設定）を調整します。既存ワールドの `VRCAVProVideoSpeaker` 付き `AudioSource` も使用できます。
+2. `AudioSource` に `AunCastSpeaker` を追加し、`playerIndex`（0 = `PlayerA`、1 = `PlayerB`）と `baseVolume` を設定します。
+3. 既存の AVPro スクリーン / スピーカーから移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで候補を選び、**「選択した出力を AunCast 宣言へ変換」** を押します。同じセクションの **URL 転写** では、AunCast 外の UdonBehaviour にある `VRCUrl` public 変数を `defaultUrl` へ転写できます。
+4. `AunCastSettings` の **壁パネル配線** にある **「AunCastEventBus参照を再配線」** を押します。同一シーン上の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` が再スキャンされ、音声・映像の配線が再構築されます。
 
     ![AVPro Speaker 配線セクション](../assets/inspector-avpro-speaker.png){ width="360" }
 
-3. **「AVPro Speaker 出力先セットアップを実行」** を押します。
-
-このボタンは、検出した「スピーカー + AudioSource」を **Player A/B（A/B再生系統）用に複製**し、各複製を適切に配線して、**元のオブジェクトを無効化（EditorOnly タグ付与）**します。
-
 ### 音量と既存 AudioSource の扱い
 
-- 複製は **元の AudioSource をそのまま複製**します。つまり、**元のスピーカーで設定した音量・3D設定が、そのままA/Bへ引き継がれます**。音量バランスは、セットアップの実行前に元の AudioSource 側で決めておいてください。
-- 観客がパネルで変更する音量は、ここで決めた AudioSource の音量に乗算されます。基準となるバランスはこの AudioSource 側で決まります。音量スライダーの初期値によって小さくなりがちですので、このときの AudioSource の音量はやや大きめにしておくことをおすすめします。
-- **複数スピーカーの多点配置**も可能です。検出された各スピーカーがA/B両方へ複製されます。
-- 設定をやり直す場合は、再度ボタンを押すと、生成済みコンテナ（`AunCastSpeakerRefs_A` / `_B`）をクリアして作り直します。
-- A/Bで同一 AudioSource を共有しているなどの配線不整合は、ツールが自動的に検査し、赤色で表示します。
+- `AudioSource.volume` は実行時に AunCast が上書きします。設計上の基準音量は `AunCastSpeaker.baseVolume` に設定してください。
+- 観客がパネルで変更する音量は、`baseVolume` に乗算されます。複数の音声出力を置く場合は、各 `AunCastSpeaker` の `baseVolume` でバランスを取ります。
+- **複数スピーカーの多点配置**も可能です。必要な数だけ `AunCastSpeaker` 付き `AudioSource` を置き、A/B再生系統ごとに `playerIndex` を設定します。
+- 設定をやり直す場合は、不要な `AunCastSpeaker` を削除または無効化してから、再度 **「AunCastEventBus参照を再配線」** を押します。
+- A/Bで同一 `AudioSource` を共有しているなどの配線不整合は、インスペクタ上に赤色で表示されます。
+
+### AudioOutputTunnel 構成を移行する場合
+
+TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` を使っている構成では、不可聴のダミーシンクを通常スピーカーとして変換しないでください。必要な場合は `AunCastAudioOutputTunnel` を追加し、既存の `leftOutput` / `rightOutput` / `stereoOutput` に相当する AudioSource を設定します。
+
+`AunCastSettings` の再配線を実行すると、`AunCastAudioOutputTunnel.inputA` / `inputB` は同一シーンの `AunCastSpeaker` から自動設定されます。この方式は直結出力よりリングバッファ分の遅延が増えるため、通常の `VRCAVProVideoSpeaker` 直結構成では使わないでください。
