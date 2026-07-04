@@ -1,4 +1,4 @@
-# AunCast Udon スクリプト クラス図
+﻿# AunCast Udon スクリプト クラス図
 
 ```mermaid
 classDiagram
@@ -42,8 +42,8 @@ classDiagram
         <<NoVariableSync>>
         -VideoPlayerManager playerManagerA
         -VideoPlayerManager playerManagerB
-        -AudioSilenceDetector silenceDetectorA
-        -AudioSilenceDetector silenceDetectorB
+        -AunCastSpeaker silenceDetectorA
+        -AunCastSpeaker silenceDetectorB
         -AunCastEventBus eventBus
         -bool _activeIsA
         -float _crossfadeStartedAt
@@ -51,7 +51,7 @@ classDiagram
         +ResetBothPlayersToA()
         +GetActiveManager() VideoPlayerManager
         +GetStandbyManager() VideoPlayerManager
-        +GetActiveSilenceDetector() AudioSilenceDetector
+        +GetActiveSilenceDetector() AunCastSpeaker
         +StartStandbyConnect(float, VRCUrl)
         +StartCrossfade(float)
         +TickCrossfade(float, float)
@@ -184,11 +184,17 @@ classDiagram
         +OnVideoError(VideoError)
     }
 
-    class AudioSilenceDetector {
+    class AunCastSpeaker {
         <<NoVariableSync>>
+        +int playerIndex
+        +int mode
+        +float baseVolume
         -float silenceRmsThresholdDbfs
         -float silenceConsecutiveSec
         -AudioSource _audioSource
+        +GetPlayerIndex() int
+        +GetMode() int
+        +GetBaseVolume() float
         +GetRms() float
         +GetLastRmsDbfs() float
         +GetSilenceRmsThreshold() float
@@ -271,18 +277,30 @@ classDiagram
     %%  Utility レイヤー
     %% ========================================
 
-    class VideoMeshScreen {
+    class AunCastScreen {
         <<NoVariableSync>>
         -AunCastEventBus eventBus
-        +string texParam
+        +string textureProperty
         +int rendererIndex
         +OnVideoTextureChanged()
     }
 
-    class VideoUiScreen {
+    class AunCastUiScreen {
         <<NoVariableSync>>
         -AunCastEventBus eventBus
         +OnVideoTextureChanged()
+    }
+
+    class AunCastAudioOutputTunnel {
+        <<NoVariableSync>>
+        +AudioSource inputA
+        +AudioSource inputB
+        +AudioSource leftOutput
+        +AudioSource rightOutput
+        +AudioSource stereoOutput
+        -int blockSamples
+        -int ringBufferSamples
+        +RestartOutputs()
     }
 
     %% ========================================
@@ -299,7 +317,7 @@ classDiagram
     LocalDualPlayerController --> AunCastEventBus : eventBus
 
     PlaybackSwitcher --> VideoPlayerManager : playerManagerA/B
-    PlaybackSwitcher --> AudioSilenceDetector : silenceDetectorA/B
+    PlaybackSwitcher --> AunCastSpeaker : silenceDetectorA/B
     PlaybackSwitcher --> AunCastEventBus : eventBus
 
     ActivePlayerMonitor --> VideoPlayerManager : playerManagerA/B
@@ -332,8 +350,9 @@ classDiagram
     UserStatusPanel --> HudProgressOverlay : hudProgress
 
     %% Utility → EventBus 購読
-    VideoMeshScreen --> AunCastEventBus : eventBus (購読)
-    VideoUiScreen --> AunCastEventBus : eventBus (購読)
+    AunCastScreen --> AunCastEventBus : eventBus (購読)
+    AunCastUiScreen --> AunCastEventBus : eventBus (購読)
+    AunCastAudioOutputTunnel --> AunCastSpeaker : inputA/B AudioSource
 ```
 
 > **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは StaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `UserStatusPanel`→`StaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`StaffControlPanel`→`UserStatusPanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
@@ -350,13 +369,14 @@ classDiagram
 | | `PlaybackMonitor` | 全ユーザーの再生状態をビットパックで同期 |
 | | `AunCastEventBus` | 疎結合イベント配信ハブ (テクスチャ・状態変化・パネル表示) |
 | **Player** | `VideoPlayerManager` | AVPro ラッパー。VRChat コールバックを FSM へ転送 |
-| | `AudioSilenceDetector` | AudioSource の PCM から RMS 無音検知 |
+| | `AunCastSpeaker` | AudioSource の出力宣言・基準音量保持・PCM からの RMS 無音検知 |
 | **UI** | `StaffControlPanel` | スタッフ向け操作・モニタリング UI |
 | | `WallControlPanel` | 壁掛け制御パネル (パスコード解錠・Resync・ジェスチャー設定) |
 | | `UserStatusPanel` | 観客向け拡張メニュー (VR ジェスチャー呼び出し対応) |
 | | `HudProgressOverlay` | VR ジェスチャー長押し中の HUD プログレス表示 |
-| **Utility** | `VideoMeshScreen` | MeshRenderer にビデオテクスチャを適用 |
-| | `VideoUiScreen` | RawImage にビデオテクスチャを適用 (アスペクト比フィット) |
+| **Utility** | `AunCastScreen` | MeshRenderer にビデオテクスチャを適用 |
+| | `AunCastUiScreen` | RawImage にビデオテクスチャを適用 (アスペクト比フィット) |
+| | `AunCastAudioOutputTunnel` | AudioOutputTunnel 構成向けに A/B 音声を Unity AudioSource 出力へ流す互換トンネル |
 
 ## 同期モード一覧
 

@@ -1,4 +1,4 @@
-# VRChat 低遅延ライブ配信専用 Resync プレイヤー設計書
+﻿# VRChat 低遅延ライブ配信専用 Resync プレイヤー設計書
 
 ## 1. 文書情報
 
@@ -318,11 +318,11 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 
 責務:
 - `playerManagerA` / `playerManagerB` のロール（Active/Standby）保持と `_activeIsA` の管理
-- `AunCastEventBus` への RenderTexture ソース配信（`UpdateRenderTexture` / `TryUpdateRenderTextureFromManager`）。実際のスクリーン群（`VideoMeshScreen` / `VideoUiScreen`）は Bus の購読者として更新される
+- `AunCastEventBus` への RenderTexture ソース配信（`UpdateRenderTexture` / `TryUpdateRenderTextureFromManager`）。実際のスクリーン群（`AunCastScreen` / `AunCastUiScreen`）は Bus の購読者として更新される
 - クロスフェード（`crossfadeDurationSec`、等パワーパニング cos/sin カーブで各 `VideoPlayerManager` の `_fadeGain` を制御）
 - AudioLink 入力ソースの切替（`audioLinkBehaviour.SetProgramVariable("audioSource", ...)` 経由）
 - ロール交換 (`CompleteSwitchRoles`) 後のリセット
-- 各 Player に対応する `AudioSilenceDetector` への参照保持（Active 側 RMS の問い合わせ）
+- 各 Player に対応する `AunCastSpeaker` への参照保持（Active 側 RMS の問い合わせ）
 - Active 直接リブート (`StartActiveDirectReboot`): 両 Player を A にリセットしてから Active で `LoadURL`
 - Standby 接続開始 (`StartStandbyConnect`): `_fadeGain=0` で接続、映像・音声を隠して準備
 
@@ -416,7 +416,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - **Menu Follow**: VR 時は頭部ローカルオフセット配置、Desktop 時は FOV から距離を算出してフィットさせる
 - **デバッグ自動オープン**: 同名ユーザー検出時にテスト用にテレポート + パネルオープン
 
-### K. AudioSilenceDetector
+### K. AunCastSpeaker
 各 AVPro AudioSource にアタッチし、`AudioSource.GetOutputData()` を使ってメインスレッドから RMS を取得する軽量コンポーネント。
 
 責務:
@@ -439,7 +439,7 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 シーン内に N 個配置されうる購読者群へ、publisher が具象型を知らずに配信するローカル PubSub ハブ。AunCast ルート直下の `AunCastEventHub` に配置する。
 
 責務:
-- `VideoTextureChanged`: `PlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`VideoMeshScreen` / `VideoUiScreen` へ `OnVideoTextureChanged` を通知する
+- `VideoTextureChanged`: `PlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`AunCastScreen` / `AunCastUiScreen` へ `OnVideoTextureChanged` を通知する
 - `LocalStateChanged`: `LocalDualPlayerController` の FSM 状態変化を `WallControlPanel` へ通知する
 - `PortablePanelShown`: `UserStatusPanel` 表示時に `WallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
 - 購読者配列は backing `UdonBehaviour[]` で保持し、配信は `SendCustomEvent(eventName)` で行う
@@ -459,10 +459,10 @@ flowchart TB
         VPM_B[VideoPlayerManager B]
         PA[VRCAVProVideoPlayer A]
         PB[VRCAVProVideoPlayer B]
-        Audio[AudioSilenceDetector A/B]
+        Audio[AunCastSpeaker A/B]
         Bus[AunCastEventBus<br/>Local PubSub Hub]
-        MeshScreen[VideoMeshScreen<br/>3D スクリーン]
-        UiScreen[VideoUiScreen<br/>UI RawImage]
+        MeshScreen[AunCastScreen<br/>3D スクリーン]
+        UiScreen[AunCastUiScreen<br/>UI RawImage]
         AL[AudioLink]
         Viewer[UserStatusPanel<br/>ポータブルパネル<br/>Viewer/Staff切替]
         HUD[HudProgressOverlay<br/>VR プログレス HUD]
@@ -597,12 +597,12 @@ stateDiagram-v2
 主判定に加え、以下を **推奨** の補助情報として併用する。
 
 - **`IsPlaying`**（推奨）: `GetTime()` が前進していても `IsPlaying == false` の場合、バッファリング中や内部エラーの可能性がある。`GetTime()` 前進 + `IsPlaying == false` が一定時間続いた場合は異常候補とする
-- **Audio RMS**（推奨）: `AudioSilenceDetector` の `GetRms()` から算出。無音検知はグローバル Resync の自動トリガーに利用する。個別の異常検知には使わない（コンテンツ無音との区別が困難なため）
+- **Audio RMS**（推奨）: `AunCastSpeaker` の `GetRms()` から算出。無音検知はグローバル Resync の自動トリガーに利用する。個別の異常検知には使わない（コンテンツ無音との区別が困難なため）
 - フレーム描画状態（任意）
 - 任意の外部フラグ（任意）
 
 ### 設計方針
-**主判定は `GetTime()` ベース + `IsPlaying` 補助とする。**  
+**主判定は `GetTime()` ベース + `IsPlaying` 補助とする。**
 理由:
 - コンテンツ無音と障害無音を分けにくいため、音量は主判定に使わない
 - 新系切替でも無音継続の可能性があるため
@@ -724,7 +724,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 ## 12.2 予約の単位
 
-ユーザーごとに 1 スロットを持つ。  
+ユーザーごとに 1 スロットを持つ。
 同一ユーザーからの重複 Request は統合する。
 
 ## 12.3 スケジューリング優先順位
@@ -760,7 +760,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 #### 自動トリガー（個人無音 Resync として実装）
 - 現在の実装では、無音検知はグローバル Resync ではなく、各クライアントの**個人 Resync** (`REQUEST_REASON_SILENCE`) として発行される
-- Active 系・Standby 系の両方の `AudioSilenceDetector.GetRms()` を確認し、`_fadeGain > 0` かつ RMS が閾値以上のプレイヤーが 1 つもない場合に「全 audible プレイヤーで無音」と判定する
+- Active 系・Standby 系の両方の `AunCastSpeaker.GetRms()` を確認し、`_fadeGain > 0` かつ RMS が閾値以上のプレイヤーが 1 つもない場合に「全 audible プレイヤーで無音」と判定する
 - 両系統ともユーザー音量がミュート（スライダー値 0）の場合は誤検知防止のため検知をスキップする
 - 無音判定が `silenceConsecutiveSec`（デフォルト 2 秒）連続した場合に個人 Resync リクエストを発行する
 - 最後の Resync 完了（`_lastResyncCompletedAt`）から `silenceSuppressSec`（デフォルト 150 秒）が経過するまで、無音検知を無効化する（`IsSilenceAutoResyncEligible`）。これにより、Resync 直後の不要な再発動を防止する
@@ -1132,20 +1132,20 @@ sequenceDiagram
 
 ## 16.2 映像切替
 
-- `StandbyVerifying → Switching` 後、Standby の `VideoPlayerManager` から非 null のテクスチャを取得できた時点で、`AunCastEventBus` 経由で登録済みの全 `VideoMeshScreen` / `VideoUiScreen` のテクスチャソースを新系へ切り替える
+- `StandbyVerifying → Switching` 後、Standby の `VideoPlayerManager` から非 null のテクスチャを取得できた時点で、`AunCastEventBus` 経由で登録済みの全 `AunCastScreen` / `AunCastUiScreen` のテクスチャソースを新系へ切り替える
 - テクスチャ未取得時は旧映像を保持し、null テクスチャをスクリーンへ配信しない。これにより切替時の白/黒フレームを避ける
-- 各 `VideoMeshScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`VideoUiScreen` は RawImage に直接テクスチャを設定する
+- 各 `AunCastScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`AunCastUiScreen` は RawImage に直接テクスチャを設定する
 
 ## 16.3 音声切替・無音検知
 
 クロスフェードは `VideoPlayerManager` が `AudioSource.volume` を制御する方式で実装する。Active/Standby 切替の物理的な制御は `PlaybackSwitcher` が担う。
 
-### AudioSilenceDetector コンポーネント
+### AunCastSpeaker コンポーネント
 
-各 AVPro AudioSource に `AudioSilenceDetector`（UdonSharpBehaviour）をアタッチする。
+各 AVPro AudioSource に `AunCastSpeaker`（UdonSharpBehaviour）をアタッチする。`AunCastSpeaker` は RMS 無音検知に加え、その AudioSource を AunCast の音声出力として宣言する役割を持つ。
 
 ```
-AVPro AudioSource A (+ AudioSilenceDetector スクリプト)
+AVPro AudioSource A (+ AunCastSpeaker スクリプト)
   → メインスレッドの GetRms() で AudioSource.GetOutputData() を呼び出し
   → 出力 PCM の RMS を返す
   → 無音判定はメインスレッドで定期実行（PlaybackSwitcher / Controller 経由）
@@ -1153,10 +1153,23 @@ AVPro AudioSource A (+ AudioSilenceDetector スクリプト)
 AVPro AudioSource B (同様の構成)
 ```
 
+- `playerIndex` で PlayerA / PlayerB のどちらへ接続するかを指定する
+- `mode` は `VRCAVProVideoSpeaker.mode` 相当のチャンネル指定（Stereo / Left / Right）を保持する
+- `baseVolume` は設計上の基準音量。`AudioSource.volume` は `VideoPlayerManager` がランタイム出力値（ユーザー音量 × fadeGain × baseVolume）として上書きする
 - 出力 PCM はそのまま AudioListener + AudioLink へ流れる
 - `OnAudioFilterRead` は使用しない（Udon VM のオーディオスレッドからメインスレッドへフィールド書き込みを反映できないため。`VRChat-Udon-Development-Notes.md` 9.6 参照）
 
 > **設計変更履歴**: 当初は `OnAudioFilterRead` を用いたリングバッファ遅延・バッファアンダーラン吸収を計画していたが、上記制約により未実装となった。`initialDelaySec` / `bufferAbsorptionLimitSec` / `absorptionThresholdSec` / `recoveryRateSecPerSec` / `maxDelaySec` といったパラメータ群はすべて旧設計のものであり、現状の Inspector には存在しない。バッファ吸収機能は Section 24 の今後の拡張案として残す。
+
+### AunCastAudioOutputTunnel（互換用）
+
+TopazChat Player の「+ Reverb Filter」構成のように、`AudioOutputTunnel` で AVPro シンクから PCM を取り出して通常の Unity `AudioSource` へ流しているワールド向けに、`AunCastAudioOutputTunnel` を同梱する。
+
+- `inputA` / `inputB` は同一シーンの `AunCastSpeaker`（PlayerA / PlayerB）から再配線処理で自動設定される
+- `leftOutput` / `rightOutput` / `stereoOutput` に生成したループ `AudioClip` を割り当て、`AudioClip.SetData` で A/B 入力を合成して流す
+- `AudioSource.GetOutputData` は `AudioSource.volume` 適用後の PCM を返す前提で、A/B の単純加算により Standby ミュートとクロスフェードを反映する
+- 直結出力よりリングバッファ分の遅延が増えるため、通常の VRCAVProVideoSpeaker 直結構成では使用しない
+- Udon VM の制約により `OnAudioFilterRead` は使わず、メインスレッド `Update` で `blockSamples / sampleRate` 間隔の書き込みを行う
 
 ### クロスフェード
 
@@ -1175,7 +1188,7 @@ float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 
 ### 無音検知
 
-`AudioSilenceDetector.GetRms()` を Active 系で定期的に呼び出し、メインスレッドで RMS と閾値を比較する。
+`AunCastSpeaker.GetRms()` を Active 系で定期的に呼び出し、メインスレッドで RMS と閾値を比較する。
 
 - `silenceRmsThreshold`: 推奨 0.001（デフォルト値）
 - `silenceConsecutiveSec`: 推奨 2.0 秒（デフォルト値）
@@ -1303,7 +1316,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 
 ## 19.3 owner 変更
 
-新 owner は既存同期変数から Scheduler を再開する。  
+新 owner は既存同期変数から Scheduler を再開する。
 ローカル配列だけに依存しない。
 
 ---
@@ -1359,7 +1372,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `wallNearDistance` (2.5m) — AunCastSettings 経由
 - `wallFarDistance` (3m) — AunCastSettings 経由
 
-### AudioSilenceDetector 側
+### AunCastSpeaker 側
 
 - `silenceRmsThreshold` — AunCastSettings 経由
 - `silenceConsecutiveSec` — AunCastSettings 経由
@@ -1484,9 +1497,9 @@ void TickScheduler()
 
 ### 22.1 映像スクリーン
 
-3D スクリーン側は `VideoMeshScreen`、UI RawImage 側は `VideoUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `VideoMeshScreen` / `VideoUiScreen` を追加し、AunCastSettings の `AunCastEventBus参照を再配線` を実行する。映像は `PlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
+3D スクリーン側は `AunCastScreen`、UI RawImage 側は `AunCastUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `AunCastScreen` / `AunCastUiScreen` を追加し、AunCastSettings の `AunCastEventBus参照を再配線` を実行する。再配線は AunCast ルート配下だけでなく、同一シーン全体の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` を収集するため、建物階層など AunCast 外に置いた出力もサポートする。映像は `PlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
 
-停止中（`PlaybackSwitcher` が `null` テクスチャを配信した状態）は、各スクリーンを**アイドル画像**へ復元する。アイドル画像は `AunCastSettings.idleScreenTexture` で指定でき、再配線処理が各 `VideoMeshScreen` / `VideoUiScreen` の `idleTexture` へ転写する。未指定の場合は、`Start` 時にマテリアル / RawImage へ初期割り当てされていたテクスチャへ戻す。ワールド起動直後にも同じ停止表示を適用する。これにより、停止時に `null` テクスチャがそのまま残って白飛びする問題を防ぐ。
+停止中（`PlaybackSwitcher` が `null` テクスチャを配信した状態）は、各スクリーンを**アイドル画像**へ復元する。アイドル画像は `AunCastSettings.idleScreenTexture` で指定でき、再配線処理が各 `AunCastScreen` / `AunCastUiScreen` の `idleTexture` へ転写する。未指定の場合は、`Start` 時にマテリアル / RawImage へ初期割り当てされていたテクスチャへ戻す。ワールド起動直後にも同じ停止表示を適用する。これにより、停止時に `null` テクスチャがそのまま残って白飛びする問題を防ぐ。
 
 ### 22.2 スタッフ操作パネル（StaffControlPanel、ポータブルパネル Staff ビュー）
 
@@ -1587,7 +1600,7 @@ float output = adjustedVolume * _fadeGain;
 - 右半分（高音量域）: 指数カーブが支配的で知覚的にリニアな音量上昇を維持
 - デフォルト音量 0.6 で約 -10dB
 - 各 AudioSource の初期音量（`_audioSourceBaseVolumes`）を乗算することで、AudioSource ごとの音量バランスを維持する
-- ミュート時は `AudioSilenceDetector` の GetOutputData が全ゼロを返し正規化が成立しないため、`PollSilenceDetection` は両系統ミュート時に検知をスキップする
+- ミュート時は `AunCastSpeaker` の GetOutputData が全ゼロを返し正規化が成立しないため、`PollSilenceDetection` は両系統ミュート時に検知をスキップする
 
 > **設計変更履歴**: 当初は「ボリューム UI を提供しない」方針だったが、観客ごとに最適な音量が異なる現実的なユースケースを踏まえ、ローカル設定として提供する形に変更した。
 
@@ -1655,7 +1668,7 @@ float output = adjustedVolume * _fadeGain;
 | グローバル Resync 殺到 | 80 人一括投入 | スタガリング（10〜15 枠で順次処理）、推定完了時間の表示 |
 | スロット枯渇 | Leave 未検知でスロットが埋まる | `OnPlayerLeft` でスロット解放 + 定期的な生存チェック |
 | 配列同期の帯域 | 82 スロット × 配列の全体送信 | PlaybackMonitor を分離（約 328 B/回）、Coordinator は約 2.3 KB/回。変更時のみ `RequestSerialization` |
-| 実装複雑化 | ロジック過多 | 監視・制御・同期・音声を分離（Controller / ActivePlayerMonitor / PlaybackSwitcher / Coordinator / PlaybackMonitor / AudioSilenceDetector） |
+| 実装複雑化 | ロジック過多 | 監視・制御・同期・音声を分離（Controller / ActivePlayerMonitor / PlaybackSwitcher / Coordinator / PlaybackMonitor / AunCastSpeaker） |
 
 ---
 
@@ -1684,7 +1697,7 @@ float output = adjustedVolume * _fadeGain;
 10. グローバル Resync（手動トリガー） + `StaffControlPanel`（停止・Resync・強制リブート・上限編集）を実装
 11. `WallControlPanel`（パスコード解錠 + Summon）を実装
 12. 観客向けステータスパネル（Resync ボタン・ドリフト表示・音量・Silence Resync）を実装
-13. `AudioSilenceDetector`（GetOutputData 方式の RMS）→ グローバル Resync 自動トリガーを実装
+13. `AunCastSpeaker`（GetOutputData 方式の RMS）→ グローバル Resync 自動トリガーを実装
 14. AudioLink 接続を実装
 15. 長時間テスト（30 / 60 / 120 分）としきい値調整
 

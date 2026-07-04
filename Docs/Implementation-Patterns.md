@@ -1,4 +1,4 @@
-# AunCast 実装パターン
+﻿# AunCast 実装パターン
 
 プロジェクト内で繰り返し現れる、VRChat/Udon 上での同期変数・スタッフ権限操作・UI 双方向追従の設計ルールをまとめる。
 VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-Notes.md` を参照。
@@ -325,7 +325,7 @@ private bool CleanupStaleSlots()
 
 ## 7. N 個配置 subscriber 群への AunCastEventBus 配信
 
-シーン内に複数配置されうる `VideoMeshScreen` / `VideoUiScreen` / `WallControlPanel`
+シーン内に複数配置されうる `AunCastScreen` / `AunCastUiScreen` / `WallControlPanel`
 のような購読者へ publisher から通知するときは、publisher 側に具象型配列を持たせず
 `AunCastEventBus` 経由で配信する。
 
@@ -340,6 +340,12 @@ private bool CleanupStaleSlots()
 - `AunCastSettingsInspector` の再配線処理だけが subscriber の具象型を集め、backing
   `UdonBehaviour` に変換してから
   Bus 配列と各 `eventBus` 参照を `SerializedObject` / `FindProperty` 経由で設定する
+- `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` は AunCast ルート配下に限定せず、
+  AunCastSettings と同一シーン全体から収集する。建物階層など AunCast 外に置いた
+  出力コンポーネントも、宣言済みであれば自動再配線の対象になる
+- `AunCastAudioOutputTunnel` も同一シーン全体から収集し、`inputA` / `inputB` は
+  PlayerA / PlayerB の `AunCastSpeaker` から自動設定する。通常の音声出力は
+  `AunCastSpeaker` 直結を優先し、トンネルは既存 `AudioOutputTunnel` 構成の互換用途に限定する
 
 ### プレハブ運用と自動再配線
 

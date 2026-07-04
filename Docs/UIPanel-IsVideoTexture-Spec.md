@@ -1,4 +1,4 @@
-# UIPanel シェーダー: _MainTex サンプリングの汎用化
+﻿# UIPanel シェーダー: _MainTex サンプリングの汎用化
 
 ## 背景
 
@@ -130,7 +130,7 @@ float4 baseSample = tex2D(_BaseTex, baseUV);
 
 ## コンシューマ側（AunCast）の対応
 
-AunCast の `VideoUiScreen.cs` から、テクスチャ切り替え時にマテリアルのプロパティを更新する。
+AunCast の `AunCastUiScreen.cs` から、テクスチャ切り替え時にマテリアルのプロパティを更新する。
 
 | テクスチャ | `_Gamma` | `_FlipY` |
 |-----------|---------|---------|

@@ -75,7 +75,8 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 **変換（明示的・一回きりの操作。オブジェクトの作成・改変はこちらに集約）**: 手動付与（コンポーネントを Add してプロパティを設定）と、3 の一括変換ツールの 2 通り。変換の内容は共通:
 - VRCAVProVideoScreen → AunCastScreen: `textureProperty` をそのまま引き継ぐ。AVPro コンポーネントを除去。プロパティ名の手動調査が不要になる。
-- VRCAVProVideoSpeaker 付き AudioSource → AunCastSpeaker 化: 所属系統を指定して変換（`mode` はそのまま引き継ぎ、元の `AudioSource.volume` は AunCastSpeaker のボリュームへ転写）。デュアル系統用に A/B ペアが必要な場合の複製もこの変換時に明示的に一度だけ行う。AudioSource の設定（3D・ロールオフ・フィルタ等）は無傷で維持。
+- VRCAVProVideoSpeaker 付き AudioSource → AunCastSpeaker 化: 所属系統を指定して変換（`mode` はそのまま引き継ぎ、元の `AudioSource.volume` は AunCastSpeaker のボリュームへ転写）。AudioSource の設定（3D・ロールオフ・フィルタ等）は無傷で維持。
+- 接続先の選択肢は **PlayerA / PlayerB / 自動複製 (A/B)** の 3 つ。「自動複製」は、同じ位置に同じ設定の AudioSource を A/B 用に用意したいケース向けに、その AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA・複製を PlayerB へ割り当てる（この変換時に明示的に一度だけ複製する）。
 
 **プロパティ命名の原則**: AunCast 系コンポーネントのプロパティ名は、**なるべく VRCAVPro 系コンポーネントと共通の名称にする**。AunCastScreen のテクスチャプロパティ指定は現 VideoMeshScreen の `texParam` から `textureProperty` へ改名、AunCastSpeaker のチャンネルモードは `mode`、など。AVPro 系との対応関係が名前から自明になり、変換時の転写も同名コピーになる。
 
@@ -87,7 +88,7 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 - **推測による自動設定**: スクリーン変換時はマテリアルプロパティ名を元コンポーネント（`VRCAVProVideoScreen.textureProperty` 等。取れない場合は対象マテリアルのシェーダーが持つ `_MainTex` / `_EmissionMap` の検出）から、スピーカー変換時はボリュームを元の `AudioSource.volume` 等から、可能な限り推測して自動設定する。
 - 6 の要件（不可聴シンクも必ず列挙・状態ラベル・トンネル検知時の案内・外部参照ラベル）の表示基盤を兼ねる。
-- 5 の移行アシスタントは、このツールの検出・変換に旧プレイヤーの撤去案内と URL 転写を加えたもの。
+- 5 の移行アシスタントは、このツールの検出・変換に旧プレイヤーの撤去案内を加えたもの。
 
 ### 4.【提案】AudioLink 参照のエディタ時配線
 
@@ -100,9 +101,8 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 - 各 VRCAVProVideoScreen → 2 の AunCastScreen 変換
 - 各スピーカー → 2 の AunCastSpeaker 変換（6 の検知・警告込み）
 - 旧プレイヤーの撤去は自動化しない。**残存する旧コンポーネント・オブジェクトを一覧提示し、ユーザーの手で削除するよう案内するにとどめる**（EditorOnly 化の自動適用はプレハブ構成・参照関係次第で単純にできないため行わない）。
-- URL の defaultUrl 転写 — **UdonBehaviour の publicVariables から VRCUrl 型変数を列挙する型ベースの一般手法**（UdonGraph / UdonSharp 両対応）で候補を提示し、ユーザーが選択する。独自差し替え・拡張されたプレイヤーでは変数名を前提にできない。
 
-トンネル構成は 6 の検知ロジックを流用する。
+トンネル構成は 6 の検知ロジックを流用する。URL の自動転写は不要と判断し実装しない（配信 URL はスタッフパネルへの入力／`defaultUrl` の手動設定で運用する）。
 
 ### 6.【対応決定】スピーカーセットアップの改善: 責任境界の一般化とトンネル構成対応
 
@@ -121,12 +121,13 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 **AudioOutputTunnel 複数対応版（AunCastAudioOutputTunnel）の同梱提供**:
 - TopazChatPlayer は利用者が多いため、付属の AudioOutputTunnel に限り **A/B 2 入力対応（またはクロスフェードなし前提で Active 側へ動的切替する）互換トンネル**を AunCast に同梱し、型名 `AudioOutputTunnel`（+ `input`/`leftOutput`/`rightOutput`/`stereoOutput` の変数構成ヒューリスティック）で検知した際に差し替えを案内する。名称は他の AunCast 系コンポーネントと同様に **AunCast プレフィックスを付けて `AunCastAudioOutputTunnel`** とする。
-- 互換トンネルの A/B 入力には **AunCast 内蔵の PlayerA/B シンク AudioSource（AunCastSpeaker 付き既定スピーカー）**を再配線が配線する。旧トンネルのダミーシンクは**削除するだけでよく、変換も複製も不要**。トンネル利用時は内蔵シンクを不可聴化する（参考実装と同じカスタムロールオフ手法。要検証事項 2 と関連）。
+- 互換トンネルの A/B 入力には **AunCast 内蔵の PlayerA/B シンク AudioSource（AunCastSpeaker 付き既定スピーカー）**を再配線が配線する。旧トンネルのダミーシンクは**削除するだけでよく、変換も複製も不要**。
+- **内蔵シンクの不可聴化（実装済み）**: トンネルが存在する場合、再配線がトンネル入力シンクを不可聴化する。`GetOutputData` は **AudioSource.volume の影響を受ける（検証済み）** ため、トンネルが読む信号を消さないよう volume は触らず、`spatialBlend = 1`（3D）＋ カスタムロールオフを全域 0 にして直接音のみを消す（参考実装と同じカスタムロールオフ手法）。冪等。
+- **A/B ミックス（実装済み）**: `GetOutputData` が volume 反映済みのため、トンネルは A+B を単純加算するだけで fadeGain（Standby ミュート・クロスフェード）が自然に反映される。Active 側選択の内部配線は不要。
+- **再生安定性（実装済み）**: DSP クロック（`AudioSettings.dspTime`）に同期して書き込み、フレーム落ちで遅延しすぎた場合や書込ヘッドが再生ヘッドへ追いつく場合はバッファをリセットして復帰する（参考実装 TopazChat AudioOutputTunnel と同じリングバッファ手法）。
 - **遅延増加の警告**: AunCastAudioOutputTunnel を利用する構成では、直結出力に比べて音声遅延（リングバッファ分 ≒ 数十 ms〜）が増える旨をセットアップ時に警告する。元の AudioOutputTunnel 構成でも同等の遅延はあったため移行で悪化するわけではないが、直結構成への切り替えという選択肢があることを利用者が判断できるようにする。
 - これにより「+ Reverb Filter」型ワールドはトンネルから先（リバーブ・外部音量制御・出力スピーカー）を**無傷のまま**移行できる。
-- 実装前の要検証事項:
-  1. `AudioSource.GetOutputData` が volume 適用後の PCM を返すなら、A+B の単純加算で fadeGain（Standby ミュート・クロスフェード）が自然に反映される。適用前なら Active 通知（PlaybackSwitcher / EventBus との内部配線）による入力選択・ゲイン合成が必要。
-  2. 聞こえる音がトンネル出力側になるため、ユーザー音量スライダーと Standby ミュートがどの層で効くか、および内蔵シンクの不可聴化手法（volume か距離ロールオフか）を実測して設計を確定する。
+- 残る実測項目: ユーザー音量スライダーの効き（内蔵シンク経由で volume 管理されるため反映される想定）と、映像に対する音声の再生位置ギャップ（リングバッファ分 ≒ 数十 ms〜）を実機で確認する。
 
 **実装ポイント**: 変換候補の検出（不可聴・無効も列挙 + 状態ラベル）、外部参照スキャン、AudioOutputTunnel 検知と互換トンネル差し替え案内、互換トンネル本体（UdonSharp。`.cs` + `.asset` ペア作成の規約に従う）。既存の `CollectSpeakerCandidates` / `ExecuteSpeakerSetup`（複製方式）は 2 の宣言型モデルに置き換える。
 
