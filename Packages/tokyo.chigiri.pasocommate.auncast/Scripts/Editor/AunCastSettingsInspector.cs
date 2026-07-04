@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using TMPro;
 using UdonSharpEditor;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -28,6 +27,9 @@ namespace PasocomMate.AunCast.Internal
         private const string SESSION_KEY_VPM_CHECK_DONE = "AunCast.SettingsEditor.VpmCheckDone";
         private const string SESSION_KEY_VPM_HAS_UPDATE = "AunCast.SettingsEditor.VpmHasUpdate";
         private const string SESSION_KEY_VPM_LATEST_VERSION = "AunCast.SettingsEditor.VpmLatestVersion";
+        // 折りたたみ状態は Editor インスタンスに持たせると選択切替で破棄されるため、SessionState に保存する。
+        private const string SESSION_KEY_MIGRATION_EXPANDED = "AunCast.SettingsEditor.MigrationExpanded";
+        private const string SESSION_KEY_CLEANUP_EXPANDED = "AunCast.SettingsEditor.CleanupExpanded";
         private const string SCREEN_COMPONENT_TYPE_NAME = "VRCAVProVideoScreen";
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
         private const string AUNCAST_EVENT_HUB_NAME = "AunCastEventHub";
@@ -35,8 +37,6 @@ namespace PasocomMate.AunCast.Internal
         // 無効化した AudioLinkInput の隣に置く注記オブジェクト名（英語・エディタ上の説明用）
         private const string AUDIOLINK_INPUT_NOTE_NAME =
             "AudioLink's referenced audio source is managed automatically by AunCast";
-
-        private const double SPEAKER_CACHE_POLL_INTERVAL_SEC = 3.0;
 
         // 利用規約 PDF（VN3ライセンス）の GUID。パス文字列リテラルは使わず GUID で特定する。
         private const string VN3_LICENSE_JA_GUID = "63ab57b266732074988fcf3b95489e05";
@@ -53,12 +53,21 @@ namespace PasocomMate.AunCast.Internal
         private string _latestVersion;
         private bool _vpmSessionCacheLoaded;
 
-        private bool _speakerCacheDirty = true;
-        private double _speakerCacheTime;
-        private MigrationCandidate[] _cachedMigrationCandidates;
-        private List<string> _cachedSpeakerValidationErrors;
-        private readonly HashSet<string> _selectedMigrationTargets = new HashSet<string>();
-        private readonly Dictionary<string, int> _migrationSpeakerPlayerIndex = new Dictionary<string, int>();
+        private static readonly Dictionary<int, MigrationCandidateCache> MigrationCaches =
+            new Dictionary<int, MigrationCandidateCache>();
+        private MigrationCandidateCache _migrationCache;
+        private int _migrationCacheRootId;
+        private static bool _migrationSectionExpanded
+        {
+            get => SessionState.GetBool(SESSION_KEY_MIGRATION_EXPANDED, true);
+            set => SessionState.SetBool(SESSION_KEY_MIGRATION_EXPANDED, value);
+        }
+
+        private static bool _cleanupSectionExpanded
+        {
+            get => SessionState.GetBool(SESSION_KEY_CLEANUP_EXPANDED, true);
+            set => SessionState.SetBool(SESSION_KEY_CLEANUP_EXPANDED, value);
+        }
 
         // 接続先ポップアップの選択値。0/1 は playerIndex そのもの、2 は「自動複製」。
         private const int MIGRATION_OPTION_AUTO_DUPLICATE = 2;
@@ -80,6 +89,7 @@ namespace PasocomMate.AunCast.Internal
             public readonly string selectionKey;
             public readonly int inferredPlayerIndex;
             public readonly bool isTunnelLike;
+            public readonly bool isConfigured;
 
             public MigrationCandidate(
                 MigrationCandidateKind kind,
@@ -90,7 +100,8 @@ namespace PasocomMate.AunCast.Internal
                 string statusLabel,
                 string selectionKey,
                 int inferredPlayerIndex,
-                bool isTunnelLike)
+                bool isTunnelLike,
+                bool isConfigured)
             {
                 this.kind = kind;
                 this.gameObject = gameObject;
@@ -101,7 +112,31 @@ namespace PasocomMate.AunCast.Internal
                 this.selectionKey = selectionKey;
                 this.inferredPlayerIndex = inferredPlayerIndex;
                 this.isTunnelLike = isTunnelLike;
+                this.isConfigured = isConfigured;
             }
+        }
+
+        private readonly struct ResidualCleanupCandidate
+        {
+            public readonly GameObject gameObject;
+            public readonly string label;
+
+            public ResidualCleanupCandidate(Component component, string typeLabel)
+            {
+                gameObject = component != null ? component.gameObject : null;
+                label = component != null
+                    ? typeLabel + ": " + GetHierarchyPath(component.transform)
+                    : typeLabel;
+            }
+        }
+
+        private sealed class MigrationCandidateCache
+        {
+            public MigrationCandidate[] candidates = Array.Empty<MigrationCandidate>();
+            public ResidualCleanupCandidate[] residualCleanupCandidates = Array.Empty<ResidualCleanupCandidate>();
+            public List<string> validationErrors = new List<string>();
+            public readonly Dictionary<string, int> speakerPlayerIndex = new Dictionary<string, int>();
+            public bool detected;
         }
 
         private readonly struct SpeakerSetupContext
@@ -148,6 +183,54 @@ namespace PasocomMate.AunCast.Internal
                 () => EditorGUIUtility.systemCopyBuffer = fieldName);
             menu.ShowAsContext();
             Event.current.Use();
+        }
+
+        private static GUIStyle PaddedHelpBoxStyle()
+        {
+            return new GUIStyle(EditorStyles.helpBox)
+            {
+                padding = new RectOffset(24, 24, 12, 14),
+                margin = new RectOffset(0, 0, 4, 4)
+            };
+        }
+
+        private static GUIStyle CandidateHelpBoxStyle()
+        {
+            return new GUIStyle(EditorStyles.helpBox)
+            {
+                padding = new RectOffset(12, 12, 8, 8),
+                margin = new RectOffset(0, 0, 4, 4)
+            };
+        }
+
+        private static GUIStyle SectionFoldoutStyle()
+        {
+            return new GUIStyle(EditorStyles.foldout)
+            {
+                fontStyle = FontStyle.Bold
+            };
+        }
+
+        private static bool SectionFoldout(bool expanded, string ja, string en)
+        {
+            return EditorGUILayout.Foldout(
+                expanded,
+                AunCastEditorLocalization.Localize(ja, en),
+                true,
+                SectionFoldoutStyle());
+        }
+
+        // オブジェクト選択リンク（パス）用のリンク色スタイル。
+        private static GUIStyle LinkPathStyle()
+        {
+            var link = new Color(0.30f, 0.56f, 1f);
+            return new GUIStyle(EditorStyles.miniLabel)
+            {
+                normal = { textColor = link },
+                hover = { textColor = link },
+                focused = { textColor = link },
+                active = { textColor = link }
+            };
         }
 
         private float SliderField(string ja, string en, string fieldName, string tooltipJa, string tooltipEn,
@@ -228,10 +311,10 @@ namespace PasocomMate.AunCast.Internal
             }
 
             EditorGUILayout.Space(8);
-            DrawWallPanelReferenceTools(root);
+            DrawAvProSpeakerSetupTools(root, settings);
 
             EditorGUILayout.Space(8);
-            DrawAvProSpeakerSetupTools(root, settings);
+            DrawWallPanelReferenceTools(root);
 
             EditorGUILayout.Space(8);
 
@@ -358,39 +441,9 @@ namespace PasocomMate.AunCast.Internal
             AssetDatabase.OpenAsset(asset);
         }
 
-        private void OnEnable()
-        {
-            // Inspector が開かれた瞬間に一度だけ既存の EventBus / 壁パネル参照を自動再配線する。
-            // OnInspectorGUI から呼ぶと毎フレーム走り、手動で変更した参照を
-            // 上書きしてしまうので OnEnable に限定する。Hub の新規作成は手動ボタン時のみ行う。
-            // SetObjectProperty / SetObjectArrayProperty は値が完全一致のときに false を返すので、
-            // 既に整合している場合は ApplyUdonSerializedChanges が呼ばれず、ユーザーの手動編集を
-            // 上書きしない。
-            var settings = target as PasocomMate.AunCast.AunCastSettings;
-            if (settings != null)
-                RewireEventHubAndConsumers(settings.transform, recordUndo: false, writeLog: false);
-
-            EditorSceneManager.sceneDirtied += OnSceneDirtied;
-            Undo.postprocessModifications += OnPostprocessModifications;
-            _speakerCacheDirty = true;
-        }
-
         private void OnDisable()
         {
             StopVpmVersionCheck();
-            EditorSceneManager.sceneDirtied -= OnSceneDirtied;
-            Undo.postprocessModifications -= OnPostprocessModifications;
-        }
-
-        private void OnSceneDirtied(Scene scene)
-        {
-            _speakerCacheDirty = true;
-        }
-
-        private UndoPropertyModification[] OnPostprocessModifications(UndoPropertyModification[] modifications)
-        {
-            _speakerCacheDirty = true;
-            return modifications;
         }
 
         private static void DrawTmpFallbackFontWarning()
@@ -441,24 +494,24 @@ namespace PasocomMate.AunCast.Internal
                 $"TMP fallback font settings are not applied. Run {TMP_FALLBACK_MENU_PATH}. After that, reopen the scene.");
         }
 
-        private static void DrawWallPanelReferenceTools(Transform root)
+        private void DrawWallPanelReferenceTools(Transform root)
         {
-            EditorGUILayout.LabelField(
-                AunCastEditorLocalization.Localize("壁パネル配線", "Wall Panel Wiring"),
-                EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                AunCastEditorLocalization.Localize(
-                    "AunCast 配下の中核参照と、同一シーン全体の AunCastScreen / AunCastUiScreen / AunCastSpeaker を再配線します。",
-                    "Re-wires core AunCast references plus all AunCastScreen / AunCastUiScreen / AunCastSpeaker components in the same scene."),
-                MessageType.None);
-            using (new EditorGUI.DisabledScope(root == null))
+            using (new EditorGUILayout.VerticalScope(PaddedHelpBoxStyle()))
             {
-                if (!GUILayout.Button(
-                    AunCastEditorLocalization.Localize("AunCastEventBus参照を再配線", "Re-wire AunCastEventBus References"),
-                    GUILayout.Height(24)))
-                    return;
+                EditorGUILayout.HelpBox(
+                    AunCastEditorLocalization.Localize(
+                        "AunCast 配下の中核参照と、同一シーン全体の AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel を再スキャンして再配線します。",
+                        "Re-scans and re-wires core AunCast references plus all AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel components in the same scene."),
+                    MessageType.None);
+                using (new EditorGUI.DisabledScope(root == null))
+                {
+                    if (!GUILayout.Button(
+                        AunCastEditorLocalization.Localize("AunCast参照を再配線", "Re-wire AunCast References"),
+                        GUILayout.Height(24)))
+                        return;
 
-                RewireEventHubAndConsumers(root, recordUndo: true, writeLog: true);
+                    RewireEventHubAndConsumers(root, recordUndo: true, writeLog: true);
+                }
             }
         }
 
@@ -855,56 +908,77 @@ namespace PasocomMate.AunCast.Internal
 
         private void DrawAvProSpeakerSetupTools(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            EditorGUILayout.LabelField(
-                AunCastEditorLocalization.Localize("既存プレイヤー出力の変換", "Existing Player Output Migration"),
-                EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                AunCastEditorLocalization.Localize(
-                    "同一シーンの VRCAVProVideoScreen / VRCAVProVideoSpeaker を検出し、選択したものを AunCastScreen / AunCastSpeaker に変換します。オブジェクトの複製は行いません。",
-                    "Detects VRCAVProVideoScreen / VRCAVProVideoSpeaker components in the same scene and converts selected items to AunCastScreen / AunCastSpeaker. No objects are duplicated."),
-                MessageType.None);
+            _migrationSectionExpanded = SectionFoldout(
+                _migrationSectionExpanded,
+                "既存プレイヤー出力の変換",
+                "Existing Player Output Migration");
 
-            if (!TryResolveSpeakerSetupContext(root, out var context, out var resolveError))
+            bool resolved = TryResolveSpeakerSetupContext(root, out var context, out var resolveError);
+
+            if (_migrationSectionExpanded)
             {
-                EditorGUILayout.HelpBox(resolveError, MessageType.Warning);
-                return;
-            }
-
-            RefreshMigrationCacheIfNeeded(root, context);
-            MigrationCandidate[] candidates = _cachedMigrationCandidates ?? Array.Empty<MigrationCandidate>();
-            DrawMigrationCandidateList(candidates);
-
-            List<string> validationErrors = _cachedSpeakerValidationErrors ?? new List<string>();
-            for (int i = 0; i < validationErrors.Count; i++)
-                EditorGUILayout.HelpBox(validationErrors[i], MessageType.Error);
-
-            using (new EditorGUI.DisabledScope(candidates.Length == 0))
-            {
-                if (GUILayout.Button(
-                    AunCastEditorLocalization.Localize("選択した出力を AunCast 宣言へ変換", "Convert Selected Outputs to AunCast Declarations"),
-                    GUILayout.Height(24)))
+                using (new EditorGUILayout.VerticalScope(PaddedHelpBoxStyle()))
                 {
-                    ExecuteSelectedMigration(root, settings, context, candidates);
-                    _speakerCacheDirty = true;
+                    if (!resolved)
+                    {
+                        EditorGUILayout.Space(4);
+                        EditorGUILayout.HelpBox(resolveError, MessageType.Warning);
+                    }
+                    else
+                    {
+                        MigrationCandidateCache cache = GetMigrationCache(root);
+                        if (GUILayout.Button(
+                            AunCastEditorLocalization.Localize("候補を再検出", "Redetect Candidates"),
+                            GUILayout.Height(22)))
+                        {
+                            RefreshMigrationCandidates(root, context, cache);
+                        }
+
+                        EditorGUILayout.Space(4);
+                        EditorGUILayout.HelpBox(
+                            AunCastEditorLocalization.Localize(
+                                "同一シーンの VRCAVProVideoScreen / VRCAVProVideoSpeaker を検出し、各行の変換ボタンで AunCastScreen / AunCastSpeaker に変換します。",
+                                "Detects VRCAVProVideoScreen / VRCAVProVideoSpeaker components in the same scene and converts each row to AunCastScreen / AunCastSpeaker with its Convert button."),
+                            MessageType.None);
+
+                        if (!cache.detected)
+                        {
+                            EditorGUILayout.HelpBox(
+                                AunCastEditorLocalization.Localize(
+                                    "候補を表示するには「候補を再検出」を押してください。高負荷を避けるため、自動では実行しません。",
+                                    "Click Redetect Candidates to show candidates. To avoid heavy processing, it does not run automatically."),
+                                MessageType.Info);
+                        }
+                        else
+                        {
+                            MigrationCandidate[] candidates = cache.candidates ?? Array.Empty<MigrationCandidate>();
+                            DrawMigrationCandidateList(root, settings, context, cache, candidates);
+
+                            List<string> validationErrors = cache.validationErrors ?? new List<string>();
+                            for (int i = 0; i < validationErrors.Count; i++)
+                                EditorGUILayout.HelpBox(validationErrors[i], MessageType.Error);
+                        }
+                    }
                 }
             }
 
-            DrawResidualCleanupGuidance(root, context);
+            if (!resolved) return;
+            DrawResidualCleanupGuidance(GetMigrationCache(root).residualCleanupCandidates);
         }
 
         /// <summary>
-        /// 変換後に残っている旧プレイヤー由来のコンポーネント/オブジェクトを一覧提示する。
-        /// AunCast は自動削除・自動 EditorOnly 化を行わず、ユーザーに手動削除を案内するにとどめる。
-        /// 例外として、AudioLink 付属の内蔵スピーカー（AunCast が入力を動的差し替えする対象）は
-        /// 再配線が無効化＋EditorOnly 化して処理するため、この手動削除候補からは除外する。
+        /// 変換候補では扱わない旧プレイヤー本体を一覧提示する。
+        /// AunCast は自動削除せず、ユーザーに手動削除を案内するにとどめる。
         /// </summary>
-        private void DrawResidualCleanupGuidance(Transform root, SpeakerSetupContext context)
+        private static ResidualCleanupCandidate[] CollectResidualCleanupCandidates(
+            Transform root,
+            SpeakerSetupContext context)
         {
-            if (root == null) return;
+            if (root == null) return Array.Empty<ResidualCleanupCandidate>();
             Scene scene = root.gameObject.scene;
-            if (!scene.IsValid()) return;
+            if (!scene.IsValid()) return Array.Empty<ResidualCleanupCandidate>();
 
-            var residual = new List<string>();
+            var residual = new List<ResidualCleanupCandidate>();
 
             // AunCast 内蔵の PlayerA/B を除いた VRCAVProVideoPlayer（旧プレイヤー本体の可能性）
             Component[] players = FindSceneComponentsByTypeName(scene, "VRCAVProVideoPlayer");
@@ -914,70 +988,120 @@ namespace PasocomMate.AunCast.Internal
                 if (player == null) continue;
                 if (context.playerA != null && player == (Component)context.playerA) continue;
                 if (context.playerB != null && player == (Component)context.playerB) continue;
-                residual.Add("VRCAVProVideoPlayer: " + GetHierarchyPath(player.transform));
+                residual.Add(new ResidualCleanupCandidate(player, "VRCAVProVideoPlayer"));
             }
 
-            // 未変換のまま残った VRCAVProVideoScreen / VRCAVProVideoSpeaker
-            Component[] screens = FindSceneComponentsByTypeName(scene, SCREEN_COMPONENT_TYPE_NAME);
-            for (int i = 0; i < screens.Length; i++)
-            {
-                Component screen = screens[i];
-                if (screen == null || screen.gameObject.GetComponent<AunCastScreen>() != null) continue;
-                if (IsInternalTextureGrabScreen(screen, context)) continue;
-                residual.Add("VRCAVProVideoScreen: " + GetHierarchyPath(screen.transform));
-            }
-
-            Component[] speakers = FindSceneComponentsByTypeName(scene, SPEAKER_COMPONENT_TYPE_NAME);
-            for (int i = 0; i < speakers.Length; i++)
-            {
-                Component speaker = speakers[i];
-                if (speaker == null) continue;
-                AudioSource source = speaker.GetComponent<AudioSource>();
-                // AunCastSpeaker と同居する VRCAVProVideoSpeaker は再配線が再利用するため残す（削除候補にしない）
-                if (source != null && source.GetComponent<AunCastSpeaker>() != null) continue;
-                // AudioLink 付属スピーカーは再配線が無効化＋EditorOnly 化して処理するため手動削除候補に含めない
-                if (IsAudioLinkOwnedSource(speaker)) continue;
-                residual.Add("VRCAVProVideoSpeaker: " + GetHierarchyPath(speaker.transform));
-            }
-
-            if (residual.Count == 0) return;
-
-            EditorGUILayout.Space(4);
-            EditorGUILayout.LabelField(
-                AunCastEditorLocalization.Localize("手動削除の候補", "Manual Cleanup Candidates"),
-                EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                AunCastEditorLocalization.Localize(
-                    "変換後に残っている旧プレイヤー由来のコンポーネント/オブジェクトです。AunCast は自動削除しません。不要であれば手動で削除してください。",
-                    "Old player-derived components/objects remaining after conversion. AunCast does not delete them automatically. Delete the unnecessary ones manually."),
-                MessageType.Warning);
-            for (int i = 0; i < residual.Count; i++)
-                EditorGUILayout.LabelField("• " + residual[i], EditorStyles.miniLabel);
+            return residual.ToArray();
         }
 
-        private void RefreshMigrationCacheIfNeeded(Transform root, SpeakerSetupContext context)
+        private void DrawResidualCleanupGuidance(ResidualCleanupCandidate[] residual)
         {
-            double now = EditorApplication.timeSinceStartup;
-            bool expired = now - _speakerCacheTime >= SPEAKER_CACHE_POLL_INTERVAL_SEC;
-            if (!_speakerCacheDirty && !expired)
-                return;
+            if (residual == null || residual.Length == 0) return;
 
-            _cachedMigrationCandidates = CollectMigrationCandidates(root, context);
-            _cachedSpeakerValidationErrors = ValidateCurrentSpeakerRouting(context);
-            for (int i = 0; i < _cachedMigrationCandidates.Length; i++)
+            EditorGUILayout.Space(8);
+            _cleanupSectionExpanded = SectionFoldout(
+                _cleanupSectionExpanded,
+                "旧プレイヤー本体の手動削除候補",
+                "Legacy Player Cleanup Candidates");
+            if (!_cleanupSectionExpanded) return;
+
+            using (new EditorGUILayout.VerticalScope(PaddedHelpBoxStyle()))
             {
-                MigrationCandidate candidate = _cachedMigrationCandidates[i];
-                if (string.IsNullOrEmpty(candidate.selectionKey)) continue;
-                if (!_migrationSpeakerPlayerIndex.ContainsKey(candidate.selectionKey))
-                    _migrationSpeakerPlayerIndex[candidate.selectionKey] = candidate.inferredPlayerIndex;
-                _selectedMigrationTargets.Add(candidate.selectionKey);
+                EditorGUILayout.Space(4);
+                EditorGUILayout.HelpBox(
+                    AunCastEditorLocalization.Localize(
+                        "変換候補では扱わない旧 VRCAVProVideoPlayer 本体です。AunCast への移行後に不要であれば手動で削除してください。",
+                        "Legacy VRCAVProVideoPlayer components that are not handled by conversion candidates. Delete them manually if they are no longer needed after migrating to AunCast."),
+                    MessageType.Warning);
+                for (int i = 0; i < residual.Length; i++)
+                    DrawSelectableCleanupCandidate(residual[i]);
             }
-
-            _speakerCacheDirty = false;
-            _speakerCacheTime = now;
         }
 
-        private void DrawMigrationCandidateList(MigrationCandidate[] candidates)
+        private static void DrawSelectableCleanupCandidate(ResidualCleanupCandidate candidate)
+        {
+            var content = new GUIContent(
+                "• " + candidate.label,
+                AunCastEditorLocalization.Localize(
+                    "クリックでこのオブジェクトを選択",
+                    "Click to select this object"));
+
+            Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
+            using (new EditorGUI.DisabledScope(candidate.gameObject == null))
+            {
+                if (GUI.Button(rect, content, LinkPathStyle()))
+                {
+                    Selection.activeGameObject = candidate.gameObject;
+                    EditorGUIUtility.PingObject(candidate.gameObject);
+                    GUIUtility.ExitGUI();
+                }
+            }
+        }
+
+        private static void DrawSelectableObjectPath(GameObject gameObject, string hierarchyPath)
+        {
+            var content = new GUIContent(
+                hierarchyPath,
+                AunCastEditorLocalization.Localize(
+                    "クリックでこのオブジェクトを選択",
+                    "Click to select this object"));
+
+            Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
+            using (new EditorGUI.DisabledScope(gameObject == null))
+            {
+                if (GUI.Button(rect, content, LinkPathStyle()))
+                {
+                    Selection.activeGameObject = gameObject;
+                    EditorGUIUtility.PingObject(gameObject);
+                    GUIUtility.ExitGUI();
+                }
+            }
+        }
+
+        private MigrationCandidateCache GetMigrationCache(Transform root)
+        {
+            int rootId = root != null ? root.GetInstanceID() : 0;
+            if (_migrationCache != null && _migrationCacheRootId == rootId)
+                return _migrationCache;
+
+            _migrationCacheRootId = rootId;
+            if (!MigrationCaches.TryGetValue(rootId, out _migrationCache))
+            {
+                _migrationCache = new MigrationCandidateCache();
+                MigrationCaches[rootId] = _migrationCache;
+            }
+
+            return _migrationCache;
+        }
+
+        private void RefreshMigrationCandidates(
+            Transform root,
+            SpeakerSetupContext context,
+            MigrationCandidateCache cache)
+        {
+            if (cache == null) return;
+
+            cache.candidates = CollectMigrationCandidates(root, context);
+            cache.residualCleanupCandidates = CollectResidualCleanupCandidates(root, context);
+            cache.validationErrors = ValidateCurrentSpeakerRouting(context);
+            cache.detected = true;
+            for (int i = 0; i < cache.candidates.Length; i++)
+            {
+                MigrationCandidate candidate = cache.candidates[i];
+                if (string.IsNullOrEmpty(candidate.selectionKey)) continue;
+                if (!cache.speakerPlayerIndex.ContainsKey(candidate.selectionKey))
+                    cache.speakerPlayerIndex[candidate.selectionKey] = candidate.inferredPlayerIndex;
+            }
+        }
+
+        private void DrawMigrationCandidateList(
+            Transform root,
+            PasocomMate.AunCast.AunCastSettings settings,
+            SpeakerSetupContext context,
+            MigrationCandidateCache cache,
+            MigrationCandidate[] candidates)
         {
             if (candidates == null || candidates.Length == 0)
             {
@@ -996,88 +1120,158 @@ namespace PasocomMate.AunCast.Internal
             for (int i = 0; i < candidates.Length; i++)
             {
                 MigrationCandidate candidate = candidates[i];
-                bool selected = _selectedMigrationTargets.Contains(candidate.selectionKey);
 
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                string label = candidate.kind == MigrationCandidateKind.Screen
-                    ? AunCastEditorLocalization.Localize("スクリーン", "Screen")
-                    : AunCastEditorLocalization.Localize("スピーカー", "Speaker");
-                bool newSelected = EditorGUILayout.ToggleLeft(label, selected);
-                if (newSelected != selected)
+                using (new EditorGUILayout.VerticalScope(CandidateHelpBoxStyle()))
                 {
-                    if (newSelected)
-                        _selectedMigrationTargets.Add(candidate.selectionKey);
-                    else
-                        _selectedMigrationTargets.Remove(candidate.selectionKey);
-                }
+                    string label = candidate.kind == MigrationCandidateKind.Screen
+                        ? AunCastEditorLocalization.Localize("スクリーン", "Screen")
+                        : AunCastEditorLocalization.Localize("スピーカー", "Speaker");
 
-                EditorGUILayout.ObjectField(candidate.gameObject, typeof(GameObject), true);
-                EditorGUILayout.LabelField(candidate.hierarchyPath, EditorStyles.miniLabel);
-                if (!string.IsNullOrEmpty(candidate.statusLabel))
-                    EditorGUILayout.LabelField(candidate.statusLabel, EditorStyles.miniLabel);
-
-                if (candidate.kind == MigrationCandidateKind.Speaker)
-                {
-                    int current = _migrationSpeakerPlayerIndex.TryGetValue(candidate.selectionKey, out int value)
-                        ? value
-                        : candidate.inferredPlayerIndex;
-                    int next = EditorGUILayout.Popup(
-                        AunCastEditorLocalization.Localize("接続先", "Player"),
-                        current,
-                        new[]
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        using (new EditorGUILayout.VerticalScope())
                         {
-                            AunCastEditorLocalization.Localize("PlayerA", "Player A"),
-                            AunCastEditorLocalization.Localize("PlayerB", "Player B"),
-                            AunCastEditorLocalization.Localize("自動複製 (A/B)", "Auto-duplicate (A/B)"),
-                        });
-                    _migrationSpeakerPlayerIndex[candidate.selectionKey] = next;
+                            EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel);
+                            DrawSelectableObjectPath(candidate.gameObject, candidate.hierarchyPath);
+                            if (IsBundledAunCastOutputCandidate(root, candidate.gameObject, candidate.hierarchyPath))
+                            {
+                                EditorGUILayout.HelpBox(
+                                    AunCastEditorLocalization.Localize(
+                                        "AunCast プレハブに元から含まれる出力です。既存ワールド側の出力を使う場合、この出力は不要なことがあります。不要であれば GameObject を手動で削除してください。",
+                                        "This output is included in the AunCast prefab. If you use outputs from an existing world setup, this output may be unnecessary. Delete the GameObject manually if you do not need it."),
+                                    MessageType.Warning);
+                            }
+                            bool showStatusInBody = !string.IsNullOrEmpty(candidate.statusLabel)
+                                && !(candidate.kind == MigrationCandidateKind.Speaker && candidate.isConfigured);
+                            if (showStatusInBody)
+                                EditorGUILayout.LabelField(candidate.statusLabel, EditorStyles.miniLabel);
 
-                    if (next == MIGRATION_OPTION_AUTO_DUPLICATE)
-                    {
-                        EditorGUILayout.HelpBox(
-                            AunCastEditorLocalization.Localize(
-                                "この AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA、複製を PlayerB に割り当てます。",
-                                "Duplicates this AudioSource right after itself in the same hierarchy, assigning the original to Player A and the copy to Player B."),
-                            MessageType.None);
-                    }
+                            if (candidate.kind == MigrationCandidateKind.Speaker && !candidate.isConfigured)
+                            {
+                                int current = cache.speakerPlayerIndex.TryGetValue(candidate.selectionKey, out int value)
+                                    ? value
+                                    : candidate.inferredPlayerIndex;
+                                int next = EditorGUILayout.Popup(
+                                    AunCastEditorLocalization.Localize("接続先", "Player"),
+                                    current,
+                                    new[]
+                                    {
+                                        AunCastEditorLocalization.Localize("PlayerA", "Player A"),
+                                        AunCastEditorLocalization.Localize("PlayerB", "Player B"),
+                                        AunCastEditorLocalization.Localize("自動複製 (A/B)", "Auto-duplicate (A/B)"),
+                                    });
+                                cache.speakerPlayerIndex[candidate.selectionKey] = next;
 
-                    if (candidate.isTunnelLike)
-                    {
-                        EditorGUILayout.HelpBox(
-                            AunCastEditorLocalization.Localize(
-                                "AudioOutputTunnel らしき構成を検出しました。ダミーシンクを通常スピーカーとして変換せず、AunCastAudioOutputTunnel へ差し替える前提で確認してください。直結出力よりリングバッファ分の遅延が増えます。",
-                                "An AudioOutputTunnel-like setup was detected. Do not convert the dummy sink as a normal speaker; review it as an AunCastAudioOutputTunnel migration. It adds ring-buffer latency compared with direct output."),
-                            MessageType.Warning);
+                                if (next == MIGRATION_OPTION_AUTO_DUPLICATE)
+                                {
+                                    EditorGUILayout.HelpBox(
+                                        AunCastEditorLocalization.Localize(
+                                            "この AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA、複製を PlayerB に割り当てます。",
+                                            "Duplicates this AudioSource right after itself in the same hierarchy, assigning the original to Player A and the copy to Player B."),
+                                        MessageType.None);
+                                }
+
+                                if (candidate.isTunnelLike)
+                                {
+                                    EditorGUILayout.HelpBox(
+                                        AunCastEditorLocalization.Localize(
+                                            "AudioOutputTunnel らしき構成を検出しました。ダミーシンクを通常スピーカーとして変換せず、AunCastAudioOutputTunnel へ差し替える前提で確認してください。直結出力よりリングバッファ分の遅延が増えます。",
+                                            "An AudioOutputTunnel-like setup was detected. Do not convert the dummy sink as a normal speaker; review it as an AunCastAudioOutputTunnel migration. It adds ring-buffer latency compared with direct output."),
+                                        MessageType.Warning);
+                                }
+                            }
+                        }
+
+                        if (candidate.sourceComponent != null)
+                        {
+                            using (new EditorGUI.DisabledScope(candidate.gameObject == null || candidate.sourceComponent == null))
+                            {
+                                string buttonLabel = candidate.isConfigured
+                                    ? AunCastEditorLocalization.Localize("修正", "Fix")
+                                    : AunCastEditorLocalization.Localize("変換", "Convert");
+                                if (GUILayout.Button(
+                                    buttonLabel,
+                                    GUILayout.Width(72),
+                                    GUILayout.Height(24)))
+                                {
+                                    ExecuteSingleMigration(root, settings, cache, candidate);
+                                    RefreshMigrationCandidates(root, context, cache);
+                                    Repaint();
+                                    GUIUtility.ExitGUI();
+                                }
+                            }
+                        }
+                        else if (candidate.isConfigured)
+                        {
+                            using (new EditorGUILayout.VerticalScope(GUILayout.Width(112)))
+                            {
+                                GUILayout.Label(
+                                    AunCastEditorLocalization.Localize("設定済み", "Configured"),
+                                    EditorStyles.boldLabel,
+                                    GUILayout.Height(20));
+
+                                if (candidate.kind == MigrationCandidateKind.Speaker
+                                    && !string.IsNullOrEmpty(candidate.statusLabel))
+                                {
+                                    GUILayout.Label(candidate.statusLabel, EditorStyles.miniLabel);
+                                }
+                            }
+                        }
                     }
                 }
-
-                EditorGUILayout.EndVertical();
             }
         }
 
         private static MigrationCandidate[] CollectMigrationCandidates(Transform root, SpeakerSetupContext context)
         {
-            var list = new List<MigrationCandidate>();
-            if (root == null || !root.gameObject.scene.IsValid()) return list.ToArray();
+            var byKey = new Dictionary<string, MigrationCandidate>();
+            if (root == null || !root.gameObject.scene.IsValid()) return Array.Empty<MigrationCandidate>();
 
             Scene scene = root.gameObject.scene;
             Component[] screens = FindSceneComponentsByTypeName(scene, SCREEN_COMPONENT_TYPE_NAME);
             for (int i = 0; i < screens.Length; i++)
             {
                 Component screen = screens[i];
-                if (screen == null || screen.gameObject.GetComponent<AunCastScreen>() != null) continue;
+                if (screen == null) continue;
                 if (IsInternalTextureGrabScreen(screen, context)) continue;
+
+                AunCastScreen declaredScreen = screen.gameObject.GetComponent<AunCastScreen>();
+                bool isConfigured = declaredScreen != null;
                 string path = GetHierarchyPath(screen.transform);
-                list.Add(new MigrationCandidate(
+                AddMigrationCandidate(byKey, new MigrationCandidate(
                     MigrationCandidateKind.Screen,
                     screen.gameObject,
                     null,
                     screen,
                     path,
+                    isConfigured
+                        ? AunCastEditorLocalization.Localize(
+                            "旧 VRCAVProVideoScreen が残っています。修正すると旧コンポーネントを削除します。",
+                            "Legacy VRCAVProVideoScreen remains. Fix removes the old component.")
+                        : string.Empty,
+                    "screen:" + path,
+                    AunCastSpeaker.PLAYER_A,
+                    false,
+                    isConfigured));
+            }
+
+            AunCastScreen[] declaredScreens = FindSceneComponents<AunCastScreen>(scene);
+            for (int i = 0; i < declaredScreens.Length; i++)
+            {
+                AunCastScreen screen = declaredScreens[i];
+                if (screen == null) continue;
+                string path = GetHierarchyPath(screen.transform);
+                AddMigrationCandidate(byKey, new MigrationCandidate(
+                    MigrationCandidateKind.Screen,
+                    screen.gameObject,
+                    null,
+                    null,
+                    path,
                     string.Empty,
                     "screen:" + path,
                     AunCastSpeaker.PLAYER_A,
-                    false));
+                    false,
+                    true));
             }
 
             Component[] speakers = FindSceneComponentsByTypeName(scene, SPEAKER_COMPONENT_TYPE_NAME);
@@ -1087,66 +1281,178 @@ namespace PasocomMate.AunCast.Internal
                 if (speaker == null) continue;
                 AudioSource source = speaker.GetComponent<AudioSource>();
                 if (source == null) continue;
-                if (source.gameObject.GetComponent<AunCastSpeaker>() != null) continue;
                 // AudioLink 付属の内蔵スピーカー（AudioLinkInput）は変換対象ではない。
                 // AunCast がランタイムで AudioLink 入力を Active スピーカーへ差し替えるため、
                 // 再配線が無効化＋EditorOnly 化して扱う（NeutralizeAudioLinkInputs 参照）。
                 if (IsAudioLinkOwnedSource(speaker)) continue;
 
+                AunCastSpeaker declaredSpeaker = source.gameObject.GetComponent<AunCastSpeaker>();
+                bool isConfigured = declaredSpeaker != null;
                 string path = GetHierarchyPath(source.transform);
                 bool isTunnelLike = IsAudioOutputTunnelLike(source);
-                string status = BuildSpeakerStatusLabel(source, isTunnelLike);
-                int inferredPlayerIndex = InferSpeakerPlayerIndex(speaker, context);
-                list.Add(new MigrationCandidate(
+                string status = isConfigured
+                    ? BuildConfiguredSpeakerStatusLabel(source, declaredSpeaker, isTunnelLike)
+                    : BuildSpeakerStatusLabel(source, isTunnelLike);
+                int inferredPlayerIndex = isConfigured
+                    ? GetAunCastSpeakerPlayerIndex(declaredSpeaker)
+                    : InferSpeakerPlayerIndex(speaker, context);
+                AddMigrationCandidate(byKey, new MigrationCandidate(
                     MigrationCandidateKind.Speaker,
                     source.gameObject,
                     source,
-                    speaker,
+                    isConfigured ? null : speaker,
                     path,
                     status,
                     "speaker:" + path,
                     inferredPlayerIndex,
-                    isTunnelLike));
+                    isTunnelLike,
+                    isConfigured));
             }
 
-            list.Sort((a, b) => string.Compare(a.selectionKey, b.selectionKey, StringComparison.Ordinal));
+            AunCastSpeaker[] declaredSpeakers = FindSceneComponents<AunCastSpeaker>(scene);
+            for (int i = 0; i < declaredSpeakers.Length; i++)
+            {
+                AunCastSpeaker speaker = declaredSpeakers[i];
+                if (speaker == null) continue;
+                AudioSource source = speaker.GetComponent<AudioSource>();
+                if (source == null) continue;
+
+                string path = GetHierarchyPath(source.transform);
+                bool isTunnelLike = IsAudioOutputTunnelLike(source);
+                AddMigrationCandidate(byKey, new MigrationCandidate(
+                    MigrationCandidateKind.Speaker,
+                    source.gameObject,
+                    source,
+                    null,
+                    path,
+                    BuildConfiguredSpeakerStatusLabel(source, speaker, isTunnelLike),
+                    "speaker:" + path,
+                    GetAunCastSpeakerPlayerIndex(speaker),
+                    isTunnelLike,
+                    true));
+            }
+
+            var list = new List<MigrationCandidate>(byKey.Values);
+            list.Sort(CompareMigrationCandidates);
             return list.ToArray();
         }
 
-        private void ExecuteSelectedMigration(
+        private static int CompareMigrationCandidates(MigrationCandidate a, MigrationCandidate b)
+        {
+            int order = string.Compare(
+                GetHierarchyOrderKey(a.gameObject),
+                GetHierarchyOrderKey(b.gameObject),
+                StringComparison.Ordinal);
+            if (order != 0) return order;
+
+            order = string.Compare(a.hierarchyPath, b.hierarchyPath, StringComparison.Ordinal);
+            if (order != 0) return order;
+
+            return a.kind.CompareTo(b.kind);
+        }
+
+        private static string GetHierarchyOrderKey(GameObject gameObject)
+        {
+            if (gameObject == null) return string.Empty;
+
+            var indices = new List<int>();
+            Transform current = gameObject.transform;
+            while (current != null)
+            {
+                indices.Add(current.GetSiblingIndex());
+                current = current.parent;
+            }
+
+            indices.Reverse();
+            string[] parts = new string[indices.Count];
+            for (int i = 0; i < indices.Count; i++)
+                parts[i] = indices[i].ToString("D6");
+            return string.Join("/", parts);
+        }
+
+        private static bool IsBundledAunCastOutputCandidate(
+            Transform root,
+            GameObject gameObject,
+            string hierarchyPath)
+        {
+            if (root == null || gameObject == null) return false;
+            if (!gameObject.transform.IsChildOf(root)) return false;
+
+            if (!string.IsNullOrEmpty(hierarchyPath)
+                && (hierarchyPath.Contains("/ExampleOutput/")
+                    || hierarchyPath.Contains("/PlayerA/")
+                    || hierarchyPath.Contains("/PlayerB/")))
+                return true;
+
+            return PrefabUtility.GetNearestPrefabInstanceRoot(gameObject) == root.gameObject
+                   && PrefabUtility.GetCorrespondingObjectFromSource(gameObject) != null;
+        }
+
+        private static void AddMigrationCandidate(Dictionary<string, MigrationCandidate> byKey, MigrationCandidate candidate)
+        {
+            if (byKey == null || string.IsNullOrEmpty(candidate.selectionKey)) return;
+            if (byKey.TryGetValue(candidate.selectionKey, out var existing))
+            {
+                if (existing.sourceComponent != null && candidate.sourceComponent == null)
+                    return;
+                if (existing.isConfigured && !candidate.isConfigured)
+                    return;
+            }
+
+            byKey[candidate.selectionKey] = candidate;
+        }
+
+        private static string BuildConfiguredSpeakerStatusLabel(AudioSource source, AunCastSpeaker speaker, bool isTunnelLike)
+        {
+            string player = GetSpeakerPlayerLabel(GetAunCastSpeakerPlayerIndex(speaker));
+            string status = BuildSpeakerStatusLabel(source, isTunnelLike);
+            string normal = AunCastEditorLocalization.Localize("通常出力候補", "normal output candidate");
+            if (string.IsNullOrEmpty(status) || status == normal)
+                return player;
+
+            return player + " / " + status;
+        }
+
+        private static int GetAunCastSpeakerPlayerIndex(AunCastSpeaker speaker)
+        {
+            return speaker != null && speaker.playerIndex == AunCastSpeaker.PLAYER_B
+                ? AunCastSpeaker.PLAYER_B
+                : AunCastSpeaker.PLAYER_A;
+        }
+
+        private static string GetSpeakerPlayerLabel(int playerIndex)
+        {
+            return playerIndex == AunCastSpeaker.PLAYER_B
+                ? AunCastEditorLocalization.Localize("PlayerB", "Player B")
+                : AunCastEditorLocalization.Localize("PlayerA", "Player A");
+        }
+
+        private void ExecuteSingleMigration(
             Transform root,
             PasocomMate.AunCast.AunCastSettings settings,
-            SpeakerSetupContext context,
-            MigrationCandidate[] candidates)
+            MigrationCandidateCache cache,
+            MigrationCandidate candidate)
         {
-            if (candidates == null || candidates.Length == 0) return;
-
             int undoGroup = Undo.GetCurrentGroup();
             Undo.SetCurrentGroupName("AunCast Output Migration");
             int convertedScreens = 0;
             int convertedSpeakers = 0;
             try
             {
-                for (int i = 0; i < candidates.Length; i++)
+                if (candidate.kind == MigrationCandidateKind.Screen)
                 {
-                    MigrationCandidate candidate = candidates[i];
-                    if (!_selectedMigrationTargets.Contains(candidate.selectionKey)) continue;
-
-                    if (candidate.kind == MigrationCandidateKind.Screen)
-                    {
-                        if (ConvertScreenCandidate(candidate))
-                            convertedScreens++;
-                    }
-                    else if (candidate.kind == MigrationCandidateKind.Speaker)
-                    {
-                        int selection = _migrationSpeakerPlayerIndex.TryGetValue(candidate.selectionKey, out int selected)
-                            ? selected
-                            : candidate.inferredPlayerIndex;
-                        if (selection == MIGRATION_OPTION_AUTO_DUPLICATE)
-                            convertedSpeakers += ConvertSpeakerCandidateWithDuplicate(candidate, settings);
-                        else if (ConvertSpeakerCandidate(candidate, settings, selection))
-                            convertedSpeakers++;
-                    }
+                    if (ConvertScreenCandidate(candidate))
+                        convertedScreens++;
+                }
+                else if (candidate.kind == MigrationCandidateKind.Speaker)
+                {
+                    int selection = cache != null && cache.speakerPlayerIndex.TryGetValue(candidate.selectionKey, out int selected)
+                        ? selected
+                        : candidate.inferredPlayerIndex;
+                    if (selection == MIGRATION_OPTION_AUTO_DUPLICATE)
+                        convertedSpeakers += ConvertSpeakerCandidateWithDuplicate(candidate, settings);
+                    else if (ConvertSpeakerCandidate(candidate, settings, selection))
+                        convertedSpeakers++;
                 }
 
                 RewireEventHubAndConsumers(root, recordUndo: true, writeLog: false);
@@ -1162,21 +1468,48 @@ namespace PasocomMate.AunCast.Internal
         {
             if (candidate.gameObject == null || candidate.sourceComponent == null) return false;
 
+            string textureProperty = ReadStringProperty(candidate.sourceComponent, "textureProperty");
+            if (string.IsNullOrEmpty(textureProperty))
+                textureProperty = GuessTextureProperty(candidate.gameObject);
+
             AunCastScreen screen = candidate.gameObject.GetComponent<AunCastScreen>();
             if (screen == null)
                 screen = Undo.AddComponent<AunCastScreen>(candidate.gameObject);
             if (screen == null) return false;
 
-            string textureProperty = ReadStringProperty(candidate.sourceComponent, "textureProperty");
-            if (string.IsNullOrEmpty(textureProperty))
-                textureProperty = GuessTextureProperty(candidate.gameObject);
-
             var so = new SerializedObject(screen);
             SetStringProperty(so, "textureProperty", textureProperty);
             ApplyUdonSerializedChanges(screen, so, "Configure AunCastScreen");
 
-            Undo.DestroyObjectImmediate(candidate.sourceComponent);
-            return true;
+            int removedLegacyScreens = DestroyComponentsByTypeName(candidate.gameObject, SCREEN_COMPONENT_TYPE_NAME);
+            if (removedLegacyScreens == 0)
+                Debug.LogWarning("[AunCast] VRCAVProVideoScreen の削除対象が見つかりませんでした。");
+            return removedLegacyScreens > 0;
+        }
+
+        private static int DestroyComponentsByTypeName(GameObject gameObject, string typeName)
+        {
+            if (gameObject == null || string.IsNullOrEmpty(typeName)) return 0;
+
+            Component[] components = gameObject.GetComponents<Component>();
+            int removed = 0;
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null) continue;
+                if (component.GetType().Name != typeName) continue;
+
+                Undo.DestroyObjectImmediate(component);
+                removed++;
+            }
+
+            if (removed > 0)
+            {
+                EditorUtility.SetDirty(gameObject);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(gameObject);
+            }
+
+            return removed;
         }
 
         private static bool ConvertSpeakerCandidate(
