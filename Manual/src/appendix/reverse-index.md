@@ -44,7 +44,7 @@
 | 停止中の待機画像を設定したい | [設定と調整](../setup/settings.md) |
 | スクリーンを追加したい | [スクリーンを増やす](../setup/replication.md#screens) |
 | 壁パネルを追加したい | [壁パネルを増やす](../setup/replication.md#wall-panels) |
-| 音声出力を配線したい | [音声（AVPro Speaker 配線）](../setup/replication.md#speaker) |
+| 音声出力を配線したい | [音声（AunCastSpeaker 配線）](../setup/replication.md#speaker) |
 | 何名まで耐えられるか知りたい | [同時接続上限の管理](../concepts/connection-limit.md) |
 | 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#server-selection) |
 | 配信のビットレートや遅延の目安を知りたい | [配信・運用上の注意](../operation/streaming.md) |

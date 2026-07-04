@@ -12,7 +12,7 @@
 
 1. 既存の **`Screen` GameObject** を選択し、Ctrl+D で複製します。
 2. ワールド内の任意の位置に配置し、サイズを調整します。
-3. `AunCastSettings` の **壁パネル配線** にある **「AunCastEventBus参照を再配線」** を押し、コンポーネントを関連付けます。
+3. `AunCastSettings` の **出力・参照の再配線** にある **「AunCast参照を再配線」** を押し、コンポーネントを関連付けます。
 
 別のシェーダー / マテリアルを使用する場合は、複製した `AunCastScreen` の以下の項目を合わせてください。
 
@@ -28,7 +28,7 @@
 
 1. 既存の **`WallControlPanel` GameObject** を選択し、Ctrl+D で複製します。
 2. ワールド内の任意の位置に配置します。
-3. `AunCastSettings` の **壁パネル配線** にある **「AunCastEventBus参照を再配線」** を押し、コンポーネントを関連付けます（`AunCastSettings` のインスペクタを開いた際にも自動的に再配線されます）。
+3. `AunCastSettings` の **出力・参照の再配線** にある **「AunCast参照を再配線」** を押し、コンポーネントを関連付けます。
 
 ## 音声（AunCastSpeaker 配線） {#speaker}
 
@@ -38,17 +38,17 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 
 1. 音声出力に使う `AudioSource` を用意し、位置・空間音響（3D設定）を調整します。既存ワールドの `VRCAVProVideoSpeaker` 付き `AudioSource` も使用できます。
 2. `AudioSource` に `AunCastSpeaker` を追加し、`playerIndex`（0 = `PlayerA`、1 = `PlayerB`）と `baseVolume` を設定します。
-3. 既存の AVPro スクリーン / スピーカーから移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで候補を選び、**「選択した出力を AunCast 宣言へ変換」** を押します。同じセクションの **URL 転写** では、AunCast 外の UdonBehaviour にある `VRCUrl` public 変数を `defaultUrl` へ転写できます。
-4. `AunCastSettings` の **壁パネル配線** にある **「AunCastEventBus参照を再配線」** を押します。同一シーン上の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` が再スキャンされ、音声・映像の配線が再構築されます。
+3. 既存の AVPro スクリーン / スピーカーから移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで候補を確認し、各行の **「変換」** を押します。
+4. `AunCastSettings` の **出力・参照の再配線** にある **「AunCast参照を再配線」** を押します。同一シーン上の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` / `AunCastAudioOutputTunnel` が再スキャンされ、音声・映像の配線が再構築されます。
 
-    ![AVPro Speaker 配線セクション](../assets/inspector-avpro-speaker.png){ width="360" }
+    ![既存プレイヤー出力の変換セクション](../assets/inspector-avpro-speaker.png){ width="360" }
 
 ### 音量と既存 AudioSource の扱い
 
 - `AudioSource.volume` は実行時に AunCast が上書きします。設計上の基準音量は `AunCastSpeaker.baseVolume` に設定してください。
 - 観客がパネルで変更する音量は、`baseVolume` に乗算されます。複数の音声出力を置く場合は、各 `AunCastSpeaker` の `baseVolume` でバランスを取ります。
 - **複数スピーカーの多点配置**も可能です。必要な数だけ `AunCastSpeaker` 付き `AudioSource` を置き、A/B再生系統ごとに `playerIndex` を設定します。
-- 設定をやり直す場合は、不要な `AunCastSpeaker` を削除または無効化してから、再度 **「AunCastEventBus参照を再配線」** を押します。
+- 設定をやり直す場合は、不要な `AunCastSpeaker` を削除または無効化してから、再度 **「AunCast参照を再配線」** を押します。
 - A/Bで同一 `AudioSource` を共有しているなどの配線不整合は、インスペクタ上に赤色で表示されます。
 
 ### AudioOutputTunnel 構成を移行する場合

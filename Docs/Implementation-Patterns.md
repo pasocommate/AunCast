@@ -353,7 +353,7 @@ private bool CleanupStaleSlots()
 シーン依存のため不可能。新規 prefab をシーンに配置した直後は `eventBus = null`
 だが、以下の経路で配線が反映される:
 
-1. **手動**: `AunCastSettings` Inspector の **「AunCastEventBus 参照を再配線」
+1. **手動**: `AunCastSettings` Inspector の **「AunCast参照を再配線」
    ボタン** を押下
 2. **Play モード遷移時** (`AunCastAutoRewire`): `playModeStateChanged` の
    `ExitingEditMode` で開いている全シーンに対して再配線
