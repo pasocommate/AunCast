@@ -1,4 +1,4 @@
-﻿# AunCast Udon スクリプト クラス図
+# AunCast Udon スクリプト クラス図
 
 ```mermaid
 classDiagram

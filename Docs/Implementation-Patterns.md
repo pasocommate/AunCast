@@ -1,4 +1,4 @@
-﻿# AunCast 実装パターン
+# AunCast 実装パターン
 
 プロジェクト内で繰り返し現れる、VRChat/Udon 上での同期変数・スタッフ権限操作・UI 双方向追従の設計ルールをまとめる。
 VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-Notes.md` を参照。

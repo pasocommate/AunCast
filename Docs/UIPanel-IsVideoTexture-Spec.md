@@ -1,4 +1,4 @@
-﻿# UIPanel シェーダー: _MainTex サンプリングの汎用化
+# UIPanel シェーダー: _MainTex サンプリングの汎用化
 
 ## 背景
 
