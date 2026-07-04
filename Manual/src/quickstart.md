@@ -21,7 +21,7 @@
 5. `AunCast` ルートオブジェクトを選択し、**`AunCastSettings`** コンポーネントのインスペクタで**利用規約に同意**します。日本語フォントの警告が表示されたら `Tools → TextMesh Pro VRC Fallback Font JPを設定` を実行します。
 6. **`AunCastSettings`** コンポーネントのインスペクタで、スタッフ用の **壁パネル解錠パスコード** と、必要に応じて **スタッフ許可ユーザー名**（VRChat ディスプレイネーム）を設定します。
 7. **接続上限の設定（重要）**：**`AunCastSettings`** で、**同時接続上限**（Connection≤）を利用する配信サーバの同時接続上限に設定します。**同時Resync上限**（Concurrent≤）は初期値（10）のまま開始できます。 [→ 同時接続上限の管理](concepts/connection-limit.md#limit-params)
-8. オプション：既存の **VRC AVPro Video Speaker＋AudioSource** がある場合は、位置・音量を調整してから **既存プレイヤー出力の変換** で各行の **「変換」** を押し、続けて **出力・参照の再配線 →「AunCast参照を再配線」** を押します。 [→ 複製配置と再配線](setup/replication.md#speaker)
+8. オプション：既存ワールドのビデオプレイヤーから移行する場合は、**既存プレイヤー出力の変換** で **「候補を再検出」** を押し、検出された各行で接続先（`PlayerA` / `PlayerB` / 自動複製）を選んで **「変換」** を押します。続けて **出力・参照の再配線 →「AunCast参照を再配線」** を押します。 [→ 既存ワールドからの移行](setup/replication.md#migration)
 9. **動作確認**：イベント前に、テスト配信で動作を確認します。配信の再生には実際の VRChat クライアントが必要で、**ClientSim では配信の再生を確認できません**。ワールドをアップロード（または Build & Test）してインスタンスに入り、スタッフビューからテスト配信のURLを入力して、再生・Resync・Stop All が行えることを確認してください。
 
 [→ 設定と調整（詳細）](setup/settings.md)

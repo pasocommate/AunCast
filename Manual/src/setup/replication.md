@@ -4,6 +4,9 @@
 
 <!--@rv 作業する前にシーンのバックアップを取るよう促す注意書き -->
 
+!!! note "再配線は自動でも実行されます"
+    **「AunCast参照を再配線」** と同じ処理は、Unity エディタで **Play を開始したとき**と**ワールドをビルドしたとき**にも自動実行されます。再配線は「シーン上の宣言済み出力を漏れなく配線し直す」処理のため、何度実行しても結果は同じです。
+
 ---
 
 ## スクリーンを増やす {#screens}
@@ -36,12 +39,14 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 
 ### 手順
 
-1. 音声出力に使う `AudioSource` を用意し、位置・空間音響（3D設定）を調整します。既存ワールドの `VRCAVProVideoSpeaker` 付き `AudioSource` も使用できます。
-2. `AudioSource` に `AunCastSpeaker` を追加し、`playerIndex`（0 = `PlayerA`、1 = `PlayerB`）と `baseVolume` を設定します。
-3. 既存の AVPro スクリーン / スピーカーから移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで候補を確認し、各行の **「変換」** を押します。
-4. `AunCastSettings` の **出力・参照の再配線** にある **「AunCast参照を再配線」** を押します。同一シーン上の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` / `AunCastAudioOutputTunnel` が再スキャンされ、音声・映像の配線が再構築されます。
+1. 音声出力に使う `AudioSource` を用意し、位置・空間音響（3D設定）を調整します。
+2. `AudioSource` に `AunCastSpeaker` を追加し、以下を設定します。
+    - `playerIndex` … 接続先のA/B再生系統（0 = `PlayerA`、1 = `PlayerB`）
+    - `mode` … チャンネル（0 = Stereo、1 = Left、2 = Right）
+    - `baseVolume` … 設計上の基準音量
+3. `AunCastSettings` の **出力・参照の再配線** にある **「AunCast参照を再配線」** を押します。同一シーン上の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` / `AunCastAudioOutputTunnel` が再スキャンされ、音声・映像の配線が再構築されます。
 
-    ![既存プレイヤー出力の変換セクション](../assets/inspector-avpro-speaker.png){ width="360" }
+既存ワールドの `VRCAVProVideoSpeaker` 付き `AudioSource` を流用する場合は、手動で追加する代わりに[既存ワールドからの移行（出力の変換）](#migration)の変換ツールが使用できます。
 
 ### 音量と既存 AudioSource の扱い
 
@@ -51,8 +56,65 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 - 設定をやり直す場合は、不要な `AunCastSpeaker` を削除または無効化してから、再度 **「AunCast参照を再配線」** を押します。
 - A/Bで同一 `AudioSource` を共有しているなどの配線不整合は、インスペクタ上に赤色で表示されます。
 
-### AudioOutputTunnel 構成を移行する場合
+## 既存ワールドからの移行（出力の変換） {#migration}
 
-TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` を使っている構成では、不可聴のダミーシンクを通常スピーカーとして変換しないでください。必要な場合は `AunCastAudioOutputTunnel` を追加し、既存の `leftOutput` / `rightOutput` / `stereoOutput` に相当する AudioSource を設定します。
+既存ワールドで稼働中のビデオプレイヤー（TopazChat Player / iwaSync3 / VizVid / USharpVideo 等）から AunCast へ移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで、使用中のスクリーン・スピーカーをそのまま AunCast 用の出力へ変換できます。
 
-`AunCastSettings` の再配線を実行すると、`AunCastAudioOutputTunnel.inputA` / `inputB` は同一シーンの `AunCastSpeaker` から自動設定されます。この方式は直結出力よりリングバッファ分の遅延が増えるため、通常の `VRCAVProVideoSpeaker` 直結構成では使わないでください。
+<!--@ph 撮り直し：現行の「既存プレイヤー出力の変換」セクション。「候補を再検出」ボタン、変換候補一覧（スクリーン行とスピーカー行の両方）、スピーカー行の「接続先」ドロップダウン、「変換」ボタン、状態ラベルが写るように撮影。旧 inspector-avpro-speaker.png（チェックボックス＋一括変換方式の旧UI）は撮影後に削除する-->
+![既存プレイヤー出力の変換セクション](../assets/inspector-output-migration.png){ width="360" }
+
+### 変換の手順
+
+1. **「候補を再検出」** を押します。同一シーン上の `VRCAVProVideoScreen` / `VRCAVProVideoSpeaker` が検出され、変換候補として一覧表示されます（負荷を避けるため、検出は自動では実行されません。シーンを変更したら再度押してください）。
+2. 各行のパスをクリックすると該当オブジェクトが選択されるため、変換対象かどうかを確認します。スピーカー行では **接続先** を選択します。
+    - **PlayerA / PlayerB** … その `AudioSource` を指定したA/B再生系統に割り当てます。
+    - **自動複製 (A/B)** … その `AudioSource` を同じ階層の直後に複製し、オリジナルを `PlayerA`・複製を `PlayerB` に割り当てます。同じ位置・同じ設定のスピーカーを両系統に用意したい通常のケースはこちらを選択します。
+3. 各行の **「変換」** を押します。
+    - スクリーン：`AunCastScreen` が追加され、テクスチャプロパティ名（`textureProperty`）は元コンポーネントから引き継がれます（取得できない場合はマテリアルから推測されます）。旧 `VRCAVProVideoScreen` は削除されます。
+    - スピーカー：`AunCastSpeaker` が追加され、チャンネル（`mode`）と元の `AudioSource.volume`（→ `baseVolume`）が転写されます。`AudioSource` の位置・3D設定・ロールオフはそのまま維持されます。
+4. すべて変換したら、**出力・参照の再配線** の **「AunCast参照を再配線」** を押します。
+
+変換済みの行は **「設定済み」** と表示されます。旧コンポーネントが残っている行は **「修正」** ボタンに変わり、押すと旧コンポーネントだけを削除できます。
+
+<!--@ph 変換後の候補一覧。「設定済み」表示の行と「修正」ボタンの行が並んだ状態を撮影-->
+![変換後の候補一覧（設定済みと修正）](../assets/inspector-output-migration-configured.png){ width="360" }
+
+### AunCast 内蔵のスクリーン・スピーカーを使わない場合
+
+既存ワールド側の出力だけを使う構成では、AunCast プレハブに元から含まれるスクリーン（`Screen`）・スピーカー（`PlayerA/AudioSource`, `PlayerB/AudioSource`）は不要です。該当する GameObject を手動で削除してから再配線してください。変換候補一覧でも、プレハブ同梱の出力には警告が表示されます。
+
+### 状態ラベルと外部参照の警告
+
+変換候補の各行には、判断材料として状態ラベルが表示されます。
+
+- **非アクティブ / AudioSource無効 / volume 0 / 不可聴ロールオフ** … 現状では聞こえない設定の `AudioSource` です。意図して無効化しているもの（トンネル給音用のダミーなど）は変換しないでください。
+- **AudioOutputTunnel検知** … [AudioOutputTunnel 構成](#tunnel)を参照してください。
+- **この AudioSource を参照するコンポーネント: ○件** … その `AudioSource` を参照する外部コンポーネント（音量制御スクリプト等）がシーン内に存在します。AunCast ではスピーカーがA/Bの２系統に分かれるため、**単一の `AudioSource` 入力しか受けない参照元は、そのままでは移行できません**。参照元の仕様を確認してください（AunCast による自動差し替えは行われません）。
+
+### 旧プレイヤー本体の削除
+
+変換候補では扱わない旧 `VRCAVProVideoPlayer` 本体は、**旧プレイヤー本体の手動削除候補** セクションに一覧表示されます。AunCast への移行が完了し、不要であることを確認できたら手動で削除してください（AunCast は自動削除しません）。
+
+<!--@ph 「旧プレイヤー本体の手動削除候補」セクション。旧 VRCAVProVideoPlayer が一覧表示された状態を撮影-->
+![旧プレイヤー本体の手動削除候補セクション](../assets/inspector-legacy-player-cleanup.png){ width="360" }
+
+### AudioOutputTunnel 構成を移行する場合 {#tunnel}
+
+TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` を使っている構成では、不可聴のダミーシンクを通常スピーカーとして変換しないでください（変換候補一覧では「AudioOutputTunnel検知」と警告表示されます）。移行は以下の手順で行います。
+
+1. `AunCastAudioOutputTunnel` を追加し、既存の `leftOutput` / `rightOutput` / `stereoOutput` に相当する AudioSource を設定します。トンネルから先（リバーブ・外部音量制御・出力スピーカー）は無傷のまま流用できます。
+2. 旧 `AudioOutputTunnel` と不可聴のダミーシンクを削除します（変換・複製は不要です）。
+3. **「AunCast参照を再配線」** を押します。`AunCastAudioOutputTunnel.inputA` / `inputB` は同一シーンの `AunCastSpeaker` から自動設定されます。
+
+トンネルが存在する構成では、再配線が入力側の `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
+
+この方式は直結出力よりリングバッファ分の遅延（数十ミリ秒程度）が増えるため、通常の直結構成では使わないでください。
+
+### AudioLink をお使いの場合 {#audiolink}
+
+AudioLink と連携する場合、追加の配線作業は不要です。AunCast が実行時に、現用系統のスピーカーを AudioLink の入力へ自動的に割り当てます。
+
+このため、AudioLink プレハブに付属する入力用スピーカー（`AudioLinkInput` の `AudioSource` + `VRCAVProVideoSpeaker`）は不要になります。再配線を実行すると、`AudioLinkInput` は自動的に **非アクティブ化＋EditorOnly タグ化**（ビルドから除外。削除はされません）され、理由を示す英語名の注記オブジェクトが直後に生成されます。この処理は AunCast の正常な動作で、AudioLink の反応が損なわれることはありません。`AudioLinkInput` は変換候補一覧にも表示されません。
+
+<!--@ph Hierarchy ビュー。再配線後の AudioLink プレハブ配下：非アクティブ化された AudioLinkInput と、その直後に生成された注記オブジェクト（AudioLink's referenced audio source is managed automatically by AunCast）が写るように撮影-->
+![再配線後の AudioLinkInput と注記オブジェクト](../assets/hierarchy-audiolink-input-note.png){ width="280" }
