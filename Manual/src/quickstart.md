@@ -13,7 +13,7 @@
     ```
 
 2. 対象プロジェクトの **Manage Project** で、**AunCast** をプロジェクトに追加します。
-3. シーンに **`AunCast.prefab`** を配置します。`AunCast` オブジェクトの直下には、いくつかのカスタマイズ可能な部品が含まれています。
+3. メニューより **`Tools → PasocomMate → AunCast → Create AunCast`** を選択し、シーンに `AunCast` を配置します。`AunCast` オブジェクトの直下には、いくつかのカスタマイズ可能な部品が含まれています。１つのシーンに配置できる `AunCast` は１つだけです（すでに配置済みの場合は追加されず、その旨が表示されます）。
 
     ![AunCastヒエラルキー](assets/hierarchy-auncast.png){ width="280" }
 
