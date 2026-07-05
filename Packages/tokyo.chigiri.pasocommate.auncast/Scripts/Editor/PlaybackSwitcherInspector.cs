@@ -12,7 +12,23 @@ namespace PasocomMate.AunCast.Internal
     [CustomEditor(typeof(PlaybackSwitcher))]
     internal class PlaybackSwitcherInspector : Editor
     {
+        private static readonly string[] SETTINGS_PROPERTY_NAMES =
+        {
+            "crossfadeDurationSec",
+        };
+
+        private static readonly string[] WIRING_PROPERTY_NAMES =
+        {
+            "playerManagerA",
+            "playerManagerB",
+            "silenceDetectorA",
+            "silenceDetectorB",
+            "eventBus",
+            "audioLinkBehaviour",
+        };
+
         private SerializedProperty _audioLinkBehaviourProperty;
+        private readonly bool[] _showManagedPropertyGroups = new bool[3];
 
         private void OnEnable()
         {
@@ -26,7 +42,21 @@ namespace PasocomMate.AunCast.Internal
 
             serializedObject.Update();
             TryAutoAssignAudioLinkBehaviour();
-            DrawPropertiesExcluding(serializedObject, "m_Script");
+            AunCastManagedSettingsInspectorUtility.DrawPropertiesWithManagedFoldouts(
+                serializedObject,
+                new[] { "m_Script" },
+                new[]
+                {
+                    new AunCastManagedSettingsInspectorUtility.ManagedPropertyGroup(
+                        "共通設定（AunCastSettings 管理下）",
+                        "Common Settings (Managed by AunCastSettings)",
+                        SETTINGS_PROPERTY_NAMES),
+                    new AunCastManagedSettingsInspectorUtility.ManagedPropertyGroup(
+                        "配線対象（変更不可）",
+                        "Wiring References (Read Only)",
+                        WIRING_PROPERTY_NAMES),
+                },
+                _showManagedPropertyGroups);
             serializedObject.ApplyModifiedProperties();
         }
 

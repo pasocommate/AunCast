@@ -8,25 +8,26 @@ namespace PasocomMate.AunCast.Internal
     [CustomEditor(typeof(WallControlPanel))]
     internal class WallControlPanelInspector : Editor
     {
-        private static readonly string[] READONLY_PROPERTY_NAMES =
+        private static readonly string[] WIRING_PROPERTY_NAMES =
         {
             "controller",
             "staffPanel",
             "portablePanel",
+            "eventBus",
             "userCanvasGroup",
             "staffCanvasGroup",
             "sharedCanvasGroup",
             "resyncOnlyCanvasGroup",
+            "informationCanvasGroup",
             "crossfadeDuration",
             "resyncOnlyButton",
             "switchViewButtonLabel",
             "switchViewButton",
             "spawnPanelButtonRect",
+            "informationButtonLabel",
             "passcodeDisplay",
-            "unlockPasscode",
             "userResyncButton",
             "userRebootButton",
-            "disabledButtonLabelAlpha",
             "vrGestureGroup",
             "gestureDoubleTriggerLeftToggle",
             "gestureDoubleTriggerRightToggle",
@@ -36,13 +37,25 @@ namespace PasocomMate.AunCast.Internal
             "desktopTabDoubleTapToggle",
             "desktopF5DoubleTapToggle",
             "desktopEscHoldToggle",
+        };
+
+        private static readonly string[] SETTINGS_PROPERTY_NAMES =
+        {
+            "unlockPasscode",
             "wallNearDistance",
             "wallFarDistance",
         };
 
+        private static readonly string[] THEME_APPLIER_PROPERTY_NAMES =
+        {
+            "disabledButtonLabelAlpha",
+        };
+
         private SerializedProperty _disablePasscodeViewSwitchButtonProperty;
         private SerializedProperty _spawnPanelButtonRectProperty;
-        private bool _showReadonlyProperties;
+        private bool _showWiringProperties;
+        private bool _showSettingsProperties;
+        private bool _showThemeApplierProperties;
 
         private void OnEnable()
         {
@@ -56,8 +69,6 @@ namespace PasocomMate.AunCast.Internal
             AunCastInspectorBanner.Draw(this);
             if (UdonSharpGUI.DrawProgramSource(target, false)) return;
 
-            DrawSettingsNotice();
-
             serializedObject.Update();
 
             EditorGUI.BeginChangeCheck();
@@ -69,7 +80,9 @@ namespace PasocomMate.AunCast.Internal
             bool layoutToggleChanged = EditorGUI.EndChangeCheck();
 
             EditorGUILayout.Space(8f);
-            DrawReadonlyProperties();
+            DrawSettingsProperties();
+            DrawThemeApplierProperties();
+            DrawWiringProperties();
 
             bool changed = serializedObject.ApplyModifiedProperties();
             if (!layoutToggleChanged && !changed) return;
@@ -96,56 +109,34 @@ namespace PasocomMate.AunCast.Internal
             }
         }
 
-        private void DrawSettingsNotice()
+        private void DrawWiringProperties()
         {
-            string message = AunCastEditorLocalization.Localize(
-                "壁パネルの距離設定やパスコードなどは AunCastSettings で一括管理されています。値を変更するには AunCastSettings を選択してください。",
-                "Wall panel distance settings and passcode are managed centrally via AunCastSettings. Select AunCastSettings to change these values.");
-            EditorGUILayout.HelpBox(message, MessageType.Info);
-
-            var wallPanel = target as WallControlPanel;
-            if (wallPanel == null) return;
-
-            var settings = wallPanel.GetComponentInParent<AunCastSettings>();
-            if (settings == null)
-                settings = wallPanel.transform.root.GetComponentInChildren<AunCastSettings>();
-
-            if (settings != null)
-            {
-                string buttonLabel = AunCastEditorLocalization.Localize(
-                    "AunCastSettings を選択",
-                    "Select AunCastSettings");
-                if (GUILayout.Button(buttonLabel))
-                    Selection.activeGameObject = settings.gameObject;
-            }
-
-            EditorGUILayout.Space(4f);
+            AunCastManagedSettingsInspectorUtility.DrawManagedGroupFoldout(
+                serializedObject,
+                "配線対象（変更不可）",
+                "Wiring References (Read Only)",
+                WIRING_PROPERTY_NAMES,
+                ref _showWiringProperties);
         }
 
-        private void DrawReadonlyProperties()
+        private void DrawSettingsProperties()
         {
-            string foldLabel = AunCastEditorLocalization.Localize(
-                "内部プロパティ（変更不可）",
-                "Internal Properties (Read Only)");
-            _showReadonlyProperties = EditorGUILayout.Foldout(_showReadonlyProperties, foldLabel, true);
-            if (!_showReadonlyProperties) return;
+            AunCastManagedSettingsInspectorUtility.DrawManagedGroupFoldout(
+                serializedObject,
+                "共通設定（AunCastSettings 管理下）",
+                "Common Settings (Managed by AunCastSettings)",
+                SETTINGS_PROPERTY_NAMES,
+                ref _showSettingsProperties);
+        }
 
-            string help = AunCastEditorLocalization.Localize(
-                "AunCastSettings から反映される値と、通常直接変更しない配線項目を表示しています。",
-                "This section shows values applied from AunCastSettings and wiring fields that are not usually edited directly.");
-            EditorGUILayout.HelpBox(help, MessageType.None);
-
-            using (new EditorGUI.DisabledScope(true))
-            {
-                EditorGUI.indentLevel++;
-                for (int i = 0; i < READONLY_PROPERTY_NAMES.Length; i++)
-                {
-                    var property = serializedObject.FindProperty(READONLY_PROPERTY_NAMES[i]);
-                    if (property == null) continue;
-                    EditorGUILayout.PropertyField(property, true);
-                }
-                EditorGUI.indentLevel--;
-            }
+        private void DrawThemeApplierProperties()
+        {
+            AunCastManagedSettingsInspectorUtility.DrawManagedGroupFoldout(
+                serializedObject,
+                "テーマ設定（AunCastThemeApplier 管理下）",
+                "Theme Settings (Managed by AunCastThemeApplier)",
+                THEME_APPLIER_PROPERTY_NAMES,
+                ref _showThemeApplierProperties);
         }
 
         private void ApplyLayoutToTargets()

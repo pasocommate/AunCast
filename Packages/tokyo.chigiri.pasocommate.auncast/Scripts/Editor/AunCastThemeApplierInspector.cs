@@ -56,6 +56,8 @@ namespace PasocomMate.AunCast.Internal
 
         public override void OnInspectorGUI()
         {
+            AunCastInspectorBanner.Draw(this);
+
             var applier = (PasocomMate.AunCast.AunCastThemeApplier)target;
             var root = applier != null ? applier.transform : null;
 
