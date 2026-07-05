@@ -209,7 +209,7 @@ classDiagram
         <<NoVariableSync>>
         -AunCastDualPlayerController controller
         -AunCastResyncCoordinator coordinator
-        -AunCastUserStatusPanel viewerStatusPanel
+        -AunCastPortablePanel viewerStatusPanel
         -string[] allowedUserNames
         -bool _isStaff
         +OnCoordinatorChanged()
@@ -227,7 +227,7 @@ classDiagram
         <<NoVariableSync>>
         -AunCastDualPlayerController controller
         -AunCastStaffControlPanel staffPanel
-        -AunCastUserStatusPanel portablePanel
+        -AunCastPortablePanel portablePanel
         -AunCastEventBus eventBus
         -string unlockPasscode
         -bool _isStaff
@@ -240,7 +240,7 @@ classDiagram
         +OnLocalStateChanged()
     }
 
-    class AunCastUserStatusPanel {
+    class AunCastPortablePanel {
         <<NoVariableSync>>
         -AunCastDualPlayerController controller
         -AunCastResyncCoordinator coordinator
@@ -336,18 +336,18 @@ classDiagram
     %% UI → Core 操作
     AunCastStaffControlPanel --> AunCastDualPlayerController : controller
     AunCastStaffControlPanel --> AunCastResyncCoordinator : coordinator
-    AunCastStaffControlPanel --> AunCastUserStatusPanel : viewerStatusPanel
+    AunCastStaffControlPanel --> AunCastPortablePanel : viewerStatusPanel
 
     AunCastWallControlPanel --> AunCastDualPlayerController : controller
     AunCastWallControlPanel --> AunCastStaffControlPanel : staffPanel
-    AunCastWallControlPanel --> AunCastUserStatusPanel : portablePanel
+    AunCastWallControlPanel --> AunCastPortablePanel : portablePanel
     AunCastWallControlPanel --> AunCastEventBus : eventBus
 
-    AunCastUserStatusPanel --> AunCastDualPlayerController : controller
-    AunCastUserStatusPanel --> AunCastResyncCoordinator : coordinator
-    AunCastUserStatusPanel --> AunCastEventBus : eventBus
-    AunCastUserStatusPanel ..> AunCastStaffControlPanel : SendCustomEvent + SetStaffUnlocked(push)
-    AunCastUserStatusPanel --> AunCastHudProgressOverlay : hudProgress
+    AunCastPortablePanel --> AunCastDualPlayerController : controller
+    AunCastPortablePanel --> AunCastResyncCoordinator : coordinator
+    AunCastPortablePanel --> AunCastEventBus : eventBus
+    AunCastPortablePanel ..> AunCastStaffControlPanel : SendCustomEvent + SetStaffUnlocked(push)
+    AunCastPortablePanel --> AunCastHudProgressOverlay : hudProgress
 
     %% Utility → EventBus 購読
     AunCastScreen --> AunCastEventBus : eventBus (購読)
@@ -355,7 +355,7 @@ classDiagram
     AunCastAudioOutputTunnel --> AunCastSpeaker : inputA/B AudioSource
 ```
 
-> **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは AunCastStaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `AunCastUserStatusPanel`→`AunCastStaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`AunCastStaffControlPanel`→`AunCastUserStatusPanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
+> **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは AunCastStaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `AunCastPortablePanel`→`AunCastStaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`AunCastStaffControlPanel`→`AunCastPortablePanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
 
 ## レイヤー構成
 
@@ -372,7 +372,7 @@ classDiagram
 | | `AunCastSpeaker` | AudioSource の出力宣言・基準音量保持・PCM からの RMS 無音検知 |
 | **UI** | `AunCastStaffControlPanel` | スタッフ向け操作・モニタリング UI |
 | | `AunCastWallControlPanel` | 壁掛け制御パネル (パスコード解錠・Resync・ジェスチャー設定) |
-| | `AunCastUserStatusPanel` | 観客向け拡張メニュー (VR ジェスチャー呼び出し対応) |
+| | `AunCastPortablePanel` | 観客向け拡張メニュー (VR ジェスチャー呼び出し対応) |
 | | `AunCastHudProgressOverlay` | VR ジェスチャー長押し中の HUD プログレス表示 |
 | **Utility** | `AunCastScreen` | MeshRenderer にビデオテクスチャを適用 |
 | | `AunCastUiScreen` | RawImage にビデオテクスチャを適用 (アスペクト比フィット) |

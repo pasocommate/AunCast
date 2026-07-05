@@ -20,7 +20,7 @@ namespace PasocomMate.AunCast
         [Header("References")]
         [SerializeField] private AunCastDualPlayerController controller;
         [SerializeField] private AunCastResyncCoordinator coordinator;
-        [SerializeField] private AunCastUserStatusPanel viewerStatusPanel;
+        [SerializeField] private AunCastPortablePanel viewerStatusPanel;
 
         [Header("Now Playing")]
         [SerializeField] private TMP_Text nowPlayingText;
@@ -633,7 +633,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// アクションボタンの有効/無効を現在のストリーム状態・Next URL の有無・スタッフロック状態の AND で更新する。
-        /// AunCastUserStatusPanel のスタッフロック切替時にも呼ばれ、ロック中は全ボタンが無効化される。
+        /// AunCastPortablePanel のスタッフロック切替時にも呼ばれ、ロック中は全ボタンが無効化される。
         /// </summary>
         public void UpdateActionButtonsInteractable()
         {

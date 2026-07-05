@@ -68,6 +68,9 @@ namespace PasocomMate.AunCast.Tests
             // Silence ゲージのマーカー — ランタイム Udon がハードコードで色を設定
             if (path.EndsWith("SilenceThresholdMarker") || path.EndsWith("SilencePeakMarker"))
                 return true;
+            // AudioLink 表示 — 色ではなくマテリアル差し替えでテーマ適用を検証する
+            if (path.EndsWith("/ALAutoCorrelator") || path.EndsWith("/AL4BandHistory_Inner"))
+                return true;
             return false;
         }
 
@@ -80,6 +83,9 @@ namespace PasocomMate.AunCast.Tests
                 return true;
             // VideoScreen / TextureGrab / Screen — テーマ対象外
             if (path.EndsWith("/VideoScreen") || path.EndsWith("/TextureGrab") || path.EndsWith("/Screen"))
+                return true;
+            // QR コード表示 — テーマ対象外
+            if (path.EndsWith("/QrImage"))
                 return true;
             return false;
         }

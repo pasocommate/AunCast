@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: AunCastSpeaker
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 101ded8835cdc1847bc7fb695d35a55c,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: b24dabaf973b84c4d8ef91734a78c08d,
     type: 2}
   udonAssembly: 
   assemblyError: 

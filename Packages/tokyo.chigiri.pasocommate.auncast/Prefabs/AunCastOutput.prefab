@@ -43,10 +43,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1330072118578588176}
+  - component: {fileID: 2507108387925053704}
   - component: {fileID: 5309060121369892091}
   - component: {fileID: 1490981959875931909}
   - component: {fileID: 3175649088641579880}
-  - component: {fileID: 2507108387925053704}
   - component: {fileID: 8899950788872264557}
   m_Layer: 0
   m_Name: SpeakerB
@@ -70,6 +70,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1112384179960197781}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2507108387925053704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2692898788835493621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a9c1e3b7d2f8054ae6b0c9d5f1a3e72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  _udonSharpBackingUdonBehaviour: {fileID: 8899950788872264557}
+  playerIndex: 1
+  mode: 0
+  baseVolume: 1
+  silenceRmsThresholdDbfs: -60
+  silenceConsecutiveSec: 2
 --- !u!82 &5309060121369892091
 AudioSource:
   m_ObjectHideFlags: 0
@@ -198,33 +225,6 @@ MonoBehaviour:
   VolumetricRadius: 0
   EnableSpatialization: 0
   UseAudioSourceVolumeCurve: 0
---- !u!114 &2507108387925053704
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2692898788835493621}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a9c1e3b7d2f8054ae6b0c9d5f1a3e72, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serializationData:
-    SerializedFormat: 2
-    SerializedBytes: 
-    ReferencedUnityObjects: []
-    SerializedBytesString: 
-    Prefab: {fileID: 0}
-    PrefabModificationsReferencedUnityObjects: []
-    PrefabModifications: []
-    SerializationNodes: []
-  _udonSharpBackingUdonBehaviour: {fileID: 8899950788872264557}
-  playerIndex: 1
-  mode: 0
-  baseVolume: 1
-  silenceRmsThresholdDbfs: -60
-  silenceConsecutiveSec: 2
 --- !u!114 &8899950788872264557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -398,10 +398,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3700248608977714095}
+  - component: {fileID: 4446816312913531483}
   - component: {fileID: 9051939570474960181}
   - component: {fileID: 1429545936694607674}
   - component: {fileID: 8441417296345797674}
-  - component: {fileID: 4446816312913531483}
   - component: {fileID: 7999508856992547322}
   m_Layer: 0
   m_Name: SpeakerA
@@ -425,6 +425,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1112384179960197781}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4446816312913531483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8711333119769346817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a9c1e3b7d2f8054ae6b0c9d5f1a3e72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  _udonSharpBackingUdonBehaviour: {fileID: 7999508856992547322}
+  playerIndex: 0
+  mode: 0
+  baseVolume: 1
+  silenceRmsThresholdDbfs: -60
+  silenceConsecutiveSec: 2
 --- !u!82 &9051939570474960181
 AudioSource:
   m_ObjectHideFlags: 0
@@ -553,33 +580,6 @@ MonoBehaviour:
   VolumetricRadius: 0
   EnableSpatialization: 0
   UseAudioSourceVolumeCurve: 0
---- !u!114 &4446816312913531483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8711333119769346817}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a9c1e3b7d2f8054ae6b0c9d5f1a3e72, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serializationData:
-    SerializedFormat: 2
-    SerializedBytes: 
-    ReferencedUnityObjects: []
-    SerializedBytesString: 
-    Prefab: {fileID: 0}
-    PrefabModificationsReferencedUnityObjects: []
-    PrefabModifications: []
-    SerializationNodes: []
-  _udonSharpBackingUdonBehaviour: {fileID: 7999508856992547322}
-  playerIndex: 0
-  mode: 0
-  baseVolume: 1
-  silenceRmsThresholdDbfs: -60
-  silenceConsecutiveSec: 2
 --- !u!114 &7999508856992547322
 MonoBehaviour:
   m_ObjectHideFlags: 0

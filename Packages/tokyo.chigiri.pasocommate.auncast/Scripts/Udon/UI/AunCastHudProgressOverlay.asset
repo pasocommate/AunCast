@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: AunCastHudProgressOverlay
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 1bf6725dd8dda1c41a2607b1f61483e1,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 80a0b668939fb684384d1c10884face9,
     type: 2}
   udonAssembly: 
   assemblyError: 

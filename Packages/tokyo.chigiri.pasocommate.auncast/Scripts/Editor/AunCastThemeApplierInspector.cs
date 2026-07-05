@@ -180,7 +180,7 @@ namespace PasocomMate.AunCast.Internal
             SetCanvasGroupVisible(userCg, !showStaff);
             SetCanvasGroupVisible(staffCg, showStaff);
 
-            // 実行時の AunCastUserStatusPanel.OnSwitchViewButtonPress と同様に Background 色も切り替える
+            // 実行時の AunCastPortablePanel.OnSwitchViewButtonPress と同様に Background 色も切り替える
             if (theme != null)
             {
                 var bg = root.Find(BACKGROUND_PATH)?.GetComponent<Image>();
@@ -267,7 +267,7 @@ namespace PasocomMate.AunCast.Internal
         {
             if (theme == null) return;
 
-            ApplyThemeToProxy<AunCastUserStatusPanel>(root, "PortablePanel", proxy =>
+            ApplyThemeToProxy<AunCastPortablePanel>(root, "PortablePanel", proxy =>
             {
                 SetSerializedField(proxy, "userBackgroundColor", theme.userBackgroundColor);
                 SetSerializedField(proxy, "staffBackgroundColor", theme.staffBackgroundColor);

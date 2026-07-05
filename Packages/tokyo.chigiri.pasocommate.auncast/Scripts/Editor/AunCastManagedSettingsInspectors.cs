@@ -196,8 +196,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(AunCastUserStatusPanel))]
-    internal sealed class AunCastUserStatusPanelInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastPortablePanel))]
+    internal sealed class AunCastPortablePanelInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] SETTINGS_MANAGED_PROPERTY_NAMES =
         {

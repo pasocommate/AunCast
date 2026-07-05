@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: AunCastWallControlPanel
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: f3a873d3536248d47952e7b1eb1e6197,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 5bbf5492595c11e4c8cbfe404ab6d0f4,
     type: 2}
   udonAssembly: 
   assemblyError: 
@@ -217,7 +217,7 @@ MonoBehaviour:
       Data: 15|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.AunCastUserStatusPanel, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastPortablePanel, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 

@@ -15,7 +15,7 @@ namespace PasocomMate.AunCast
     /// VRChat メニュー近傍に表示される拡張メニュー型。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class AunCastUserStatusPanel : UdonSharpBehaviour
+    public class AunCastPortablePanel : UdonSharpBehaviour
     {
         [Header("References")]
         [SerializeField] private AunCastDualPlayerController controller;

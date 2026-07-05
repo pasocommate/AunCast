@@ -521,7 +521,7 @@ namespace PasocomMate.AunCast.Internal
 
             var controller = root.GetComponentInChildren<AunCastDualPlayerController>(true);
             var staffPanel = root.GetComponentInChildren<AunCastStaffControlPanel>(true);
-            var portablePanel = root.GetComponentInChildren<AunCastUserStatusPanel>(true);
+            var portablePanel = root.GetComponentInChildren<AunCastPortablePanel>(true);
             var settings = root.GetComponent<PasocomMate.AunCast.AunCastSettings>();
             var idleScreenTexture = settings != null ? settings.idleScreenTexture : null;
             Scene scene = root.gameObject.scene;
@@ -536,12 +536,12 @@ namespace PasocomMate.AunCast.Internal
             var speakers = FindSceneComponents<AunCastSpeaker>(scene);
             var audioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
             var wallPanels = root.GetComponentsInChildren<AunCastWallControlPanel>(true);
-            var userPanels = root.GetComponentsInChildren<AunCastUserStatusPanel>(true);
+            var userPanels = root.GetComponentsInChildren<AunCastPortablePanel>(true);
 
             if (controller == null || staffPanel == null || portablePanel == null)
             {
                 if (writeLog)
-                    Debug.LogWarning("[AunCast] 再配線を中止しました。AunCastDualPlayerController / AunCastStaffControlPanel / AunCastUserStatusPanel のいずれかが見つかりません。");
+                    Debug.LogWarning("[AunCast] 再配線を中止しました。AunCastDualPlayerController / AunCastStaffControlPanel / AunCastPortablePanel のいずれかが見つかりません。");
                 return;
             }
 
@@ -610,7 +610,7 @@ namespace PasocomMate.AunCast.Internal
                     var so = new SerializedObject(user);
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
 
-                    if (changed && ApplyUdonSerializedChanges(user, so, "Rewire AunCastUserStatusPanel EventBus", recordUndo))
+                    if (changed && ApplyUdonSerializedChanges(user, so, "Rewire AunCastPortablePanel EventBus", recordUndo))
                         userUpdated++;
                 }
             }
@@ -693,7 +693,7 @@ namespace PasocomMate.AunCast.Internal
             }
 
             if (writeLog)
-                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / AunCastWallControlPanel: {wallUpdated}件 / AunCastUserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / AudioLink入力無効化: {audioLinkInputNeutralized}件 / 通知先: {notifyUpdated}件");
+                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / AunCastWallControlPanel: {wallUpdated}件 / AunCastPortablePanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / AudioLink入力無効化: {audioLinkInputNeutralized}件 / 通知先: {notifyUpdated}件");
         }
 
         private static AunCastEventBus FindOrCreateEventBus(Transform root, bool createIfMissing, bool writeLog)
@@ -2934,7 +2934,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void ApplyUiSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            var userPanels = root.GetComponentsInChildren<AunCastUserStatusPanel>(true);
+            var userPanels = root.GetComponentsInChildren<AunCastPortablePanel>(true);
             ApplyToUdonComponents(userPanels, so =>
             {
                 SetIntProperty(so, "summonGesture", settings.defaultSummonGesture);
@@ -3026,7 +3026,7 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "silenceSuppressSec", settings.silenceSuppressSec);
             });
 
-            var userPanels = root.GetComponentsInChildren<AunCastUserStatusPanel>(true);
+            var userPanels = root.GetComponentsInChildren<AunCastPortablePanel>(true);
             ApplyToUdonComponents(userPanels, so =>
             {
                 SetFloatProperty(so, "silenceMeterPeakHoldSec", settings.silenceMeterPeakHoldSec);
@@ -3090,7 +3090,7 @@ namespace PasocomMate.AunCast.Internal
         }
 
         // ── AunCastSettings → 表示用 UI への反映 ──
-        // AunCastStaffControlPanel / AunCastUserStatusPanel / AunCastWallControlPanel が参照する素の UI
+        // AunCastStaffControlPanel / AunCastPortablePanel / AunCastWallControlPanel が参照する素の UI
         // コンポーネント（TMP / Slider / Toggle）へ設定値を編集時にも反映し、Play せずとも
         // シーン上の表示を実値に揃える。
 
@@ -3110,7 +3110,7 @@ namespace PasocomMate.AunCast.Internal
                 && value is T fromUdon)
                 return fromUdon;
 
-            // フォールバック: 非ネストのプロキシ（AunCastUserStatusPanel 等）はこちらで取れる
+            // フォールバック: 非ネストのプロキシ（AunCastPortablePanel 等）はこちらで取れる
             var so = new SerializedObject(panel);
             var prop = so.FindProperty(fieldName);
             if (prop != null && prop.propertyType == SerializedPropertyType.ObjectReference)

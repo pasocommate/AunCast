@@ -211,7 +211,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - **CDN 同時接続上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
 - **モニタリング表示**: グローバル Resync の進捗状況（FR-14 参照）
 
-> **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから AunCastUserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
+> **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから AunCastPortablePanel（観客向けパネル）側に移行している（FR-17 参照）。
 
 以下のパラメータはワールド制作時にコンポーネント側（Inspector）で設定する。
 
@@ -363,7 +363,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - グローバル強制リブートの検知 (`PollGlobalForceReboot`: `globalForceRebootSeq` の変化を監視)
 
 ### H. AunCastStaffControlPanel（ポータブルパネルの Staff ビューとして統合）
-スタッフ向けの操作・モニタリング UI。AunCastUserStatusPanel 内の Staff ビュー（クロスフェード切替）として動作する。
+スタッフ向けの操作・モニタリング UI。AunCastPortablePanel 内の Staff ビュー（クロスフェード切替）として動作する。
 
 責務:
 - URL 入力欄 (`nextUrlField`)、Promote ボタンによる URL 同期適用 (`OnPromoteNextUrl`)
@@ -384,14 +384,14 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - **User ビュー**: 個人 Resync リクエストボタン (`OnUserResyncButtonPress`) / 緊急リブートボタン (`OnUserRebootButtonPress`) / VR 呼び出しジェスチャー選択トグル（右スティック上倒し / 片手ダブルトリガー / 両手トリガー長押し）
 - **Staff ビュー**: 4 桁パスコード入力 UI（成功時に `staffPanel.SetLocalPasscodeUnlocked()` を呼ぶ。同期なしのローカル解錠）
 - **ResyncOnly ビュー**: パネルから離れているときに全面表示する大型 Resync ボタン。全ユーザーが利用可能
-- **共通**: ポータブルパネル（AunCastUserStatusPanel）を頭部前面に呼び出す Spawn ボタン (`OnSpawnPanelButtonPress`)
+- **共通**: ポータブルパネル（AunCastPortablePanel）を頭部前面に呼び出す Spawn ボタン (`OnSpawnPanelButtonPress`)
 - User/Staff ビュー切替ボタン (`OnSwitchViewButtonPress`)
 - User ボタンの interactable 状態を controller の FSM に追従させる（0.3 秒間隔でポーリング）
 - **距離ベース表示切替**: シュミットトリガー方式（`wallNearDistance`=2.5m / `wallFarDistance`=3m）で ResyncOnly ↔ User/Staff をちらつきなく切替。AunCastSettings で変更可能
 - **CanvasGroup クロスフェード**: 4 つの CanvasGroup（user / staff / shared / resyncOnly）を `crossfadeDuration` で滑らかに遷移。遷移中は切替先のみインタラクティブ
 - **解錠後のポータブルパネル連動**: パスコード解錠後にポータブルパネルを開くと自動的に User ビューに切替。切替ボタンは LockOpen アイコンで無効化
 
-### J. AunCastUserStatusPanel（ポータブルパネル）
+### J. AunCastPortablePanel（ポータブルパネル）
 観客向けの自己状態確認・Resync リクエスト UI。VR ジェスチャーまたはデスクトップの Tab キーで呼び出す。Viewer ビューと Staff ビュー（AunCastStaffControlPanel）をクロスフェードで切替可能。
 
 責務:
@@ -441,7 +441,7 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 責務:
 - `VideoTextureChanged`: `AunCastPlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`AunCastScreen` / `AunCastUiScreen` へ `OnVideoTextureChanged` を通知する
 - `LocalStateChanged`: `AunCastDualPlayerController` の FSM 状態変化を `AunCastWallControlPanel` へ通知する
-- `PortablePanelShown`: `AunCastUserStatusPanel` 表示時に `AunCastWallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
+- `PortablePanelShown`: `AunCastPortablePanel` 表示時に `AunCastWallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
 - 購読者配列は backing `UdonBehaviour[]` で保持し、配信は `SendCustomEvent(eventName)` で行う
 
 ---
@@ -464,7 +464,7 @@ flowchart TB
         MeshScreen[AunCastScreen<br/>3D スクリーン]
         UiScreen[AunCastUiScreen<br/>UI RawImage]
         AL[AudioLink]
-        Viewer[AunCastUserStatusPanel<br/>ポータブルパネル<br/>Viewer/Staff切替]
+        Viewer[AunCastPortablePanel<br/>ポータブルパネル<br/>Viewer/Staff切替]
         HUD[AunCastHudProgressOverlay<br/>VR プログレス HUD]
 
         Ctrl --> Mon
@@ -700,7 +700,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 ### 表示
 
-蓄積量と方向（遅れ / 進み）を AunCastUserStatusPanel に表示する（FR-17 参照）。ドリフトが `driftResyncThresholdSec` に近づいた段階で視覚的警告を出す。
+蓄積量と方向（遅れ / 進み）を AunCastPortablePanel に表示する（FR-17 参照）。ドリフトが `driftResyncThresholdSec` に近づいた段階で視覚的警告を出す。
 
 ### 推奨パラメータ
 
@@ -764,7 +764,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 - 両系統ともユーザー音量がミュート（スライダー値 0）の場合は誤検知防止のため検知をスキップする
 - 無音判定が `silenceConsecutiveSec`（デフォルト 2 秒）連続した場合に個人 Resync リクエストを発行する
 - 最後の Resync 完了（`_lastResyncCompletedAt`）から `silenceSuppressSec`（デフォルト 150 秒）が経過するまで、無音検知を無効化する（`IsSilenceAutoResyncEligible`）。これにより、Resync 直後の不要な再発動を防止する
-- 各ユーザーが `_autoSilenceResyncEnabled` フラグ（AunCastUserStatusPanel のトグル）で有効/無効を切り替えられる
+- 各ユーザーが `_autoSilenceResyncEnabled` フラグ（AunCastPortablePanel のトグル）で有効/無効を切り替えられる
 
 ### スタガリング戦略
 
@@ -1503,7 +1503,7 @@ void TickScheduler()
 
 ### 22.2 スタッフ操作パネル（AunCastStaffControlPanel、ポータブルパネル Staff ビュー）
 
-AunCastUserStatusPanel 内の Staff ビューとして動作する。パスコード解錠後に Viewer/Staff 切替ボタンで遷移できる。
+AunCastPortablePanel 内の Staff ビューとして動作する。パスコード解錠後に Viewer/Staff 切替ボタンで遷移できる。
 
 #### 操作項目
 - **URL 入力欄 + Promote ボタン**: ストリーム URL を入力し、Promote で全クライアントに同期適用する（`OnPromoteNextUrl`）。プロトコルチェック（`://` 位置 1〜8）と長さチェック（4096 文字以内）を通過した場合のみ発行
@@ -1514,7 +1514,7 @@ AunCastUserStatusPanel 内の Staff ビューとして動作する。パスコ�
 - **CDN 同時接続上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
-> **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく AunCastUserStatusPanel の Viewer ビューに配置している。
+> **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく AunCastPortablePanel の Viewer ビューに配置している。
 
 #### モニタリング表示
 - **インジケーター** (`indicatorText`): 全スロットを色付き ■/□ でリッチテキスト表示。色分け:
@@ -1538,7 +1538,7 @@ AunCastUserStatusPanel 内の Staff ビューとして動作する。パスコ�
 - 周期フォールバック 1 秒（時刻依存の色遷移対応）
 - `UpdateLockUI()` は周期フォールバック時のみ実行
 
-### 22.3 ポータブルパネル（AunCastUserStatusPanel）
+### 22.3 ポータブルパネル（AunCastPortablePanel）
 
 VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポータブル UI。全観客が利用可能。AunCastWallControlPanel の Spawn ボタンから頭部前面に呼び出すこともできる (`SummonInFrontOfLocalPlayer`)。Viewer ビューと Staff ビュー（AunCastStaffControlPanel）をクロスフェードで切替可能。
 
@@ -1580,7 +1580,7 @@ Tab キーで Viewer 表示 → Staff 表示（解錠時）→ 非表示 の 3 �
 
 ### 22.4 ボリューム
 
-各観客が AunCastUserStatusPanel の音量スライダーで自身のローカル音量を調整できる。`SetVolumeLocal` で `AunCastDualPlayerController._localVolume` に書き込み、各 `AunCastVideoPlayerManager.SetVolume` 経由で適用する。同期は不要（クライアントローカル設定）。
+各観客が AunCastPortablePanel の音量スライダーで自身のローカル音量を調整できる。`SetVolumeLocal` で `AunCastDualPlayerController._localVolume` に書き込み、各 `AunCastVideoPlayerManager.SetVolume` 経由で適用する。同期は不要（クライアントローカル設定）。
 
 #### 音量カーブ
 

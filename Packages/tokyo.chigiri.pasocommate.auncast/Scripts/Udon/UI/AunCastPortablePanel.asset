@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: AunCastUserStatusPanel
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 4e0f0db58e612994c973c6a9b3ddcc1d,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 9ba8e237dda63514393eee8132af7472,
     type: 2}
   udonAssembly: 
   assemblyError: 
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 2
   hasInteractEvent: 0
-  scriptID: -8701890425590485457
+  scriptID: -8114023237451894397
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 

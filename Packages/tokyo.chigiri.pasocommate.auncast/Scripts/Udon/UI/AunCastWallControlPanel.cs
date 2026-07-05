@@ -10,7 +10,7 @@ namespace PasocomMate.AunCast
     /// 壁掛けで固定配置する制御パネル。
     /// ・User ビュー: Resync / Reboot / 持ち運びパネルの呼び出しジェスチャー選択
     /// ・Staff ビュー: スタッフ解錠用のパスコード入力 (ローカル解錠のみ、同期なし)
-    /// ・Shared: 持ち運びパネル (AunCastUserStatusPanel) の Spawn ボタン / ビュー切替
+    /// ・Shared: 持ち運びパネル (AunCastPortablePanel) の Spawn ボタン / ビュー切替
     /// ・Resync Only ビュー: 遠距離で表示する全面 Resync ボタン
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
@@ -22,7 +22,7 @@ namespace PasocomMate.AunCast
         [Tooltip("解錠対象の AunCastStaffControlPanel。正解時に SetLocalPasscodeUnlocked() を呼ぶ。")]
         [SerializeField] private AunCastStaffControlPanel staffPanel;
         [Tooltip("呼び出し対象の持ち運びパネル。Summon ボタンで表示する。")]
-        [SerializeField] private AunCastUserStatusPanel portablePanel;
+        [SerializeField] private AunCastPortablePanel portablePanel;
         [SerializeField] private AunCastEventBus eventBus;
 
         [Header("View Crossfade")]
@@ -300,7 +300,7 @@ namespace PasocomMate.AunCast
         //  解錠後の自動切り替え
         // =================================================================
 
-        /// <summary>AunCastUserStatusPanel が表示されたときに AunCastEventBus から呼ばれる。</summary>
+        /// <summary>AunCastPortablePanel が表示されたときに AunCastEventBus から呼ばれる。</summary>
         public void OnPortablePanelShown()
         {
             if (!_isStaff) return;
@@ -474,7 +474,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureDoubleTriggerLeftToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT, gestureDoubleTriggerLeftToggle.isOn);
+                AunCastPortablePanel.GESTURE_DOUBLE_TRIGGER_LEFT, gestureDoubleTriggerLeftToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -482,7 +482,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureDoubleTriggerRightToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT, gestureDoubleTriggerRightToggle.isOn);
+                AunCastPortablePanel.GESTURE_DOUBLE_TRIGGER_RIGHT, gestureDoubleTriggerRightToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -490,7 +490,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureBothTriggersToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                AunCastUserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD, gestureBothTriggersToggle.isOn);
+                AunCastPortablePanel.GESTURE_BOTH_TRIGGERS_HOLD, gestureBothTriggersToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -498,7 +498,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureRightStickUpToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                AunCastUserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD, gestureRightStickUpToggle.isOn);
+                AunCastPortablePanel.GESTURE_RIGHT_STICK_UP_HOLD, gestureRightStickUpToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -506,7 +506,7 @@ namespace PasocomMate.AunCast
         {
             if (desktopTabDoubleTapToggle == null || portablePanel == null) return;
             portablePanel.SetDesktopSummonGestureFlag(
-                AunCastUserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP, desktopTabDoubleTapToggle.isOn);
+                AunCastPortablePanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP, desktopTabDoubleTapToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -514,7 +514,7 @@ namespace PasocomMate.AunCast
         {
             if (desktopF5DoubleTapToggle == null || portablePanel == null) return;
             portablePanel.SetDesktopSummonGestureFlag(
-                AunCastUserStatusPanel.DESKTOP_GESTURE_F5_DOUBLE_TAP, desktopF5DoubleTapToggle.isOn);
+                AunCastPortablePanel.DESKTOP_GESTURE_F5_DOUBLE_TAP, desktopF5DoubleTapToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -522,7 +522,7 @@ namespace PasocomMate.AunCast
         {
             if (desktopEscHoldToggle == null || portablePanel == null) return;
             portablePanel.SetDesktopSummonGestureFlag(
-                AunCastUserStatusPanel.DESKTOP_GESTURE_ESC_HOLD, desktopEscHoldToggle.isOn);
+                AunCastPortablePanel.DESKTOP_GESTURE_ESC_HOLD, desktopEscHoldToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -530,34 +530,34 @@ namespace PasocomMate.AunCast
         {
             int vrCurrent = portablePanel != null
                 ? portablePanel.GetSummonGesture()
-                : AunCastUserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD;
+                : AunCastPortablePanel.GESTURE_RIGHT_STICK_UP_HOLD;
 
             if (gestureDoubleTriggerLeftToggle != null)
                 gestureDoubleTriggerLeftToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT) != 0);
+                    (vrCurrent & AunCastPortablePanel.GESTURE_DOUBLE_TRIGGER_LEFT) != 0);
             if (gestureDoubleTriggerRightToggle != null)
                 gestureDoubleTriggerRightToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT) != 0);
+                    (vrCurrent & AunCastPortablePanel.GESTURE_DOUBLE_TRIGGER_RIGHT) != 0);
             if (gestureBothTriggersToggle != null)
                 gestureBothTriggersToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & AunCastUserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD) != 0);
+                    (vrCurrent & AunCastPortablePanel.GESTURE_BOTH_TRIGGERS_HOLD) != 0);
             if (gestureRightStickUpToggle != null)
                 gestureRightStickUpToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & AunCastUserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD) != 0);
+                    (vrCurrent & AunCastPortablePanel.GESTURE_RIGHT_STICK_UP_HOLD) != 0);
 
             int deskCurrent = portablePanel != null
                 ? portablePanel.GetDesktopSummonGesture()
-                : AunCastUserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP;
+                : AunCastPortablePanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP;
 
             if (desktopTabDoubleTapToggle != null)
                 desktopTabDoubleTapToggle.SetIsOnWithoutNotify(
-                    (deskCurrent & AunCastUserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP) != 0);
+                    (deskCurrent & AunCastPortablePanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP) != 0);
             if (desktopF5DoubleTapToggle != null)
                 desktopF5DoubleTapToggle.SetIsOnWithoutNotify(
-                    (deskCurrent & AunCastUserStatusPanel.DESKTOP_GESTURE_F5_DOUBLE_TAP) != 0);
+                    (deskCurrent & AunCastPortablePanel.DESKTOP_GESTURE_F5_DOUBLE_TAP) != 0);
             if (desktopEscHoldToggle != null)
                 desktopEscHoldToggle.SetIsOnWithoutNotify(
-                    (deskCurrent & AunCastUserStatusPanel.DESKTOP_GESTURE_ESC_HOLD) != 0);
+                    (deskCurrent & AunCastPortablePanel.DESKTOP_GESTURE_ESC_HOLD) != 0);
         }
 
 

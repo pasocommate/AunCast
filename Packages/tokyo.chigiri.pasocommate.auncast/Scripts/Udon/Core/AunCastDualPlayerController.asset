@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: AunCastDualPlayerController
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: a9bfa0699e0179840923b596627a7887,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 4fd7a32bd851ec64f87e34d74ca1c50e,
     type: 2}
   udonAssembly: 
   assemblyError: 

@@ -13,7 +13,7 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 > **注意**: 音量 (`_localVolume`) と Silence Resync (`_autoSilenceResyncEnabled`) は
 > 各クライアントのローカル設定に変更済み。同期不要のため `AsStaff` パターンではなく、
 > `SetVolumeLocal` / `SetAutoSilenceResyncEnabled` でローカル値を直接書き換える。
-> UI は AunCastUserStatusPanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
+> UI は AunCastPortablePanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
 >
 > **注意（ロック機構）**: 旧設計の `SetLockedAsStaff` 系（同期 lock フラグ）は廃止され、
 > AunCastStaffControlPanel のアクセス制御は「許可ユーザー名リスト + AunCastWallControlPanel
@@ -108,7 +108,7 @@ Slider / Toggle など **同期値を操作する UI** は、次の 3 つを**�
 3. 初回フレームの `_lastSliderValue` 初期化
 
 > **注意**: ローカル専用値（音量・無音 Resync トグル等）を操作する UI はステップ 2 が不要。
-> `AunCastUserStatusPanel.PollVolumeSlider` のように初期化 + 操作検知のみの簡略版を使う。
+> `AunCastPortablePanel.PollVolumeSlider` のように初期化 + 操作検知のみの簡略版を使う。
 
 ```csharp
 private void PollXxxSlider()
@@ -156,7 +156,7 @@ private void PollXxxSlider()
 未反映だとエディタ上で旧値が見えてしまう。
 
 - **参照取得は backing UdonBehaviour の `publicVariables` を優先する**（取れなければ
-  プロキシの `SerializedObject.FindProperty` へフォールバック）。`AunCastUserStatusPanel` /
+  プロキシの `SerializedObject.FindProperty` へフォールバック）。`AunCastPortablePanel` /
   `AunCastStaffControlPanel` は `AunCast.prefab` 直下なのでプロキシの SerializeField でも解決できるが、
   ネストプレハブ（`AunCast.prefab` 内の `AunCastWallControlPanel` 等）はプロキシの参照が
   編集時に null へ解決されることがある。実行時が参照を解決するのと同じ
@@ -373,7 +373,7 @@ private bool CleanupStaleSlots()
 （Inspector 配線のコンポーネント参照に過ぎない）が、結合度が上がりテスト・再利用・
 変更波及の面で不利になる。`AunCastEventBus`（§7）が複数購読者向けなのに対し、
 **1 対 1 の相互参照**はこのパターンで片方向化する。Core→UI の `staffNotifyTarget`
-や UI↔UI の `AunCastUserStatusPanel`↔`AunCastStaffControlPanel` がこの形。
+や UI↔UI の `AunCastPortablePanel`↔`AunCastStaffControlPanel` がこの形。
 
 ルール:
 - **型循環は片辺だけ基底型化すれば切れる。** 両辺を基底型にする必要はない。
@@ -385,7 +385,7 @@ private bool CleanupStaleSlots()
   基底型辺では値を渡せず（§7 のとおり `SetProgramVariable` 多用や「値ごとにイベント
   分割」は避けたい）、クエリ（戻り値あり）も `SendCustomEvent` では呼べないため。
   例: 解錠状態は所有者の `AunCastStaffControlPanel` が `viewerStatusPanel.SetStaffUnlocked(bool)`
-  （具象呼び出し）で `AunCastUserStatusPanel` に push し、UI 側は `_staffUnlocked` を読む。
+  （具象呼び出し）で `AunCastPortablePanel` に push し、UI 側は `_staffUnlocked` を読む。
 - **状態を変える箇所すべてで push する。** キャッシュ化前にライブクエリで成立して
   いた経路（例: `OnPlayerJoined` の許可ユーザー自動解錠）を見落とすと、キャッシュが
   stale になる。所有者側の状態変更点を網羅して push を入れる。
@@ -418,8 +418,8 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 | キー | 型 | 保存元 | 復元先 |
 |------|----|--------|--------|
 | `AunCast-Volume` | float | `AunCastDualPlayerController.SetVolumeLocal` | `AunCastDualPlayerController.OnPlayerRestored` |
-| `AunCast-VrGesture` | int | `AunCastUserStatusPanel.SetSummonGestureFlag` | `AunCastUserStatusPanel.OnPlayerRestored` |
-| `AunCast-DesktopGesture` | int | `AunCastUserStatusPanel.SetDesktopSummonGestureFlag` | `AunCastUserStatusPanel.OnPlayerRestored` |
+| `AunCast-VrGesture` | int | `AunCastPortablePanel.SetSummonGestureFlag` | `AunCastPortablePanel.OnPlayerRestored` |
+| `AunCast-DesktopGesture` | int | `AunCastPortablePanel.SetDesktopSummonGestureFlag` | `AunCastPortablePanel.OnPlayerRestored` |
 
 ### 制約
 
@@ -521,5 +521,5 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   記録する。
 - 注意: ContentScaler 配下の**個別 UI（ボタン等）は絶対配置**のものが多く、設計サイズを
   変えても自動リフローしない。アスペクト比を大きく変える場合は内部レイアウトの再調整が要る。
-- 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`AunCastUserStatusPanel`）
+- 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`AunCastPortablePanel`）
   側で行い、`sizeDelta` は触らない。
