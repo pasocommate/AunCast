@@ -19,8 +19,8 @@ namespace PasocomMate.AunCast.Internal
             if (settings == null) return;
 
             // ビルド・アップロード前に EventBus / publisher / subscriber の参照を最新化する。
-            // recordUndo: false なので新規 Hub の自動作成は走らず、既存配線の整合更新のみ。
-            AunCastSettingsInspector.RewireEventHubAndConsumers(
+            // recordUndo: false なので新規 EventBus の自動作成は走らず、既存配線の整合更新のみ。
+            AunCastSettingsInspector.RewireEventBusAndConsumers(
                 settings.transform, recordUndo: false, writeLog: false);
             AunCastSettingsInspector.ApplyResyncSettingsToScene(settings.transform, settings);
         }

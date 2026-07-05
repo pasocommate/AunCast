@@ -436,7 +436,7 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 - 表示はローカル限定（同期なし）
 
 ### M. AunCastEventBus
-シーン内に N 個配置されうる購読者群へ、publisher が具象型を知らずに配信するローカル PubSub ハブ。AunCast ルート直下の `AunCastEventHub` に配置する。
+シーン内に N 個配置されうる購読者群へ、publisher が具象型を知らずに配信するローカル PubSub ハブ。AunCast ルート直下の `EventBus` オブジェクトに配置する。
 
 責務:
 - `VideoTextureChanged`: `PlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`AunCastScreen` / `AunCastUiScreen` へ `OnVideoTextureChanged` を通知する

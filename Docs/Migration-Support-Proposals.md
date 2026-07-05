@@ -50,7 +50,7 @@ AVPro 音声は Unity の DSP フィルタチェーンに乗らないため、�
 
 ### 1.【提案】再配線スコープのシーン全体化（優先度: 最高）
 
-`RewireEventHubAndConsumers`（`Scripts/Editor/AunCastSettingsInspector.cs`）は現在 AunCast ルート配下のみを `GetComponentsInChildren` で探索し、EventBus の `videoTextureSubscribers` を全上書きする。このため **AunCast ルート外に置いたスクリーンコンポーネントは配線されず、手動で購読者に加えても Play/ビルド時の自動再配線（AunCastAutoRewire / AunCastBuildCallback）で消される**。
+`RewireEventBusAndConsumers`（`Scripts/Editor/AunCastSettingsInspector.cs`）は現在 AunCast ルート配下のみを `GetComponentsInChildren` で探索し、EventBus の `videoTextureSubscribers` を全上書きする。このため **AunCast ルート外に置いたスクリーンコンポーネントは配線されず、手動で購読者に加えても Play/ビルド時の自動再配線（AunCastAutoRewire / AunCastBuildCallback）で消される**。
 
 探索をシーン全体に拡大する。1 シーン 1 AunCast 制約があるため衝突しない。再配線対象は 2 の宣言型コンポーネント（AunCastScreen / AunCastSpeaker 等）とし、**「ユーザーがあらかじめ変換ユーティリティで AunCast 系コンポーネントに置き換えたものを、再配線がすべて配線する」**という手順に固定する。これにより再配線ボタンの処理が「シーン内の宣言済み出力を漏れなく配線する冪等処理」として明確になり、建物階層に組み込まれて移動できないスクリーンメッシュにも対応できる。同期スキーマ変更なし。Design.md に「AunCast 階層外の出力コンポーネントをサポート」と明記する。
 

@@ -32,7 +32,7 @@ namespace PasocomMate.AunCast.Internal
         private const string SESSION_KEY_CLEANUP_EXPANDED = "AunCast.SettingsEditor.CleanupExpanded";
         private const string SCREEN_COMPONENT_TYPE_NAME = "VRCAVProVideoScreen";
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
-        private const string AUNCAST_EVENT_HUB_NAME = "AunCastEventHub";
+        private const string EVENT_BUS_OBJECT_NAME = "EventBus";
         private const string AUNCAST_EVENT_BUS_ASSET_GUID = "86f742d2e8954336a9cd87f1e4527d80";
         // 無効化した AudioLinkInput の隣に置く注記オブジェクト名（英語・エディタ上の説明用）
         private const string AUDIOLINK_INPUT_NOTE_NAME =
@@ -510,12 +510,12 @@ namespace PasocomMate.AunCast.Internal
                         GUILayout.Height(24)))
                         return;
 
-                    RewireEventHubAndConsumers(root, recordUndo: true, writeLog: true);
+                    RewireEventBusAndConsumers(root, recordUndo: true, writeLog: true);
                 }
             }
         }
 
-        internal static void RewireEventHubAndConsumers(Transform root, bool recordUndo, bool writeLog)
+        internal static void RewireEventBusAndConsumers(Transform root, bool recordUndo, bool writeLog)
         {
             if (root == null) return;
 
@@ -700,43 +700,57 @@ namespace PasocomMate.AunCast.Internal
         {
             if (root == null) return null;
 
-            var eventBus = root.GetComponentInChildren<AunCastEventBus>(true);
-            if (eventBus != null)
+            // 正規名 "EventBus" 直下を最優先で探しつつ、見つからなければ型ベースでも探索し、
+            // 旧名 "AunCastEventHub" や Unpack 後にリネーム/移動されたバスも拾う。
+            // 名前一致のみに頼ると既存シーンで二重生成・旧バス孤立が起きるため、型で補完する。
+            Transform eventBusTransform = root.Find(EVENT_BUS_OBJECT_NAME);
+            AunCastEventBus existingEventBus = eventBusTransform != null
+                ? eventBusTransform.gameObject.GetComponent<AunCastEventBus>()
+                : null;
+            if (existingEventBus == null)
+                existingEventBus = root.GetComponentInChildren<AunCastEventBus>(true);
+
+            GameObject eventBusObject;
+            if (existingEventBus != null)
+                eventBusObject = existingEventBus.gameObject;
+            else if (eventBusTransform != null)
+                eventBusObject = eventBusTransform.gameObject;
+            else
             {
-                if (UdonSharpEditorUtility.GetBackingUdonBehaviour(eventBus) != null)
-                    return eventBus;
+                if (!createIfMissing) return null;
+                eventBusObject = new GameObject(EVENT_BUS_OBJECT_NAME);
+                Undo.RegisterCreatedObjectUndo(eventBusObject, "Create EventBus");
+                eventBusObject.transform.SetParent(root, false);
+            }
+
+            if (existingEventBus != null)
+            {
+                if (UdonSharpEditorUtility.GetBackingUdonBehaviour(existingEventBus) != null)
+                {
+                    if (createIfMissing) EnsureCanonicalEventBusName(eventBusObject);
+                    return existingEventBus;
+                }
 
                 if (!createIfMissing)
                     return null;
 
                 if (writeLog)
-                    Debug.LogWarning("[AunCast] backing UdonBehaviour のない AunCastEventBus を検出したため作り直します。", eventBus);
-                UdonSharpUndo.DestroyImmediate(eventBus);
-                eventBus = null;
+                    Debug.LogWarning("[AunCast] backing UdonBehaviour のない AunCastEventBus を検出したため作り直します。", existingEventBus);
+                UdonSharpUndo.DestroyImmediate(existingEventBus);
             }
+
             if (!createIfMissing) return null;
+
+            EnsureCanonicalEventBusName(eventBusObject);
 
             if (LoadAssetByGuid<UnityEngine.Object>(AUNCAST_EVENT_BUS_ASSET_GUID) == null)
             {
                 if (writeLog)
-                    Debug.LogWarning("[AunCast] AunCastEventBus.asset が見つからないため、AunCastEventHub を作成できません。");
+                    Debug.LogWarning("[AunCast] AunCastEventBus.asset が見つからないため、AunCastEventBus を作成できません。");
                 return null;
             }
 
-            Transform hubTransform = root.Find(AUNCAST_EVENT_HUB_NAME);
-            GameObject hubObject;
-            if (hubTransform != null)
-            {
-                hubObject = hubTransform.gameObject;
-            }
-            else
-            {
-                hubObject = new GameObject(AUNCAST_EVENT_HUB_NAME);
-                Undo.RegisterCreatedObjectUndo(hubObject, "Create AunCastEventHub");
-                hubObject.transform.SetParent(root, false);
-            }
-
-            eventBus = UdonSharpUndo.AddComponent<AunCastEventBus>(hubObject);
+            var eventBus = UdonSharpUndo.AddComponent<AunCastEventBus>(eventBusObject);
             if (eventBus == null) return null;
 
             EditorUtility.SetDirty(eventBus);
@@ -748,6 +762,15 @@ namespace PasocomMate.AunCast.Internal
                 PrefabUtility.RecordPrefabInstancePropertyModifications(udon);
             }
             return eventBus;
+        }
+
+        // 型ベースで拾った旧名/リネーム済みのバスを正規名へ揃える（次回以降の名前検索を安定させ、二重生成を防ぐ）。
+        private static void EnsureCanonicalEventBusName(GameObject eventBusObject)
+        {
+            if (eventBusObject == null) return;
+            if (eventBusObject.name == EVENT_BUS_OBJECT_NAME) return;
+            Undo.RecordObject(eventBusObject, "Rename EventBus");
+            eventBusObject.name = EVENT_BUS_OBJECT_NAME;
         }
 
         private static VRC.Udon.UdonBehaviour[] BuildVideoTextureSubscribers(
@@ -1455,7 +1478,7 @@ namespace PasocomMate.AunCast.Internal
                         convertedSpeakers++;
                 }
 
-                RewireEventHubAndConsumers(root, recordUndo: true, writeLog: false);
+                RewireEventBusAndConsumers(root, recordUndo: true, writeLog: false);
                 Debug.Log($"[AunCast] 出力変換を完了しました。Screen: {convertedScreens}件 / Speaker: {convertedSpeakers}件");
             }
             finally
@@ -1473,8 +1496,7 @@ namespace PasocomMate.AunCast.Internal
                 textureProperty = GuessTextureProperty(candidate.gameObject);
 
             AunCastScreen screen = candidate.gameObject.GetComponent<AunCastScreen>();
-            if (screen == null)
-                screen = Undo.AddComponent<AunCastScreen>(candidate.gameObject);
+            screen = EnsureUdonSharpComponent(candidate.gameObject, screen, recordUndo: true, nameof(AunCastScreen));
             if (screen == null) return false;
 
             var so = new SerializedObject(screen);
@@ -1959,6 +1981,12 @@ namespace PasocomMate.AunCast.Internal
                 : so.ApplyModifiedPropertiesWithoutUndo();
             if (!applied) return false;
 
+            if (!HasConfiguredBackingUdonBehaviour(component))
+            {
+                Debug.LogWarning($"[AunCast] {component.GetType().Name} の backing UdonBehaviour が未設定のため、Udon 側への反映をスキップしました。", component);
+                return false;
+            }
+
             UdonSharpEditorUtility.CopyProxyToUdon(component);
             EditorUtility.SetDirty(component);
             PrefabUtility.RecordPrefabInstancePropertyModifications(component);
@@ -1971,6 +1999,37 @@ namespace PasocomMate.AunCast.Internal
             return true;
         }
 
+        private static T EnsureUdonSharpComponent<T>(
+            GameObject gameObject,
+            T component,
+            bool recordUndo,
+            string componentName) where T : UdonSharp.UdonSharpBehaviour
+        {
+            if (gameObject == null) return null;
+            if (component != null && HasConfiguredBackingUdonBehaviour(component))
+                return component;
+
+            if (component != null)
+            {
+                Debug.LogWarning($"[AunCast] {componentName} の backing UdonBehaviour が未設定のため作り直します。", component);
+                if (recordUndo)
+                    UdonSharpUndo.DestroyImmediate(component);
+                else
+                    UdonSharpEditorUtility.DestroyImmediate(component);
+            }
+
+            return recordUndo
+                ? UdonSharpUndo.AddComponent<T>(gameObject)
+                : gameObject.AddUdonSharpComponent<T>();
+        }
+
+        private static bool HasConfiguredBackingUdonBehaviour(UdonSharp.UdonSharpBehaviour component)
+        {
+            if (component == null) return false;
+            var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(component);
+            return udon != null && udon.programSource != null;
+        }
+
         private static AunCastSpeaker EnsureAunCastSpeaker(
             GameObject gameObject,
             PasocomMate.AunCast.AunCastSettings settings,
@@ -1979,8 +2038,7 @@ namespace PasocomMate.AunCast.Internal
             if (gameObject == null) return null;
 
             var detector = gameObject.GetComponent<AunCastSpeaker>();
-            if (detector == null)
-                detector = recordUndo ? Undo.AddComponent<AunCastSpeaker>(gameObject) : gameObject.AddComponent<AunCastSpeaker>();
+            detector = EnsureUdonSharpComponent(gameObject, detector, recordUndo, nameof(AunCastSpeaker));
             if (detector == null) return null;
 
             var so = new SerializedObject(detector);
@@ -2567,7 +2625,7 @@ namespace PasocomMate.AunCast.Internal
 
             ApplyCrossfadeSettingsToScene(root, settings);
             if (idleScreenTextureChanged)
-                RewireEventHubAndConsumers(root, recordUndo: true, writeLog: false);
+                RewireEventBusAndConsumers(root, recordUndo: true, writeLog: false);
         }
 
         // ── UI/操作 ──

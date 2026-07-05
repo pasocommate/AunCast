@@ -2415,7 +2415,7 @@ GameObject:
   - component: {fileID: 5688601582486852472}
   - component: {fileID: 2789259085940159964}
   m_Layer: 0
-  m_Name: AunCastEventHub
+  m_Name: EventBus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
