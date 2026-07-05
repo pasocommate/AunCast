@@ -121,7 +121,7 @@
 
 ## 7. システム概要
 
-本システムは、各ユーザーにローカルで 2 台の `VRCAVProVideoPlayer` を持たせる。また、世界全体で 1 つの `ResyncCoordinator` を配置する。
+本システムは、各ユーザーにローカルで 2 台の `VRCAVProVideoPlayer` を持たせる。また、世界全体で 1 つの `AunCastResyncCoordinator` を配置する。
 
 ### 7.1 基本方針
 
@@ -198,7 +198,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - **数値サマリ**: 再生中ユーザー数 / 接続中ユーザー数 / インスタンス内ユーザー数 / インスタンス収容上限
 - **スロットインジケーター**: 各ユーザーの状態（正常再生 / 接続中 / Resync 待機 / Resync 実行中 / エラー）を色分けアイコンで一覧表示し、異常度の高い順にソートする
 - **推定残り時間（ユーザー向け）**: Resync 待機が発生したとき、待機列が解消して自身の Resync が完了するまでの推定残り時間を ViewerPanel に表示する
-- **推定残り時間（スタッフ向け）**: 待機列がある場合、全体の Resync が完了するまでの推定残り時間を StaffControlPanel に表示する
+- **推定残り時間（スタッフ向け）**: 待機列がある場合、全体の Resync が完了するまでの推定残り時間を AunCastStaffControlPanel に表示する
 
 ### FR-15: スタッフ操作パネル
 スタッフ向けの操作パネルをワールド内に設置できなければならない。操作可能なユーザーを制限するアクセス制御を備えること。以下の機能を含む。
@@ -211,7 +211,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - **CDN 同時接続上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
 - **モニタリング表示**: グローバル Resync の進捗状況（FR-14 参照）
 
-> **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから UserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
+> **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから AunCastUserStatusPanel（観客向けパネル）側に移行している（FR-17 参照）。
 
 以下のパラメータはワールド制作時にコンポーネント側（Inspector）で設定する。
 
@@ -274,7 +274,7 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 
 ## 9.1 構成要素
 
-### A. LocalDualPlayerController
+### A. AunCastDualPlayerController
 各ユーザーのローカル再生制御を行う司令塔。状態機械の本体は本クラスが保持し、検知・切替・音声・Coordinator 連携の各責務はサブコンポーネントへ委譲する。
 
 責務:
@@ -282,18 +282,18 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 - URL の同期・適用 (`_syncedURL`, `_syncedUrlSubmitterName`, `_syncedVideoIdx`, `_ownerPlaying`)
 - ローカル音量 (`_localVolume`) と Silence Resync フラグ (`_autoSilenceResyncEnabled`) の保持
 - 無音検知ポーリング (`PollSilenceDetection`): 全 audible プレイヤーの RMS を確認し、連続無音で個人 Resync 発行
-- サブコンポーネント (`ActivePlayerMonitor`, `PlaybackSwitcher`, `ResyncCoordinatorClient`, `PlaybackMonitor`) への委譲・調停
-- `VideoPlayerManager` のコールバックハブ（`OnManagerVideoReady` / `OnManagerVideoStart` / `OnManagerVideoError` 等）
+- サブコンポーネント (`AunCastActivePlayerMonitor`, `AunCastPlaybackSwitcher`, `AunCastResyncCoordinatorClient`, `AunCastPlaybackMonitor`) への委譲・調停
+- `AunCastVideoPlayerManager` のコールバックハブ（`OnManagerVideoReady` / `OnManagerVideoStart` / `OnManagerVideoError` 等）
 - `AsStaff` API（`PlayVideoAsStaff` / `StopVideoAsStaff`）の提供
 - `Reboot()`: 緊急リブート（Resync キャンセル → 全断 → Active 直接再接続）
 - `Reload()`: Active プレイヤーの再読み込み（Resync キャンセル → Active 停止 → 再接続）
 - `RequestManualResync()`: 観客からの手動 Resync リクエスト
-- `PlaybackMonitor` への再生状態レポート（スロットル付き、10 秒ごと + 変化時）
+- `AunCastPlaybackMonitor` への再生状態レポート（スロットル付き、10 秒ごと + 変化時）
 - `OnDeserialization`: 非 Owner の URL 変更検知と再生停止同期
 - 非 Owner の同期待ち（`_waitForSync`）: `_ownerPlaying` が false の間は Pause で待機
 
-### B. VideoPlayerManager（既存流用 × 2 台）
-各 `VRCAVProVideoPlayer` に対応する AVPro ラッパー。既存の `VideoPlayerManager` を 2 台配置して Active / Standby に対応する。
+### B. AunCastVideoPlayerManager（既存流用 × 2 台）
+各 `VRCAVProVideoPlayer` に対応する AVPro ラッパー。既存の `AunCastVideoPlayerManager` を 2 台配置して Active / Standby に対応する。
 
 責務:
 - `OnVideoReady` / `OnVideoStart` / `OnVideoEnd` / `OnVideoError` / `OnVideoLoop` のイベント受信と Controller への通知（`receiver._lastCallbackPlayerIndex` + `receiver.OnManagerXxx()` パターン）
@@ -302,8 +302,8 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 - クロスフェード用ゲイン（`_fadeGain`）の保持と `ApplyVolume()` への反映
 - テクスチャ取得（`_MainTex` / `_EmissionMap` / `_BaseMap` / `_BaseColorMap` を順に探索）
 
-### C. ActivePlayerMonitor
-`LocalDualPlayerController` から委譲される、Active / Standby Player の生存監視と Verify を担う独立コンポーネント。
+### C. AunCastActivePlayerMonitor
+`AunCastDualPlayerController` から委譲される、Active / Standby Player の生存監視と Verify を担う独立コンポーネント。
 
 責務:
 - `GetTime()` 前進判定（`monitorIntervalSec` ごとにポーリング）
@@ -311,22 +311,22 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 - Standby Player の Verify (`IsVerifySatisfied` / `IsStandbyTimedOut`)
 - ドリフト計測（絶対ドリフト方式 EMA、`_baseWallTime` / `_basePlayerTime` / `_driftAccumulator`）
 - ドリフトしきい値 (`driftResyncThresholdSec`) を超えた際の Resync 候補通知
-- `BindRoles(activeIsA)` で `PlaybackSwitcher` のロール変更に追従
+- `BindRoles(activeIsA)` で `AunCastPlaybackSwitcher` のロール変更に追従
 
-### D. PlaybackSwitcher
+### D. AunCastPlaybackSwitcher
 Active / Standby の物理的な切替（映像・音声・AudioLink）を担う。
 
 責務:
 - `playerManagerA` / `playerManagerB` のロール（Active/Standby）保持と `_activeIsA` の管理
 - `AunCastEventBus` への RenderTexture ソース配信（`UpdateRenderTexture` / `TryUpdateRenderTextureFromManager`）。実際のスクリーン群（`AunCastScreen` / `AunCastUiScreen`）は Bus の購読者として更新される
-- クロスフェード（`crossfadeDurationSec`、等パワーパニング cos/sin カーブで各 `VideoPlayerManager` の `_fadeGain` を制御）
+- クロスフェード（`crossfadeDurationSec`、等パワーパニング cos/sin カーブで各 `AunCastVideoPlayerManager` の `_fadeGain` を制御）
 - AudioLink 入力ソースの切替（`audioLinkBehaviour.SetProgramVariable("audioSource", ...)` 経由）
 - ロール交換 (`CompleteSwitchRoles`) 後のリセット
 - 各 Player に対応する `AunCastSpeaker` への参照保持（Active 側 RMS の問い合わせ）
 - Active 直接リブート (`StartActiveDirectReboot`): 両 Player を A にリセットしてから Active で `LoadURL`
 - Standby 接続開始 (`StartStandbyConnect`): `_fadeGain=0` で接続、映像・音声を隠して準備
 
-### E. PlaybackMonitor
+### E. AunCastPlaybackMonitor
 各クライアントの再生状態（再生中 / 接続中 / エラー）を世界共通で同期する別オブジェクト。Coordinator から分離することで、頻繁な再生状態更新が Resync 制御の同期と競合しないようにする。
 
 責務:
@@ -335,9 +335,9 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - ポップカウントによる再生中・接続中ユーザー数の高速算出（`_popcount` テーブル参照）
 - スロット解放（`ClearSlot`）— 3 配列すべてをクリア
 - `FlushSerialization()` による即時送信（`OnPlayerLeft` 時に Coordinator から呼ばれる）
-- `StaffControlPanel` への再描画通知（`OnDeserialization` / `Update` で `NotifyObservers`）
+- `AunCastStaffControlPanel` への再描画通知（`OnDeserialization` / `Update` で `NotifyObservers`）
 
-### F. ResyncCoordinator
+### F. AunCastResyncCoordinator
 ワールド全体の予約制御を行う同期オブジェクト。
 
 責務:
@@ -348,7 +348,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - グローバル Resync (`TriggerGlobalResync`) と強制リブート (`TriggerGlobalForceReboot`) の発行
 - owner 変更後の状態継続
 
-### G. ResyncCoordinatorClient
+### G. AunCastResyncCoordinatorClient
 クライアント側に配置し、Coordinator の同期変数をローカル状態に翻訳する薄いクライアント。
 
 責務:
@@ -362,8 +362,8 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - Silence Resync の適格判定 (`IsSilenceAutoResyncEligible`: 最後の Resync 完了から `silenceSuppressSec` 経過後に有効)
 - グローバル強制リブートの検知 (`PollGlobalForceReboot`: `globalForceRebootSeq` の変化を監視)
 
-### H. StaffControlPanel（ポータブルパネルの Staff ビューとして統合）
-スタッフ向けの操作・モニタリング UI。UserStatusPanel 内の Staff ビュー（クロスフェード切替）として動作する。
+### H. AunCastStaffControlPanel（ポータブルパネルの Staff ビューとして統合）
+スタッフ向けの操作・モニタリング UI。AunCastUserStatusPanel 内の Staff ビュー（クロスフェード切替）として動作する。
 
 責務:
 - URL 入力欄 (`nextUrlField`)、Promote ボタンによる URL 同期適用 (`OnPromoteNextUrl`)
@@ -372,27 +372,27 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - 強制リブート (`OnForceRebootButtonPress`)
 - 同時Resync上限 (`maxConcurrentResyncUsers`) と CDN 同時接続上限 (`maxConnectionLimit`) のランタイム編集 UI（Display/Edit モード切替、±1/±10 ボタン）
 - モニタリング表示: インジケーター（色付き ■/□ でスロット状態を表示）、ユーザー数表示（Playing / In Instance / Queued）
-- アクセス制御: 許可ユーザー名リスト (`allowedUserNames`) + WallControlPanel 経由のローカルパスコード解錠 (`SetLocalPasscodeUnlocked`)。同名ユーザー衝突時は最小 playerId を優先
+- アクセス制御: 許可ユーザー名リスト (`allowedUserNames`) + AunCastWallControlPanel 経由のローカルパスコード解錠 (`SetLocalPasscodeUnlocked`)。同名ユーザー衝突時は最小 playerId を優先
 - 多言語ヘルプテキスト: ホバーに応じてボタン説明を表示 (`OnHoverXxx` → `helpTextField`)。日本語/英語をシステム言語 or 手動トグルで切替 (`OnLanguageChanged` / `ToggleLanguage`)
 - `OnCoordinatorChanged()` による通知駆動の再描画（デバウンス 0.2 秒 + 周期 1 秒フォールバック）
 - Now Playing 表示（現在再生中の URL）
 
-### I. WallControlPanel（壁掛け設置型）
+### I. AunCastWallControlPanel（壁掛け設置型）
 ワールド内に固定配置する小型の壁掛けパネル。3 つの表示状態を持つ: User ビュー / Staff ビュー / ResyncOnly ビュー。
 
 責務:
 - **User ビュー**: 個人 Resync リクエストボタン (`OnUserResyncButtonPress`) / 緊急リブートボタン (`OnUserRebootButtonPress`) / VR 呼び出しジェスチャー選択トグル（右スティック上倒し / 片手ダブルトリガー / 両手トリガー長押し）
 - **Staff ビュー**: 4 桁パスコード入力 UI（成功時に `staffPanel.SetLocalPasscodeUnlocked()` を呼ぶ。同期なしのローカル解錠）
 - **ResyncOnly ビュー**: パネルから離れているときに全面表示する大型 Resync ボタン。全ユーザーが利用可能
-- **共通**: ポータブルパネル（UserStatusPanel）を頭部前面に呼び出す Spawn ボタン (`OnSpawnPanelButtonPress`)
+- **共通**: ポータブルパネル（AunCastUserStatusPanel）を頭部前面に呼び出す Spawn ボタン (`OnSpawnPanelButtonPress`)
 - User/Staff ビュー切替ボタン (`OnSwitchViewButtonPress`)
 - User ボタンの interactable 状態を controller の FSM に追従させる（0.3 秒間隔でポーリング）
 - **距離ベース表示切替**: シュミットトリガー方式（`wallNearDistance`=2.5m / `wallFarDistance`=3m）で ResyncOnly ↔ User/Staff をちらつきなく切替。AunCastSettings で変更可能
 - **CanvasGroup クロスフェード**: 4 つの CanvasGroup（user / staff / shared / resyncOnly）を `crossfadeDuration` で滑らかに遷移。遷移中は切替先のみインタラクティブ
 - **解錠後のポータブルパネル連動**: パスコード解錠後にポータブルパネルを開くと自動的に User ビューに切替。切替ボタンは LockOpen アイコンで無効化
 
-### J. UserStatusPanel（ポータブルパネル）
-観客向けの自己状態確認・Resync リクエスト UI。VR ジェスチャーまたはデスクトップの Tab キーで呼び出す。Viewer ビューと Staff ビュー（StaffControlPanel）をクロスフェードで切替可能。
+### J. AunCastUserStatusPanel（ポータブルパネル）
+観客向けの自己状態確認・Resync リクエスト UI。VR ジェスチャーまたはデスクトップの Tab キーで呼び出す。Viewer ビューと Staff ビュー（AunCastStaffControlPanel）をクロスフェードで切替可能。
 
 責務:
 - 個人 Resync リクエストボタン / 緊急リブートボタン
@@ -407,12 +407,12 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
   - 両手トリガー長押し (`GESTURE_BOTH_TRIGGERS_HOLD`)
   - 右スティック上方向倒し続け (`GESTURE_RIGHT_STICK_UP_HOLD`)
 - **Desktop 呼び出し**: Tab キー（Viewer → Staff → 閉じる の 3 ステート切替）
-- **HUD プログレス表示**: VR ジェスチャー長押し中に `HudProgressOverlay` で視界にプログレスを表示
+- **HUD プログレス表示**: VR ジェスチャー長押し中に `AunCastHudProgressOverlay` で視界にプログレスを表示
 - **グラブムーブ (VR)**: グリップボタンで近傍判定 → パネルを手に追従させて移動
 - **Dissolve アニメーション**: 開閉時に背景の Dissolve + コンテンツ alpha フェード
 - **Viewer/Staff クロスフェード切替**: 解錠時のみ切替ボタン表示。`crossfadeDuration` で滑らかに遷移
 - **ハプティクス**: VR でメニューを開いた際に両手へ触覚フィードバック
-- `SummonInFrontOfLocalPlayer()` による頭部前面への呼び出し（WallControlPanel から起動）
+- `SummonInFrontOfLocalPlayer()` による頭部前面への呼び出し（AunCastWallControlPanel から起動）
 - **Menu Follow**: VR 時は頭部ローカルオフセット配置、Desktop 時は FOV から距離を算出してフィットさせる
 - **デバッグ自動オープン**: 同名ユーザー検出時にテスト用にテレポート + パネルオープン
 
@@ -425,7 +425,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 
 > **設計変更履歴**: 当初は `OnAudioFilterRead` を用いたリングバッファ遅延・バッファアンダーラン吸収を計画していたが、Udon VM がオーディオスレッドのフィールド書き込みをメインスレッドに反映できない制約（`VRChat-Udon-Development-Notes.md` 9.6 参照）から、`GetOutputData` を用いた RMS 取得のみの簡易実装に切り替えた。リングバッファ遅延・吸収機構は未実装で、Section 24 の今後の拡張案として残す。
 
-### L. HudProgressOverlay
+### L. AunCastHudProgressOverlay
 VR ジェスチャー長押し中に視界へ重ねるプログレス表示。頭部追従の World Space Quad に専用シェーダーを適用する。
 
 責務:
@@ -439,9 +439,9 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 シーン内に N 個配置されうる購読者群へ、publisher が具象型を知らずに配信するローカル PubSub ハブ。AunCast ルート直下の `EventBus` オブジェクトに配置する。
 
 責務:
-- `VideoTextureChanged`: `PlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`AunCastScreen` / `AunCastUiScreen` へ `OnVideoTextureChanged` を通知する
-- `LocalStateChanged`: `LocalDualPlayerController` の FSM 状態変化を `WallControlPanel` へ通知する
-- `PortablePanelShown`: `UserStatusPanel` 表示時に `WallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
+- `VideoTextureChanged`: `AunCastPlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`AunCastScreen` / `AunCastUiScreen` へ `OnVideoTextureChanged` を通知する
+- `LocalStateChanged`: `AunCastDualPlayerController` の FSM 状態変化を `AunCastWallControlPanel` へ通知する
+- `PortablePanelShown`: `AunCastUserStatusPanel` 表示時に `AunCastWallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
 - 購読者配列は backing `UdonBehaviour[]` で保持し、配信は `SendCustomEvent(eventName)` で行う
 
 ---
@@ -451,12 +451,12 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 ```mermaid
 flowchart TB
     subgraph "各ユーザー（ローカル）"
-        Ctrl[LocalDualPlayerController]
-        Mon[ActivePlayerMonitor]
-        Sw[PlaybackSwitcher]
-        Cli[ResyncCoordinatorClient]
-        VPM_A[VideoPlayerManager A]
-        VPM_B[VideoPlayerManager B]
+        Ctrl[AunCastDualPlayerController]
+        Mon[AunCastActivePlayerMonitor]
+        Sw[AunCastPlaybackSwitcher]
+        Cli[AunCastResyncCoordinatorClient]
+        VPM_A[AunCastVideoPlayerManager A]
+        VPM_B[AunCastVideoPlayerManager B]
         PA[VRCAVProVideoPlayer A]
         PB[VRCAVProVideoPlayer B]
         Audio[AunCastSpeaker A/B]
@@ -464,8 +464,8 @@ flowchart TB
         MeshScreen[AunCastScreen<br/>3D スクリーン]
         UiScreen[AunCastUiScreen<br/>UI RawImage]
         AL[AudioLink]
-        Viewer[UserStatusPanel<br/>ポータブルパネル<br/>Viewer/Staff切替]
-        HUD[HudProgressOverlay<br/>VR プログレス HUD]
+        Viewer[AunCastUserStatusPanel<br/>ポータブルパネル<br/>Viewer/Staff切替]
+        HUD[AunCastHudProgressOverlay<br/>VR プログレス HUD]
 
         Ctrl --> Mon
         Ctrl --> Sw
@@ -488,13 +488,13 @@ flowchart TB
     end
 
     subgraph "ワールド共通（同期）"
-        Coord[ResyncCoordinator<br/>Synced State Owner]
-        PMon[PlaybackMonitor<br/>Synced Playback/Connecting/Error]
+        Coord[AunCastResyncCoordinator<br/>Synced State Owner]
+        PMon[AunCastPlaybackMonitor<br/>Synced Playback/Connecting/Error]
     end
 
     subgraph "ワールド設置（UI）"
-        Wall[WallControlPanel<br/>パスコード解錠 / Spawn<br/>Resync / Reboot / ジェスチャー設定]
-        Staff[StaffControlPanel<br/>URL入力 / 停止 / Resync / Reboot<br/>モニタリング / パラメータ編集]
+        Wall[AunCastWallControlPanel<br/>パスコード解錠 / Spawn<br/>Resync / Reboot / ジェスチャー設定]
+        Staff[AunCastStaffControlPanel<br/>URL入力 / 停止 / Resync / Reboot<br/>モニタリング / パラメータ編集]
     end
 
     Cli <--> Coord
@@ -687,7 +687,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 ### 実装場所
 
-ドリフト計測は `ActivePlayerMonitor` が担当する。`_baseWallTime` / `_basePlayerTime` / `_driftAccumulator` は同コンポーネントの内部状態として保持し、`LocalDualPlayerController` からは `GetDriftAccumulator()` 経由で参照する。
+ドリフト計測は `AunCastActivePlayerMonitor` が担当する。`_baseWallTime` / `_basePlayerTime` / `_driftAccumulator` は同コンポーネントの内部状態として保持し、`AunCastDualPlayerController` からは `GetDriftAccumulator()` 経由で参照する。
 
 ### ドリフトに対する処理
 
@@ -700,7 +700,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 ### 表示
 
-蓄積量と方向（遅れ / 進み）を UserStatusPanel に表示する（FR-17 参照）。ドリフトが `driftResyncThresholdSec` に近づいた段階で視覚的警告を出す。
+蓄積量と方向（遅れ / 進み）を AunCastUserStatusPanel に表示する（FR-17 参照）。ドリフトが `driftResyncThresholdSec` に近づいた段階で視覚的警告を出す。
 
 ### 推奨パラメータ
 
@@ -754,7 +754,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 ### トリガー種別
 
 #### 手動トリガー
-- スタッフ（アクセス制御で許可されたユーザー）がワールド設置型の StaffControlPanel のボタンを押して発行する
+- スタッフ（アクセス制御で許可されたユーザー）がワールド設置型の AunCastStaffControlPanel のボタンを押して発行する
 - 発行時、Coordinator は全アクティブスロット（`userPlayerId != 0` かつ `STATE_NONE`）を `STATE_QUEUED` に一括設定する（すでに Queued/Granted/Running のユーザーはスキップ）
 - 曲間・MC 中など、音切れが目立たないタイミングでスタッフが判断して押す運用を想定する
 
@@ -764,7 +764,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 - 両系統ともユーザー音量がミュート（スライダー値 0）の場合は誤検知防止のため検知をスキップする
 - 無音判定が `silenceConsecutiveSec`（デフォルト 2 秒）連続した場合に個人 Resync リクエストを発行する
 - 最後の Resync 完了（`_lastResyncCompletedAt`）から `silenceSuppressSec`（デフォルト 150 秒）が経過するまで、無音検知を無効化する（`IsSilenceAutoResyncEligible`）。これにより、Resync 直後の不要な再発動を防止する
-- 各ユーザーが `_autoSilenceResyncEnabled` フラグ（UserStatusPanel のトグル）で有効/無効を切り替えられる
+- 各ユーザーが `_autoSilenceResyncEnabled` フラグ（AunCastUserStatusPanel のトグル）で有効/無効を切り替えられる
 
 ### スタガリング戦略
 
@@ -782,7 +782,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 - 予約待機中（Queued）のユーザー数
 
 #### オブジェクト仕様
-- トリガーボタンとモニタリングディスプレイは **StaffControlPanel**（ワールド設置型）に統合する
+- トリガーボタンとモニタリングディスプレイは **AunCastStaffControlPanel**（ワールド設置型）に統合する
 - Coordinator の同期変数から読み取って表示するだけなので、描画処理はすべてローカル
 - アクセス制御により、スタッフのみ操作可能とする（グループインスタンスのロール、ユーザー名リスト等）
 
@@ -792,7 +792,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 - `TriggerGlobalResync()` は全アクティブスロットを `STATE_QUEUED` に一括設定し、`RequestSerialization()` で同期する
 - 以降は通常の TickScheduler（1 秒ティック × `maxConcurrentResyncUsers` 枠制限）で QUEUED → GRANTED に昇格
-- 各クライアントは `ResyncCoordinatorClient.CheckAdoption()` で QUEUED / GRANTED 状態を検知し、通常の Resync フローに入る。このとき `requestReason = MANUAL` が設定され、Active Player の recovery チェック（障害回復によるキャンセル）の対象外となる
+- 各クライアントは `AunCastResyncCoordinatorClient.CheckAdoption()` で QUEUED / GRANTED 状態を検知し、通常の Resync フローに入る。このとき `requestReason = MANUAL` が設定され、Active Player の recovery チェック（障害回復によるキャンセル）の対象外となる
 - 成功・失敗報告も通常の `OnReportSuccess` / `OnReportFail` を使用する
 
 ---
@@ -816,8 +816,8 @@ Coordinator はユーザーごとの状態を固定長配列で管理する。
 
 - 配列の同期は変更の有無にかかわらず全体送信される
 - Coordinator: short[82] + byte[82] + ushort[82] + float + スカラー群 = 約 420 B / 同期（Owner-Centric 移行 + タイムスタンプ圧縮 + 型縮小）
-- PlaybackMonitor: byte[11] = 約 11 B / 同期（1 スロット 1 ビットにパック済み）
-- 再生状態の頻繁な更新（PlaybackMonitor）と Resync 制御（Coordinator）を別オブジェクトに分離することで、ownership 競合を軽減し帯域効率を向上させる
+- AunCastPlaybackMonitor: byte[11] = 約 11 B / 同期（1 スロット 1 ビットにパック済み）
+- 再生状態の頻繁な更新（AunCastPlaybackMonitor）と Resync 制御（Coordinator）を別オブジェクトに分離することで、ownership 競合を軽減し帯域効率を向上させる
 - `RequestSerialization()` の呼び出し頻度を最小化するため、Coordinator の `TickScheduler` で変更があった場合のみ送信する
 
 ## 13.2 Coordinator 同期変数
@@ -844,7 +844,7 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 [UdonSynced] private byte maxConnectionLimit;       // CDN 同時接続上限（ランタイム変更可能、配信サーバ側キャパシティ）
 ```
 
-> **命名注記**: 当初設計では `userState` を予定していたが、実装ではより限定的な意味を示す `resyncState` に改名されている（`PlaybackMonitor` 側に再生状態が分離されたため）。同様に getter は `GetResyncState(slotIndex)`。
+> **命名注記**: 当初設計では `userState` を予定していたが、実装ではより限定的な意味を示す `resyncState` に改名されている（`AunCastPlaybackMonitor` 側に再生状態が分離されたため）。同様に getter は `GetResyncState(slotIndex)`。
 
 ### 旧設計からの削除変数
 
@@ -864,9 +864,9 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 - クランプ発生時は最古の値のみが影響を受ける（タイムアウト清掃対象なので安全）
 - Owner 内部では `float[] _ownerTimestamp` で正確な値を保持し、タイムアウト判定に使用
 
-## 13.2.1 PlaybackMonitor 同期変数
+## 13.2.1 AunCastPlaybackMonitor 同期変数
 
-再生状態のモニタリングは別オブジェクト `PlaybackMonitor` で同期する。Coordinator と分離することで、頻繁な再生状態更新が Resync 制御の ownership と競合しない。
+再生状態のモニタリングは別オブジェクト `AunCastPlaybackMonitor` で同期する。Coordinator と分離することで、頻繁な再生状態更新が Resync 制御の ownership と競合しない。
 
 ```csharp
 [UdonSynced] private byte[] playbackActive;    // ビットパック: 1 スロット = 1 ビット。byte[(MAX_PLAYERS+7)/8]
@@ -876,9 +876,9 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 
 - 各クライアントが `SendCustomNetworkEvent(Owner, "OnReportPlayback", slotIndex, encoded)` で Owner に再生状態を報告する（`encoded`: 0/1 int エンコーディング）。Owner が一元的にビットフィールドを更新し同期する
 - 同様に `OnReportConnecting` / `OnReportError` で接続中・エラー状態を報告する
-- `active` の判定は A/B 双方のプレイヤーについて `IsPlaying() && hasSeenTimeAdvance` の OR を取る（`ActivePlayerMonitor.IsAnyPlayerPlaying()`）。Resync 切替中でも片方が再生中であれば `active=true` を維持する
-- `playing=true` になったタイミングで `connecting=false` を自動送信する（`LocalDualPlayerController.ReportPlaybackStateToCoordinator` 内）
-- スロットのクリアは **PlaybackMonitor 自身の `OnPlayerLeft` / `OnPlayerJoined`** で行う。自オブジェクトの所有者が `userPlayerId` を参照しつつ全スロットを走査し、対応プレイヤーが `IsValid()=false` のスロットを 3 配列まとめて `ClearSlot` 相当でクリアする。Coordinator と PlaybackMonitor の ownership が分離していても確実にビットが解放されるようにするための分担
+- `active` の判定は A/B 双方のプレイヤーについて `IsPlaying() && hasSeenTimeAdvance` の OR を取る（`AunCastActivePlayerMonitor.IsAnyPlayerPlaying()`）。Resync 切替中でも片方が再生中であれば `active=true` を維持する
+- `playing=true` になったタイミングで `connecting=false` を自動送信する（`AunCastDualPlayerController.ReportPlaybackStateToCoordinator` 内）
+- スロットのクリアは **AunCastPlaybackMonitor 自身の `OnPlayerLeft` / `OnPlayerJoined`** で行う。自オブジェクトの所有者が `userPlayerId` を参照しつつ全スロットを走査し、対応プレイヤーが `IsValid()=false` のスロットを 3 配列まとめて `ClearSlot` 相当でクリアする。Coordinator と AunCastPlaybackMonitor の ownership が分離していても確実にビットが解放されるようにするための分担
 - `FlushSerialization()`: `OnPlayerLeft` 時に遅延シリアライズを即時送信する（ワールド破棄直前のロスト対策）
 
 ### Grant の発行方式
@@ -890,10 +890,10 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 
 ### Leave 時の処理
 
-Coordinator と PlaybackMonitor は別 GameObject で ownership が独立しているため、それぞれの所有者が自オブジェクト分のクリーンアップを担当する。
+Coordinator と AunCastPlaybackMonitor は別 GameObject で ownership が独立しているため、それぞれの所有者が自オブジェクト分のクリーンアップを担当する。
 
 ```
-ResyncCoordinator.OnPlayerLeft(VRCPlayerApi player):
+AunCastResyncCoordinator.OnPlayerLeft(VRCPlayerApi player):
   // Coordinator 所有者: スロット割当・Resync 状態を解放
   if !Networking.IsOwner(gameObject): return
   slotIndex = FindSlotByPlayerId(player.playerId)
@@ -903,8 +903,8 @@ ResyncCoordinator.OnPlayerLeft(VRCPlayerApi player):
   // タイムスタンプ等もクリア
   RequestSerialization()  // Rejoin 時のロスト対策で即時送信
 
-PlaybackMonitor.OnPlayerLeft(VRCPlayerApi player):
-  // PlaybackMonitor 所有者: 自オブジェクトのビット 3 配列を掃除
+AunCastPlaybackMonitor.OnPlayerLeft(VRCPlayerApi player):
+  // AunCastPlaybackMonitor 所有者: 自オブジェクトのビット 3 配列を掃除
   if !Networking.IsOwner(gameObject): return
   foreach slot i in 0..MAX_PLAYERS:
     if no bit set in playback/connecting/error[i]: continue
@@ -915,7 +915,7 @@ PlaybackMonitor.OnPlayerLeft(VRCPlayerApi player):
   if any changed: FlushSerialization()
 ```
 
-`OnPlayerJoined` でも PlaybackMonitor 側は同じ走査を行い、`OnPlayerLeft` のシリアライズがロストした残留ビットをフォールバックで回収する。
+`OnPlayerJoined` でも AunCastPlaybackMonitor 側は同じ走査を行い、`OnPlayerLeft` のシリアライズがロストした残留ビットをフォールバックで回収する。
 
 ## 13.3 状態コード
 
@@ -933,7 +933,7 @@ Cooldown はクライアントローカルで管理する（Coordinator のス�
 
 実装上、ローカル状態は責務ごとにコンポーネントへ分割保持する。
 
-### 13.4.1 LocalDualPlayerController が保持する状態
+### 13.4.1 AunCastDualPlayerController が保持する状態
 
 ```csharp
 // --- 同期変数（Manual sync, Owner 書き込み） ---
@@ -946,7 +946,7 @@ Cooldown はクライアントローカルで管理する（Coordinator のス�
 private int _localState;                       // ローカル状態（10.1 参照）
 
 // --- ロール ---
-private bool _activeIsA = true;                // PlaybackSwitcher と同期させる
+private bool _activeIsA = true;                // AunCastPlaybackSwitcher と同期させる
 
 // --- ローカル設定（同期しない） ---
 private bool _autoSilenceResyncEnabled = true; // Silence Resync 切替
@@ -973,7 +973,7 @@ private float _lastPlaybackReportAt;
 // 値変化なしでも 10 秒ごとに再送する
 ```
 
-### 13.4.2 ResyncCoordinatorClient が保持する状態
+### 13.4.2 AunCastResyncCoordinatorClient が保持する状態
 
 ```csharp
 private int _mySlotIndex;                      // Coordinator 上の自スロット番号（キャッシュ）
@@ -996,7 +996,7 @@ private float _lastResyncRequestSentAt;        // SendCustomNetworkEvent 再送�
 private float _adoptionSuppressedUntil;        // キャンセル後 2 秒間 Adoption を抑制
 ```
 
-### 13.4.3 ActivePlayerMonitor が保持する状態
+### 13.4.3 AunCastActivePlayerMonitor が保持する状態
 
 ```csharp
 // --- Active Player 監視 ---
@@ -1017,7 +1017,7 @@ private float _baseWallTime;
 private float _basePlayerTime;
 ```
 
-### 13.4.4 PlaybackSwitcher が保持する状態
+### 13.4.4 AunCastPlaybackSwitcher が保持する状態
 
 ```csharp
 private bool _activeIsA;
@@ -1132,13 +1132,13 @@ sequenceDiagram
 
 ## 16.2 映像切替
 
-- `StandbyVerifying → Switching` 後、Standby の `VideoPlayerManager` から非 null のテクスチャを取得できた時点で、`AunCastEventBus` 経由で登録済みの全 `AunCastScreen` / `AunCastUiScreen` のテクスチャソースを新系へ切り替える
+- `StandbyVerifying → Switching` 後、Standby の `AunCastVideoPlayerManager` から非 null のテクスチャを取得できた時点で、`AunCastEventBus` 経由で登録済みの全 `AunCastScreen` / `AunCastUiScreen` のテクスチャソースを新系へ切り替える
 - テクスチャ未取得時は旧映像を保持し、null テクスチャをスクリーンへ配信しない。これにより切替時の白/黒フレームを避ける
 - 各 `AunCastScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`AunCastUiScreen` は RawImage に直接テクスチャを設定する
 
 ## 16.3 音声切替・無音検知
 
-クロスフェードは `VideoPlayerManager` が `AudioSource.volume` を制御する方式で実装する。Active/Standby 切替の物理的な制御は `PlaybackSwitcher` が担う。
+クロスフェードは `AunCastVideoPlayerManager` が `AudioSource.volume` を制御する方式で実装する。Active/Standby 切替の物理的な制御は `AunCastPlaybackSwitcher` が担う。
 
 ### AunCastSpeaker コンポーネント
 
@@ -1148,14 +1148,14 @@ sequenceDiagram
 AVPro AudioSource A (+ AunCastSpeaker スクリプト)
   → メインスレッドの GetRms() で AudioSource.GetOutputData() を呼び出し
   → 出力 PCM の RMS を返す
-  → 無音判定はメインスレッドで定期実行（PlaybackSwitcher / Controller 経由）
+  → 無音判定はメインスレッドで定期実行（AunCastPlaybackSwitcher / Controller 経由）
 
 AVPro AudioSource B (同様の構成)
 ```
 
 - `playerIndex` で PlayerA / PlayerB のどちらへ接続するかを指定する
 - `mode` は `VRCAVProVideoSpeaker.mode` 相当のチャンネル指定（Stereo / Left / Right）を保持する
-- `baseVolume` は設計上の基準音量。`AudioSource.volume` は `VideoPlayerManager` がランタイム出力値（ユーザー音量 × fadeGain × baseVolume）として上書きする
+- `baseVolume` は設計上の基準音量。`AudioSource.volume` は `AunCastVideoPlayerManager` がランタイム出力値（ユーザー音量 × fadeGain × baseVolume）として上書きする
 - 出力 PCM はそのまま AudioListener + AudioLink へ流れる
 - `OnAudioFilterRead` は使用しない（Udon VM のオーディオスレッドからメインスレッドへフィールド書き込みを反映できないため。`VRChat-Udon-Development-Notes.md` 9.6 参照）
 
@@ -1173,7 +1173,7 @@ TopazChat Player の「+ Reverb Filter」構成のように、`AudioOutputTunnel
 
 ### クロスフェード
 
-`PlaybackSwitcher.StartCrossfade` / `TickCrossfade` が制御し、各 `VideoPlayerManager` の `_fadeGain` (0.0〜1.0) を**等パワーパニングカーブ (cos/sin)** でランプする。`VideoPlayerManager.SetFadeGain` は調整済み音量 × `_fadeGain` を `AudioSource.volume` に反映する。
+`AunCastPlaybackSwitcher.StartCrossfade` / `TickCrossfade` が制御し、各 `AunCastVideoPlayerManager` の `_fadeGain` (0.0〜1.0) を**等パワーパニングカーブ (cos/sin)** でランプする。`AunCastVideoPlayerManager.SetFadeGain` は調整済み音量 × `_fadeGain` を `AudioSource.volume` に反映する。
 
 ```csharp
 float angle = t * Mathf.PI * 0.5f;
@@ -1181,7 +1181,7 @@ float activeGain = Mathf.Cos(angle);   // 旧系: 1 → 0
 float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 ```
 
-- `crossfadeDurationSec`: 推奨 0.3〜0.5 秒（Inspector 調整可能、`PlaybackSwitcher` で管理。デフォルト 0.3 秒）
+- `crossfadeDurationSec`: 推奨 0.3〜0.5 秒（Inspector 調整可能、`AunCastPlaybackSwitcher` で管理。デフォルト 0.3 秒）
 - Controller が `STATE_SWITCHING` 遷移時に `StartCrossfade` を呼ぶ。新系テクスチャを取得できるまで旧映像を保持し、取得後に切り替える
 - 両系統が同時に AudioListener に出力されるため、等パワー特性により音量の落ち込みなく自然にミックスされる
 - フェード完了後、`CompleteSwitchRoles()` で旧系プレイヤーを停止しロールを交換する
@@ -1200,7 +1200,7 @@ float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 
 - AudioLink は Active 系の AVPro AudioSource を入力とする
 - `AudioSource.volume` によるクロスフェードが AudioLink の取り込み振幅にも反映される
-- 切替時、`PlaybackSwitcher` が AudioLink の入力ソースを新系の AudioSource に差し替える（`audioLinkBehaviour` への参照を経由）
+- 切替時、`AunCastPlaybackSwitcher` が AudioLink の入力ソースを新系の AudioSource に差し替える（`audioLinkBehaviour` への参照を経由）
 
 ## 16.4 ロール交換
 
@@ -1326,7 +1326,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 実装上、Inspector パラメータは責務に応じて各コンポーネントへ分散配置されている。
 主要なチューニングパラメータは `AunCastSettings`（Editor 専用 MonoBehaviour）に集約されており、`AunCastSettings` の Inspector で一括編集できる。
 
-### LocalDualPlayerController 側
+### AunCastDualPlayerController 側
 
 - `readyTimeoutSec`
 - `playTimeoutSec`
@@ -1334,7 +1334,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `defaultVolume`
 - `verboseLogging` / `_timelineLogging`
 
-### ActivePlayerMonitor 側
+### AunCastActivePlayerMonitor 側
 
 - `monitorIntervalSec`
 - `minAdvanceThresholdSec`
@@ -1345,11 +1345,11 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `driftSmoothingTimeConstant`
 - `driftWarmupSec`
 
-### PlaybackSwitcher 側
+### AunCastPlaybackSwitcher 側
 
 - `crossfadeDurationSec`
 
-### ResyncCoordinatorClient 側
+### AunCastResyncCoordinatorClient 側
 
 - `resyncCycleTimeoutSec` (45s)
 - `silenceSuppressSec` (150s)
@@ -1358,7 +1358,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `retryCooldownMultiplier` (1.5)
 - `maxRetryCooldownSec` (90s)
 
-### ResyncCoordinator 側
+### AunCastResyncCoordinator 側
 
 - `maxConcurrentResyncUsers`（同期、ランタイム変更可能）
 - `maxConnectionLimit`（同期、ランタイム変更可能。配信サーバへの同時接続上限）
@@ -1367,7 +1367,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `MAX_PLAYERS` (82、同期スロット配列の固定長上限)
 - `debugLoggingEnabled`
 
-### WallControlPanel 側
+### AunCastWallControlPanel 側
 
 - `wallNearDistance` (2.5m) — AunCastSettings 経由
 - `wallFarDistance` (3m) — AunCastSettings 経由
@@ -1377,7 +1377,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 - `silenceRmsThreshold` — AunCastSettings 経由
 - `silenceConsecutiveSec` — AunCastSettings 経由
 
-### HudProgressOverlay 側
+### AunCastHudProgressOverlay 側
 
 - `localOffset` (頭部ローカルオフセット)
 - `usePieMode` (Bar / Pie 切替)
@@ -1497,13 +1497,13 @@ void TickScheduler()
 
 ### 22.1 映像スクリーン
 
-3D スクリーン側は `AunCastScreen`、UI RawImage 側は `AunCastUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `AunCastScreen` / `AunCastUiScreen` を追加し、AunCastSettings の `AunCast参照を再配線` を実行する。再配線は AunCast ルート配下だけでなく、同一シーン全体の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` を収集するため、建物階層など AunCast 外に置いた出力もサポートする。映像は `PlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
+3D スクリーン側は `AunCastScreen`、UI RawImage 側は `AunCastUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `AunCastScreen` / `AunCastUiScreen` を追加し、AunCastSettings の `AunCast参照を再配線` を実行する。再配線は AunCast ルート配下だけでなく、同一シーン全体の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` を収集するため、建物階層など AunCast 外に置いた出力もサポートする。映像は `AunCastPlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
 
-停止中（`PlaybackSwitcher` が `null` テクスチャを配信した状態）は、各スクリーンを**アイドル画像**へ復元する。アイドル画像は `AunCastSettings.idleScreenTexture` で指定でき、再配線処理が各 `AunCastScreen` / `AunCastUiScreen` の `idleTexture` へ転写する。未指定の場合は、`Start` 時にマテリアル / RawImage へ初期割り当てされていたテクスチャへ戻す。ワールド起動直後にも同じ停止表示を適用する。これにより、停止時に `null` テクスチャがそのまま残って白飛びする問題を防ぐ。
+停止中（`AunCastPlaybackSwitcher` が `null` テクスチャを配信した状態）は、各スクリーンを**アイドル画像**へ復元する。アイドル画像は `AunCastSettings.idleScreenTexture` で指定でき、再配線処理が各 `AunCastScreen` / `AunCastUiScreen` の `idleTexture` へ転写する。未指定の場合は、`Start` 時にマテリアル / RawImage へ初期割り当てされていたテクスチャへ戻す。ワールド起動直後にも同じ停止表示を適用する。これにより、停止時に `null` テクスチャがそのまま残って白飛びする問題を防ぐ。
 
-### 22.2 スタッフ操作パネル（StaffControlPanel、ポータブルパネル Staff ビュー）
+### 22.2 スタッフ操作パネル（AunCastStaffControlPanel、ポータブルパネル Staff ビュー）
 
-UserStatusPanel 内の Staff ビューとして動作する。パスコード解錠後に Viewer/Staff 切替ボタンで遷移できる。
+AunCastUserStatusPanel 内の Staff ビューとして動作する。パスコード解錠後に Viewer/Staff 切替ボタンで遷移できる。
 
 #### 操作項目
 - **URL 入力欄 + Promote ボタン**: ストリーム URL を入力し、Promote で全クライアントに同期適用する（`OnPromoteNextUrl`）。プロトコルチェック（`://` 位置 1〜8）と長さチェック（4096 文字以内）を通過した場合のみ発行
@@ -1514,7 +1514,7 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
 - **CDN 同時接続上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
-> **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく UserStatusPanel の Viewer ビューに配置している。
+> **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく AunCastUserStatusPanel の Viewer ビューに配置している。
 
 #### モニタリング表示
 - **インジケーター** (`indicatorText`): 全スロットを色付き ■/□ でリッチテキスト表示。色分け:
@@ -1530,7 +1530,7 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
 #### アクセス制御
 操作可能なユーザーを限定するロジックを備える。実装方式:
 - Inspector で設定するユーザー名リスト (`allowedUserNames`)
-- WallControlPanel から発行されるローカルパスコード解錠 (`SetLocalPasscodeUnlocked`、同期なし)
+- AunCastWallControlPanel から発行されるローカルパスコード解錠 (`SetLocalPasscodeUnlocked`、同期なし)
 - 同名ユーザー衝突時は最小 `playerId` を優先（SDK Build & Test の複数クライアント対策）
 
 #### 再描画制御
@@ -1538,9 +1538,9 @@ UserStatusPanel 内の Staff ビューとして動作する。パスコード解
 - 周期フォールバック 1 秒（時刻依存の色遷移対応）
 - `UpdateLockUI()` は周期フォールバック時のみ実行
 
-### 22.3 ポータブルパネル（UserStatusPanel）
+### 22.3 ポータブルパネル（AunCastUserStatusPanel）
 
-VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポータブル UI。全観客が利用可能。WallControlPanel の Spawn ボタンから頭部前面に呼び出すこともできる (`SummonInFrontOfLocalPlayer`)。Viewer ビューと Staff ビュー（StaffControlPanel）をクロスフェードで切替可能。
+VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポータブル UI。全観客が利用可能。AunCastWallControlPanel の Spawn ボタンから頭部前面に呼び出すこともできる (`SummonInFrontOfLocalPlayer`)。Viewer ビューと Staff ビュー（AunCastStaffControlPanel）をクロスフェードで切替可能。
 
 #### 表示項目・操作項目（Viewer ビュー）
 - **Resync ボタン**: 押すと自身の Resync を Coordinator に Request する。非再生時は無効化。Cooldown / 待機中は ETA またはカウントダウンを表示
@@ -1553,12 +1553,12 @@ VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポ
 - **閉じるボタン**: パネルを非表示にする
 
 #### VR ジェスチャー呼び出し
-複数方式を同時有効にできる（ビットフラグ `summonGesture`。WallControlPanel のトグルで設定可能）:
+複数方式を同時有効にできる（ビットフラグ `summonGesture`。AunCastWallControlPanel のトグルで設定可能）:
 - **片手ダブルトリガー** (`GESTURE_DOUBLE_TRIGGER`): デフォルト有効。左右いずれかのトリガーを所定時間内に 2 回連続押し
 - **両手トリガー長押し** (`GESTURE_BOTH_TRIGGERS_HOLD`): 左右同時に一定秒数握り続け
 - **右スティック上倒し続け** (`GESTURE_RIGHT_STICK_UP_HOLD`): 閾値を超えて一定秒数倒し続けで発動
 
-ジェスチャー長押し中は `HudProgressOverlay` で視界にプログレスバーを表示する。長押し成立 / キャンセルでフェードアウト。表示閾値 (`showThreshold`) 未満では非表示のままとなる。
+ジェスチャー長押し中は `AunCastHudProgressOverlay` で視界にプログレスバーを表示する。長押し成立 / キャンセルでフェードアウト。表示閾値 (`showThreshold`) 未満では非表示のままとなる。
 
 #### Desktop 呼び出し
 Tab キーで Viewer 表示 → Staff 表示（解錠時）→ 非表示 の 3 ステート切替。
@@ -1574,17 +1574,17 @@ Tab キーで Viewer 表示 → Staff 表示（解錠時）→ 非表示 の 3 �
 - Desktop: FOV と `desktopFillRatio` から距離を算出し、画面に対して適切なサイズで正面に配置
 
 #### 実装方針
-- Coordinator / PlaybackMonitor の同期変数と自身のローカル変数から描画（ローカル処理のみ、0.5 秒間隔で更新）
+- Coordinator / AunCastPlaybackMonitor の同期変数と自身のローカル変数から描画（ローカル処理のみ、0.5 秒間隔で更新）
 - Canvas の enabled を `menuVisible || _dissolveHiding` で制御
 - 開閉時は Animator 駆動の Dissolve アニメーション + `contentCanvasGroup.alpha` で演出
 
 ### 22.4 ボリューム
 
-各観客が UserStatusPanel の音量スライダーで自身のローカル音量を調整できる。`SetVolumeLocal` で `LocalDualPlayerController._localVolume` に書き込み、各 `VideoPlayerManager.SetVolume` 経由で適用する。同期は不要（クライアントローカル設定）。
+各観客が AunCastUserStatusPanel の音量スライダーで自身のローカル音量を調整できる。`SetVolumeLocal` で `AunCastDualPlayerController._localVolume` に書き込み、各 `AunCastVideoPlayerManager.SetVolume` 経由で適用する。同期は不要（クライアントローカル設定）。
 
 #### 音量カーブ
 
-`VideoPlayerManager.ApplyVolume()` で適用される音量カーブは、x² ベースと Dr. Lex 指数カーブ (50dB レンジ) を入力値 x 自体を補間係数として lerp する方式。スライダー値 0 は完全ミュート扱いとし、それ以外は x∈(0,1] を t∈[0.15,1] にリマップしてからカーブを適用する:
+`AunCastVideoPlayerManager.ApplyVolume()` で適用される音量カーブは、x² ベースと Dr. Lex 指数カーブ (50dB レンジ) を入力値 x 自体を補間係数として lerp する方式。スライダー値 0 は完全ミュート扱いとし、それ以外は x∈(0,1] を t∈[0.15,1] にリマップしてからカーブを適用する:
 
 ```csharp
 if (x <= 0f) return 0f;                          // スライダー最小値はミュート
@@ -1667,8 +1667,8 @@ float output = adjustedVolume * _fadeGain;
 | 切替後すぐ失敗 | 新系不安定 | verify 期間導入 |
 | グローバル Resync 殺到 | 80 人一括投入 | スタガリング（10〜15 枠で順次処理）、推定完了時間の表示 |
 | スロット枯渇 | Leave 未検知でスロットが埋まる | `OnPlayerLeft` でスロット解放 + 定期的な生存チェック |
-| 配列同期の帯域 | 82 スロット × 配列の全体送信 | PlaybackMonitor を分離（約 328 B/回）、Coordinator は約 2.3 KB/回。変更時のみ `RequestSerialization` |
-| 実装複雑化 | ロジック過多 | 監視・制御・同期・音声を分離（Controller / ActivePlayerMonitor / PlaybackSwitcher / Coordinator / PlaybackMonitor / AunCastSpeaker） |
+| 配列同期の帯域 | 82 スロット × 配列の全体送信 | AunCastPlaybackMonitor を分離（約 328 B/回）、Coordinator は約 2.3 KB/回。変更時のみ `RequestSerialization` |
+| 実装複雑化 | ロジック過多 | 監視・制御・同期・音声を分離（Controller / AunCastActivePlayerMonitor / AunCastPlaybackSwitcher / Coordinator / AunCastPlaybackMonitor / AunCastSpeaker） |
 
 ---
 
@@ -1685,17 +1685,17 @@ float output = adjustedVolume * _fadeGain;
 
 ## 26. 実装順序の推奨
 
-1. `VideoPlayerManager` を 2 台配置し、`PlaybackSwitcher` で Active/Standby の物理切替・クロスフェードを実装
-2. `ActivePlayerMonitor` で `GetTime()` + `IsPlaying` ベースの異常検知・Verify・ドリフト計測を実装
-3. 失敗処理・タイムアウト・両系統失敗時の backoff を `LocalDualPlayerController` に実装
+1. `AunCastVideoPlayerManager` を 2 台配置し、`AunCastPlaybackSwitcher` で Active/Standby の物理切替・クロスフェードを実装
+2. `AunCastActivePlayerMonitor` で `GetTime()` + `IsPlaying` ベースの異常検知・Verify・ドリフト計測を実装
+3. 失敗処理・タイムアウト・両系統失敗時の backoff を `AunCastDualPlayerController` に実装
 4. Coordinator なしのローカル疑似キューで単一クライアント検証
-5. `ResyncCoordinator` を Owner-Centric な同期変数 + `[NetworkCallable]` で実装（スロット管理・Grant）
-6. `ResyncCoordinatorClient` でクライアント側ポーリング・再送・Cooldown を実装
+5. `AunCastResyncCoordinator` を Owner-Centric な同期変数 + `[NetworkCallable]` で実装（スロット管理・Grant）
+6. `AunCastResyncCoordinatorClient` でクライアント側ポーリング・再送・Cooldown を実装
 7. 複数ユーザー時の Grant / Running / Cooldown を実装
-8. `PlaybackMonitor` を分離し、再生状態の同期を別オブジェクトに切り出し
+8. `AunCastPlaybackMonitor` を分離し、再生状態の同期を別オブジェクトに切り出し
 9. owner 変更と Late Joiner の確認
-10. グローバル Resync（手動トリガー） + `StaffControlPanel`（停止・Resync・強制リブート・上限編集）を実装
-11. `WallControlPanel`（パスコード解錠 + Summon）を実装
+10. グローバル Resync（手動トリガー） + `AunCastStaffControlPanel`（停止・Resync・強制リブート・上限編集）を実装
+11. `AunCastWallControlPanel`（パスコード解錠 + Summon）を実装
 12. 観客向けステータスパネル（Resync ボタン・ドリフト表示・音量・Silence Resync）を実装
 13. `AunCastSpeaker`（GetOutputData 方式の RMS）→ グローバル Resync 自動トリガーを実装
 14. AudioLink 接続を実装
@@ -1713,7 +1713,7 @@ float output = adjustedVolume * _fadeGain;
 
 - 2 台の AVPro を使い、待機系を先に接続する
 - 切替判定は音量ではなく `GetTime()` 前進 + `IsPlaying` で行う
-- 切替時は音声クロスフェード（`VideoPlayerManager` の `AudioSource.volume` 制御）で滑らかに移行する
+- 切替時は音声クロスフェード（`AunCastVideoPlayerManager` の `AudioSource.volume` 制御）で滑らかに移行する
 - Resync は即時実行ではなく予約制とし、CDN 同時接続上限（100 接続プラン前提）を超えないよう制御する
 - 世界全体の同時Resync上限とクールダウンを Coordinator が管理する
 - スタッフによる手動グローバル Resync と、無音区間検知による自動グローバル Resync をサポートする

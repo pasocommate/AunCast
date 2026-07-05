@@ -8,14 +8,14 @@ classDiagram
     %%  Core レイヤー
     %% ========================================
 
-    class LocalDualPlayerController {
+    class AunCastDualPlayerController {
         <<Manual Sync>>
-        -VideoPlayerManager playerManagerA
-        -VideoPlayerManager playerManagerB
-        -PlaybackMonitor playbackMonitor
-        -PlaybackSwitcher switcher
-        -ActivePlayerMonitor activeMonitor
-        -ResyncCoordinatorClient resyncClient
+        -AunCastVideoPlayerManager playerManagerA
+        -AunCastVideoPlayerManager playerManagerB
+        -AunCastPlaybackMonitor playbackMonitor
+        -AunCastPlaybackSwitcher switcher
+        -AunCastActivePlayerMonitor activeMonitor
+        -AunCastResyncCoordinatorClient resyncClient
         -UdonSharpBehaviour staffNotifyTarget
         -AunCastEventBus eventBus
         ~[UdonSynced] VRCUrl _syncedURL
@@ -38,10 +38,10 @@ classDiagram
         +OnDeserialization()
     }
 
-    class PlaybackSwitcher {
+    class AunCastPlaybackSwitcher {
         <<NoVariableSync>>
-        -VideoPlayerManager playerManagerA
-        -VideoPlayerManager playerManagerB
+        -AunCastVideoPlayerManager playerManagerA
+        -AunCastVideoPlayerManager playerManagerB
         -AunCastSpeaker silenceDetectorA
         -AunCastSpeaker silenceDetectorB
         -AunCastEventBus eventBus
@@ -49,8 +49,8 @@ classDiagram
         -float _crossfadeStartedAt
         +InitializeToA()
         +ResetBothPlayersToA()
-        +GetActiveManager() VideoPlayerManager
-        +GetStandbyManager() VideoPlayerManager
+        +GetActiveManager() AunCastVideoPlayerManager
+        +GetStandbyManager() AunCastVideoPlayerManager
         +GetActiveSilenceDetector() AunCastSpeaker
         +StartStandbyConnect(float, VRCUrl)
         +StartCrossfade(float)
@@ -63,10 +63,10 @@ classDiagram
         +SwitchAudioLinkSource()
     }
 
-    class ActivePlayerMonitor {
+    class AunCastActivePlayerMonitor {
         <<NoVariableSync>>
-        -VideoPlayerManager playerManagerA
-        -VideoPlayerManager playerManagerB
+        -AunCastVideoPlayerManager playerManagerA
+        -AunCastVideoPlayerManager playerManagerB
         -float _driftAccumulator
         -int _consecutiveStallCount
         -int _consecutiveAdvanceCount
@@ -83,9 +83,9 @@ classDiagram
         +GetActiveStallDuration() float
     }
 
-    class ResyncCoordinator {
+    class AunCastResyncCoordinator {
         <<Manual Sync>>
-        -PlaybackMonitor playbackMonitor
+        -AunCastPlaybackMonitor playbackMonitor
         -UdonSharpBehaviour staffNotifyTarget
         ~[UdonSynced] short[] userPlayerId
         ~[UdonSynced] byte[] resyncState
@@ -107,9 +107,9 @@ classDiagram
         +EstimateWaitTime(int) float
     }
 
-    class ResyncCoordinatorClient {
+    class AunCastResyncCoordinatorClient {
         <<NoVariableSync>>
-        -ResyncCoordinator coordinator
+        -AunCastResyncCoordinator coordinator
         -int _mySlotIndex
         -bool _resyncRequested
         -int _consecutiveFailCount
@@ -124,10 +124,10 @@ classDiagram
         +IsSilenceAutoResyncEligible(float) bool
     }
 
-    class PlaybackMonitor {
+    class AunCastPlaybackMonitor {
         <<Manual Sync>>
         -UdonSharpBehaviour staffNotifyTarget
-        -ResyncCoordinator coordinator
+        -AunCastResyncCoordinator coordinator
         ~[UdonSynced] byte[] playbackActive
         ~[UdonSynced] byte[] connectingActive
         ~[UdonSynced] byte[] errorActive
@@ -159,9 +159,9 @@ classDiagram
     %%  Player レイヤー
     %% ========================================
 
-    class VideoPlayerManager {
+    class AunCastVideoPlayerManager {
         <<NoVariableSync>>
-        +LocalDualPlayerController receiver
+        +AunCastDualPlayerController receiver
         +int playerIndex
         +VRCAVProVideoPlayer avProPlayer
         +Renderer avProTextureRenderer
@@ -205,11 +205,11 @@ classDiagram
     %%  UI レイヤー
     %% ========================================
 
-    class StaffControlPanel {
+    class AunCastStaffControlPanel {
         <<NoVariableSync>>
-        -LocalDualPlayerController controller
-        -ResyncCoordinator coordinator
-        -UserStatusPanel viewerStatusPanel
+        -AunCastDualPlayerController controller
+        -AunCastResyncCoordinator coordinator
+        -AunCastUserStatusPanel viewerStatusPanel
         -string[] allowedUserNames
         -bool _isStaff
         +OnCoordinatorChanged()
@@ -223,11 +223,11 @@ classDiagram
         +UpdateActionButtonsInteractable()
     }
 
-    class WallControlPanel {
+    class AunCastWallControlPanel {
         <<NoVariableSync>>
-        -LocalDualPlayerController controller
-        -StaffControlPanel staffPanel
-        -UserStatusPanel portablePanel
+        -AunCastDualPlayerController controller
+        -AunCastStaffControlPanel staffPanel
+        -AunCastUserStatusPanel portablePanel
         -AunCastEventBus eventBus
         -string unlockPasscode
         -bool _isStaff
@@ -240,13 +240,13 @@ classDiagram
         +OnLocalStateChanged()
     }
 
-    class UserStatusPanel {
+    class AunCastUserStatusPanel {
         <<NoVariableSync>>
-        -LocalDualPlayerController controller
-        -ResyncCoordinator coordinator
+        -AunCastDualPlayerController controller
+        -AunCastResyncCoordinator coordinator
         -AunCastEventBus eventBus
         -UdonSharpBehaviour staffControlPanel
-        -HudProgressOverlay hudProgress
+        -AunCastHudProgressOverlay hudProgress
         -bool _staffUnlocked
         -int summonGesture
         -int desktopSummonGesture
@@ -263,7 +263,7 @@ classDiagram
         +SetDesktopSummonGestureFlag(int, bool)
     }
 
-    class HudProgressOverlay {
+    class AunCastHudProgressOverlay {
         <<NoVariableSync>>
         -Transform quadTransform
         -MeshRenderer quadRenderer
@@ -308,46 +308,46 @@ classDiagram
     %% ========================================
 
     %% Core 内部の依存
-    LocalDualPlayerController --> PlaybackSwitcher : switcher
-    LocalDualPlayerController --> ActivePlayerMonitor : activeMonitor
-    LocalDualPlayerController --> ResyncCoordinatorClient : resyncClient
-    LocalDualPlayerController --> PlaybackMonitor : playbackMonitor
-    LocalDualPlayerController --> VideoPlayerManager : playerManagerA/B
-    LocalDualPlayerController ..> StaffControlPanel : SendCustomEvent(OnUrlChanged)
-    LocalDualPlayerController --> AunCastEventBus : eventBus
+    AunCastDualPlayerController --> AunCastPlaybackSwitcher : switcher
+    AunCastDualPlayerController --> AunCastActivePlayerMonitor : activeMonitor
+    AunCastDualPlayerController --> AunCastResyncCoordinatorClient : resyncClient
+    AunCastDualPlayerController --> AunCastPlaybackMonitor : playbackMonitor
+    AunCastDualPlayerController --> AunCastVideoPlayerManager : playerManagerA/B
+    AunCastDualPlayerController ..> AunCastStaffControlPanel : SendCustomEvent(OnUrlChanged)
+    AunCastDualPlayerController --> AunCastEventBus : eventBus
 
-    PlaybackSwitcher --> VideoPlayerManager : playerManagerA/B
-    PlaybackSwitcher --> AunCastSpeaker : silenceDetectorA/B
-    PlaybackSwitcher --> AunCastEventBus : eventBus
+    AunCastPlaybackSwitcher --> AunCastVideoPlayerManager : playerManagerA/B
+    AunCastPlaybackSwitcher --> AunCastSpeaker : silenceDetectorA/B
+    AunCastPlaybackSwitcher --> AunCastEventBus : eventBus
 
-    ActivePlayerMonitor --> VideoPlayerManager : playerManagerA/B
+    AunCastActivePlayerMonitor --> AunCastVideoPlayerManager : playerManagerA/B
 
-    ResyncCoordinatorClient --> ResyncCoordinator : coordinator
+    AunCastResyncCoordinatorClient --> AunCastResyncCoordinator : coordinator
 
-    ResyncCoordinator --> PlaybackMonitor : playbackMonitor
-    ResyncCoordinator ..> StaffControlPanel : SendCustomEvent(OnCoordinatorChanged)
+    AunCastResyncCoordinator --> AunCastPlaybackMonitor : playbackMonitor
+    AunCastResyncCoordinator ..> AunCastStaffControlPanel : SendCustomEvent(OnCoordinatorChanged)
 
-    PlaybackMonitor ..> StaffControlPanel : SendCustomEvent(OnCoordinatorChanged)
-    PlaybackMonitor --> ResyncCoordinator : coordinator
+    AunCastPlaybackMonitor ..> AunCastStaffControlPanel : SendCustomEvent(OnCoordinatorChanged)
+    AunCastPlaybackMonitor --> AunCastResyncCoordinator : coordinator
 
     %% Player → Core コールバック
-    VideoPlayerManager --> LocalDualPlayerController : receiver (コールバック転送)
+    AunCastVideoPlayerManager --> AunCastDualPlayerController : receiver (コールバック転送)
 
     %% UI → Core 操作
-    StaffControlPanel --> LocalDualPlayerController : controller
-    StaffControlPanel --> ResyncCoordinator : coordinator
-    StaffControlPanel --> UserStatusPanel : viewerStatusPanel
+    AunCastStaffControlPanel --> AunCastDualPlayerController : controller
+    AunCastStaffControlPanel --> AunCastResyncCoordinator : coordinator
+    AunCastStaffControlPanel --> AunCastUserStatusPanel : viewerStatusPanel
 
-    WallControlPanel --> LocalDualPlayerController : controller
-    WallControlPanel --> StaffControlPanel : staffPanel
-    WallControlPanel --> UserStatusPanel : portablePanel
-    WallControlPanel --> AunCastEventBus : eventBus
+    AunCastWallControlPanel --> AunCastDualPlayerController : controller
+    AunCastWallControlPanel --> AunCastStaffControlPanel : staffPanel
+    AunCastWallControlPanel --> AunCastUserStatusPanel : portablePanel
+    AunCastWallControlPanel --> AunCastEventBus : eventBus
 
-    UserStatusPanel --> LocalDualPlayerController : controller
-    UserStatusPanel --> ResyncCoordinator : coordinator
-    UserStatusPanel --> AunCastEventBus : eventBus
-    UserStatusPanel ..> StaffControlPanel : SendCustomEvent + SetStaffUnlocked(push)
-    UserStatusPanel --> HudProgressOverlay : hudProgress
+    AunCastUserStatusPanel --> AunCastDualPlayerController : controller
+    AunCastUserStatusPanel --> AunCastResyncCoordinator : coordinator
+    AunCastUserStatusPanel --> AunCastEventBus : eventBus
+    AunCastUserStatusPanel ..> AunCastStaffControlPanel : SendCustomEvent + SetStaffUnlocked(push)
+    AunCastUserStatusPanel --> AunCastHudProgressOverlay : hudProgress
 
     %% Utility → EventBus 購読
     AunCastScreen --> AunCastEventBus : eventBus (購読)
@@ -355,25 +355,25 @@ classDiagram
     AunCastAudioOutputTunnel --> AunCastSpeaker : inputA/B AudioSource
 ```
 
-> **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは StaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `UserStatusPanel`→`StaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`StaffControlPanel`→`UserStatusPanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
+> **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは AunCastStaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `AunCastUserStatusPanel`→`AunCastStaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`AunCastStaffControlPanel`→`AunCastUserStatusPanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
 
 ## レイヤー構成
 
 | レイヤー | クラス | 役割 |
 |---------|--------|------|
-| **Core** | `LocalDualPlayerController` | 各ユーザーのローカル再生 FSM。A/B 二重化再生の統括 |
-| | `PlaybackSwitcher` | Active/Standby のクロスフェード切替と AudioLink 連携 |
-| | `ActivePlayerMonitor` | Active の生存監視・ドリフト計測、Standby の検証 |
-| | `ResyncCoordinator` | ワールド全体の Resync スロット管理 (Owner 一元管理) |
-| | `ResyncCoordinatorClient` | Coordinator との RPC 通信を担うクライアント側ラッパー |
-| | `PlaybackMonitor` | 全ユーザーの再生状態をビットパックで同期 |
+| **Core** | `AunCastDualPlayerController` | 各ユーザーのローカル再生 FSM。A/B 二重化再生の統括 |
+| | `AunCastPlaybackSwitcher` | Active/Standby のクロスフェード切替と AudioLink 連携 |
+| | `AunCastActivePlayerMonitor` | Active の生存監視・ドリフト計測、Standby の検証 |
+| | `AunCastResyncCoordinator` | ワールド全体の Resync スロット管理 (Owner 一元管理) |
+| | `AunCastResyncCoordinatorClient` | Coordinator との RPC 通信を担うクライアント側ラッパー |
+| | `AunCastPlaybackMonitor` | 全ユーザーの再生状態をビットパックで同期 |
 | | `AunCastEventBus` | 疎結合イベント配信ハブ (テクスチャ・状態変化・パネル表示) |
-| **Player** | `VideoPlayerManager` | AVPro ラッパー。VRChat コールバックを FSM へ転送 |
+| **Player** | `AunCastVideoPlayerManager` | AVPro ラッパー。VRChat コールバックを FSM へ転送 |
 | | `AunCastSpeaker` | AudioSource の出力宣言・基準音量保持・PCM からの RMS 無音検知 |
-| **UI** | `StaffControlPanel` | スタッフ向け操作・モニタリング UI |
-| | `WallControlPanel` | 壁掛け制御パネル (パスコード解錠・Resync・ジェスチャー設定) |
-| | `UserStatusPanel` | 観客向け拡張メニュー (VR ジェスチャー呼び出し対応) |
-| | `HudProgressOverlay` | VR ジェスチャー長押し中の HUD プログレス表示 |
+| **UI** | `AunCastStaffControlPanel` | スタッフ向け操作・モニタリング UI |
+| | `AunCastWallControlPanel` | 壁掛け制御パネル (パスコード解錠・Resync・ジェスチャー設定) |
+| | `AunCastUserStatusPanel` | 観客向け拡張メニュー (VR ジェスチャー呼び出し対応) |
+| | `AunCastHudProgressOverlay` | VR ジェスチャー長押し中の HUD プログレス表示 |
 | **Utility** | `AunCastScreen` | MeshRenderer にビデオテクスチャを適用 |
 | | `AunCastUiScreen` | RawImage にビデオテクスチャを適用 (アスペクト比フィット) |
 | | `AunCastAudioOutputTunnel` | AudioOutputTunnel 構成向けに A/B 音声を Unity AudioSource 出力へ流す互換トンネル |
@@ -382,7 +382,7 @@ classDiagram
 
 | クラス | BehaviourSyncMode | 同期変数 |
 |--------|-------------------|----------|
-| `LocalDualPlayerController` | Manual | `_syncedURL`, `_syncedUrlSubmitterName`, `_syncedVideoIdx`, `_ownerPlaying` |
-| `ResyncCoordinator` | Manual | `userPlayerId[]`, `resyncState[]`, `userTimestampOffset`, `userTimestampDelta[]`, `globalForceRebootSeq`, `maxConcurrentResyncUsers`, `maxConnectionLimit` |
-| `PlaybackMonitor` | Manual | `playbackActive[]`, `connectingActive[]`, `errorActive[]` |
+| `AunCastDualPlayerController` | Manual | `_syncedURL`, `_syncedUrlSubmitterName`, `_syncedVideoIdx`, `_ownerPlaying` |
+| `AunCastResyncCoordinator` | Manual | `userPlayerId[]`, `resyncState[]`, `userTimestampOffset`, `userTimestampDelta[]`, `globalForceRebootSeq`, `maxConcurrentResyncUsers`, `maxConnectionLimit` |
+| `AunCastPlaybackMonitor` | Manual | `playbackActive[]`, `connectingActive[]`, `errorActive[]` |
 | その他全クラス | NoVariableSync / None | なし |

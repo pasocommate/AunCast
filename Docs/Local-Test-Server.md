@@ -6,7 +6,7 @@ AunCast の Resync ロジック・ドリフト検知・スタッフ操作など�
 
 - `Docs/Design.md` の通り AunCast は `rtspt://` 系（RTSP over TCP）を主用途とする。
 - **MediaMTX** (https://github.com/bluenviron/mediamtx) は単一の `mediamtx.exe` だけで RTSP/RTMP/HLS/WebRTC を受信・配信できる Go 製サーバ。インストーラ不要、Windows ZIP リリースあり、MIT ライセンス。
-- 既定設定で RTSP 8554/TCP・UDP が開く。AunCast 側の URL 受け入れ実装 (`Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/Core/LocalDualPlayerController.cs` の `PlayVideoAsStaff`) はそのまま使えるためコード変更は不要。
+- 既定設定で RTSP 8554/TCP・UDP が開く。AunCast 側の URL 受け入れ実装 (`Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/Core/AunCastDualPlayerController.cs` の `PlayVideoAsStaff`) はそのまま使えるためコード変更は不要。
 - `rtspt://` で TCP トランスポートを強制する AVPro 形式も、サーバ側は同じ `rtsp://` エンドポイントで受け付ける。
 
 代替候補との比較:
@@ -60,15 +60,15 @@ ffmpeg -re -stream_loop -1 -i "C:\path\to\sample.mp4" ^
 
 ### 3.3 同時 2 系統運用
 
-`/test` と `/loop` を別ターミナルで同時に起動しておくと、StaffControlPanel から URL を切り替えての系統間切替テストができる。
+`/test` と `/loop` を別ターミナルで同時に起動しておくと、AunCastStaffControlPanel から URL を切り替えての系統間切替テストができる。
 
 ## 4. AunCast 側での使い方
 
 1. VRChat クライアントの設定で **Allow Untrusted URLs** を有効化（Settings > Comfort & Safety > Untrusted URLs）。
-2. AunCast デモワールドに入り、StaffControlPanel (`Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/UI/StaffControlPanel.cs`) の URL 入力フィールド (`nextUrlField`) に以下を入力。
+2. AunCast デモワールドに入り、AunCastStaffControlPanel (`Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/UI/AunCastStaffControlPanel.cs`) の URL 入力フィールド (`nextUrlField`) に以下を入力。
    - `rtspt://127.0.0.1:8554/test` … TCP 強制（本番に近い形）
    - `rtsp://127.0.0.1:8554/test` … UDP も許容
-3. Play ボタンで再生開始。`LocalDualPlayerController` の URL バリデーション（プロトコルスキーム長 1〜8 文字）は `rtsp` (4)・`rtspt` (5) のいずれもクリアする。
+3. Play ボタンで再生開始。`AunCastDualPlayerController` の URL バリデーション（プロトコルスキーム長 1〜8 文字）は `rtsp` (4)・`rtspt` (5) のいずれもクリアする。
 
 > 注意: VRChat クライアントと MediaMTX を同じ PC で動かすことを前提にしている。別 PC から参照する場合は `127.0.0.1` をその PC の LAN IP に置き換え、ファイアウォール 8554/TCP を開放する。
 
@@ -80,7 +80,7 @@ ffmpeg -re -stream_loop -1 -i "C:\path\to\sample.mp4" ^
 | 停止検知 → 自動 Resync | FFmpeg を Ctrl+C で停止 | 一定時間後に Standby 系で再接続 → 切替 |
 | ドリフト/系統切替 | `/test` 再生中に URL を `/loop` に変更 | Standby 先行接続後に Active へ昇格 |
 | グローバル Resync | スタッフ操作で Resync を全クライアントに発火 | Coordinator の予約制御に従って順次切替 |
-| 二重化動作 | Unity Console で `LocalDualPlayerController` のログを観察 | Active/Standby のロール遷移ログが出る |
+| 二重化動作 | Unity Console で `AunCastDualPlayerController` のログを観察 | Active/Standby のロール遷移ログが出る |
 
 ## 6. トラブルシュート
 

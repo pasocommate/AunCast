@@ -80,7 +80,7 @@
 - `OnVideoStart` 直後は `GetTime()` が **1〜2 秒ほど `0` を返し続ける**ことがある（特にライブストリーム）。そのまま stall タイマーで計測すると誤 Resync が発火する。
 - さらに、前のロードで進んでいた**残留値**を一瞬返してから `0` に巻き戻る、あるいは非常に小さい値を返したまま滞留する、というケースも観測される。
 - 対策: 「`GetTime() > 0` を 1 度でも観測したか」を起動判定に使わない。**前進 delta（`current - last > minAdvanceThresholdSec`）を観測した瞬間**を起動判定トリガーにする。これなら残留値・巻き戻り・微小値滞留のいずれにも左右されない。
-- 参考実装: `LocalDualPlayerController.MonitorActivePlayer` の `_hasSeenPlayerTimeAdvance` フラグ。
+- 参考実装: `AunCastDualPlayerController.MonitorActivePlayer` の `_hasSeenPlayerTimeAdvance` フラグ。
 
 ### 9.3 バグ調査用ログ
 - VRChat のログ: `%AppData%\..\LocalLow\VRChat\VRChat\output_log_*.txt`
@@ -110,7 +110,7 @@
 - `LoadURL()` を呼ぶと `IsPlaying` は**即座に true を返し始める**が、実際の再生（`GetTime()` が進行し始める瞬間）までには数秒〜十数秒の接続フェーズがある。
 - 症状: `IsPlaying && (serverTime - anchorServerTime)` で再生経過時間を計算すると、接続フェーズ分が誤って積算され、Gap 検知や進捗表示がズレる。
 - 対策: 実再生のアンカーは **`IsPlaying` ではなく `GetTime() > 0`（または 9.2 の前進 delta 観測）を基準に取る**。「再生開始」と「接続開始」は別イベントとして区別する。
-- 参考実装: `LocalDualPlayerController.IsActiveAlive`（`IsPlaying() && GetTime() > 0f` で実再生を判定）。
+- 参考実装: `AunCastDualPlayerController.IsActiveAlive`（`IsPlaying() && GetTime() > 0f` で実再生を判定）。
 
 ### 9.8 グループロール API は Udon 未露出
 - VRChat のグループロール（`GroupRole`）を Udon から取得する公式 API は存在しない（2026-04 時点で Canny に要望あり、未実装）。

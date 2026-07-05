@@ -8,8 +8,8 @@ SDK 3.10.2 の `SendCustomNetworkEvent` パラメータ対応 + `[NetworkCallabl
 ```mermaid
 sequenceDiagram
     participant C as Client (LDPC)
-    participant R as ResyncCoordinator
-    participant O as Owner (ResyncCoordinator)
+    participant R as AunCastResyncCoordinator
+    participant O as Owner (AunCastResyncCoordinator)
 
     Note over C: Active 異常検知 or ボタン押下
 
@@ -40,7 +40,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant C as Client (LDPC)
-    participant O as Owner (ResyncCoordinator)
+    participant O as Owner (AunCastResyncCoordinator)
 
     Note over C: Standby 接続タイムアウト
 
@@ -61,8 +61,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant S as Staff
-    participant O as Owner (ResyncCoordinator)
-    participant R as ResyncCoordinator (synced)
+    participant O as Owner (AunCastResyncCoordinator)
+    participant R as AunCastResyncCoordinator (synced)
     participant C1 as Client A
     participant C2 as Client B
 
@@ -97,8 +97,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant C as Client (LDPC)
-    participant O as Owner (ResyncCoordinator)
-    participant R as ResyncCoordinator (synced)
+    participant O as Owner (AunCastResyncCoordinator)
+    participant R as AunCastResyncCoordinator (synced)
 
     Note over C: REQUEST_PENDING or RESERVED 中にユーザーがキャンセル
 
@@ -121,8 +121,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant C as Client (LDPC)
-    participant O as Owner (ResyncCoordinator)
-    participant R as ResyncCoordinator (synced)
+    participant O as Owner (AunCastResyncCoordinator)
+    participant R as AunCastResyncCoordinator (synced)
 
     Note over O: OnPlayerJoined(player)<br/>空きスロット割当<br/>RequestSerialization()
 
@@ -144,8 +144,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant C as Client (LDPC)
-    participant O as Owner (ResyncCoordinator)
-    participant R as ResyncCoordinator (synced)
+    participant O as Owner (AunCastResyncCoordinator)
+    participant R as AunCastResyncCoordinator (synced)
 
     C->>O: SendCustomNetworkEvent(Owner, "OnResyncRequest", slot)
     Note over C: _localState = REQUEST_PENDING<br/>_requestStartedAt = now

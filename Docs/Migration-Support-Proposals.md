@@ -34,7 +34,7 @@ AVPro 音声は Unity の DSP フィルタチェーンに乗らないため、�
 | TopazChat Player | 「+ Reverb Filter」版のみ **AudioOutputTunnel あり** |
 | iwaSync3 | なし（`VideoCore` の `AudioSource[] speaker` は音量書き込み専用） |
 | VizVid (VVMW) | なし（`Core_Audio` は音量フェード、`Core_AudioLink` は AudioLink 割り当てのみ） |
-| USharpVideo | なし（`VideoPlayerManager.audioSources` は音量書き込み専用） |
+| USharpVideo | なし（`AunCastVideoPlayerManager.audioSources` は音量書き込み専用） |
 
 結論: **PCM トンネル構造は TopazChat「+ Reverb Filter」版に固有**。互換対応の同梱対象は AudioOutputTunnel のみで足りる。
 
@@ -71,7 +71,7 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 - 別の AudioSource を使いたい場合は、内蔵のものを削除し、使いたい AudioSource を変換ユーティリティで AunCastSpeaker 化（A/B 各系統分）して再配線するだけ。
 - 位置・音量・3D 設定の調整は該当 AudioSource を直接編集するだけで済む。「クローンへの反映」「調整のたびの再セットアップ」という概念自体がなくなる。
 
-**再配線は冪等な純粋配線処理（破棄 → 再構築）**: 現在の配線を一旦破棄したうえで、シーン全体（提案 1）から AunCastScreen / AunCastUiScreen / AunCastSpeaker を収集し、eventBus 購読・`VideoPlayerManager.audioSources`・SilenceDetector 参照・背後の VRCAVProVideoSpeaker（存在保証と videoPlayer 参照の修復）を配線し直す。**オブジェクトの生成・削除・複製は一切行わない**。何度実行しても同じ結果になり、Play/ビルド時の自動実行も安全になる。
+**再配線は冪等な純粋配線処理（破棄 → 再構築）**: 現在の配線を一旦破棄したうえで、シーン全体（提案 1）から AunCastScreen / AunCastUiScreen / AunCastSpeaker を収集し、eventBus 購読・`AunCastVideoPlayerManager.audioSources`・SilenceDetector 参照・背後の VRCAVProVideoSpeaker（存在保証と videoPlayer 参照の修復）を配線し直す。**オブジェクトの生成・削除・複製は一切行わない**。何度実行しても同じ結果になり、Play/ビルド時の自動実行も安全になる。
 
 **変換（明示的・一回きりの操作。オブジェクトの作成・改変はこちらに集約）**: 手動付与（コンポーネントを Add してプロパティを設定）と、3 の一括変換ツールの 2 通り。変換の内容は共通:
 - VRCAVProVideoScreen → AunCastScreen: `textureProperty` をそのまま引き継ぐ。AVPro コンポーネントを除去。プロパティ名の手動調査が不要になる。
@@ -92,9 +92,9 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 ### 4.【提案】AudioLink 参照のエディタ時配線
 
-現状の `GameObject.Find("AudioLink")` + 型名一致によるランタイム探索は GameObject 名の変更に弱い。再配線処理でシーンの AudioLink を検出し `PlaybackSwitcher.audioLinkBehaviour` をシリアライズ配線しておく（ランタイム探索はフォールバックとして残す）。
+現状の `GameObject.Find("AudioLink")` + 型名一致によるランタイム探索は GameObject 名の変更に弱い。再配線処理でシーンの AudioLink を検出し `AunCastPlaybackSwitcher.audioLinkBehaviour` をシリアライズ配線しておく（ランタイム探索はフォールバックとして残す）。
 
-**【対応決定・2026-07-04】AudioLink 付属スピーカー（AudioLinkInput）の無効化＋EditorOnly 化**: `AudioLink.prefab` は `AudioLinkInput` 子オブジェクトに `AudioSource + VRCAVProVideoSpeaker` を同梱し、AudioLink の `audioSource` に配線している。AunCast はランタイムで `PlaybackSwitcher.SwitchAudioLinkSource()` が AudioLink の入力を Active スピーカーの `AudioSource` へ差し替えるため、この付属スピーカーは不要。従来はこれがセットアップ時に「スピーカー変換候補」として誤検出され、手動削除候補一覧にも並んでいた。対応として:
+**【対応決定・2026-07-04】AudioLink 付属スピーカー（AudioLinkInput）の無効化＋EditorOnly 化**: `AudioLink.prefab` は `AudioLinkInput` 子オブジェクトに `AudioSource + VRCAVProVideoSpeaker` を同梱し、AudioLink の `audioSource` に配線している。AunCast はランタイムで `AunCastPlaybackSwitcher.SwitchAudioLinkSource()` が AudioLink の入力を Active スピーカーの `AudioSource` へ差し替えるため、この付属スピーカーは不要。従来はこれがセットアップ時に「スピーカー変換候補」として誤検出され、手動削除候補一覧にも並んでいた。対応として:
 
 - 変換候補・手動削除候補の双方から AudioLink 付属スピーカーを除外する（`IsAudioLinkOwnedSource`: 対象コンポーネントの祖先に AudioLink 型 or 名 `AudioLink` があるかで判定）。
 - 再配線時（`NeutralizeAudioLinkInputs`）に AudioLinkInput の GameObject を**無効化（SetActive false）＋EditorOnly タグ化**する。削除ではなく EditorOnly 化にするのは、削除だとシーン構造からの消失が混乱のもとになるため（エディタには残しつつビルド時に剥がす）。冪等。
@@ -142,4 +142,4 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 **トンネル式音声出力レイヤー（AudioMixTunnel）の本体導入 — 2026-07-04 見送り決定。** A/B 内蔵シンク → PCM ミキシング → 素の AudioSource 出力という構成は、ユーザー調整対象を最少 1 個にでき移行も容易になるが、リングバッファ遅延（参考実装の 4096 サンプル ≒ 48kHz で約 85ms）とメインスレッド Update 駆動ゆえのフレームヒッチ時の音切れが、AunCast の「無音で切り替える」思想と相反するため。トンネルが必要なケースは 6 の互換トンネル（AudioOutputTunnel 検知時のみ）で限定的に対応する。
 
-**URL プリセットリスト — 2026-07-04 不要と判断。** メイン + 予備 URL の切替機構（AunCastSettings のプリセット配列 + StaffControlPanel の選択 UI）を検討したが、採用しない。予備 URL への切替は `defaultUrl` とスタッフパネルへの手動入力で運用する。
+**URL プリセットリスト — 2026-07-04 不要と判断。** メイン + 予備 URL の切替機構（AunCastSettings のプリセット配列 + AunCastStaffControlPanel の選択 UI）を検討したが、採用しない。予備 URL への切替は `defaultUrl` とスタッフパネルへの手動入力で運用する。

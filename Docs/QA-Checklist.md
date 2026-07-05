@@ -122,7 +122,7 @@ Unity Editor で `Window > General > Test Runner > EditMode` から実行する�
 | D3 | パネル表示中に再度召喚 | 頭部前方に再配置 | | |
 | D4 | Viewer/Staff ビューを切り替え | CanvasGroup フェードでスムーズに切替 | | |
 | D5 | 各ボタン・スライダーにホバー | ツールチップが日本語/英語で正しく表示 | | |
-| D6 | WallControlPanel でジェスチャー設定トグルを変更 | 選択したジェスチャーのみ有効化 | | |
+| D6 | AunCastWallControlPanel でジェスチャー設定トグルを変更 | 選択したジェスチャーのみ有効化 | | |
 
 ---
 

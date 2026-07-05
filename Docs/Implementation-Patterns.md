@@ -5,7 +5,7 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 
 ## 1. Manual sync + `AsStaff` メソッドパターン
 
-`LocalDualPlayerController` は `BehaviourSyncMode.Manual`。スタッフ UI からの操作は
+`AunCastDualPlayerController` は `BehaviourSyncMode.Manual`。スタッフ UI からの操作は
 「ローカル直呼び」ではなく**専用の `SetXxxAsStaff` メソッド経由**で必ず同期する。
 
 既存例: `PlayVideoAsStaff` / `StopVideoAsStaff`
@@ -13,10 +13,10 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 > **注意**: 音量 (`_localVolume`) と Silence Resync (`_autoSilenceResyncEnabled`) は
 > 各クライアントのローカル設定に変更済み。同期不要のため `AsStaff` パターンではなく、
 > `SetVolumeLocal` / `SetAutoSilenceResyncEnabled` でローカル値を直接書き換える。
-> UI は UserStatusPanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
+> UI は AunCastUserStatusPanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
 >
 > **注意（ロック機構）**: 旧設計の `SetLockedAsStaff` 系（同期 lock フラグ）は廃止され、
-> StaffControlPanel のアクセス制御は「許可ユーザー名リスト + WallControlPanel
+> AunCastStaffControlPanel のアクセス制御は「許可ユーザー名リスト + AunCastWallControlPanel
 > 経由のローカルパスコード解錠」に置き換えられている（同期なし）。
 
 補足:
@@ -49,7 +49,7 @@ public void SetXxxAsStaff(Tx value)
 
 ### 呼び出し側 (UI) のルール
 
-- `StaffControlPanel` 側のイベントハンドラは **冒頭で `_isStaff` チェック**を入れる。
+- `AunCastStaffControlPanel` 側のイベントハンドラは **冒頭で `_isStaff` チェック**を入れる。
   非スタッフが UI を操作した場合はアクセス拒否表示で UI を同期値へ戻す。
 - 操作可能な UI は `interactable = _isStaff` に設定し、
   非スタッフが物理的に触れないようにもする（アクセス権チェックとの二重防御）。
@@ -108,7 +108,7 @@ Slider / Toggle など **同期値を操作する UI** は、次の 3 つを**�
 3. 初回フレームの `_lastSliderValue` 初期化
 
 > **注意**: ローカル専用値（音量・無音 Resync トグル等）を操作する UI はステップ 2 が不要。
-> `UserStatusPanel.PollVolumeSlider` のように初期化 + 操作検知のみの簡略版を使う。
+> `AunCastUserStatusPanel.PollVolumeSlider` のように初期化 + 操作検知のみの簡略版を使う。
 
 ```csharp
 private void PollXxxSlider()
@@ -156,9 +156,9 @@ private void PollXxxSlider()
 未反映だとエディタ上で旧値が見えてしまう。
 
 - **参照取得は backing UdonBehaviour の `publicVariables` を優先する**（取れなければ
-  プロキシの `SerializedObject.FindProperty` へフォールバック）。`UserStatusPanel` /
-  `StaffControlPanel` は `AunCast.prefab` 直下なのでプロキシの SerializeField でも解決できるが、
-  ネストプレハブ（`AunCast.prefab` 内の `WallControlPanel` 等）はプロキシの参照が
+  プロキシの `SerializedObject.FindProperty` へフォールバック）。`AunCastUserStatusPanel` /
+  `AunCastStaffControlPanel` は `AunCast.prefab` 直下なのでプロキシの SerializeField でも解決できるが、
+  ネストプレハブ（`AunCast.prefab` 内の `AunCastWallControlPanel` 等）はプロキシの参照が
   編集時に null へ解決されることがある。実行時が参照を解決するのと同じ
   `GetBackingUdonBehaviour(panel).publicVariables.TryGetVariableValue(fieldName, out var v)`
   で読めばネストの有無に関わらず確実。
@@ -172,7 +172,7 @@ private void PollXxxSlider()
 
 > **対象外（ジェスチャートグル）**: ウォールパネルの呼び出しジェスチャートグルは編集時
 > プレビュー同期の対象にしていない。チェックマークがカスタム Graphic（UIPanel シェーダー系）で
-> 編集時にライブ再描画されにくく、かつ実行時は `WallControlPanel.SyncGestureToggles` が
+> 編集時にライブ再描画されにくく、かつ実行時は `AunCastWallControlPanel.SyncGestureToggles` が
 > `summonGesture` から `isOn` を上書きするため、トグルのシリアライズ値は実行時には使われない。
 > 設定値そのものは `ApplyUiSettingsToScene` の `summonGesture` / `desktopSummonGesture` 転写で
 > 正しく反映される。
@@ -181,12 +181,12 @@ private void PollXxxSlider()
 
 `[UdonSynced]` フィールドを追加 / 改名した後は、
 **`Tools > UdonSharp > Refresh All UdonSharp Programs` を手動実行**して、
-`LocalDualPlayerController.asset` 等の UdonSharp プログラムアセットに
+`AunCastDualPlayerController.asset` 等の UdonSharp プログラムアセットに
 新しいシリアライズ情報を反映させる。自動ビルドだけでは反映されないことがある。
 
 ## 6. `[NetworkCallable]` パラメータ付きイベントパターン (SDK 3.10.2+)
 
-ResyncCoordinator の Owner-Centric モデルで使用。
+AunCastResyncCoordinator の Owner-Centric モデルで使用。
 クライアントが ownership を取らず、Owner に状態変更を依頼するパターン。
 
 ### namespace と属性
@@ -252,7 +252,7 @@ Owner 側の状態が変わっていなければ一定間隔で再送する。
 
 ```csharp
 // STATE_REQUEST_PENDING 中に Owner 側が STATE_NONE のまま 3 秒経過 → 再送
-if (coordinator.GetResyncState(_mySlotIndex) == ResyncCoordinator.STATE_NONE
+if (coordinator.GetResyncState(_mySlotIndex) == AunCastResyncCoordinator.STATE_NONE
     && (now - _lastResyncRequestSentAt) >= RESYNC_REQUEST_RETRY_SEC)
 {
     coordinator.SendCustomNetworkEvent(
@@ -270,15 +270,15 @@ if (coordinator.GetResyncState(_mySlotIndex) == ResyncCoordinator.STATE_NONE
 
 ## 6. ownership 分離オブジェクトの退室クリーンアップ
 
-複数の `[UdonSynced]` オブジェクトを意図的に分離してある場合（例: `ResyncCoordinator` と
-`PlaybackMonitor`）、各オブジェクトの ownership は独立に移動する。スタッフ操作で
+複数の `[UdonSynced]` オブジェクトを意図的に分離してある場合（例: `AunCastResyncCoordinator` と
+`AunCastPlaybackMonitor`）、各オブジェクトの ownership は独立に移動する。スタッフ操作で
 片方の owner だけが変わったり、マスター離脱で別々のクライアントへ移譲されたりして
 ownership が乖離した状況で `OnPlayerLeft` をやらせると、**「片方の所有者が他方の同期変数を書き換える」呼び出しが silent fail する**（`RequestSerialization()` は非所有者だと no-op）。
 
 そのため、**各オブジェクトの「自分の同期変数」は自オブジェクトの所有者だけが
 `OnPlayerLeft` で掃除する**。他オブジェクトから命じない。
 
-PlaybackMonitor の例: 自前で全スロット走査し、`coordinator.GetUserPlayerId(i)` の
+AunCastPlaybackMonitor の例: 自前で全スロット走査し、`coordinator.GetUserPlayerId(i)` の
 プレイヤーが `VRCPlayerApi.GetPlayerById(pid).IsValid() == false` のスロットを
 3 配列まとめてクリアする。`pid == 0`（Coordinator 側で既に解放済み）も「不在」と扱う。
 
@@ -314,18 +314,18 @@ private bool CleanupStaleSlots()
 - `OnPlayerJoined` でも同じ走査を呼び、`OnPlayerLeft` のシリアライズロスト時の
   フォールバックにする
 - 自オブジェクトの掃除以外は他オブジェクトに任せる（責務分離）
-- PlaybackMonitor の人数サマリは、ビット配列全体ではなく
+- AunCastPlaybackMonitor の人数サマリは、ビット配列全体ではなく
   `coordinator.GetUserPlayerId(i) != 0` の割当済みスロットだけを数える。
   未割当スロットの残留ビットを混ぜると、インジケーターに `■` が無いのに
   `Playing` だけが 1 以上で残る表示不整合が起きる。
-- クライアントがスロット割当を初めて検出した直後は、PlaybackMonitor へ
+- クライアントがスロット割当を初めて検出した直後は、AunCastPlaybackMonitor へ
   Playing / Connecting / Error の 3 状態を明示的に初期報告する。
   退室直後のスロットが同じ `OnPlayerJoined` 内で再利用されると、割当済み判定だけでは
   以前の利用者が残したビットと新しい利用者の状態を区別できない。
 
 ## 7. N 個配置 subscriber 群への AunCastEventBus 配信
 
-シーン内に複数配置されうる `AunCastScreen` / `AunCastUiScreen` / `WallControlPanel`
+シーン内に複数配置されうる `AunCastScreen` / `AunCastUiScreen` / `AunCastWallControlPanel`
 のような購読者へ publisher から通知するときは、publisher 側に具象型配列を持たせず
 `AunCastEventBus` 経由で配信する。
 
@@ -349,7 +349,7 @@ private bool CleanupStaleSlots()
 
 ### プレハブ運用と自動再配線
 
-`WallControlPanel.prefab` などの prefab に `eventBus` フィールドを焼き込むことは
+`AunCastWallControlPanel.prefab` などの prefab に `eventBus` フィールドを焼き込むことは
 シーン依存のため不可能。新規 prefab をシーンに配置した直後は `eventBus = null`
 だが、以下の経路で配線が反映される:
 
@@ -373,24 +373,24 @@ private bool CleanupStaleSlots()
 （Inspector 配線のコンポーネント参照に過ぎない）が、結合度が上がりテスト・再利用・
 変更波及の面で不利になる。`AunCastEventBus`（§7）が複数購読者向けなのに対し、
 **1 対 1 の相互参照**はこのパターンで片方向化する。Core→UI の `staffNotifyTarget`
-や UI↔UI の `UserStatusPanel`↔`StaffControlPanel` がこの形。
+や UI↔UI の `AunCastUserStatusPanel`↔`AunCastStaffControlPanel` がこの形。
 
 ルール:
 - **型循環は片辺だけ基底型化すれば切れる。** 両辺を基底型にする必要はない。
-  従属側（通知/命令を送るだけの辺）のフィールドを `StaffControlPanel` のような
+  従属側（通知/命令を送るだけの辺）のフィールドを `AunCastStaffControlPanel` のような
   具象型から `UdonSharpBehaviour` 基底型に変える。残した具象辺が「状態の所有者」になる。
 - **基底型辺は `SendCustomEvent(メソッド名)` で呼ぶ。** 引数なしの通知・命令のみ
   送れる。呼び先メソッドは `public` であること。
 - **bool / enum などの値は、具象のまま残した逆辺から push してキャッシュする。**
   基底型辺では値を渡せず（§7 のとおり `SetProgramVariable` 多用や「値ごとにイベント
   分割」は避けたい）、クエリ（戻り値あり）も `SendCustomEvent` では呼べないため。
-  例: 解錠状態は所有者の `StaffControlPanel` が `viewerStatusPanel.SetStaffUnlocked(bool)`
-  （具象呼び出し）で `UserStatusPanel` に push し、UI 側は `_staffUnlocked` を読む。
+  例: 解錠状態は所有者の `AunCastStaffControlPanel` が `viewerStatusPanel.SetStaffUnlocked(bool)`
+  （具象呼び出し）で `AunCastUserStatusPanel` に push し、UI 側は `_staffUnlocked` を読む。
 - **状態を変える箇所すべてで push する。** キャッシュ化前にライブクエリで成立して
   いた経路（例: `OnPlayerJoined` の許可ユーザー自動解錠）を見落とすと、キャッシュが
   stale になる。所有者側の状態変更点を網羅して push を入れる。
-- 既存の `staffNotifyTarget`（`LocalDualPlayerController` / `ResyncCoordinator` /
-  `PlaybackMonitor`）と同じ形。新規の 1 対 1 相互参照を作りそうになったら、まず
+- 既存の `staffNotifyTarget`（`AunCastDualPlayerController` / `AunCastResyncCoordinator` /
+  `AunCastPlaybackMonitor`）と同じ形。新規の 1 対 1 相互参照を作りそうになったら、まず
   どちらを所有者にするか決め、従属辺を基底型 + `SendCustomEvent` にする。
 - 基底型化したフィールドはシーン/プレハブの参照が外れる場合があるため、変更後は
   `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行し、Inspector で配線を
@@ -417,9 +417,9 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 
 | キー | 型 | 保存元 | 復元先 |
 |------|----|--------|--------|
-| `AunCast-Volume` | float | `LocalDualPlayerController.SetVolumeLocal` | `LocalDualPlayerController.OnPlayerRestored` |
-| `AunCast-VrGesture` | int | `UserStatusPanel.SetSummonGestureFlag` | `UserStatusPanel.OnPlayerRestored` |
-| `AunCast-DesktopGesture` | int | `UserStatusPanel.SetDesktopSummonGestureFlag` | `UserStatusPanel.OnPlayerRestored` |
+| `AunCast-Volume` | float | `AunCastDualPlayerController.SetVolumeLocal` | `AunCastDualPlayerController.OnPlayerRestored` |
+| `AunCast-VrGesture` | int | `AunCastUserStatusPanel.SetSummonGestureFlag` | `AunCastUserStatusPanel.OnPlayerRestored` |
+| `AunCast-DesktopGesture` | int | `AunCastUserStatusPanel.SetDesktopSummonGestureFlag` | `AunCastUserStatusPanel.OnPlayerRestored` |
 
 ### 制約
 
@@ -499,7 +499,7 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 
 ## 12. ContentScaler「設計キャンバス」パターンとサイズ追従
 
-パネル（`PortablePanel` / `WallControlPanel`）配下の `ContentScaler` は、
+パネル（`PortablePanel` / `AunCastWallControlPanel`）配下の `ContentScaler` は、
 **固定の設計解像度（PortablePanel は 900×640）を持つ単一キャンバス**であり、
 `localScale`（例: 0.1）でパネルのローカル単位へ縮小する役割を持つ。
 
@@ -521,5 +521,5 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   記録する。
 - 注意: ContentScaler 配下の**個別 UI（ボタン等）は絶対配置**のものが多く、設計サイズを
   変えても自動リフローしない。アスペクト比を大きく変える場合は内部レイアウトの再調整が要る。
-- 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`UserStatusPanel`）
+- 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`AunCastUserStatusPanel`）
   側で行い、`sizeDelta` は触らない。

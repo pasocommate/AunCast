@@ -21,7 +21,7 @@
 - [Docs/Implementation-Patterns.md](Docs/Implementation-Patterns.md)
   — **同期変数 / スタッフ権限操作 / UI 双方向追従** のプロジェクト固有コーディングルール。以下のような変更を行う際は必ず確認する:
   - `[UdonSynced]` フィールドを追加する
-  - スタッフ UI から `LocalDualPlayerController` を操作する機能を追加する
+  - スタッフ UI から `AunCastDualPlayerController` を操作する機能を追加する
   - Slider / Toggle など UI の状態を全クライアント間で同期する
 - 汎用的な学びがあれば `Docs/Implementation-Patterns.md` へ追記する。VRChat API の罠は `VRChat-Udon-Development-Notes.md` 側に集約する。
 
