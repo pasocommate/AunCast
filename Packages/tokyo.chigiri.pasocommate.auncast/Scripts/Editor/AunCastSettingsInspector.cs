@@ -304,7 +304,7 @@ namespace PasocomMate.AunCast.Internal
             {
                 EditorGUILayout.HelpBox(
                     AunCastEditorLocalization.Localize(
-                        "AunCastコンポーネントが見つかりません。AunCast ルート配下で設定してください。",
+                        "AunCastコンポーネントが見つかりません｡ AunCast ルート配下で設定してください｡",
                         "No AunCast components were found. Configure them under the AunCast root."),
                     MessageType.Warning);
                 return;
@@ -375,7 +375,7 @@ namespace PasocomMate.AunCast.Internal
 
             EditorGUILayout.HelpBox(
                 AunCastEditorLocalization.Localize(
-                    "AunCast を使用するには利用規約（VN3 ライセンス）への同意が必要です。下のボタンから規約全文を開いて内容を確認し、同意のうえ設定を続けてください。同意するまで設定項目は表示されません。",
+                    "AunCast を使用するには利用規約（VN3 ライセンス）への同意が必要です｡ 下のボタンから規約全文を開いて内容を確認し､ 同意のうえ設定を続けてください｡ 同意するまで設定項目は表示されません｡",
                     "Using AunCast requires agreement to the Terms of Use (VN3 License). Open the full terms with the buttons below, review them, then agree to continue. Settings stay hidden until you agree."),
                 MessageType.Warning);
 
@@ -460,7 +460,7 @@ namespace PasocomMate.AunCast.Internal
             if (tmpSettings == null)
             {
                 return AunCastEditorLocalization.Localize(
-                    "TMP Settings が見つかりません。Edit→Project Settings→TextMesh Pro から TMP Essentials を先にインポートしてください。",
+                    "TMP Settings が見つかりません｡ Edit→Project Settings→TextMesh Pro から TMP Essentials を先にインポートしてください｡",
                     "TMP Settings was not found. Open Edit > Project Settings > TextMesh Pro and import TMP Essentials first.");
             }
 
@@ -469,7 +469,7 @@ namespace PasocomMate.AunCast.Internal
             if (defaultFontAsset == null || fallbackFontAsset == null)
             {
                 return AunCastEditorLocalization.Localize(
-                    "net.narazaka.vrchat.tmp-fallback-fonts-jp のフォントアセットが見つかりません。Manage Project で TextMesh Pro VRC Fallback Font JP を導入してください。",
+                    "net.narazaka.vrchat.tmp-fallback-fonts-jp のフォントアセットが見つかりません｡ Manage Project で TextMesh Pro VRC Fallback Font JP を導入してください｡",
                     "Font assets from net.narazaka.vrchat.tmp-fallback-fonts-jp were not found. Install TextMesh Pro VRC Fallback Font JP from Manage Project.");
             }
 
@@ -490,7 +490,7 @@ namespace PasocomMate.AunCast.Internal
 
             if (hasDefault && hasFallback) return null;
             return AunCastEditorLocalization.Localize(
-                $"TMP フォールバック設定が未適用です。{TMP_FALLBACK_MENU_PATH} を実行してください。実行後はシーンを開き直してください。",
+                $"TMP フォールバック設定が未適用です｡ {TMP_FALLBACK_MENU_PATH} を実行してください｡ 実行後はシーンを開き直してください｡",
                 $"TMP fallback font settings are not applied. Run {TMP_FALLBACK_MENU_PATH}. After that, reopen the scene.");
         }
 
@@ -500,7 +500,7 @@ namespace PasocomMate.AunCast.Internal
             {
                 EditorGUILayout.HelpBox(
                     AunCastEditorLocalization.Localize(
-                        "AunCast 配下の中核参照と、同一シーン全体の AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel を再スキャンして再配線します。",
+                        "AunCast 配下の中核参照と､ 同一シーン全体の AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel を再スキャンして再配線します｡",
                         "Re-scans and re-wires core AunCast references plus all AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel components in the same scene."),
                     MessageType.None);
                 using (new EditorGUI.DisabledScope(root == null))
@@ -960,7 +960,7 @@ namespace PasocomMate.AunCast.Internal
                         EditorGUILayout.Space(4);
                         EditorGUILayout.HelpBox(
                             AunCastEditorLocalization.Localize(
-                                "同一シーンの VRCAVProVideoScreen / VRCAVProVideoSpeaker を検出し、各行の変換ボタンで AunCastScreen / AunCastSpeaker に変換します。",
+                                "同一シーンの VRCAVProVideoScreen / VRCAVProVideoSpeaker を検出し､ 各行の変換ボタンで AunCastScreen / AunCastSpeaker に変換します｡",
                                 "Detects VRCAVProVideoScreen / VRCAVProVideoSpeaker components in the same scene and converts each row to AunCastScreen / AunCastSpeaker with its Convert button."),
                             MessageType.None);
 
@@ -968,7 +968,7 @@ namespace PasocomMate.AunCast.Internal
                         {
                             EditorGUILayout.HelpBox(
                                 AunCastEditorLocalization.Localize(
-                                    "候補を表示するには「候補を再検出」を押してください。高負荷を避けるため、自動では実行しません。",
+                                    "候補を表示するには「候補を再検出」を押してください｡ 高負荷を避けるため､ 自動では実行しません｡",
                                     "Click Redetect Candidates to show candidates. To avoid heavy processing, it does not run automatically."),
                                 MessageType.Info);
                         }
@@ -1033,7 +1033,7 @@ namespace PasocomMate.AunCast.Internal
                 EditorGUILayout.Space(4);
                 EditorGUILayout.HelpBox(
                     AunCastEditorLocalization.Localize(
-                        "変換候補では扱わない旧 VRCAVProVideoPlayer 本体です。AunCast への移行後に不要であれば手動で削除してください。",
+                        "変換候補では扱わない旧 VRCAVProVideoPlayer 本体です｡ AunCast への移行後に不要であれば手動で削除してください｡",
                         "Legacy VRCAVProVideoPlayer components that are not handled by conversion candidates. Delete them manually if they are no longer needed after migrating to AunCast."),
                     MessageType.Warning);
                 for (int i = 0; i < residual.Length; i++)
@@ -1130,7 +1130,7 @@ namespace PasocomMate.AunCast.Internal
             {
                 EditorGUILayout.HelpBox(
                     AunCastEditorLocalization.Localize(
-                        "変換対象の AVPro スクリーン / スピーカーは見つかりませんでした。",
+                        "変換対象の AVPro スクリーン / スピーカーは見つかりませんでした｡",
                         "No AVPro screens / speakers were found for conversion."),
                     MessageType.Info);
                 return;
@@ -1160,7 +1160,7 @@ namespace PasocomMate.AunCast.Internal
                             {
                                 EditorGUILayout.HelpBox(
                                     AunCastEditorLocalization.Localize(
-                                        "AunCast プレハブに元から含まれる出力です。既存ワールド側の出力を使う場合、この出力は不要なことがあります。不要であれば GameObject を手動で削除してください。",
+                                        "AunCast プレハブに元から含まれる出力です｡ 既存ワールド側の出力を使う場合､ この出力は不要なことがあります｡ 不要であれば GameObject を手動で削除してください｡",
                                         "This output is included in the AunCast prefab. If you use outputs from an existing world setup, this output may be unnecessary. Delete the GameObject manually if you do not need it."),
                                     MessageType.Warning);
                             }
@@ -1189,7 +1189,7 @@ namespace PasocomMate.AunCast.Internal
                                 {
                                     EditorGUILayout.HelpBox(
                                         AunCastEditorLocalization.Localize(
-                                            "この AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA、複製を PlayerB に割り当てます。",
+                                            "この AudioSource を同じ階層の直後に複製し､ オリジナルを PlayerA､ 複製を PlayerB に割り当てます｡",
                                             "Duplicates this AudioSource right after itself in the same hierarchy, assigning the original to Player A and the copy to Player B."),
                                         MessageType.None);
                                 }
@@ -1198,7 +1198,7 @@ namespace PasocomMate.AunCast.Internal
                                 {
                                     EditorGUILayout.HelpBox(
                                         AunCastEditorLocalization.Localize(
-                                            "AudioOutputTunnel らしき構成を検出しました。ダミーシンクを通常スピーカーとして変換せず、AunCastAudioOutputTunnel へ差し替える前提で確認してください。直結出力よりリングバッファ分の遅延が増えます。",
+                                            "AudioOutputTunnel らしき構成を検出しました｡ ダミーシンクを通常スピーカーとして変換せず､ AunCastAudioOutputTunnel へ差し替える前提で確認してください｡ 直結出力よりリングバッファ分の遅延が増えます｡",
                                             "An AudioOutputTunnel-like setup was detected. Do not convert the dummy sink as a normal speaker; review it as an AunCastAudioOutputTunnel migration. It adds ring-buffer latency compared with direct output."),
                                         MessageType.Warning);
                                 }
@@ -1805,7 +1805,7 @@ namespace PasocomMate.AunCast.Internal
             if (root == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "AunCast ルートが見つかりません。", "AunCast root was not found.");
+                    "AunCast ルートが見つかりません｡", "AunCast root was not found.");
                 return false;
             }
 
@@ -1825,13 +1825,13 @@ namespace PasocomMate.AunCast.Internal
             if (managerA == null || managerB == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "AunCastVideoPlayerManager A/B が見つかりません。", "AunCastVideoPlayerManager A/B was not found.");
+                    "AunCastVideoPlayerManager A/B が見つかりません｡", "AunCastVideoPlayerManager A/B was not found.");
                 return false;
             }
             if (managerA.avProPlayer == null || managerB.avProPlayer == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "AunCastVideoPlayerManager の avProPlayer 参照が不足しています。",
+                    "AunCastVideoPlayerManager の avProPlayer 参照が不足しています｡",
                     "The avProPlayer reference on AunCastVideoPlayerManager is missing.");
                 return false;
             }
@@ -1840,7 +1840,7 @@ namespace PasocomMate.AunCast.Internal
             if (switcher == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "AunCastPlaybackSwitcher が見つかりません。", "AunCastPlaybackSwitcher was not found.");
+                    "AunCastPlaybackSwitcher が見つかりません｡", "AunCastPlaybackSwitcher was not found.");
                 return false;
             }
 
@@ -1868,7 +1868,7 @@ namespace PasocomMate.AunCast.Internal
                     if (source == null)
                     {
                         errors.Add(AunCastEditorLocalization.Localize(
-                            $"PlayerA audioSources[{i}] が null です。",
+                            $"PlayerA audioSources[{i}] が null です｡",
                             $"PlayerA audioSources[{i}] is null."));
                         continue;
                     }
@@ -1885,7 +1885,7 @@ namespace PasocomMate.AunCast.Internal
                     if (source == null)
                     {
                         errors.Add(AunCastEditorLocalization.Localize(
-                            $"PlayerB audioSources[{i}] が null です。",
+                            $"PlayerB audioSources[{i}] が null です｡",
                             $"PlayerB audioSources[{i}] is null."));
                         continue;
                     }
@@ -1910,7 +1910,7 @@ namespace PasocomMate.AunCast.Internal
             if (expectedPlayer == null)
             {
                 errors.Add(AunCastEditorLocalization.Localize(
-                    $"{label}: 期待する VRCAVProVideoPlayer が null です。",
+                    $"{label}: 期待する VRCAVProVideoPlayer が null です｡",
                     $"{label}: The expected VRCAVProVideoPlayer is null."));
                 return;
             }
@@ -1919,7 +1919,7 @@ namespace PasocomMate.AunCast.Internal
             if (speaker == null)
             {
                 errors.Add(AunCastEditorLocalization.Localize(
-                    $"{label}: VRC AVPro Video Speaker がありません。({GetHierarchyPath(source.transform)})",
+                    $"{label}: VRC AVPro Video Speaker がありません｡ ({GetHierarchyPath(source.transform)})",
                     $"{label}: No VRC AVPro Video Speaker found. ({GetHierarchyPath(source.transform)})"));
                 return;
             }
@@ -1927,7 +1927,7 @@ namespace PasocomMate.AunCast.Internal
             if (!IsSpeakerRoutedTo(speaker, expectedPlayer))
             {
                 errors.Add(AunCastEditorLocalization.Localize(
-                    $"{label}: Speaker の videoPlayer が想定先を向いていません。({GetHierarchyPath(source.transform)})",
+                    $"{label}: Speaker の videoPlayer が想定先を向いていません｡ ({GetHierarchyPath(source.transform)})",
                     $"{label}: The Speaker's videoPlayer does not point to the expected target. ({GetHierarchyPath(source.transform)})"));
             }
         }
