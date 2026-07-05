@@ -81,15 +81,16 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 
 ### AunCast 内蔵のスクリーン・スピーカーを使わない場合
 
-既存ワールド側の出力だけを使う構成では、AunCast プレハブに元から含まれるスクリーン（`Screen`）・スピーカー（`PlayerA/AudioSource`, `PlayerB/AudioSource`）は不要です。該当する GameObject を手動で削除してから再配線してください。変換候補一覧でも、プレハブ同梱の出力には警告が表示されます。
+既存ワールド側の出力だけを使う構成では、AunCast プレハブに元から含まれるスクリーン（`Screen`）・スピーカー（`PlayerA/AudioSource`, `PlayerB/AudioSource`）は不要です。変換候補一覧でプレハブ同梱の出力に表示される **「削除」** を押してから再配線してください。
 
 ### 状態ラベルと外部参照の警告
 
-変換候補の各行には、判断材料として状態ラベルが表示されます。
+変換候補のスピーカー行には、判断材料として状態ラベルが表示されます。`AudioOutputTunnel` が検出された場合は、入力用 AudioSource のスピーカー行ではなく、`AudioOutputTunnel` 行として表示されます。
 
-- **非アクティブ / AudioSource無効 / volume 0 / 不可聴ロールオフ** … 現状では聞こえない設定の `AudioSource` です。意図して無効化しているもの（トンネル給音用のダミーなど）は変換しないでください。
-- **AudioOutputTunnel検知** … [AudioOutputTunnel 構成](#tunnel)を参照してください。
-- **この AudioSource を参照するコンポーネント: ○件** … その `AudioSource` を参照する外部コンポーネント（音量制御スクリプト等）がシーン内に存在します。AunCast ではスピーカーがA/Bの２系統に分かれるため、**単一の `AudioSource` 入力しか受けない参照元は、そのままでは移行できません**。参照元の仕様を確認してください（AunCast による自動差し替えは行われません）。
+- **[非アクティブ] [AudioSource無効] [volume 0] [音が届かない設定]** … 現状では聞こえない設定の `AudioSource` です。「音が届かない設定」は、AudioSource の距離減衰カーブにより音が直接聞こえない状態を指します。
+- **この AudioSource を参照するコンポーネント: ○件** … その `AudioSource` を参照する外部コンポーネント（音量制御スクリプト等）がシーン内に存在します。警告には参照元コンポーネントへのリンク一覧が表示されます。AunCast ではスピーカーがA/Bの２系統に分かれるため、**単一の `AudioSource` 入力しか受けない参照元は、そのままでは移行できません**。参照元の仕様を確認してください（AunCast による自動差し替えは行われません）。
+
+AudioLink の `AudioSource` 参照は AunCast が自動管理するため、手動対応が必要な警告としては扱われません。
 
 ### 旧プレイヤー本体の削除
 
@@ -100,11 +101,26 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 
 ### AudioOutputTunnel 構成を移行する場合 {#tunnel}
 
-TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` を使っている構成では、不可聴のダミーシンクを通常スピーカーとして変換しないでください（変換候補一覧では「AudioOutputTunnel検知」と警告表示されます）。移行は以下の手順で行います。
+TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` を使っている構成では、`AudioOutputTunnel.input` 側の入力用 AudioSource は通常スピーカー候補として表示されません。変換候補一覧では `AudioOutputTunnel` として表示され、**「移行方法」** を選べます。
 
-1. `AunCastAudioOutputTunnel` を追加し、既存の `leftOutput` / `rightOutput` / `stereoOutput` に相当する AudioSource を設定します。トンネルから先（リバーブ・外部音量制御・出力スピーカー）は無傷のまま流用できます。
-2. 旧 `AudioOutputTunnel` と不可聴のダミーシンクを削除します（変換・複製は不要です）。
-3. **「AunCast参照を再配線」** を押します。`AunCastAudioOutputTunnel.inputA` / `inputB` は同一シーンの `AunCastSpeaker` から自動設定されます。
+すでに `AunCastAudioOutputTunnel` へ移行済みのトンネルは、変換候補一覧に **「移行済み」** と表示されます。併設される **「直結化」** を押すと、`AunCastAudioOutputTunnel` の出力先 AudioSource が通常の `AunCastSpeaker` として設定され、各出力は A/B再生系統用に複製されます。`AunCastAudioOutputTunnel` は削除され、トンネルによる出力合成機能は失われますが、リングバッファ由来の遅延は解消されます。
+
+**互換トンネルへ移行** を選ぶ場合:
+
+1. `AudioOutputTunnel` と表示された候補で **「互換トンネルへ移行」** を選び、**「トンネル移行」** を押します。
+2. 旧 `AudioOutputTunnel` の `leftOutput` / `rightOutput` / `stereoOutput` が `AunCastAudioOutputTunnel` へ引き継がれます。トンネルから先（リバーブ・外部音量制御・出力スピーカー）はそのまま流用できます。
+3. 旧 `AudioOutputTunnel` と、外部参照がない単純な入力用 AudioSource オブジェクトは自動で削除されます。入力用 AudioSource に他のコンポーネントや子オブジェクトがある場合、または外部参照がある場合は、旧スピーカーコンポーネントだけが削除されます。
+4. `AunCastAudioOutputTunnel.inputA` / `inputB` は、移行処理の最後に同一シーンの `AunCastSpeaker` から自動設定されます。
+
+**出力AudioSourceをスピーカー化** を選ぶ場合:
+
+1. `AudioOutputTunnel` と表示された候補で **「出力AudioSourceをスピーカー化」** を選び、**「スピーカー化」** を押します。
+2. 旧 `AudioOutputTunnel` の `leftOutput` / `rightOutput` / `stereoOutput` が通常の `AunCastSpeaker` として設定されます。各出力は A/B再生系統用に複製されます。
+3. 旧 `AudioOutputTunnel` と、外部参照がない単純な入力用 AudioSource オブジェクトは自動で削除されます。外部参照がある場合は、旧スピーカーコンポーネントだけが削除されます。
+
+トンネルの出力先 AudioSource を参照する外部コンポーネントがある場合は、**「出力AudioSourceをスピーカー化」** を選んだ時点で、参照元コンポーネントへのリンク一覧付きの警告が表示されます。参照元が単一の AudioSource だけを扱う構成では、A/B再生系統への複製後に手動調整が必要になることがあります。
+
+旧 `AudioOutputTunnel` の出力先を読み取れない構成では、自動移行を中止します。その場合は、目的に応じて `AunCastAudioOutputTunnel` または `AunCastSpeaker` を手動で追加し、出力先を設定してから **「AunCast参照を再配線」** を押してください。
 
 トンネルが存在する構成では、再配線が入力側の `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
 

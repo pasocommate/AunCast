@@ -16,7 +16,7 @@ TopazChat Player の「+ Reverb Filter」バリアントのみ、以下の特殊
 
 ```
 VRCAVProVideoPlayer
- └─ VRCAVProVideoSpeaker(Stereo) on 不可聴ダミーシンク
+ └─ VRCAVProVideoSpeaker(Stereo) on 不可聴の入力用 AudioSource
      │  （カスタムロールオフ全キー 0 で聞こえない AudioSource）
      └─ AudioOutputTunnel（GetOutputData で PCM 吸出 → AudioClip リングバッファ書込）
          └─ 素の AudioSource 群（input / leftOutput / rightOutput / stereoOutput）
@@ -118,17 +118,21 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 **責任境界（一般化の原則)**: AunCast が面倒を見るのは **VRCAVProVideoSpeaker が付いた AudioSource（= AVPro 音声のシンク）まで**。その先の音声パイプライン（トンネルの出力先、外部音量制御コンポーネント等）には関知しない。問題の本質は「シンクが A/B の 2 系統に複製されるのに対し、シンクを入力に取る外部コンポーネントが単一入力しか受けられない」ことにあり、対応はシンク境界で完結させる。
 
 **変換候補の検出（3 の一覧に対する要件）**:
-- 不可聴設定（カスタムロールオフ全キー 0・volume 0・無効化・非アクティブ）でも VRCAVProVideoSpeaker 付きなら**変換候補一覧に必ず載せ、自動除外しない**。不可聴シンクは「トンネル給音用ダミー」として機能上必須のことがある。変換するかはユーザーがチェックボックスで選択し、状態（不可聴・無効・非アクティブ）をラベル表示する。
-- トンネル検知時は、ダミーシンクに対して「変換ではなく互換トンネルフロー（後述。ダミーシンクは削除するだけでよい）」を案内する。
+- `AudioOutputTunnel.input` として参照されていない VRCAVProVideoSpeaker は、音が届かない設定（カスタムロールオフ全キー 0・volume 0・無効化・非アクティブ）でも**変換候補一覧に必ず載せ、自動除外しない**。変換するかはユーザーが各行の操作で選択し、状態（音が届かない設定・無効・非アクティブ）をラベル表示する。
+- トンネル検知時は、入力用 AudioSource を通常スピーカー候補としては列挙せず、旧 `AudioOutputTunnel` 自体を `AudioOutputTunnel` 候補として列挙する。移行は、旧 `AudioOutputTunnel` の出力先を `AunCastAudioOutputTunnel` へ引き継ぐ互換トンネル移行、または旧トンネルの出力先 AudioSource を通常スピーカー化する方式で行う。
 
 **シンクへの外部参照のスキャンと警告（自動差し替えはしない)**:
 - 変換対象シンクを参照している外部コンポーネントを、シーン全体（UdonBehaviour の publicVariables、UdonSharpBehaviour / MonoBehaviour のシリアライズフィールドを SerializedProperty 走査）から検索し、一覧で警告表示する。
 - 警告内容: AunCast ではシンクが A/B の 2 系統に分かれるため、**単一の AudioSource 入力しか受けない参照元は、A/B 両系統への複数対応（またはクロスフェードを断念して Active 側へ動的に切り替える改修）をしない限り移行できない**。内容が不明なワールド独自の Udon コンポーネントに対して AunCast ができるのはこの警告までで、自動差し替え・自動改修は行わない。
 - 誤警報の抑制: 旧プレイヤー本体が自分のスピーカーを参照しているだけのケース（iwaSync3 / VizVid / USharpVideo で確認した共通パターン）は旧プレイヤーごと削除されるため、参照元がシンクと同一プレハブ/階層内にある場合はその旨をラベルで区別表示する。
+- 例外: AudioLink の `audioSource` 参照は `AunCastPlaybackSwitcher.SwitchAudioLinkSource()` が Active 系の AudioSource へ自動差し替えするため、手動対応が必要な警告から除外し、自動管理の情報表示に留める。
 
 **AudioOutputTunnel 複数対応版（AunCastAudioOutputTunnel）の同梱提供**:
-- TopazChatPlayer は利用者が多いため、付属の AudioOutputTunnel に限り **A/B 2 入力対応（またはクロスフェードなし前提で Active 側へ動的切替する）互換トンネル**を AunCast に同梱し、型名 `AudioOutputTunnel`（+ `input`/`leftOutput`/`rightOutput`/`stereoOutput` の変数構成ヒューリスティック）で検知した際に差し替えを案内する。名称は他の AunCast 系コンポーネントと同様に **AunCast プレフィックスを付けて `AunCastAudioOutputTunnel`** とする。
-- 互換トンネルの A/B 入力には **AunCast 内蔵の PlayerA/B シンク AudioSource（AunCastSpeaker 付き既定スピーカー）**を再配線が配線する。旧トンネルのダミーシンクは**削除するだけでよく、変換も複製も不要**。
+- TopazChatPlayer は利用者が多いため、付属の AudioOutputTunnel に限り **A/B 2 入力対応（またはクロスフェードなし前提で Active 側へ動的切替する）互換トンネル**を AunCast に同梱し、型名 `AudioOutputTunnel`（+ `input`/`leftOutput`/`rightOutput`/`stereoOutput` の変数構成ヒューリスティック）で検知した際に差し替える。名称は他の AunCast 系コンポーネントと同様に **AunCast プレフィックスを付けて `AunCastAudioOutputTunnel`** とする。
+- **自動移行（実装済み）**: 変換候補の「トンネル移行」ボタンは、候補の旧 `AudioOutputTunnel` から `leftOutput` / `rightOutput` / `stereoOutput` を読み取り、新しい `AunCastAudioOutputTunnel` へ引き継ぐ。旧 `AudioOutputTunnel` は削除し、`AudioSource` / `VRCAVProVideoSpeaker` / `VRCSpatialAudioSource` 程度で外部参照がない入力用 AudioSource GameObject は削除する。外部参照がある場合や複雑な入力用 AudioSource では旧 `VRCAVProVideoSpeaker` だけを削除する。
+- **出力 AudioSource の通常スピーカー化（実装済み）**: 変換候補の「出力AudioSourceをスピーカー化」では、旧 `leftOutput` / `rightOutput` / `stereoOutput` をそれぞれ `AunCastSpeaker` として設定し、各出力を A/B 用に複製する。チャンネルは leftOutput=Left、rightOutput=Right、stereoOutput=Stereo とする。選択時には、旧トンネル自身と出力 AudioSource 同一 GameObject 上のコンポーネントを除外したうえで、出力 AudioSource への外部参照をコンポーネントリンク一覧付きで警告表示する。旧トンネルを経由しないためリングバッファ遅延を避けられるが、旧トンネルから先に付いていた処理のうち AudioSource 以外の共有構造は複製結果を確認する必要がある。
+- **移行済みトンネルの直結化（実装済み）**: `AunCastAudioOutputTunnel` 検出時は「移行済み」表示に「直結化」ボタンを併設する。押下時は出力先 AudioSource を通常スピーカー化し、`AunCastAudioOutputTunnel` を削除する。トンネル機能は失われるが、リングバッファ遅延は解消される旨を警告表示する。
+- 互換トンネルの A/B 入力には **AunCast 内蔵の PlayerA/B シンク AudioSource（AunCastSpeaker 付き既定スピーカー）**を再配線が配線する。旧トンネルの入力用 AudioSource は**削除するだけでよく、変換も複製も不要**。
 - **内蔵シンクの不可聴化（実装済み）**: トンネルが存在する場合、再配線がトンネル入力シンクを不可聴化する。`GetOutputData` は **AudioSource.volume の影響を受ける（検証済み）** ため、トンネルが読む信号を消さないよう volume は触らず、`spatialBlend = 1`（3D）＋ カスタムロールオフを全域 0 にして直接音のみを消す（参考実装と同じカスタムロールオフ手法）。冪等。
 - **A/B ミックス（実装済み）**: `GetOutputData` が volume 反映済みのため、トンネルは A+B を単純加算するだけで fadeGain（Standby ミュート・クロスフェード）が自然に反映される。Active 側選択の内部配線は不要。
 - **再生安定性（実装済み）**: DSP クロック（`AudioSettings.dspTime`）に同期して書き込み、フレーム落ちで遅延しすぎた場合や書込ヘッドが再生ヘッドへ追いつく場合はバッファをリセットして復帰する（参考実装 TopazChat AudioOutputTunnel と同じリングバッファ手法）。
@@ -136,7 +140,7 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 - これにより「+ Reverb Filter」型ワールドはトンネルから先（リバーブ・外部音量制御・出力スピーカー）を**無傷のまま**移行できる。
 - 残る実測項目: ユーザー音量スライダーの効き（内蔵シンク経由で volume 管理されるため反映される想定）と、映像に対する音声の再生位置ギャップ（リングバッファ分 ≒ 数十 ms〜）を実機で確認する。
 
-**実装ポイント**: 変換候補の検出（不可聴・無効も列挙 + 状態ラベル）、外部参照スキャン、AudioOutputTunnel 検知と互換トンネル差し替え案内、互換トンネル本体（UdonSharp。`.cs` + `.asset` ペア作成の規約に従う）。既存の `CollectSpeakerCandidates` / `ExecuteSpeakerSetup`（複製方式）は 2 の宣言型モデルに置き換える。
+**実装ポイント**: 変換候補の検出（音が届かない設定・無効も列挙 + 状態ラベル）、外部参照スキャン、AudioOutputTunnel 候補と互換トンネル差し替え案内、互換トンネル本体（UdonSharp。`.cs` + `.asset` ペア作成の規約に従う）。既存の `CollectSpeakerCandidates` / `ExecuteSpeakerSetup`（複製方式）は 2 の宣言型モデルに置き換える。
 
 ## 見送り事項の記録
 
