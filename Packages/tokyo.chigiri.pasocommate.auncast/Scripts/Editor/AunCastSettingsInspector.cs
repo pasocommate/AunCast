@@ -352,7 +352,7 @@ namespace PasocomMate.AunCast.Internal
         {
             string version = GetCurrentPackageVersion();
             int major = GetMajorVersion(version);
-            if (AunCastConsentStore.HasConsented(major))
+            if (AunCastProjectSettingsStore.HasConsented(major))
                 return true;
 
             DrawConsentGate(version);
@@ -414,7 +414,7 @@ namespace PasocomMate.AunCast.Internal
                     AunCastEditorLocalization.Localize("同意して続行", "Agree and Continue"),
                     GUILayout.Height(28)))
                 {
-                    AunCastConsentStore.SetConsented(GetMajorVersion(version), version);
+                    AunCastProjectSettingsStore.SetConsented(GetMajorVersion(version), version);
                     _consentCheckbox = false;
                     // 描画する UI の構成が変わるため、現フレームの GUI を一旦やり直す。
                     GUIUtility.ExitGUI();

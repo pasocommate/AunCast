@@ -434,7 +434,7 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 
 ### 方針
 
-- 保存先は `ProjectSettings/<Name>.json`。**素のテキストを `File.WriteAllText` /
+- 保存先は `ProjectSettings/AunCastProjectSettings.json`。**素のテキストを `File.WriteAllText` /
   `File.ReadAllText` で直接読み書き**し、`JsonUtility` でシリアライズする。
   - アセットDB に現れないため Project ビューや Inspector を汚さない。
   - VCS にコミットすればチーム単位で共有できる（個人マシン単位なら `EditorPrefs`）。
@@ -442,8 +442,10 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
     ファイルから再構築されるため、`UnityEngine.Object` の寿命問題に巻き込まれない。
 - 導入先ではパッケージ本体（`Packages/.../`）は書き込み不可。同意状態のような
   プロジェクト固有の状態は **必ず導入先プロジェクトの `ProjectSettings/`** に書く。
-- 実装例: [`AunCastConsentStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastConsentStore.cs)。
-  メジャーバージョンを記録し、メジャー更新時のみ再同意を促す。
+- 実装例: [`AunCastProjectSettingsStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastProjectSettingsStore.cs)。
+  JSON ルート直下に用途別の階層（例: `terms`）を置き、今後のプロジェクトスコープ値を
+  同じファイルへ追加できるようにする。利用規約同意ではメジャーバージョンを記録し、
+  メジャー更新時のみ再同意を促す。
 
 > **落とし穴（重要）**: エディタ状態の永続化に Unity のシリアライズドファイル API
 > （`InternalEditorUtility.SaveToSerializedFileAndForget` や `ScriptableSingleton<T>`）を

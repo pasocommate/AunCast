@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UpmPackageInfo = UnityEditor.PackageManager.PackageInfo;
@@ -20,6 +22,13 @@ namespace PasocomMate.AunCast.Internal
         private static string _cachedScriptPath = string.Empty;
         private static string _cachedPackageName = string.Empty;
         private static string _cachedPackageVersion = string.Empty;
+
+        [Serializable]
+        private sealed class PackageJson
+        {
+            public string name;
+            public string version;
+        }
 
         internal static void Draw(Editor ownerEditor, bool hasVersionUpdate = false, string latestVersion = "")
         {
@@ -221,10 +230,45 @@ namespace PasocomMate.AunCast.Internal
             if (string.IsNullOrEmpty(scriptPath)) return;
 
             UpmPackageInfo packageInfo = UpmPackageInfo.FindForAssetPath(scriptPath);
-            if (packageInfo == null) return;
+            if (packageInfo != null)
+            {
+                _cachedPackageName = packageInfo.name ?? string.Empty;
+                _cachedPackageVersion = packageInfo.version ?? string.Empty;
+                return;
+            }
 
-            _cachedPackageName = packageInfo.name ?? string.Empty;
-            _cachedPackageVersion = packageInfo.version ?? string.Empty;
+            if (TryReadPackageJson(scriptPath, out string packageName, out string packageVersion))
+            {
+                _cachedPackageName = packageName;
+                _cachedPackageVersion = packageVersion;
+            }
+        }
+
+        private static bool TryReadPackageJson(string assetPath, out string packageName, out string packageVersion)
+        {
+            packageName = string.Empty;
+            packageVersion = string.Empty;
+            if (string.IsNullOrEmpty(assetPath)) return false;
+
+            string dir = Path.GetDirectoryName(Path.GetFullPath(assetPath));
+            while (!string.IsNullOrEmpty(dir))
+            {
+                string packageJsonPath = Path.Combine(dir, "package.json");
+                if (File.Exists(packageJsonPath))
+                {
+                    var json = JsonUtility.FromJson<PackageJson>(File.ReadAllText(packageJsonPath));
+                    if (json == null) return false;
+                    packageName = json.name ?? string.Empty;
+                    packageVersion = json.version ?? string.Empty;
+                    return !string.IsNullOrEmpty(packageVersion);
+                }
+
+                DirectoryInfo parent = Directory.GetParent(dir);
+                if (parent == null) return false;
+                dir = parent.FullName;
+            }
+
+            return false;
         }
     }
 }
