@@ -1,4 +1,4 @@
-﻿
+
 using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
@@ -7,15 +7,15 @@ using VRC.SDK3.Video.Components.AVPro;
 namespace PasocomMate.AunCast
 {
     /// <summary>
-    /// AVPro ラッパー。VRCAVProVideoPlayer のイベントを LocalDualPlayerController に転送する。
+    /// AVPro ラッパー。VRCAVProVideoPlayer のイベントを AunCastDualPlayerController に転送する。
     /// Active 用と Standby 用の 2 インスタンスを配置し、playerIndex で識別する。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class VideoPlayerManager : UdonSharpBehaviour
+    public class AunCastVideoPlayerManager : UdonSharpBehaviour
     {
         /// <summary>映像イベントの転送先 FSM。再生状態の管理はすべてこちらに委譲する。</summary>
-        [Tooltip("イベント転送先の LocalDualPlayerController")]
-        public LocalDualPlayerController receiver;
+        [Tooltip("イベント転送先の AunCastDualPlayerController")]
+        public AunCastDualPlayerController receiver;
 
         /// <summary>コールバック時にどちらのプレイヤーからの通知かを識別するためのインデックス (0=A, 1=B)。</summary>
         [Tooltip("このマネージャーのプレイヤー識別子（0 = A, 1 = B）")]
@@ -343,7 +343,7 @@ namespace PasocomMate.AunCast
 
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[AunCast/VideoPlayerManager[{playerIndex}]] {message}", this);
+            Debug.LogWarning($"[AunCast/AunCastVideoPlayerManager[{playerIndex}]] {message}", this);
         }
 
     }

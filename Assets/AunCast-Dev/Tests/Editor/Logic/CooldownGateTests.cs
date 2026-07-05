@@ -5,12 +5,12 @@ namespace PasocomMate.AunCast.Tests
 {
     public class CooldownGateTests
     {
-        private ResyncCoordinatorClient _client;
+        private AunCastResyncCoordinatorClient _client;
 
         [SetUp]
         public void SetUp()
         {
-            _client = TestHelper.CreateComponent<ResyncCoordinatorClient>();
+            _client = TestHelper.CreateComponent<AunCastResyncCoordinatorClient>();
         }
 
         [TearDown]
@@ -22,7 +22,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void WithinSuppressSec_NotEligible()
         {
-            float suppressSec = TestHelper.Get<ResyncCoordinatorClient, float>(
+            float suppressSec = TestHelper.Get<AunCastResyncCoordinatorClient, float>(
                 _client, "silenceSuppressSec");
 
             float lastCompleted = 100f;
@@ -38,7 +38,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void AfterSuppressSec_Eligible()
         {
-            float suppressSec = TestHelper.Get<ResyncCoordinatorClient, float>(
+            float suppressSec = TestHelper.Get<AunCastResyncCoordinatorClient, float>(
                 _client, "silenceSuppressSec");
 
             float lastCompleted = 100f;
@@ -57,7 +57,7 @@ namespace PasocomMate.AunCast.Tests
             // _lastResyncCompletedAt のデフォルト値は 0
             TestHelper.Set(_client, "_lastResyncCompletedAt", 0f);
 
-            float suppressSec = TestHelper.Get<ResyncCoordinatorClient, float>(
+            float suppressSec = TestHelper.Get<AunCastResyncCoordinatorClient, float>(
                 _client, "silenceSuppressSec");
 
             float now = suppressSec + 1f;

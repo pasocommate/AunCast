@@ -12,7 +12,7 @@ namespace PasocomMate.AunCast
     /// 配信サーバへの同時接続数を制御することで、大人数インスタンスでのサーバ過負荷を防ぐ。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-    public class ResyncCoordinator : UdonSharpBehaviour
+    public class AunCastResyncCoordinator : UdonSharpBehaviour
     {
         // --- 状態コード (Design Section 13.3) ---
         // Resync スロットの状態遷移: NONE → QUEUED → GRANTED → RUNNING → NONE
@@ -38,8 +38,8 @@ namespace PasocomMate.AunCast
 
         [Header("References")]
         /// <summary>各クライアントの再生状態を集約するモニタ。接続数上限の判断に使う。</summary>
-        [SerializeField] private PlaybackMonitor playbackMonitor;
-        [Tooltip("同期変数の更新を通知する先（StaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
+        [SerializeField] private AunCastPlaybackMonitor playbackMonitor;
+        [Tooltip("同期変数の更新を通知する先（AunCastStaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
         [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
 
         // --- 同期変数: スロット管理 (Design Section 13.2) ---
@@ -69,8 +69,8 @@ namespace PasocomMate.AunCast
         private float[] _ownerTimestamp;
         private float _tickTimer;
         private const float TICK_INTERVAL = 1.0f;
-        // PlaybackMonitor.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
-        // PlaybackMonitor 側のビットパック配列長と Coordinator の配列長が食い違う。
+        // AunCastPlaybackMonitor.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
+        // AunCastPlaybackMonitor 側のビットパック配列長と Coordinator の配列長が食い違う。
         private const int MAX_PLAYERS = 82;
         private const int DEFAULT_CONNECTION_LIMIT = 100;
         private const int MIN_CONNECTION_LIMIT = 1;
@@ -185,7 +185,7 @@ namespace PasocomMate.AunCast
 
             // 同時接続上限による制約
             // Resync 中のユーザーは Active 側 + Standby 側で 2 接続を消費するため、
-            // PlaybackMonitor のカウント（1 スロット 1 ビット）に加え
+            // AunCastPlaybackMonitor のカウント（1 スロット 1 ビット）に加え
             // GRANTED/RUNNING 分のスタンバイ接続を上乗せする
             if (playbackMonitor != null)
             {
@@ -436,7 +436,7 @@ namespace PasocomMate.AunCast
                     ResetSlot(i);
 
                     // Rejoin 等でワールド破棄直前に呼ばれると遅延シリアライズが
-                    // ロストするため即時送信する。PlaybackMonitor は自身の OnPlayerLeft で掃除する。
+                    // ロストするため即時送信する。AunCastPlaybackMonitor は自身の OnPlayerLeft で掃除する。
                     CompressTimestamps();
                     RequestSerialization();
                     NotifyObservers();
@@ -518,7 +518,7 @@ namespace PasocomMate.AunCast
         }
 
         public int GetMaxPlayers() { return MAX_PLAYERS; }
-        public PlaybackMonitor GetPlaybackMonitor() { return playbackMonitor; }
+        public AunCastPlaybackMonitor GetPlaybackMonitor() { return playbackMonitor; }
         public int GetMaxConcurrentResyncUsers() { return maxConcurrentResyncUsers; }
         public int GetMaxConnectionLimit() { return maxConnectionLimit; }
         public int GetMinConnectionLimit() { return MIN_CONNECTION_LIMIT; }
@@ -642,8 +642,8 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
-        /// 自オブジェクトのスロット状態を初期化する。PlaybackMonitor 側のビット掃除は
-        /// PlaybackMonitor 自身の OnPlayerLeft / OnPlayerJoined が担当する（ownership 分離のため）。
+        /// 自オブジェクトのスロット状態を初期化する。AunCastPlaybackMonitor 側のビット掃除は
+        /// AunCastPlaybackMonitor 自身の OnPlayerLeft / OnPlayerJoined が担当する（ownership 分離のため）。
         /// </summary>
         private void ResetSlot(int i)
         {
@@ -675,12 +675,12 @@ namespace PasocomMate.AunCast
 
         private void LogMessage(string message)
         {
-            Debug.Log($"[AunCast/ResyncCoordinator] {message}", this);
+            Debug.Log($"[AunCast/AunCastResyncCoordinator] {message}", this);
         }
 
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[AunCast/ResyncCoordinator] {message}", this);
+            Debug.LogWarning($"[AunCast/AunCastResyncCoordinator] {message}", this);
         }
 
         /// <summary>タイムラインログをローカルのみ設定する。</summary>

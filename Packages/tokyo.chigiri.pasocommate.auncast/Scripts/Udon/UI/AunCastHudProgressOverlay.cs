@@ -13,7 +13,7 @@ namespace PasocomMate.AunCast
     /// 表示はローカル限定のため同期は持たない。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class HudProgressOverlay : UdonSharpBehaviour
+    public class AunCastHudProgressOverlay : UdonSharpBehaviour
     {
         [Header("References")]
         [SerializeField] private Transform quadTransform;

@@ -10,19 +10,19 @@ namespace PasocomMate.AunCast
     /// 壁掛けで固定配置する制御パネル。
     /// ・User ビュー: Resync / Reboot / 持ち運びパネルの呼び出しジェスチャー選択
     /// ・Staff ビュー: スタッフ解錠用のパスコード入力 (ローカル解錠のみ、同期なし)
-    /// ・Shared: 持ち運びパネル (UserStatusPanel) の Spawn ボタン / ビュー切替
+    /// ・Shared: 持ち運びパネル (AunCastUserStatusPanel) の Spawn ボタン / ビュー切替
     /// ・Resync Only ビュー: 遠距離で表示する全面 Resync ボタン
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class WallControlPanel : UdonSharpBehaviour
+    public class AunCastWallControlPanel : UdonSharpBehaviour
     {
         [Header("References")]
-        [Tooltip("ローカル個人 Resync / Reboot を発行する LocalDualPlayerController。")]
-        [SerializeField] private LocalDualPlayerController controller;
-        [Tooltip("解錠対象の StaffControlPanel。正解時に SetLocalPasscodeUnlocked() を呼ぶ。")]
-        [SerializeField] private StaffControlPanel staffPanel;
+        [Tooltip("ローカル個人 Resync / Reboot を発行する AunCastDualPlayerController。")]
+        [SerializeField] private AunCastDualPlayerController controller;
+        [Tooltip("解錠対象の AunCastStaffControlPanel。正解時に SetLocalPasscodeUnlocked() を呼ぶ。")]
+        [SerializeField] private AunCastStaffControlPanel staffPanel;
         [Tooltip("呼び出し対象の持ち運びパネル。Summon ボタンで表示する。")]
-        [SerializeField] private UserStatusPanel portablePanel;
+        [SerializeField] private AunCastUserStatusPanel portablePanel;
         [SerializeField] private AunCastEventBus eventBus;
 
         [Header("View Crossfade")]
@@ -146,7 +146,7 @@ namespace PasocomMate.AunCast
             }
         }
 
-        /// <summary>LocalDualPlayerController から FSM 状態変化を Push 通知される。</summary>
+        /// <summary>AunCastDualPlayerController から FSM 状態変化を Push 通知される。</summary>
         public void OnLocalStateChanged()
         {
             UpdateUserButtonInteractable();
@@ -300,7 +300,7 @@ namespace PasocomMate.AunCast
         //  解錠後の自動切り替え
         // =================================================================
 
-        /// <summary>UserStatusPanel が表示されたときに AunCastEventBus から呼ばれる。</summary>
+        /// <summary>AunCastUserStatusPanel が表示されたときに AunCastEventBus から呼ばれる。</summary>
         public void OnPortablePanelShown()
         {
             if (!_isStaff) return;
@@ -397,7 +397,7 @@ namespace PasocomMate.AunCast
         public void OnResyncOnlyButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
+            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
@@ -418,14 +418,14 @@ namespace PasocomMate.AunCast
         public void OnUserResyncButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
+            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
         public void OnUserRebootButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
+            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.Reboot();
         }
 
@@ -436,7 +436,7 @@ namespace PasocomMate.AunCast
         private void UpdateUserButtonInteractable()
         {
             if (controller == null) return;
-            bool canRequest = controller.GetLocalState() == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
+            bool canRequest = controller.GetLocalState() == AunCastDualPlayerController.STATE_ACTIVE_PLAYING;
             SetButtonInteractable(userResyncButton, canRequest);
             SetButtonInteractable(resyncOnlyButton, canRequest);
             SetButtonInteractable(userRebootButton, canRequest);
@@ -474,7 +474,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureDoubleTriggerLeftToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                UserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT, gestureDoubleTriggerLeftToggle.isOn);
+                AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT, gestureDoubleTriggerLeftToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -482,7 +482,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureDoubleTriggerRightToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                UserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT, gestureDoubleTriggerRightToggle.isOn);
+                AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT, gestureDoubleTriggerRightToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -490,7 +490,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureBothTriggersToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                UserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD, gestureBothTriggersToggle.isOn);
+                AunCastUserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD, gestureBothTriggersToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -498,7 +498,7 @@ namespace PasocomMate.AunCast
         {
             if (gestureRightStickUpToggle == null || portablePanel == null) return;
             portablePanel.SetSummonGestureFlag(
-                UserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD, gestureRightStickUpToggle.isOn);
+                AunCastUserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD, gestureRightStickUpToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -506,7 +506,7 @@ namespace PasocomMate.AunCast
         {
             if (desktopTabDoubleTapToggle == null || portablePanel == null) return;
             portablePanel.SetDesktopSummonGestureFlag(
-                UserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP, desktopTabDoubleTapToggle.isOn);
+                AunCastUserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP, desktopTabDoubleTapToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -514,7 +514,7 @@ namespace PasocomMate.AunCast
         {
             if (desktopF5DoubleTapToggle == null || portablePanel == null) return;
             portablePanel.SetDesktopSummonGestureFlag(
-                UserStatusPanel.DESKTOP_GESTURE_F5_DOUBLE_TAP, desktopF5DoubleTapToggle.isOn);
+                AunCastUserStatusPanel.DESKTOP_GESTURE_F5_DOUBLE_TAP, desktopF5DoubleTapToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -522,7 +522,7 @@ namespace PasocomMate.AunCast
         {
             if (desktopEscHoldToggle == null || portablePanel == null) return;
             portablePanel.SetDesktopSummonGestureFlag(
-                UserStatusPanel.DESKTOP_GESTURE_ESC_HOLD, desktopEscHoldToggle.isOn);
+                AunCastUserStatusPanel.DESKTOP_GESTURE_ESC_HOLD, desktopEscHoldToggle.isOn);
             SyncGestureToggles();
         }
 
@@ -530,34 +530,34 @@ namespace PasocomMate.AunCast
         {
             int vrCurrent = portablePanel != null
                 ? portablePanel.GetSummonGesture()
-                : UserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD;
+                : AunCastUserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD;
 
             if (gestureDoubleTriggerLeftToggle != null)
                 gestureDoubleTriggerLeftToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT) != 0);
+                    (vrCurrent & AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_LEFT) != 0);
             if (gestureDoubleTriggerRightToggle != null)
                 gestureDoubleTriggerRightToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & UserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT) != 0);
+                    (vrCurrent & AunCastUserStatusPanel.GESTURE_DOUBLE_TRIGGER_RIGHT) != 0);
             if (gestureBothTriggersToggle != null)
                 gestureBothTriggersToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & UserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD) != 0);
+                    (vrCurrent & AunCastUserStatusPanel.GESTURE_BOTH_TRIGGERS_HOLD) != 0);
             if (gestureRightStickUpToggle != null)
                 gestureRightStickUpToggle.SetIsOnWithoutNotify(
-                    (vrCurrent & UserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD) != 0);
+                    (vrCurrent & AunCastUserStatusPanel.GESTURE_RIGHT_STICK_UP_HOLD) != 0);
 
             int deskCurrent = portablePanel != null
                 ? portablePanel.GetDesktopSummonGesture()
-                : UserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP;
+                : AunCastUserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP;
 
             if (desktopTabDoubleTapToggle != null)
                 desktopTabDoubleTapToggle.SetIsOnWithoutNotify(
-                    (deskCurrent & UserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP) != 0);
+                    (deskCurrent & AunCastUserStatusPanel.DESKTOP_GESTURE_TAB_DOUBLE_TAP) != 0);
             if (desktopF5DoubleTapToggle != null)
                 desktopF5DoubleTapToggle.SetIsOnWithoutNotify(
-                    (deskCurrent & UserStatusPanel.DESKTOP_GESTURE_F5_DOUBLE_TAP) != 0);
+                    (deskCurrent & AunCastUserStatusPanel.DESKTOP_GESTURE_F5_DOUBLE_TAP) != 0);
             if (desktopEscHoldToggle != null)
                 desktopEscHoldToggle.SetIsOnWithoutNotify(
-                    (deskCurrent & UserStatusPanel.DESKTOP_GESTURE_ESC_HOLD) != 0);
+                    (deskCurrent & AunCastUserStatusPanel.DESKTOP_GESTURE_ESC_HOLD) != 0);
         }
 
 

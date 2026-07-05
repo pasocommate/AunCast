@@ -6,11 +6,11 @@ using UnityEngine;
 namespace PasocomMate.AunCast.Internal
 {
     /// <summary>
-    /// PlaybackSwitcher の Inspector カスタムエディタ。
+    /// AunCastPlaybackSwitcher の Inspector カスタムエディタ。
     /// audioLinkBehaviour が未設定の場合、AudioLink を自動検出して配線する。
     /// </summary>
-    [CustomEditor(typeof(PlaybackSwitcher))]
-    internal class PlaybackSwitcherInspector : Editor
+    [CustomEditor(typeof(AunCastPlaybackSwitcher))]
+    internal class AunCastPlaybackSwitcherInspector : Editor
     {
         private static readonly string[] SETTINGS_PROPERTY_NAMES =
         {
@@ -83,7 +83,7 @@ namespace PasocomMate.AunCast.Internal
             }
             if (audioLink == null) return;
 
-            var switcher = (PlaybackSwitcher)target;
+            var switcher = (AunCastPlaybackSwitcher)target;
             Undo.RecordObject(switcher, "Auto Assign AudioLink Behaviour");
             _audioLinkBehaviourProperty.objectReferenceValue = audioLink;
             if (!serializedObject.ApplyModifiedProperties()) return;

@@ -10,17 +10,17 @@ namespace PasocomMate.AunCast
     /// <summary>
     /// スタッフ向けの操作・モニタリング UI（Design Section 9.2-D, 22.2）。
     /// ワールドをセットアップする人がワールド内の適切な場所に設置する。
-    /// パスコードによる解錠 UI は別の WallControlPanel に分離されており、
+    /// パスコードによる解錠 UI は別の AunCastWallControlPanel に分離されており、
     /// このパネル自体は解錠状態のローカルフラグのみを保持する。
     /// </summary>
     [DefaultExecutionOrder(10)]
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class StaffControlPanel : UdonSharpBehaviour
+    public class AunCastStaffControlPanel : UdonSharpBehaviour
     {
         [Header("References")]
-        [SerializeField] private LocalDualPlayerController controller;
-        [SerializeField] private ResyncCoordinator coordinator;
-        [SerializeField] private UserStatusPanel viewerStatusPanel;
+        [SerializeField] private AunCastDualPlayerController controller;
+        [SerializeField] private AunCastResyncCoordinator coordinator;
+        [SerializeField] private AunCastUserStatusPanel viewerStatusPanel;
 
         [Header("Now Playing")]
         [SerializeField] private TMP_Text nowPlayingText;
@@ -112,7 +112,7 @@ namespace PasocomMate.AunCast
         private string[] _helpTextsEn;
         private string[] _helpTextsJa;
 
-        // 再描画制御: 通常は ResyncCoordinator / PlaybackMonitor からの通知で
+        // 再描画制御: 通常は AunCastResyncCoordinator / AunCastPlaybackMonitor からの通知で
         // 再描画し、連続通知を吸収するために描画直後の一定時間はデバウンスする。
         // 紫→黄 の色遷移は同期変数の変化を伴わない時刻依存なので、周期フォールバックも残す。
         /// <summary>OnCoordinatorChanged() で立てられ、次の Update で消費される再描画要求フラグ。</summary>
@@ -247,7 +247,7 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
-        /// ResyncCoordinator / PlaybackMonitor が同期変数を書き換えた / 受信したときに呼ばれる。
+        /// AunCastResyncCoordinator / AunCastPlaybackMonitor が同期変数を書き換えた / 受信したときに呼ばれる。
         /// 次の Update で（デバウンス経過後に）再描画する。
         /// </summary>
         public void OnCoordinatorChanged()
@@ -255,7 +255,7 @@ namespace PasocomMate.AunCast
             _redrawDirty = true;
         }
 
-        /// <summary>LocalDualPlayerController から URL 変更（再生開始・停止・受信反映）を通知される。</summary>
+        /// <summary>AunCastDualPlayerController から URL 変更（再生開始・停止・受信反映）を通知される。</summary>
         public void OnUrlChanged()
         {
             UpdateNowPlayingDisplay();
@@ -300,7 +300,7 @@ namespace PasocomMate.AunCast
 
         }
 
-        /// <summary>WallControlPanel から正解入力時に呼ばれる。ローカルのみ解錠扱いにする。</summary>
+        /// <summary>AunCastWallControlPanel から正解入力時に呼ばれる。ローカルのみ解錠扱いにする。</summary>
         public void SetLocalPasscodeUnlocked()
         {
             _isStaff = true;
@@ -633,7 +633,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// アクションボタンの有効/無効を現在のストリーム状態・Next URL の有無・スタッフロック状態の AND で更新する。
-        /// UserStatusPanel のスタッフロック切替時にも呼ばれ、ロック中は全ボタンが無効化される。
+        /// AunCastUserStatusPanel のスタッフロック切替時にも呼ばれ、ロック中は全ボタンが無効化される。
         /// </summary>
         public void UpdateActionButtonsInteractable()
         {
@@ -740,7 +740,7 @@ namespace PasocomMate.AunCast
             if (indicatorText == null || coordinator == null) return;
 
             int coordSlots = coordinator.GetMaxPlayers();
-            PlaybackMonitor pbm = coordinator.GetPlaybackMonitor();
+            AunCastPlaybackMonitor pbm = coordinator.GetPlaybackMonitor();
 
             // ソートキー: スタイル（Playing=0, 停止=1）× 色（赤=0, 青=1, 黄=2, 橙=3, 白=4）
             int assigned = 0;
@@ -761,9 +761,9 @@ namespace PasocomMate.AunCast
                 int state = coordinator.GetResyncState(i);
 
                 int colorOrder;
-                if (state == ResyncCoordinator.STATE_QUEUED)
+                if (state == AunCastResyncCoordinator.STATE_QUEUED)
                     colorOrder = INDICATOR_COLOR_QUEUED;
-                else if (state == ResyncCoordinator.STATE_GRANTED || state == ResyncCoordinator.STATE_RUNNING)
+                else if (state == AunCastResyncCoordinator.STATE_GRANTED || state == AunCastResyncCoordinator.STATE_RUNNING)
                     colorOrder = INDICATOR_COLOR_RUNNING;
                 else if (connecting)
                     colorOrder = INDICATOR_COLOR_CONNECTING;

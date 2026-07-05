@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
-  m_Name: ActivePlayerMonitor
+  m_Name: AunCastActivePlayerMonitor
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: 06f14b7a5a8621947b8c57152ad7b1c7,
     type: 2}
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 2
   hasInteractEvent: 0
-  scriptID: 8794827754236456629
+  scriptID: 1598212044654766219
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.VideoPlayerManager, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastVideoPlayerManager, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 

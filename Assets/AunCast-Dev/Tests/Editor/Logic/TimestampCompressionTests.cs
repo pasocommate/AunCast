@@ -5,12 +5,12 @@ namespace PasocomMate.AunCast.Tests
 {
     public class TimestampCompressionTests
     {
-        private ResyncCoordinator _coordinator;
+        private AunCastResyncCoordinator _coordinator;
 
         [SetUp]
         public void SetUp()
         {
-            _coordinator = TestHelper.CreateComponent<ResyncCoordinator>();
+            _coordinator = TestHelper.CreateComponent<AunCastResyncCoordinator>();
             // 内部配列を初期化
             TestHelper.Invoke(_coordinator, "InitializeArrays");
             int slotCount = _coordinator.GetMaxPlayers();
@@ -26,8 +26,8 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void RoundTrip_PreservesWithin100ms()
         {
-            var resyncState = TestHelper.Get<ResyncCoordinator, byte[]>(_coordinator, "resyncState");
-            var ownerTimestamp = TestHelper.Get<ResyncCoordinator, float[]>(_coordinator, "_ownerTimestamp");
+            var resyncState = TestHelper.Get<AunCastResyncCoordinator, byte[]>(_coordinator, "resyncState");
+            var ownerTimestamp = TestHelper.Get<AunCastResyncCoordinator, float[]>(_coordinator, "_ownerTimestamp");
 
             // テストデータ: スロット 0, 3, 7 に異なるタイムスタンプを設定
             float[] testTimes = { 100.5f, 105.3f, 102.7f };
@@ -35,7 +35,7 @@ namespace PasocomMate.AunCast.Tests
 
             for (int i = 0; i < testSlots.Length; i++)
             {
-                resyncState[testSlots[i]] = (byte)ResyncCoordinator.STATE_QUEUED;
+                resyncState[testSlots[i]] = (byte)AunCastResyncCoordinator.STATE_QUEUED;
                 ownerTimestamp[testSlots[i]] = testTimes[i];
             }
 
@@ -56,7 +56,7 @@ namespace PasocomMate.AunCast.Tests
             // 全スロット STATE_NONE のまま圧縮
             TestHelper.Invoke(_coordinator, "CompressTimestamps");
 
-            float offset = TestHelper.Get<ResyncCoordinator, float>(
+            float offset = TestHelper.Get<AunCastResyncCoordinator, float>(
                 _coordinator, "userTimestampOffset");
             Assert.AreEqual(0f, offset, "全 NONE の場合 offset は 0 であるべき");
         }

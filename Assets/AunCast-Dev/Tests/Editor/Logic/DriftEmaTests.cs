@@ -5,12 +5,12 @@ namespace PasocomMate.AunCast.Tests
 {
     public class DriftEmaTests
     {
-        private ActivePlayerMonitor _monitor;
+        private AunCastActivePlayerMonitor _monitor;
 
         [SetUp]
         public void SetUp()
         {
-            _monitor = TestHelper.CreateComponent<ActivePlayerMonitor>();
+            _monitor = TestHelper.CreateComponent<AunCastActivePlayerMonitor>();
         }
 
         [TearDown]
@@ -23,7 +23,7 @@ namespace PasocomMate.AunCast.Tests
         public void Warmup_AccumulatorStaysZero()
         {
             float now = 10f;
-            float warmupSec = TestHelper.Get<ActivePlayerMonitor, float>(
+            float warmupSec = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftWarmupSec");
 
             // ウォームアップ中の状態を設定
@@ -46,7 +46,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void AfterWarmup_EmaConvergesToRawDrift()
         {
-            float tau = TestHelper.Get<ActivePlayerMonitor, float>(
+            float tau = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftSmoothingTimeConstant");
             float dt = 0.1f;
 

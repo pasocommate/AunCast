@@ -98,7 +98,7 @@ namespace PasocomMate.AunCast
         public float portableVerticalMargin = 40f;
 
         [Header("Wall Panel Layout")]
-        [Tooltip("WallControlPanel のコンテンツ設計サイズ（ContentScaler の SizeDelta）。X=幅、Y=高さ。")]
+        [Tooltip("AunCastWallControlPanel のコンテンツ設計サイズ（ContentScaler の SizeDelta）。X=幅、Y=高さ。")]
         public Vector2 wallContentSize = new Vector2(480f, 560f);
 
         [Tooltip("TopBarPadded / UserContent / StaffContent / SharedContent / ResyncOnlyContent に一括適用する左右共通の余白。")]

@@ -9,7 +9,7 @@ namespace PasocomMate.AunCast
 {
     /// <summary>各ユーザーのローカル再生制御を行う中核 FSM。A/B 二重化再生の異常検知→切替を統括する。</summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-    public class LocalDualPlayerController : UdonSharpBehaviour
+    public class AunCastDualPlayerController : UdonSharpBehaviour
     {
         // =================================================================
         //  ローカル状態コード (Design Section 10.1)
@@ -31,19 +31,19 @@ namespace PasocomMate.AunCast
         //  Inspector 参照
         // =================================================================
         [Header("Player Managers")]
-        [SerializeField] private VideoPlayerManager playerManagerA;
-        [SerializeField] private VideoPlayerManager playerManagerB;
+        [SerializeField] private AunCastVideoPlayerManager playerManagerA;
+        [SerializeField] private AunCastVideoPlayerManager playerManagerB;
 
         [Header("Playback Monitor")]
-        [SerializeField] private PlaybackMonitor playbackMonitor;
+        [SerializeField] private AunCastPlaybackMonitor playbackMonitor;
 
         [Header("Sub-components")]
-        [SerializeField] private PlaybackSwitcher switcher;
-        [SerializeField] private ActivePlayerMonitor activeMonitor;
-        [SerializeField] private ResyncCoordinatorClient resyncClient;
+        [SerializeField] private AunCastPlaybackSwitcher switcher;
+        [SerializeField] private AunCastActivePlayerMonitor activeMonitor;
+        [SerializeField] private AunCastResyncCoordinatorClient resyncClient;
 
         [Header("UI Notification")]
-        [Tooltip("URL 変更を通知する先（StaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
+        [Tooltip("URL 変更を通知する先（AunCastStaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
         [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
         [SerializeField] private AunCastEventBus eventBus;
 
@@ -114,11 +114,11 @@ namespace PasocomMate.AunCast
         private bool _waitForSync;
         private bool _pendingConnectingReport;
 
-        // PlaybackActive レポートのスロットル（PlaybackMonitor への過剰通知を防止）
+        // PlaybackActive レポートのスロットル（AunCastPlaybackMonitor への過剰通知を防止）
         private float _lastPlaybackReportAt;
         private const float PLAYBACK_REPORT_MIN_INTERVAL = 10.0f;
 
-        // VideoPlayerManager コールバック用（コールバック元を識別するための一時変数）
+        // AunCastVideoPlayerManager コールバック用（コールバック元を識別するための一時変数）
         [System.NonSerialized] public int _lastCallbackPlayerIndex;
         [System.NonSerialized] public VideoError _lastVideoError;
 
@@ -156,7 +156,7 @@ namespace PasocomMate.AunCast
             }
 
             QueueSerialize();
-            LogMessage("LocalDualPlayerController initialized");
+            LogMessage("AunCastDualPlayerController initialized");
 
             // インスタンス最初の参加者なら、デフォルト URL の自動再生を遅延スケジュールする。
             // Owner 判定とネットワーク初期化が安定するよう数秒待ってから実行する。
@@ -263,7 +263,7 @@ namespace PasocomMate.AunCast
             return true;
         }
 
-        /// <summary>ActivePlayerMonitor に Active/Standby の時刻進行ポーリングを委譲する。</summary>
+        /// <summary>AunCastActivePlayerMonitor に Active/Standby の時刻進行ポーリングを委譲する。</summary>
         private void PollActiveMonitoring(float now)
         {
             if (_localState == STATE_ACTIVE_PLAYING || _localState == STATE_REQUEST_PENDING)
@@ -282,7 +282,7 @@ namespace PasocomMate.AunCast
                     break;
 
                 case STATE_ACTIVE_PLAYING:
-                    if (activeMonitor.DetectActiveFailure(now) && resyncClient.TryRequestResync(now, ResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+                    if (activeMonitor.DetectActiveFailure(now) && resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
                     {
                         LogWarning($"Active failure -> RequestPending (stall={activeMonitor.GetActiveStallDuration():F2}s, drift={activeMonitor.GetDriftAccumulator():F3}s)");
                         _tlAction = "ACTIVE_FAILURE";
@@ -291,7 +291,7 @@ namespace PasocomMate.AunCast
                     break;
 
                 case STATE_REQUEST_PENDING:
-                    if (resyncClient.GetRequestReason() == ResyncCoordinatorClient.REQUEST_REASON_FAILURE
+                    if (resyncClient.GetRequestReason() == AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE
                              && activeMonitor.GetConsecutiveStallCount() == 0
                              && activeMonitor.GetConsecutiveAdvanceCount() >= activeMonitor.GetMinConsecutiveAdvances())
                     {
@@ -395,8 +395,8 @@ namespace PasocomMate.AunCast
             float threshold = activeDet != null ? activeDet.GetSilenceRmsThreshold() : 0.001f;
             float requiredSec = activeDet != null ? activeDet.GetSilenceConsecutiveSec() : 2f;
 
-            VideoPlayerManager activeMgr = switcher.GetActiveManager();
-            VideoPlayerManager standbyMgr = switcher.GetStandbyManager();
+            AunCastVideoPlayerManager activeMgr = switcher.GetActiveManager();
+            AunCastVideoPlayerManager standbyMgr = switcher.GetStandbyManager();
 
             // 両系統ともユーザー音量でミュート (slider=0) の場合は無音検知をスキップ。
             // ミュート中は GetOutputData が全ゼロを返し RMS 正規化が成立しないため。
@@ -414,7 +414,7 @@ namespace PasocomMate.AunCast
                 _combinedSilenceDuration += Time.deltaTime;
 
             if (_combinedSilenceDuration >= requiredSec
-                && resyncClient.TryRequestResync(now, ResyncCoordinatorClient.REQUEST_REASON_SILENCE))
+                && resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_SILENCE))
             {
                 LogWarning("Silence detected on all audible players; requesting individual resync");
                 _tlAction = "SILENCE_RESYNC";
@@ -424,14 +424,14 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>指定プレイヤーの音量が閾値以上かを判定する（フェード中のミュート側を除外するため FadeGain も確認）。</summary>
-        private bool CheckPlayerAudible(VideoPlayerManager mgr, AunCastSpeaker det, float threshold)
+        private bool CheckPlayerAudible(AunCastVideoPlayerManager mgr, AunCastSpeaker det, float threshold)
         {
             if (mgr == null || det == null) return false;
             if (mgr.GetFadeGain() <= 0f) return false;
             return det.GetRms() >= threshold;
         }
 
-        /// <summary>PlaybackMonitor に再生状態を定期報告する（全体ステータス UI 表示用）。</summary>
+        /// <summary>AunCastPlaybackMonitor に再生状態を定期報告する（全体ステータス UI 表示用）。</summary>
         private void ReportPlaybackStateToCoordinator()
         {
             if (playbackMonitor == null || resyncClient.GetMySlotIndex() < 0) return;
@@ -542,7 +542,7 @@ namespace PasocomMate.AunCast
             resyncClient.SetLocalCooldownUntil(now + resyncClient.GetLocalCooldownSec());
             resyncClient.SetConsecutiveFailCount(0);
             resyncClient.SetResyncRequested(false);
-            resyncClient.SetRequestReason(ResyncCoordinatorClient.REQUEST_REASON_FAILURE);
+            resyncClient.SetRequestReason(AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE);
             resyncClient.OnResyncCompleted(now);
 
             resyncClient.ReportResult(true);
@@ -565,7 +565,7 @@ namespace PasocomMate.AunCast
             ReportConnecting(false);
 
             resyncClient.SetResyncRequested(false);
-            resyncClient.SetRequestReason(ResyncCoordinatorClient.REQUEST_REASON_FAILURE);
+            resyncClient.SetRequestReason(AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE);
             LogMessage("Standby connection failed");
             HandleFailed(now);
         }
@@ -601,7 +601,7 @@ namespace PasocomMate.AunCast
         /// <summary>Active プレイヤーがまだフレームを生成しているか確認する（再生中かつ時刻が進んでいるか）。</summary>
         private bool IsActiveAlive()
         {
-            VideoPlayerManager active = switcher.GetActiveManager();
+            AunCastVideoPlayerManager active = switcher.GetActiveManager();
             if (active == null) return false;
             return active.IsPlaying() && active.GetTime() > 0f;
         }
@@ -649,7 +649,7 @@ namespace PasocomMate.AunCast
         {
             float now = Time.time;
             if (_localState != STATE_ACTIVE_PLAYING) return false;
-            if (!resyncClient.TryRequestResync(now, ResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
+            if (!resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
 
             _tlAction = "MANUAL_RESYNC";
             _localState = STATE_REQUEST_PENDING;
@@ -658,10 +658,10 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
-        //  VideoPlayerManager コールバック
+        //  AunCastVideoPlayerManager コールバック
         // =================================================================
 
-        /// <summary>VideoPlayerManager からの Ready コールバック。Active なら即 Play、Standby なら検証フローへ進む。</summary>
+        /// <summary>AunCastVideoPlayerManager からの Ready コールバック。Active なら即 Play、Standby なら検証フローへ進む。</summary>
         public void OnManagerVideoReady()
         {
             bool isActiveEvent = IsActiveEvent();
@@ -688,7 +688,7 @@ namespace PasocomMate.AunCast
             }
         }
 
-        /// <summary>VideoPlayerManager からの Start コールバック。オーナーは _ownerPlaying を配信、非オーナーは同期待ちを判断する。</summary>
+        /// <summary>AunCastVideoPlayerManager からの Start コールバック。オーナーは _ownerPlaying を配信、非オーナーは同期待ちを判断する。</summary>
         public void OnManagerVideoStart()
         {
             bool isActiveEvent = IsActiveEvent();
@@ -762,7 +762,7 @@ namespace PasocomMate.AunCast
 
         public void OnManagerVideoEnd() { }
 
-        /// <summary>VideoPlayerManager からの Error コールバック。Active ならリブート失敗判定/Resync 要求、Standby なら切替断念。</summary>
+        /// <summary>AunCastVideoPlayerManager からの Error コールバック。Active ならリブート失敗判定/Resync 要求、Standby なら切替断念。</summary>
         public void OnManagerVideoError()
         {
             bool isActiveEvent = IsActiveEvent();
@@ -797,7 +797,7 @@ namespace PasocomMate.AunCast
 
                 // Active 再生中のエラー → Resync 要求
                 if (_localState == STATE_ACTIVE_PLAYING
-                    && resyncClient.TryRequestResync(Time.time, ResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+                    && resyncClient.TryRequestResync(Time.time, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
                 {
                     _localState = STATE_REQUEST_PENDING;
                 }
@@ -1141,7 +1141,7 @@ namespace PasocomMate.AunCast
             if (d == null) return -96f;
             float dbfs = d.GetLastRmsDbfs();
             // GetOutputData は AudioSource.volume 適用後の出力を返すため、実適用ゲインで逆補正する (#10)
-            VideoPlayerManager activeManager = switcher != null ? switcher.GetActiveManager() : null;
+            AunCastVideoPlayerManager activeManager = switcher != null ? switcher.GetActiveManager() : null;
             if (activeManager != null)
             {
                 AudioSource source = d.GetComponent<AudioSource>();
@@ -1255,7 +1255,7 @@ namespace PasocomMate.AunCast
         private bool _tlLoadingA;
         private bool _tlLoadingB;
 
-        private int ObservePlayerState(VideoPlayerManager mgr, bool loading)
+        private int ObservePlayerState(AunCastVideoPlayerManager mgr, bool loading)
         {
             if (mgr != null && mgr.IsPlaying()) return 2;
             return loading ? 1 : 0;

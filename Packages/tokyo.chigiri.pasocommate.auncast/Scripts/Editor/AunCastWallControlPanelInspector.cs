@@ -5,8 +5,8 @@ using UdonSharpEditor;
 
 namespace PasocomMate.AunCast.Internal
 {
-    [CustomEditor(typeof(WallControlPanel))]
-    internal class WallControlPanelInspector : Editor
+    [CustomEditor(typeof(AunCastWallControlPanel))]
+    internal class AunCastWallControlPanelInspector : Editor
     {
         private static readonly string[] WIRING_PROPERTY_NAMES =
         {
@@ -96,7 +96,7 @@ namespace PasocomMate.AunCast.Internal
             if (_spawnPanelButtonRectProperty.objectReferenceValue != null) return;
             if (serializedObject.isEditingMultipleObjects) return;
 
-            var panel = target as WallControlPanel;
+            var panel = target as AunCastWallControlPanel;
             if (panel == null) return;
 
             RectTransform[] rects = panel.GetComponentsInChildren<RectTransform>(true);
@@ -143,11 +143,11 @@ namespace PasocomMate.AunCast.Internal
         {
             for (int i = 0; i < targets.Length; i++)
             {
-                var panel = targets[i] as WallControlPanel;
+                var panel = targets[i] as AunCastWallControlPanel;
                 if (panel == null) continue;
 
                 var state = ReadLayoutState(panel);
-                Undo.RecordObjects(state.RecordTargets, "Update WallControlPanel Shared Layout");
+                Undo.RecordObjects(state.RecordTargets, "Update AunCastWallControlPanel Shared Layout");
 
                 panel.ApplySharedButtonsLayout();
 
@@ -173,7 +173,7 @@ namespace PasocomMate.AunCast.Internal
             }
         }
 
-        private static LayoutState ReadLayoutState(WallControlPanel panel)
+        private static LayoutState ReadLayoutState(AunCastWallControlPanel panel)
         {
             var so = new SerializedObject(panel);
             var switchButtonProperty = so.FindProperty("switchViewButton");

@@ -15,11 +15,11 @@ namespace PasocomMate.AunCast
     /// VRChat メニュー近傍に表示される拡張メニュー型。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class UserStatusPanel : UdonSharpBehaviour
+    public class AunCastUserStatusPanel : UdonSharpBehaviour
     {
         [Header("References")]
-        [SerializeField] private LocalDualPlayerController controller;
-        [SerializeField] private ResyncCoordinator coordinator;
+        [SerializeField] private AunCastDualPlayerController controller;
+        [SerializeField] private AunCastResyncCoordinator coordinator;
         [SerializeField] private AunCastEventBus eventBus;
 
         [Header("UI Elements")]
@@ -78,7 +78,7 @@ namespace PasocomMate.AunCast
         [SerializeField] private CanvasGroup userContentCanvasGroup;
         [Tooltip("Staff 側コンテンツの CanvasGroup")]
         [SerializeField] private CanvasGroup staffContentCanvasGroup;
-        [Tooltip("Staff ビューの UI ロジックを司る StaffControlPanel。Staff ビューへの通知/命令専用（基底型参照で循環を断つ。解錠状態は SetStaffUnlocked で push されキャッシュする）")]
+        [Tooltip("Staff ビューの UI ロジックを司る AunCastStaffControlPanel。Staff ビューへの通知/命令専用（基底型参照で循環を断つ。解錠状態は SetStaffUnlocked で push されキャッシュする）")]
         [SerializeField] private UdonSharpBehaviour staffControlPanel;
 
         /// <summary>SCP から push される解錠状態のローカルキャッシュ。SCP を逆参照しないため保持する。</summary>
@@ -172,7 +172,7 @@ namespace PasocomMate.AunCast
 
         [Header("HUD Overlay")]
         [Tooltip("VR ジェスチャー長押し中に視界へ表示するプログレス HUD。")]
-        [SerializeField] private HudProgressOverlay hudProgress;
+        [SerializeField] private AunCastHudProgressOverlay hudProgress;
 
 
         // --- ジェスチャー検出状態 ---
@@ -531,7 +531,7 @@ namespace PasocomMate.AunCast
                 backgroundImage.color = Color.Lerp(userBackgroundColor, staffBackgroundColor, _crossfadeCurrent);
         }
 
-        /// <summary>スタッフロックが解除中なら true。StaffControlPanel が個別ボタン制御で使用。</summary>
+        /// <summary>スタッフロックが解除中なら true。AunCastStaffControlPanel が個別ボタン制御で使用。</summary>
         /// <remarks>_inStaffView は意図的に見ない。クロスフェード中に false になる瞬間があり、その間に
         /// ボタン色が変わる視覚的ノイズが発生するため。スタッフビュー非表示時の interactable は
         /// staffContentCanvasGroup.interactable で別途遮断される。</remarks>
@@ -1065,7 +1065,7 @@ namespace PasocomMate.AunCast
             }
         }
 
-        /// <summary>WallControlPanel から呼ばれ、ジェスチャーフラグを個別に設定する。ローカル設定のみで同期しない。</summary>
+        /// <summary>AunCastWallControlPanel から呼ばれ、ジェスチャーフラグを個別に設定する。ローカル設定のみで同期しない。</summary>
         public void SetSummonGestureFlag(int flag, bool enabled)
         {
             if (enabled)
@@ -1180,7 +1180,7 @@ namespace PasocomMate.AunCast
             if (stateText != null)
             {
                 string errorMsg = controller.GetLastErrorMessage();
-                bool isPlaying = localState == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
+                bool isPlaying = localState == AunCastDualPlayerController.STATE_ACTIVE_PLAYING;
                 bool hasError = !string.IsNullOrEmpty(errorMsg);
                 bool showError = hasError && (!isPlaying || controller.GetErrorMessageAge() < errorDisplayDurationSec);
 
@@ -1205,15 +1205,15 @@ namespace PasocomMate.AunCast
 
             UpdateGauges();
 
-            bool canRequestLocal = localState == LocalDualPlayerController.STATE_ACTIVE_PLAYING;
+            bool canRequestLocal = localState == AunCastDualPlayerController.STATE_ACTIVE_PLAYING;
             if (rebootButton != null)
                 SetButtonInteractable(rebootButton, canRequestLocal);
             if (resyncButton != null)
             {
                 SetButtonInteractable(resyncButton, canRequestLocal);
-                bool isCooldown = localState == LocalDualPlayerController.STATE_COOLDOWN;
-                bool isWaiting = localState == LocalDualPlayerController.STATE_REQUEST_PENDING
-                    || localState == LocalDualPlayerController.STATE_RESERVED;
+                bool isCooldown = localState == AunCastDualPlayerController.STATE_COOLDOWN;
+                bool isWaiting = localState == AunCastDualPlayerController.STATE_REQUEST_PENDING
+                    || localState == AunCastDualPlayerController.STATE_RESERVED;
                 bool showCountdown = isCooldown || isWaiting;
                 if (_resyncButtonLabel != null)
                     _resyncButtonLabel.gameObject.SetActive(!showCountdown);
@@ -1437,7 +1437,7 @@ namespace PasocomMate.AunCast
             if (staffLockButtonLabel != null)
                 staffLockButtonLabel.text = _staffLocked ? ICON_LOCK : ICON_LOCK_OPEN;
 
-            // StaffControlPanel 側でロック状態と AND を取って個別ボタン alpha を計算する。
+            // AunCastStaffControlPanel 側でロック状態と AND を取って個別ボタン alpha を計算する。
             if (staffControlPanel != null)
                 staffControlPanel.SendCustomEvent("UpdateActionButtonsInteractable");
         }
@@ -1446,7 +1446,7 @@ namespace PasocomMate.AunCast
         public void OnResyncButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
+            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
@@ -1454,7 +1454,7 @@ namespace PasocomMate.AunCast
         public void OnRebootButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != LocalDualPlayerController.STATE_ACTIVE_PLAYING) return;
+            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.Reboot();
         }
 

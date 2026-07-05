@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
-  m_Name: ResyncCoordinator
+  m_Name: AunCastResyncCoordinator
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: c4a03810f2d2f3a45a0a1d949b5aee1b,
     type: 2}
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 4
   hasInteractEvent: 0
-  scriptID: -3694950070065187028
+  scriptID: -8870339840411677380
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -344,7 +344,7 @@ MonoBehaviour:
       Data: 23|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.PlaybackMonitor, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastPlaybackMonitor, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 
@@ -449,7 +449,7 @@ MonoBehaviour:
       Data: 31|UnityEngine.TooltipAttribute, UnityEngine.CoreModule
     - Name: tooltip
       Entry: 1
-      Data: "\u540C\u671F\u5909\u6570\u306E\u66F4\u65B0\u3092\u901A\u77E5\u3059\u308B\u5148\uFF08StaffControlPanel
+      Data: "\u540C\u671F\u5909\u6570\u306E\u66F4\u65B0\u3092\u901A\u77E5\u3059\u308B\u5148\uFF08AunCastStaffControlPanel
         \u3092\u914D\u7DDA\uFF09\u3002UI \u5177\u8C61\u578B\u306B\u4F9D\u5B58\u3057\u306A\u3044\u305F\u3081
         UdonSharpBehaviour \u3067\u53D7\u3051\u308B\u3002"
     - Name: 

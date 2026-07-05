@@ -5,16 +5,16 @@ namespace PasocomMate.AunCast.Tests
 {
     public class ParameterRangeValidationTests
     {
-        private ActivePlayerMonitor _monitor;
-        private ResyncCoordinator _coordinator;
-        private ResyncCoordinatorClient _client;
+        private AunCastActivePlayerMonitor _monitor;
+        private AunCastResyncCoordinator _coordinator;
+        private AunCastResyncCoordinatorClient _client;
 
         [SetUp]
         public void SetUp()
         {
-            _monitor = TestHelper.CreateComponent<ActivePlayerMonitor>();
-            _coordinator = TestHelper.CreateComponent<ResyncCoordinator>();
-            _client = TestHelper.CreateComponent<ResyncCoordinatorClient>();
+            _monitor = TestHelper.CreateComponent<AunCastActivePlayerMonitor>();
+            _coordinator = TestHelper.CreateComponent<AunCastResyncCoordinator>();
+            _client = TestHelper.CreateComponent<AunCastResyncCoordinatorClient>();
         }
 
         [TearDown]
@@ -28,7 +28,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void MonitorInterval_NotExceedRecommended()
         {
-            float value = TestHelper.Get<ActivePlayerMonitor, float>(_monitor, "monitorIntervalSec");
+            float value = TestHelper.Get<AunCastActivePlayerMonitor, float>(_monitor, "monitorIntervalSec");
             Assert.LessOrEqual(value, 0.1f,
                 $"monitorIntervalSec ({value}) は 0.1 秒以下であるべき");
         }
@@ -36,7 +36,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void StalledTimeout_InRange()
         {
-            float value = TestHelper.Get<ActivePlayerMonitor, float>(_monitor, "stalledTimeoutSec");
+            float value = TestHelper.Get<AunCastActivePlayerMonitor, float>(_monitor, "stalledTimeoutSec");
             Assert.GreaterOrEqual(value, 1.5f,
                 $"stalledTimeoutSec ({value}) は 1.5 秒以上であるべき");
             Assert.LessOrEqual(value, 3.0f,
@@ -46,7 +46,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void MaxConcurrent_SafeForCDN()
         {
-            byte value = TestHelper.Get<ResyncCoordinator, byte>(_coordinator, "maxConcurrentResyncUsers");
+            byte value = TestHelper.Get<AunCastResyncCoordinator, byte>(_coordinator, "maxConcurrentResyncUsers");
             Assert.LessOrEqual(value, 15,
                 $"maxConcurrentResyncUsers ({value}) は CDN 上限 (100) の 15% = 15 以下であるべき");
         }
@@ -54,9 +54,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void CycleTimeout_LessThanRunningTimeout()
         {
-            float cycleTimeout = TestHelper.Get<ResyncCoordinatorClient, float>(
+            float cycleTimeout = TestHelper.Get<AunCastResyncCoordinatorClient, float>(
                 _client, "resyncCycleTimeoutSec");
-            float runningTimeout = TestHelper.Get<ResyncCoordinator, float>(
+            float runningTimeout = TestHelper.Get<AunCastResyncCoordinator, float>(
                 _coordinator, "runningTimeoutSec");
 
             Assert.Less(cycleTimeout, runningTimeout,
@@ -66,7 +66,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DriftThreshold_IsConfigured()
         {
-            float value = TestHelper.Get<ActivePlayerMonitor, float>(
+            float value = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftResyncThresholdSec");
             Assert.Greater(value, 0f,
                 "driftResyncThresholdSec は 0 より大きくなければならない");

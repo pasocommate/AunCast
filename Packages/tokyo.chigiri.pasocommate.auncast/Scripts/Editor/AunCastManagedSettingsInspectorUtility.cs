@@ -55,7 +55,7 @@ namespace PasocomMate.AunCast.Internal
 
         /// <summary>
         /// 折りたたみ見出し＋読み取り専用（DisabledScope）で列挙プロパティを描画する。
-        /// 明示的にプロパティ名を並べたい呼び出し側（例: WallControlPanelInspector）で共用する。
+        /// 明示的にプロパティ名を並べたい呼び出し側（例: AunCastWallControlPanelInspector）で共用する。
         /// </summary>
         public static void DrawManagedGroupFoldout(
             SerializedObject serializedObject,

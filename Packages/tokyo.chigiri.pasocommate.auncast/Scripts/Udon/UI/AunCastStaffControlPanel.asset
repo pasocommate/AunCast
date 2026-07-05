@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
-  m_Name: StaffControlPanel
+  m_Name: AunCastStaffControlPanel
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: 0640187eaa23aa64cb1f28db01952abd,
     type: 2}
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 2
   hasInteractEvent: 0
-  scriptID: -4729056422724382660
+  scriptID: 1225558717110853888
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.LocalDualPlayerController, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastDualPlayerController, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 
@@ -137,7 +137,7 @@ MonoBehaviour:
       Data: 9|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.ResyncCoordinator, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastResyncCoordinator, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 
@@ -197,7 +197,7 @@ MonoBehaviour:
       Data: 13|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.UserStatusPanel, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastUserStatusPanel, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 

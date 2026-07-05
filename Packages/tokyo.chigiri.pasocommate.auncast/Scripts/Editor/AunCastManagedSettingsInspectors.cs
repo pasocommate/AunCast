@@ -54,8 +54,8 @@ namespace PasocomMate.AunCast.Internal
         }
     }
 
-    [CustomEditor(typeof(LocalDualPlayerController))]
-    internal sealed class LocalDualPlayerControllerInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastDualPlayerController))]
+    internal sealed class AunCastDualPlayerControllerInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] SETTINGS_MANAGED_PROPERTY_NAMES =
         {
@@ -80,8 +80,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(ActivePlayerMonitor))]
-    internal sealed class ActivePlayerMonitorInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastActivePlayerMonitor))]
+    internal sealed class AunCastActivePlayerMonitorInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] MANAGED_PROPERTY_NAMES =
         {
@@ -104,8 +104,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(ResyncCoordinatorClient))]
-    internal sealed class ResyncCoordinatorClientInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastResyncCoordinatorClient))]
+    internal sealed class AunCastResyncCoordinatorClientInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] MANAGED_PROPERTY_NAMES =
         {
@@ -126,8 +126,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(ResyncCoordinator))]
-    internal sealed class ResyncCoordinatorInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastResyncCoordinator))]
+    internal sealed class AunCastResyncCoordinatorInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] SETTINGS_MANAGED_PROPERTY_NAMES =
         {
@@ -147,8 +147,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(PlaybackMonitor))]
-    internal sealed class PlaybackMonitorInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastPlaybackMonitor))]
+    internal sealed class AunCastPlaybackMonitorInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] WIRING_PROPERTY_NAMES =
         {
@@ -159,8 +159,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(StaffControlPanel))]
-    internal sealed class StaffControlPanelInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastStaffControlPanel))]
+    internal sealed class AunCastStaffControlPanelInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] MANAGED_PROPERTY_NAMES =
         {
@@ -196,8 +196,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(UserStatusPanel))]
-    internal sealed class UserStatusPanelInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastUserStatusPanel))]
+    internal sealed class AunCastUserStatusPanelInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] SETTINGS_MANAGED_PROPERTY_NAMES =
         {
@@ -251,8 +251,8 @@ namespace PasocomMate.AunCast.Internal
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;
     }
 
-    [CustomEditor(typeof(HudProgressOverlay))]
-    internal sealed class HudProgressOverlayInspector : AunCastManagedSettingsInspectorBase
+    [CustomEditor(typeof(AunCastHudProgressOverlay))]
+    internal sealed class AunCastHudProgressOverlayInspector : AunCastManagedSettingsInspectorBase
     {
         private static readonly string[] SETTINGS_MANAGED_PROPERTY_NAMES =
         {

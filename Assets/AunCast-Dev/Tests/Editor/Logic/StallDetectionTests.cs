@@ -5,12 +5,12 @@ namespace PasocomMate.AunCast.Tests
 {
     public class StallDetectionTests
     {
-        private ActivePlayerMonitor _monitor;
+        private AunCastActivePlayerMonitor _monitor;
 
         [SetUp]
         public void SetUp()
         {
-            _monitor = TestHelper.CreateComponent<ActivePlayerMonitor>();
+            _monitor = TestHelper.CreateComponent<AunCastActivePlayerMonitor>();
         }
 
         [TearDown]
@@ -22,7 +22,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_StallTimeout_ReturnsTrue()
         {
-            float stalledTimeout = TestHelper.Get<ActivePlayerMonitor, float>(
+            float stalledTimeout = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "stalledTimeoutSec");
 
             // 停滞開始から stalledTimeoutSec 以上経過
@@ -40,7 +40,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_DriftOverThreshold_ReturnsTrue()
         {
-            float threshold = TestHelper.Get<ActivePlayerMonitor, float>(
+            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftResyncThresholdSec");
 
             // ウォームアップ済み、ドリフト閾値超過
@@ -58,7 +58,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_Normal_ReturnsFalse()
         {
-            float threshold = TestHelper.Get<ActivePlayerMonitor, float>(
+            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftResyncThresholdSec");
 
             // 停滞なし、ドリフト正常
@@ -76,7 +76,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_DuringWarmup_IgnoresDrift()
         {
-            float threshold = TestHelper.Get<ActivePlayerMonitor, float>(
+            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftResyncThresholdSec");
 
             // ウォームアップ中は大きなドリフトでも無視
@@ -94,7 +94,7 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_BeforeStablePlayback_IgnoresDrift()
         {
-            float threshold = TestHelper.Get<ActivePlayerMonitor, float>(
+            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "driftResyncThresholdSec");
 
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
@@ -109,9 +109,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void IsVerifySatisfied_EnoughAdvances_ReturnsTrue()
         {
-            int minAdvances = TestHelper.Get<ActivePlayerMonitor, int>(
+            int minAdvances = TestHelper.Get<AunCastActivePlayerMonitor, int>(
                 _monitor, "minConsecutiveAdvances");
-            float minDuration = TestHelper.Get<ActivePlayerMonitor, float>(
+            float minDuration = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "verifyMinDurationSec");
 
             TestHelper.Set(_monitor, "_standbyAdvanceCount", minAdvances);
@@ -126,9 +126,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void IsVerifySatisfied_NotEnoughAdvances_ReturnsFalse()
         {
-            int minAdvances = TestHelper.Get<ActivePlayerMonitor, int>(
+            int minAdvances = TestHelper.Get<AunCastActivePlayerMonitor, int>(
                 _monitor, "minConsecutiveAdvances");
-            float minDuration = TestHelper.Get<ActivePlayerMonitor, float>(
+            float minDuration = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "verifyMinDurationSec");
 
             TestHelper.Set(_monitor, "_standbyAdvanceCount", minAdvances - 1);
@@ -143,9 +143,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void IsVerifySatisfied_NotEnoughTime_ReturnsFalse()
         {
-            int minAdvances = TestHelper.Get<ActivePlayerMonitor, int>(
+            int minAdvances = TestHelper.Get<AunCastActivePlayerMonitor, int>(
                 _monitor, "minConsecutiveAdvances");
-            float minDuration = TestHelper.Get<ActivePlayerMonitor, float>(
+            float minDuration = TestHelper.Get<AunCastActivePlayerMonitor, float>(
                 _monitor, "verifyMinDurationSec");
 
             TestHelper.Set(_monitor, "_standbyAdvanceCount", minAdvances + 5);

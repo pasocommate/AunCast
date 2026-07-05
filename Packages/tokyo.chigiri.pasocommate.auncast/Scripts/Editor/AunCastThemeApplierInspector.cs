@@ -180,7 +180,7 @@ namespace PasocomMate.AunCast.Internal
             SetCanvasGroupVisible(userCg, !showStaff);
             SetCanvasGroupVisible(staffCg, showStaff);
 
-            // 実行時の UserStatusPanel.OnSwitchViewButtonPress と同様に Background 色も切り替える
+            // 実行時の AunCastUserStatusPanel.OnSwitchViewButtonPress と同様に Background 色も切り替える
             if (theme != null)
             {
                 var bg = root.Find(BACKGROUND_PATH)?.GetComponent<Image>();
@@ -237,7 +237,7 @@ namespace PasocomMate.AunCast.Internal
                     targets.Add(videoScreen);
             }
 
-            foreach (var wallPanel in root.GetComponentsInChildren<WallControlPanel>(true))
+            foreach (var wallPanel in root.GetComponentsInChildren<AunCastWallControlPanel>(true))
             {
                 if (wallPanel == null) continue;
 
@@ -267,19 +267,19 @@ namespace PasocomMate.AunCast.Internal
         {
             if (theme == null) return;
 
-            ApplyThemeToProxy<UserStatusPanel>(root, "PortablePanel", proxy =>
+            ApplyThemeToProxy<AunCastUserStatusPanel>(root, "PortablePanel", proxy =>
             {
                 SetSerializedField(proxy, "userBackgroundColor", theme.userBackgroundColor);
                 SetSerializedField(proxy, "staffBackgroundColor", theme.staffBackgroundColor);
                 SetSerializedField(proxy, "disabledButtonLabelAlpha", theme.disabledButtonLabelAlpha);
             });
 
-            ApplyThemeToAllProxies<WallControlPanel>(root, proxy =>
+            ApplyThemeToAllProxies<AunCastWallControlPanel>(root, proxy =>
             {
                 SetSerializedField(proxy, "disabledButtonLabelAlpha", theme.disabledButtonLabelAlpha);
             });
 
-            ApplyThemeToProxy<HudProgressOverlay>(root, "HudProgressOverlay", proxy =>
+            ApplyThemeToProxy<AunCastHudProgressOverlay>(root, "HudProgressOverlay", proxy =>
             {
                 SetSerializedField(proxy, "vrLocalOffset", theme.hudProgressLocalOffset);
             });

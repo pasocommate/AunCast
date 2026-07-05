@@ -620,7 +620,7 @@ namespace PasocomMate.AunCast
             {
                 if (behaviour == null) continue;
                 var type = behaviour.GetType();
-                if (type.Name != "WallControlPanel") continue;
+                if (type.Name != "AunCastWallControlPanel") continue;
                 if (type.Namespace != "PasocomMate.AunCast") continue;
                 return true;
             }

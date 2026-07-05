@@ -7,12 +7,12 @@ using VRC.Udon.Common.Interfaces;
 namespace PasocomMate.AunCast
 {
     /// <summary>
-    /// ResyncCoordinator との通信を担当するクライアント側コンポーネント。
+    /// AunCastResyncCoordinator との通信を担当するクライアント側コンポーネント。
     /// スロット割当、Resync 要求・キャンセル・結果報告、グローバル Resync の採用を行う。
-    /// LocalDualPlayerController と同一 GameObject に配置され、ネットワーク RPC を発行する。
+    /// AunCastDualPlayerController と同一 GameObject に配置され、ネットワーク RPC を発行する。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class ResyncCoordinatorClient : UdonSharpBehaviour
+    public class AunCastResyncCoordinatorClient : UdonSharpBehaviour
     {
         // =================================================================
         //  定数 — Resync 要求の理由コード（ログ・UI 表示用）
@@ -25,7 +25,7 @@ namespace PasocomMate.AunCast
         //  Inspector 参照
         // =================================================================
         /// <summary>Owner 側で全スロットを管理する Coordinator 本体。</summary>
-        [SerializeField] private ResyncCoordinator coordinator;
+        [SerializeField] private AunCastResyncCoordinator coordinator;
 
         // =================================================================
         //  Inspector パラメータ
@@ -168,7 +168,7 @@ namespace PasocomMate.AunCast
 
             // Coordinator 側で既にキューイング中なら二重要求しない
             int coordState = coordinator.GetResyncState(_mySlotIndex);
-            if (coordState != ResyncCoordinator.STATE_NONE) return false;
+            if (coordState != AunCastResyncCoordinator.STATE_NONE) return false;
 
             coordinator.SendCustomNetworkEvent(
                 NetworkEventTarget.Owner, "OnResyncRequest", _mySlotIndex);
@@ -199,34 +199,34 @@ namespace PasocomMate.AunCast
 
             switch (currentLocalState)
             {
-                case LocalDualPlayerController.STATE_ACTIVE_PLAYING:
+                case AunCastDualPlayerController.STATE_ACTIVE_PLAYING:
                     if (now < _localCooldownUntil) return -1;
                     // キャンセル送信後、Coordinator が NONE に戻るまで採用を抑制
                     if (now < _adoptionSuppressedUntil)
                     {
-                        if (coordState == ResyncCoordinator.STATE_NONE)
+                        if (coordState == AunCastResyncCoordinator.STATE_NONE)
                             _adoptionSuppressedUntil = 0f;
                         else
                             return -1;
                     }
-                    if (coordState != ResyncCoordinator.STATE_QUEUED
-                        && coordState != ResyncCoordinator.STATE_GRANTED) return -1;
+                    if (coordState != AunCastResyncCoordinator.STATE_QUEUED
+                        && coordState != AunCastResyncCoordinator.STATE_GRANTED) return -1;
 
                     _resyncRequested = true;
                     _requestStartedAt = now;
                     _requestReason = REQUEST_REASON_MANUAL;
                     if (_timelineLogging) TL($"a=ADOPTION coordState={coordState} slot={_mySlotIndex}");
                     LogMessage($"Adopted queued Resync request (coordState={coordState})");
-                    return coordState == ResyncCoordinator.STATE_GRANTED
-                        ? LocalDualPlayerController.STATE_RESERVED
-                        : LocalDualPlayerController.STATE_REQUEST_PENDING;
+                    return coordState == AunCastResyncCoordinator.STATE_GRANTED
+                        ? AunCastDualPlayerController.STATE_RESERVED
+                        : AunCastDualPlayerController.STATE_REQUEST_PENDING;
 
-                case LocalDualPlayerController.STATE_REQUEST_PENDING:
-                    if (coordState == ResyncCoordinator.STATE_GRANTED)
+                case AunCastDualPlayerController.STATE_REQUEST_PENDING:
+                    if (coordState == AunCastResyncCoordinator.STATE_GRANTED)
                     {
                         if (_timelineLogging) TL($"a=RESYNC_GRANTED slot={_mySlotIndex}");
                         LogMessage($"Resync granted after {(now - _requestStartedAt):F2}s");
-                        return LocalDualPlayerController.STATE_RESERVED;
+                        return AunCastDualPlayerController.STATE_RESERVED;
                     }
                     return -1;
 
@@ -250,7 +250,7 @@ namespace PasocomMate.AunCast
             if (_mySlotIndex >= 0 && coordinator != null)
             {
                 int coordState = coordinator.GetResyncState(_mySlotIndex);
-                if (coordState != ResyncCoordinator.STATE_NONE)
+                if (coordState != AunCastResyncCoordinator.STATE_NONE)
                 {
                     coordinator.SendCustomNetworkEvent(
                         NetworkEventTarget.Owner, "OnCancelSlot", _mySlotIndex);
@@ -292,7 +292,7 @@ namespace PasocomMate.AunCast
         public bool ShouldRetryResyncRequest(float now)
         {
             if (coordinator == null || _mySlotIndex < 0) return false;
-            return coordinator.GetResyncState(_mySlotIndex) == ResyncCoordinator.STATE_NONE
+            return coordinator.GetResyncState(_mySlotIndex) == AunCastResyncCoordinator.STATE_NONE
                 && (now - _lastResyncRequestSentAt) >= RESYNC_REQUEST_RETRY_SEC;
         }
 
@@ -371,7 +371,7 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>Coordinator 参照（外部からの状態確認用）。</summary>
-        public ResyncCoordinator GetCoordinator() { return coordinator; }
+        public AunCastResyncCoordinator GetCoordinator() { return coordinator; }
 
         /// <summary>タイムラインログをローカルのみ設定する。</summary>
         public void SetTimelineLoggingLocal(bool value)

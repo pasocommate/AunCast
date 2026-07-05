@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 利用規約への同意ゲートをインスペクタに追加
 - AunCastSettings 編集時に UI 表示を実値へ同期
 - リトライ間隔を AunCastSettings で調整可能に
-- WallControlPanel に製品情報ビュー（QR コード・連絡先・バージョン付きコピーライト表記）を追加
+- AunCastWallControlPanel に製品情報ビュー（QR コード・連絡先・バージョン付きコピーライト表記）を追加
 - 「Auto Resync」表記を「Silence Resync」に統一
 - DriftGraph（同期デバッグ表示）を廃止
 - ワールド定員管理を廃止し接続上限を既定値化
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 各種バグ修正
 
 ## [2.1.0] - 2026-05-29
-- WallControlPanel を検証シーンに追加
+- AunCastWallControlPanel を検証シーンに追加
 - ドリフト計測中断時に基準点をクリアし再有効化時に取り直すよう修正
 
 ## [2.0.0] - 2026-05-27
@@ -53,10 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2026-05-13
 - AVPro Speaker 自動配線ツール・defaultVolume 外出し・AudioSource 初期音量保持を追加
 - ビルド時に VRC_SceneDescriptor の Capacity を自動注入する機能を追加
-- PlaybackMonitor の残留ビットを所有者自身で掃除するよう修正
+- AunCastPlaybackMonitor の残留ビットを所有者自身で掃除するよう修正
 
 ## [1.3.0] - 2026-05-13
 - Stop All 時に Playing URL を空へリセットするよう修正
 - AudioLink 未設定時の自動探索を追加
 - AudioLink の自動配線を Inspector に追加
-- WallControlPanel をプレハブ化し複数配置に対応
+- AunCastWallControlPanel をプレハブ化し複数配置に対応

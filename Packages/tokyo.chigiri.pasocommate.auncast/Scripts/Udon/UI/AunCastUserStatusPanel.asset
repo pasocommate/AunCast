@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
-  m_Name: UserStatusPanel
+  m_Name: AunCastUserStatusPanel
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: 4e0f0db58e612994c973c6a9b3ddcc1d,
     type: 2}
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 2
   hasInteractEvent: 0
-  scriptID: 6979440605992846561
+  scriptID: -8701890425590485457
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.LocalDualPlayerController, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastDualPlayerController, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 
@@ -137,7 +137,7 @@ MonoBehaviour:
       Data: 9|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.ResyncCoordinator, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastResyncCoordinator, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 
@@ -1809,7 +1809,7 @@ MonoBehaviour:
     - Name: tooltip
       Entry: 1
       Data: "Staff \u30D3\u30E5\u30FC\u306E UI \u30ED\u30B8\u30C3\u30AF\u3092\u53F8\u308B
-        StaffControlPanel\u3002Staff \u30D3\u30E5\u30FC\u3078\u306E\u901A\u77E5/\u547D\u4EE4\u5C02\u7528\uFF08\u57FA\u5E95\u578B\u53C2\u7167\u3067\u5FAA\u74B0\u3092\u65AD\u3064\u3002\u89E3\u9320\u72B6\u614B\u306F
+        AunCastStaffControlPanel\u3002Staff \u30D3\u30E5\u30FC\u3078\u306E\u901A\u77E5/\u547D\u4EE4\u5C02\u7528\uFF08\u57FA\u5E95\u578B\u53C2\u7167\u3067\u5FAA\u74B0\u3092\u65AD\u3064\u3002\u89E3\u9320\u72B6\u614B\u306F
         SetStaffUnlocked \u3067 push \u3055\u308C\u30AD\u30E3\u30C3\u30B7\u30E5\u3059\u308B\uFF09"
     - Name: 
       Entry: 8
@@ -3795,7 +3795,7 @@ MonoBehaviour:
       Data: 249|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: PasocomMate.AunCast.HudProgressOverlay, PasocomMate.AunCast
+      Data: PasocomMate.AunCast.AunCastHudProgressOverlay, PasocomMate.AunCast
     - Name: 
       Entry: 8
       Data: 

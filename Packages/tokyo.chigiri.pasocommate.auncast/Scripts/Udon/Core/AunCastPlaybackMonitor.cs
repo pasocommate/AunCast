@@ -14,9 +14,9 @@ namespace PasocomMate.AunCast
     /// 1 スロット 1 ビットにパックして同期帯域を節約する。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-    public class PlaybackMonitor : UdonSharpBehaviour
+    public class AunCastPlaybackMonitor : UdonSharpBehaviour
     {
-        // ResyncCoordinator.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
+        // AunCastResyncCoordinator.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
         // 本クラスのビットパック配列長と Coordinator の配列長が食い違う。
         private const int MAX_PLAYERS = 82;
 
@@ -25,10 +25,10 @@ namespace PasocomMate.AunCast
         [SerializeField] private bool debugLoggingEnabled = false;
 
         [Header("References")]
-        [Tooltip("同期変数の更新を通知する先（StaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
+        [Tooltip("同期変数の更新を通知する先（AunCastStaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
         [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
         [Tooltip("スロット→プレイヤー ID 対応の参照元。OnPlayerLeft で残留ビットを掃除するときに使う。")]
-        [SerializeField] private ResyncCoordinator coordinator;
+        [SerializeField] private AunCastResyncCoordinator coordinator;
 
         [UdonSynced] private byte[] playbackActive;
         [UdonSynced] private byte[] connectingActive;
@@ -82,19 +82,19 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// プレイヤー退室時に、自オブジェクトの所有者が残留ビットを掃除する。
-        /// ResyncCoordinator と所有者が分かれていても確実にビットを解放するため、
+        /// AunCastResyncCoordinator と所有者が分かれていても確実にビットを解放するため、
         /// 自前で全スロットを走査して 3 配列まとめてクリアする。
         /// </summary>
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
             if (CleanupStaleSlots() && debugLoggingEnabled)
-                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on player left (playerId={player.playerId})", this);
+                Debug.Log($"[AunCast/AunCastPlaybackMonitor] Cleared stale slots on player left (playerId={player.playerId})", this);
         }
 
         public override void OnOwnershipTransferred(VRCPlayerApi player)
         {
             if (CleanupStaleSlots() && debugLoggingEnabled)
-                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on ownership transferred", this);
+                Debug.Log($"[AunCast/AunCastPlaybackMonitor] Cleared stale slots on ownership transferred", this);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace PasocomMate.AunCast
         public override void OnPlayerJoined(VRCPlayerApi player)
         {
             if (CleanupStaleSlots() && debugLoggingEnabled)
-                Debug.Log($"[AunCast/PlaybackMonitor] Cleared stale slots on player joined (playerId={player.playerId})", this);
+                Debug.Log($"[AunCast/AunCastPlaybackMonitor] Cleared stale slots on player joined (playerId={player.playerId})", this);
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace PasocomMate.AunCast
                 nameof(OnReportPlayback), slotIndex, encoded);
 
             if (debugLoggingEnabled)
-                Debug.Log($"[AunCast/PlaybackMonitor] Sent playback report: slot {slotIndex} active={isActive}", this);
+                Debug.Log($"[AunCast/AunCastPlaybackMonitor] Sent playback report: slot {slotIndex} active={isActive}", this);
         }
 
         /// <summary>エラー状態を Owner に報告する（クライアントから呼ぶ）。</summary>
@@ -200,7 +200,7 @@ namespace PasocomMate.AunCast
                 nameof(OnReportError), slotIndex, encoded);
 
             if (debugLoggingEnabled)
-                Debug.Log($"[AunCast/PlaybackMonitor] Sent error report: slot {slotIndex} error={isError}", this);
+                Debug.Log($"[AunCast/AunCastPlaybackMonitor] Sent error report: slot {slotIndex} error={isError}", this);
         }
 
         /// <summary>接続試行中状態を Owner に報告する（クライアントから呼ぶ）。</summary>
@@ -213,7 +213,7 @@ namespace PasocomMate.AunCast
                 nameof(OnReportConnecting), slotIndex, encoded);
 
             if (debugLoggingEnabled)
-                Debug.Log($"[AunCast/PlaybackMonitor] Sent connecting report: slot {slotIndex} connecting={isConnecting}", this);
+                Debug.Log($"[AunCast/AunCastPlaybackMonitor] Sent connecting report: slot {slotIndex} connecting={isConnecting}", this);
         }
 
         // =====================================================================
@@ -232,7 +232,7 @@ namespace PasocomMate.AunCast
                 _serializationPending = true;
 
                 if (debugLoggingEnabled)
-                    Debug.Log($"[AunCast/PlaybackMonitor] Slot {slotIndex} playback={active != 0}", this);
+                    Debug.Log($"[AunCast/AunCastPlaybackMonitor] Slot {slotIndex} playback={active != 0}", this);
             }
         }
 
@@ -248,7 +248,7 @@ namespace PasocomMate.AunCast
                 _serializationPending = true;
 
                 if (debugLoggingEnabled)
-                    Debug.Log($"[AunCast/PlaybackMonitor] Slot {slotIndex} error={error != 0}", this);
+                    Debug.Log($"[AunCast/AunCastPlaybackMonitor] Slot {slotIndex} error={error != 0}", this);
             }
         }
 
@@ -264,7 +264,7 @@ namespace PasocomMate.AunCast
                 _serializationPending = true;
 
                 if (debugLoggingEnabled)
-                    Debug.Log($"[AunCast/PlaybackMonitor] Slot {slotIndex} connecting={connecting != 0}", this);
+                    Debug.Log($"[AunCast/AunCastPlaybackMonitor] Slot {slotIndex} connecting={connecting != 0}", this);
             }
         }
 
@@ -299,7 +299,7 @@ namespace PasocomMate.AunCast
             NotifyObservers();
         }
 
-        /// <summary>StaffControlPanel にステータス変化を通知して表示を更新させる。</summary>
+        /// <summary>AunCastStaffControlPanel にステータス変化を通知して表示を更新させる。</summary>
         private void NotifyObservers()
         {
             if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnCoordinatorChanged");
@@ -309,7 +309,7 @@ namespace PasocomMate.AunCast
         //  Getter
         // =====================================================================
 
-        /// <summary>現在再生中のスロット総数を返す。ResyncCoordinator の同時接続上限判定に使用。</summary>
+        /// <summary>現在再生中のスロット総数を返す。AunCastResyncCoordinator の同時接続上限判定に使用。</summary>
         public int GetPlayingEstimateCount()
         {
             return CountAssignedBits(playbackActive);
@@ -321,21 +321,21 @@ namespace PasocomMate.AunCast
             return CountAssignedBits(connectingActive);
         }
 
-        /// <summary>指定スロットが再生中か返す（StaffControlPanel のインジケータ表示用）。</summary>
+        /// <summary>指定スロットが再生中か返す（AunCastStaffControlPanel のインジケータ表示用）。</summary>
         public int GetPlaybackActive(int slotIndex)
         {
             if (playbackActive == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;
             return GetSlotActive(slotIndex) ? 1 : 0;
         }
 
-        /// <summary>指定スロットが接続試行中か返す（StaffControlPanel のインジケータ表示用）。</summary>
+        /// <summary>指定スロットが接続試行中か返す（AunCastStaffControlPanel のインジケータ表示用）。</summary>
         public int GetConnectingActive(int slotIndex)
         {
             if (connectingActive == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;
             return GetSlotConnecting(slotIndex) ? 1 : 0;
         }
 
-        /// <summary>指定スロットがエラー状態か返す（StaffControlPanel のインジケータ表示用）。</summary>
+        /// <summary>指定スロットがエラー状態か返す（AunCastStaffControlPanel のインジケータ表示用）。</summary>
         public int GetErrorActive(int slotIndex)
         {
             if (errorActive == null || slotIndex < 0 || slotIndex >= MAX_PLAYERS) return 0;

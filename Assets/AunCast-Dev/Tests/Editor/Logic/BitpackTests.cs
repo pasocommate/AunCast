@@ -5,12 +5,12 @@ namespace PasocomMate.AunCast.Tests
 {
     public class BitpackTests
     {
-        private PlaybackMonitor _monitor;
+        private AunCastPlaybackMonitor _monitor;
 
         [SetUp]
         public void SetUp()
         {
-            _monitor = TestHelper.CreateComponent<PlaybackMonitor>();
+            _monitor = TestHelper.CreateComponent<AunCastPlaybackMonitor>();
             // Start() を明示呼び出しして popcount テーブルと配列を初期化
             TestHelper.Invoke(_monitor, "Start");
         }

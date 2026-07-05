@@ -6,16 +6,16 @@ namespace PasocomMate.AunCast
 {
     /// <summary>
     /// Active Player の生存監視・ドリフト計測と、Standby Player の検証を担当するコンポーネント。
-    /// LocalDualPlayerController と同一 GameObject に配置される。
+    /// AunCastDualPlayerController と同一 GameObject に配置される。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class ActivePlayerMonitor : UdonSharpBehaviour
+    public class AunCastActivePlayerMonitor : UdonSharpBehaviour
     {
         // =================================================================
         //  Inspector 参照
         // =================================================================
-        [SerializeField] private VideoPlayerManager playerManagerA;
-        [SerializeField] private VideoPlayerManager playerManagerB;
+        [SerializeField] private AunCastVideoPlayerManager playerManagerA;
+        [SerializeField] private AunCastVideoPlayerManager playerManagerB;
 
         // =================================================================
         //  Inspector パラメータ
@@ -93,7 +93,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// 現在どちらのプレイヤーが Active ロールかを設定する。
-        /// PlaybackSwitcher が切替を行うたびに呼ばれ、以降の監視対象を決定する。
+        /// AunCastPlaybackSwitcher が切替を行うたびに呼ばれ、以降の監視対象を決定する。
         /// </summary>
         public void BindRoles(bool activeIsA)
         {
@@ -111,7 +111,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void InitializeForActive(float now)
         {
-            VideoPlayerManager active = GetActiveManager();
+            AunCastVideoPlayerManager active = GetActiveManager();
             if (active != null)
                 _lastActiveTime = active.GetTime();
             else
@@ -159,7 +159,7 @@ namespace PasocomMate.AunCast
             if (now - _lastMonitorTime < monitorIntervalSec) return;
             _lastMonitorTime = now;
 
-            VideoPlayerManager active = GetActiveManager();
+            AunCastVideoPlayerManager active = GetActiveManager();
             if (active == null) return;
 
             float currentPlayerTime = active.GetTime();
@@ -279,7 +279,7 @@ namespace PasocomMate.AunCast
         {
             if (now - _lastMonitorTime < monitorIntervalSec) return;
 
-            VideoPlayerManager standby = GetStandbyManager();
+            AunCastVideoPlayerManager standby = GetStandbyManager();
             if (standby == null) return;
 
             float currentTime = standby.GetTime();
@@ -309,7 +309,7 @@ namespace PasocomMate.AunCast
         /// <summary>
         /// Active プレイヤーに障害が発生しているかを判定する。
         /// 停滞タイムアウト超過、またはドリフト閾値超過のいずれかで true を返す。
-        /// 呼び出し元（PlaybackSwitcher）はこの結果を受けて Resync フローを起動する。
+        /// 呼び出し元（AunCastPlaybackSwitcher）はこの結果を受けて Resync フローを起動する。
         /// </summary>
         public bool DetectActiveFailure(float now)
         {
@@ -352,7 +352,7 @@ namespace PasocomMate.AunCast
         /// <summary>Active プレイヤーの現在再生時刻を返す。</summary>
         public float GetActivePlayerTime()
         {
-            VideoPlayerManager active = GetActiveManager();
+            AunCastVideoPlayerManager active = GetActiveManager();
             return active != null ? active.GetTime() : _lastActiveTime;
         }
         /// <summary>現在の停滞継続時間（秒）を返す。停滞していなければ 0。</summary>
@@ -374,7 +374,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// A/B いずれかのプレイヤーが再生中かつ時間前進を確認済みかを返す。
-        /// PlaybackMonitor がシステム全体の再生状態を外部に報告する際に使用する。
+        /// AunCastPlaybackMonitor がシステム全体の再生状態を外部に報告する際に使用する。
         /// </summary>
         public bool IsAnyPlayerPlaying()
         {
@@ -417,13 +417,13 @@ namespace PasocomMate.AunCast
         // =================================================================
 
         /// <summary>現在 Active ロールのプレイヤーマネージャーを返す。</summary>
-        private VideoPlayerManager GetActiveManager()
+        private AunCastVideoPlayerManager GetActiveManager()
         {
             return _activeIsA ? playerManagerA : playerManagerB;
         }
 
         /// <summary>現在 Standby ロールのプレイヤーマネージャーを返す。</summary>
-        private VideoPlayerManager GetStandbyManager()
+        private AunCastVideoPlayerManager GetStandbyManager()
         {
             return _activeIsA ? playerManagerB : playerManagerA;
         }

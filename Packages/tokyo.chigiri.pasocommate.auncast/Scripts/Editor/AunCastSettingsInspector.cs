@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -141,18 +141,18 @@ namespace PasocomMate.AunCast.Internal
 
         private readonly struct SpeakerSetupContext
         {
-            public readonly VideoPlayerManager managerA;
-            public readonly VideoPlayerManager managerB;
+            public readonly AunCastVideoPlayerManager managerA;
+            public readonly AunCastVideoPlayerManager managerB;
             public readonly VRCAVProVideoPlayer playerA;
             public readonly VRCAVProVideoPlayer playerB;
-            public readonly PlaybackSwitcher switcher;
+            public readonly AunCastPlaybackSwitcher switcher;
 
             public SpeakerSetupContext(
-                VideoPlayerManager managerA,
-                VideoPlayerManager managerB,
+                AunCastVideoPlayerManager managerA,
+                AunCastVideoPlayerManager managerB,
                 VRCAVProVideoPlayer playerA,
                 VRCAVProVideoPlayer playerB,
-                PlaybackSwitcher switcher)
+                AunCastPlaybackSwitcher switcher)
             {
                 this.managerA = managerA;
                 this.managerB = managerB;
@@ -291,11 +291,11 @@ namespace PasocomMate.AunCast.Internal
             var settings = (PasocomMate.AunCast.AunCastSettings)target;
             var root = settings.transform;
 
-            var ldpcList = root.GetComponentsInChildren<LocalDualPlayerController>(true);
-            var apmList = root.GetComponentsInChildren<ActivePlayerMonitor>(true);
-            var rccList = root.GetComponentsInChildren<ResyncCoordinatorClient>(true);
-            var pbsList = root.GetComponentsInChildren<PlaybackSwitcher>(true);
-            var rcList = root.GetComponentsInChildren<ResyncCoordinator>(true);
+            var ldpcList = root.GetComponentsInChildren<AunCastDualPlayerController>(true);
+            var apmList = root.GetComponentsInChildren<AunCastActivePlayerMonitor>(true);
+            var rccList = root.GetComponentsInChildren<AunCastResyncCoordinatorClient>(true);
+            var pbsList = root.GetComponentsInChildren<AunCastPlaybackSwitcher>(true);
+            var rcList = root.GetComponentsInChildren<AunCastResyncCoordinator>(true);
             AutoAssignAudioLinkBehaviour(pbsList);
 
             int totalCount = ldpcList.Length + apmList.Length + rccList.Length + pbsList.Length + rcList.Length;
@@ -519,14 +519,14 @@ namespace PasocomMate.AunCast.Internal
         {
             if (root == null) return;
 
-            var controller = root.GetComponentInChildren<LocalDualPlayerController>(true);
-            var staffPanel = root.GetComponentInChildren<StaffControlPanel>(true);
-            var portablePanel = root.GetComponentInChildren<UserStatusPanel>(true);
+            var controller = root.GetComponentInChildren<AunCastDualPlayerController>(true);
+            var staffPanel = root.GetComponentInChildren<AunCastStaffControlPanel>(true);
+            var portablePanel = root.GetComponentInChildren<AunCastUserStatusPanel>(true);
             var settings = root.GetComponent<PasocomMate.AunCast.AunCastSettings>();
             var idleScreenTexture = settings != null ? settings.idleScreenTexture : null;
             Scene scene = root.gameObject.scene;
             var eventBus = FindOrCreateEventBus(root, createIfMissing: recordUndo, writeLog: writeLog);
-            var switchers = root.GetComponentsInChildren<PlaybackSwitcher>(true);
+            var switchers = root.GetComponentsInChildren<AunCastPlaybackSwitcher>(true);
             AutoAssignAudioLinkBehaviour(switchers, recordUndo);
             // AudioLink 付属の内蔵スピーカー（AudioLinkInput）を無効化＋EditorOnly 化する。
             // AunCast が AudioLink 入力をランタイムで差し替えるため付属スピーカーは不要（冪等）。
@@ -535,13 +535,13 @@ namespace PasocomMate.AunCast.Internal
             var uiScreens = FindSceneComponents<AunCastUiScreen>(scene);
             var speakers = FindSceneComponents<AunCastSpeaker>(scene);
             var audioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
-            var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);
-            var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
+            var wallPanels = root.GetComponentsInChildren<AunCastWallControlPanel>(true);
+            var userPanels = root.GetComponentsInChildren<AunCastUserStatusPanel>(true);
 
             if (controller == null || staffPanel == null || portablePanel == null)
             {
                 if (writeLog)
-                    Debug.LogWarning("[AunCast] 再配線を中止しました。LocalDualPlayerController / StaffControlPanel / UserStatusPanel のいずれかが見つかりません。");
+                    Debug.LogWarning("[AunCast] 再配線を中止しました。AunCastDualPlayerController / AunCastStaffControlPanel / AunCastUserStatusPanel のいずれかが見つかりません。");
                 return;
             }
 
@@ -570,17 +570,17 @@ namespace PasocomMate.AunCast.Internal
                     if (switcher == null) continue;
                     var so = new SerializedObject(switcher);
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
-                    if (changed && ApplyUdonSerializedChanges(switcher, so, "Rewire PlaybackSwitcher EventBus", recordUndo))
+                    if (changed && ApplyUdonSerializedChanges(switcher, so, "Rewire AunCastPlaybackSwitcher EventBus", recordUndo))
                         publisherUpdated++;
                 }
 
-                var controllers = root.GetComponentsInChildren<LocalDualPlayerController>(true);
+                var controllers = root.GetComponentsInChildren<AunCastDualPlayerController>(true);
                 foreach (var ctrl in controllers)
                 {
                     if (ctrl == null) continue;
                     var so = new SerializedObject(ctrl);
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
-                    if (changed && ApplyUdonSerializedChanges(ctrl, so, "Rewire LocalDualPlayerController EventBus", recordUndo))
+                    if (changed && ApplyUdonSerializedChanges(ctrl, so, "Rewire AunCastDualPlayerController EventBus", recordUndo))
                         publisherUpdated++;
                 }
             }
@@ -597,7 +597,7 @@ namespace PasocomMate.AunCast.Internal
                 if (eventBus != null)
                     changed |= SetObjectProperty(so, "eventBus", eventBus);
 
-                if (changed && ApplyUdonSerializedChanges(wall, so, "Rewire WallControlPanel References", recordUndo))
+                if (changed && ApplyUdonSerializedChanges(wall, so, "Rewire AunCastWallControlPanel References", recordUndo))
                     wallUpdated++;
             }
 
@@ -610,7 +610,7 @@ namespace PasocomMate.AunCast.Internal
                     var so = new SerializedObject(user);
                     bool changed = SetObjectProperty(so, "eventBus", eventBus);
 
-                    if (changed && ApplyUdonSerializedChanges(user, so, "Rewire UserStatusPanel EventBus", recordUndo))
+                    if (changed && ApplyUdonSerializedChanges(user, so, "Rewire AunCastUserStatusPanel EventBus", recordUndo))
                         userUpdated++;
                 }
             }
@@ -640,33 +640,33 @@ namespace PasocomMate.AunCast.Internal
                 }
             }
 
-            // Core→UI の通知先（staffNotifyTarget）を StaffControlPanel へ配線する。
+            // Core→UI の通知先（staffNotifyTarget）を AunCastStaffControlPanel へ配線する。
             // SendCustomEvent による通知のため、フィールドは UdonSharpBehaviour 基底型で受ける。
             int notifyUpdated = 0;
             if (staffPanel != null)
             {
-                foreach (var ctrl in root.GetComponentsInChildren<LocalDualPlayerController>(true))
+                foreach (var ctrl in root.GetComponentsInChildren<AunCastDualPlayerController>(true))
                 {
                     if (ctrl == null) continue;
                     var so = new SerializedObject(ctrl);
                     if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
-                        && ApplyUdonSerializedChanges(ctrl, so, "Rewire LocalDualPlayerController StaffNotifyTarget", recordUndo))
+                        && ApplyUdonSerializedChanges(ctrl, so, "Rewire AunCastDualPlayerController StaffNotifyTarget", recordUndo))
                         notifyUpdated++;
                 }
-                foreach (var coord in root.GetComponentsInChildren<ResyncCoordinator>(true))
+                foreach (var coord in root.GetComponentsInChildren<AunCastResyncCoordinator>(true))
                 {
                     if (coord == null) continue;
                     var so = new SerializedObject(coord);
                     if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
-                        && ApplyUdonSerializedChanges(coord, so, "Rewire ResyncCoordinator StaffNotifyTarget", recordUndo))
+                        && ApplyUdonSerializedChanges(coord, so, "Rewire AunCastResyncCoordinator StaffNotifyTarget", recordUndo))
                         notifyUpdated++;
                 }
-                foreach (var monitor in root.GetComponentsInChildren<PlaybackMonitor>(true))
+                foreach (var monitor in root.GetComponentsInChildren<AunCastPlaybackMonitor>(true))
                 {
                     if (monitor == null) continue;
                     var so = new SerializedObject(monitor);
                     if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
-                        && ApplyUdonSerializedChanges(monitor, so, "Rewire PlaybackMonitor StaffNotifyTarget", recordUndo))
+                        && ApplyUdonSerializedChanges(monitor, so, "Rewire AunCastPlaybackMonitor StaffNotifyTarget", recordUndo))
                         notifyUpdated++;
                 }
             }
@@ -693,7 +693,7 @@ namespace PasocomMate.AunCast.Internal
             }
 
             if (writeLog)
-                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / WallControlPanel: {wallUpdated}件 / UserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / AudioLink入力無効化: {audioLinkInputNeutralized}件 / 通知先: {notifyUpdated}件");
+                Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / AunCastWallControlPanel: {wallUpdated}件 / AunCastUserStatusPanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / AudioLink入力無効化: {audioLinkInputNeutralized}件 / 通知先: {notifyUpdated}件");
         }
 
         private static AunCastEventBus FindOrCreateEventBus(Transform root, bool createIfMissing, bool writeLog)
@@ -789,7 +789,7 @@ namespace PasocomMate.AunCast.Internal
             return subscribers.ToArray();
         }
 
-        private static VRC.Udon.UdonBehaviour[] ToUdonSubscribers(WallControlPanel[] wallPanels)
+        private static VRC.Udon.UdonBehaviour[] ToUdonSubscribers(AunCastWallControlPanel[] wallPanels)
         {
             var subscribers = new List<VRC.Udon.UdonBehaviour>();
             int count = wallPanels != null ? wallPanels.Length : 0;
@@ -1620,7 +1620,7 @@ namespace PasocomMate.AunCast.Internal
                    || IsManagerTextureRenderer(context.managerB, renderer);
         }
 
-        private static bool IsManagerTextureRenderer(VideoPlayerManager manager, Renderer renderer)
+        private static bool IsManagerTextureRenderer(AunCastVideoPlayerManager manager, Renderer renderer)
         {
             return manager != null
                    && renderer != null
@@ -1809,12 +1809,12 @@ namespace PasocomMate.AunCast.Internal
                 return false;
             }
 
-            VideoPlayerManager managerA = null;
-            VideoPlayerManager managerB = null;
-            VideoPlayerManager[] managers = root.GetComponentsInChildren<VideoPlayerManager>(true);
+            AunCastVideoPlayerManager managerA = null;
+            AunCastVideoPlayerManager managerB = null;
+            AunCastVideoPlayerManager[] managers = root.GetComponentsInChildren<AunCastVideoPlayerManager>(true);
             for (int i = 0; i < managers.Length; i++)
             {
-                VideoPlayerManager manager = managers[i];
+                AunCastVideoPlayerManager manager = managers[i];
                 if (manager == null) continue;
                 if (manager.playerIndex == 0 && managerA == null)
                     managerA = manager;
@@ -1825,22 +1825,22 @@ namespace PasocomMate.AunCast.Internal
             if (managerA == null || managerB == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "VideoPlayerManager A/B が見つかりません。", "VideoPlayerManager A/B was not found.");
+                    "AunCastVideoPlayerManager A/B が見つかりません。", "AunCastVideoPlayerManager A/B was not found.");
                 return false;
             }
             if (managerA.avProPlayer == null || managerB.avProPlayer == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "VideoPlayerManager の avProPlayer 参照が不足しています。",
-                    "The avProPlayer reference on VideoPlayerManager is missing.");
+                    "AunCastVideoPlayerManager の avProPlayer 参照が不足しています。",
+                    "The avProPlayer reference on AunCastVideoPlayerManager is missing.");
                 return false;
             }
 
-            var switcher = root.GetComponentInChildren<PlaybackSwitcher>(true);
+            var switcher = root.GetComponentInChildren<AunCastPlaybackSwitcher>(true);
             if (switcher == null)
             {
                 error = AunCastEditorLocalization.Localize(
-                    "PlaybackSwitcher が見つかりません。", "PlaybackSwitcher was not found.");
+                    "AunCastPlaybackSwitcher が見つかりません。", "AunCastPlaybackSwitcher was not found.");
                 return false;
             }
 
@@ -1932,17 +1932,17 @@ namespace PasocomMate.AunCast.Internal
             }
         }
 
-        private static bool ApplyAudioSourcesToManager(VideoPlayerManager manager, AudioSource[] sources, bool recordUndo = true)
+        private static bool ApplyAudioSourcesToManager(AunCastVideoPlayerManager manager, AudioSource[] sources, bool recordUndo = true)
         {
             if (manager == null) return false;
             var so = new SerializedObject(manager);
-            if (SetObjectArrayProperty(so, nameof(VideoPlayerManager.audioSources), sources))
-                return ApplyUdonSerializedChanges(manager, so, "Apply AudioSources to VideoPlayerManager", recordUndo);
+            if (SetObjectArrayProperty(so, nameof(AunCastVideoPlayerManager.audioSources), sources))
+                return ApplyUdonSerializedChanges(manager, so, "Apply AudioSources to AunCastVideoPlayerManager", recordUndo);
             return false;
         }
 
         private static bool ApplySilenceDetectorsToSwitcher(
-            PlaybackSwitcher switcher,
+            AunCastPlaybackSwitcher switcher,
             AunCastSpeaker detectorA,
             AunCastSpeaker detectorB,
             bool recordUndo = true)
@@ -1954,7 +1954,7 @@ namespace PasocomMate.AunCast.Internal
             changed |= SetObjectProperty(so, "silenceDetectorA", detectorA);
             changed |= SetObjectProperty(so, "silenceDetectorB", detectorB);
             if (changed)
-                return ApplyUdonSerializedChanges(switcher, so, "Apply Silence Detectors to PlaybackSwitcher", recordUndo);
+                return ApplyUdonSerializedChanges(switcher, so, "Apply Silence Detectors to AunCastPlaybackSwitcher", recordUndo);
             return false;
         }
 
@@ -2647,7 +2647,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void ApplyStaffNamesToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
+            var staffPanels = root.GetComponentsInChildren<AunCastStaffControlPanel>(true);
             ApplyToUdonComponents(staffPanels, so =>
                 SetStringArrayProperty(so, "allowedUserNames", settings.staffAllowedUserNames));
         }
@@ -2732,8 +2732,8 @@ namespace PasocomMate.AunCast.Internal
                 "Switches to Resync-only display when you move farther than this distance (m) (outer threshold).",
                 settings.wallFarDistance, 0f, 10f);
             string newUnlockPasscode = TextField("壁パネル解錠パスコード", "Wall Panel Unlock Passcode", "wallUnlockPasscode",
-                "WallControlPanel の Staff ビュー解錠用 4 桁数字。空文字で無効。",
-                "4-digit number to unlock the Staff view of the WallControlPanel. Empty to disable.",
+                "AunCastWallControlPanel の Staff ビュー解錠用 4 桁数字。空文字で無効。",
+                "4-digit number to unlock the Staff view of the AunCastWallControlPanel. Empty to disable.",
                 settings.wallUnlockPasscode);
             newUnlockPasscode = NormalizeWallUnlockPasscode(newUnlockPasscode);
 
@@ -2925,7 +2925,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void ApplyCrossfadeSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            var switchers = root.GetComponentsInChildren<PlaybackSwitcher>(true);
+            var switchers = root.GetComponentsInChildren<AunCastPlaybackSwitcher>(true);
             ApplyToUdonComponents(switchers, so =>
             {
                 SetFloatProperty(so, "crossfadeDurationSec", settings.crossfadeDurationSec);
@@ -2934,7 +2934,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void ApplyUiSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
+            var userPanels = root.GetComponentsInChildren<AunCastUserStatusPanel>(true);
             ApplyToUdonComponents(userPanels, so =>
             {
                 SetIntProperty(so, "summonGesture", settings.defaultSummonGesture);
@@ -2946,7 +2946,7 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "outOfSightDismissSec", settings.panelOutOfSightDismissSec);
             });
 
-            var overlays = root.GetComponentsInChildren<HudProgressOverlay>(true);
+            var overlays = root.GetComponentsInChildren<AunCastHudProgressOverlay>(true);
             ApplyToUdonComponents(overlays, so =>
             {
                 SetFloatProperty(so, "showThreshold", settings.gestureHudShowThreshold);
@@ -2954,7 +2954,7 @@ namespace PasocomMate.AunCast.Internal
                 SetVector3Property(so, "desktopLocalOffset", settings.hudDesktopLocalOffset);
             });
 
-            var wallPanels = root.GetComponentsInChildren<WallControlPanel>(true);
+            var wallPanels = root.GetComponentsInChildren<AunCastWallControlPanel>(true);
             ApplyToUdonComponents(wallPanels, so =>
             {
                 SetFloatProperty(so, "wallNearDistance", settings.wallNearDistance);
@@ -2962,13 +2962,13 @@ namespace PasocomMate.AunCast.Internal
                 SetStringProperty(so, "unlockPasscode", settings.wallUnlockPasscode);
             });
 
-            var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
+            var staffPanels = root.GetComponentsInChildren<AunCastStaffControlPanel>(true);
             ApplyToUdonComponents(staffPanels, so =>
             {
                 SetStringArrayProperty(so, "allowedUserNames", settings.staffAllowedUserNames);
             });
 
-            var controllers = root.GetComponentsInChildren<LocalDualPlayerController>(true);
+            var controllers = root.GetComponentsInChildren<AunCastDualPlayerController>(true);
             ApplyToUdonComponents(controllers, so =>
             {
                 SetFloatProperty(so, "defaultVolume", settings.defaultVolume);
@@ -3008,7 +3008,7 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "silenceConsecutiveSec", settings.silenceConsecutiveSec);
             });
 
-            var monitors = root.GetComponentsInChildren<ActivePlayerMonitor>(true);
+            var monitors = root.GetComponentsInChildren<AunCastActivePlayerMonitor>(true);
             ApplyToUdonComponents(monitors, so =>
             {
                 SetFloatProperty(so, "stalledTimeoutSec", settings.stalledTimeoutSec);
@@ -3020,13 +3020,13 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "driftWarmupSec", settings.driftWarmupSec);
             });
 
-            var clients = root.GetComponentsInChildren<ResyncCoordinatorClient>(true);
+            var clients = root.GetComponentsInChildren<AunCastResyncCoordinatorClient>(true);
             ApplyToUdonComponents(clients, so =>
             {
                 SetFloatProperty(so, "silenceSuppressSec", settings.silenceSuppressSec);
             });
 
-            var userPanels = root.GetComponentsInChildren<UserStatusPanel>(true);
+            var userPanels = root.GetComponentsInChildren<AunCastUserStatusPanel>(true);
             ApplyToUdonComponents(userPanels, so =>
             {
                 SetFloatProperty(so, "silenceMeterPeakHoldSec", settings.silenceMeterPeakHoldSec);
@@ -3036,7 +3036,7 @@ namespace PasocomMate.AunCast.Internal
 
         internal static void ApplyResyncSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
-            var coordinators = root.GetComponentsInChildren<ResyncCoordinator>(true);
+            var coordinators = root.GetComponentsInChildren<AunCastResyncCoordinator>(true);
             ApplyToUdonComponents(coordinators, so =>
             {
                 SetByteProperty(so, "maxConcurrentResyncUsers", settings.maxConcurrentResyncUsers);
@@ -3045,7 +3045,7 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "runningTimeoutSec", settings.runningTimeoutSec);
             });
 
-            var clients = root.GetComponentsInChildren<ResyncCoordinatorClient>(true);
+            var clients = root.GetComponentsInChildren<AunCastResyncCoordinatorClient>(true);
             ApplyToUdonComponents(clients, so =>
             {
                 SetFloatProperty(so, "resyncCycleTimeoutSec", settings.resyncCycleTimeoutSec);
@@ -3055,10 +3055,10 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "maxRetryCooldownSec", settings.maxRetryCooldownSec);
             });
 
-            // StaffControlPanel の数値表示/入力欄を実値へ揃える（Play せずとも見た目を一致させる）
+            // AunCastStaffControlPanel の数値表示/入力欄を実値へ揃える（Play せずとも見た目を一致させる）
             string concurrentVal = settings.maxConcurrentResyncUsers.ToString();
             string connectionVal = settings.maxConnectionLimit.ToString();
-            var staffPanels = root.GetComponentsInChildren<StaffControlPanel>(true);
+            var staffPanels = root.GetComponentsInChildren<AunCastStaffControlPanel>(true);
             bool changed = false;
             foreach (var panel in staffPanels)
             {
@@ -3090,13 +3090,13 @@ namespace PasocomMate.AunCast.Internal
         }
 
         // ── AunCastSettings → 表示用 UI への反映 ──
-        // StaffControlPanel / UserStatusPanel / WallControlPanel が参照する素の UI
+        // AunCastStaffControlPanel / AunCastUserStatusPanel / AunCastWallControlPanel が参照する素の UI
         // コンポーネント（TMP / Slider / Toggle）へ設定値を編集時にも反映し、Play せずとも
         // シーン上の表示を実値に揃える。
 
         // パネルが参照する UI コンポーネントを取得する。
         // プロキシ MonoBehaviour の SerializeField は AunCast.prefab にネストされた
-        // WallControlPanel のようなネストプレハブのインスタンスでは編集時に参照が解決されず
+        // AunCastWallControlPanel のようなネストプレハブのインスタンスでは編集時に参照が解決されず
         // null になることがある。実行時が参照を解決するのと同じ backing UdonBehaviour の
         // publicVariables を優先して読み、取れない場合のみプロキシ側へフォールバックする。
         private static T GetReferencedUiComponent<T>(UdonSharp.UdonSharpBehaviour panel, string fieldName)
@@ -3110,7 +3110,7 @@ namespace PasocomMate.AunCast.Internal
                 && value is T fromUdon)
                 return fromUdon;
 
-            // フォールバック: 非ネストのプロキシ（UserStatusPanel 等）はこちらで取れる
+            // フォールバック: 非ネストのプロキシ（AunCastUserStatusPanel 等）はこちらで取れる
             var so = new SerializedObject(panel);
             var prop = so.FindProperty(fieldName);
             if (prop != null && prop.propertyType == SerializedPropertyType.ObjectReference)
@@ -3266,13 +3266,13 @@ namespace PasocomMate.AunCast.Internal
             return new string(buffer, 0, count);
         }
 
-        private static void AutoAssignAudioLinkBehaviour(PlaybackSwitcher[] switchers, bool recordUndo = true)
+        private static void AutoAssignAudioLinkBehaviour(AunCastPlaybackSwitcher[] switchers, bool recordUndo = true)
         {
             if (switchers == null || switchers.Length == 0) return;
 
             for (int i = 0; i < switchers.Length; i++)
             {
-                PlaybackSwitcher switcher = switchers[i];
+                AunCastPlaybackSwitcher switcher = switchers[i];
                 if (switcher == null) continue;
                 UdonSharp.UdonSharpBehaviour audioLink = FindAudioLinkBehaviour(switcher.gameObject.scene);
                 if (audioLink == null) continue;
@@ -3432,11 +3432,11 @@ namespace PasocomMate.AunCast.Internal
         }
 
         private void DrawTimelineLoggingToggle(
-            LocalDualPlayerController[] ldpcList,
-            ActivePlayerMonitor[] apmList,
-            ResyncCoordinatorClient[] rccList,
-            PlaybackSwitcher[] pbsList,
-            ResyncCoordinator[] rcList)
+            AunCastDualPlayerController[] ldpcList,
+            AunCastActivePlayerMonitor[] apmList,
+            AunCastResyncCoordinatorClient[] rccList,
+            AunCastPlaybackSwitcher[] pbsList,
+            AunCastResyncCoordinator[] rcList)
         {
             EditorGUILayout.LabelField(
                 AunCastEditorLocalization.Localize("デバッグ", "Debug"),

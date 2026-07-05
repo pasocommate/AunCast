@@ -6,16 +6,16 @@ namespace PasocomMate.AunCast
 {
     /// <summary>
     /// Active/Standby の PlayerManager 切替とクロスフェードを担当するコンポーネント。
-    /// LocalDualPlayerController と同一 GameObject に配置される。
+    /// AunCastDualPlayerController と同一 GameObject に配置される。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class PlaybackSwitcher : UdonSharpBehaviour
+    public class AunCastPlaybackSwitcher : UdonSharpBehaviour
     {
         // =================================================================
         //  Inspector 参照
         // =================================================================
-        [SerializeField] private VideoPlayerManager playerManagerA;
-        [SerializeField] private VideoPlayerManager playerManagerB;
+        [SerializeField] private AunCastVideoPlayerManager playerManagerA;
+        [SerializeField] private AunCastVideoPlayerManager playerManagerB;
         [SerializeField] private AunCastSpeaker silenceDetectorA;
         [SerializeField] private AunCastSpeaker silenceDetectorB;
         [SerializeField] private AunCastEventBus eventBus;
@@ -57,18 +57,18 @@ namespace PasocomMate.AunCast
         // =================================================================
 
         /// <summary>PlayerManager A への直接参照（初期化・デバッグ用）。</summary>
-        public VideoPlayerManager GetPlayerManagerA() => playerManagerA;
+        public AunCastVideoPlayerManager GetPlayerManagerA() => playerManagerA;
         /// <summary>PlayerManager B への直接参照（初期化・デバッグ用）。</summary>
-        public VideoPlayerManager GetPlayerManagerB() => playerManagerB;
+        public AunCastVideoPlayerManager GetPlayerManagerB() => playerManagerB;
 
         /// <summary>現在視聴者に出力中のプレイヤーを返す。</summary>
-        public VideoPlayerManager GetActiveManager()
+        public AunCastVideoPlayerManager GetActiveManager()
         {
             return _activeIsA ? playerManagerA : playerManagerB;
         }
 
         /// <summary>次回切替用に待機中のプレイヤーを返す。</summary>
-        public VideoPlayerManager GetStandbyManager()
+        public AunCastVideoPlayerManager GetStandbyManager()
         {
             return _activeIsA ? playerManagerB : playerManagerA;
         }
@@ -130,7 +130,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void StartStandbyConnect(float now, VRC.SDKBase.VRCUrl url)
         {
-            VideoPlayerManager standbyManager = GetStandbyManager();
+            AunCastVideoPlayerManager standbyManager = GetStandbyManager();
             if (standbyManager != null)
             {
                 // 接続中は音量ゼロで待機
@@ -195,8 +195,8 @@ namespace PasocomMate.AunCast
         /// <summary>Active / Standby 両プレイヤーのフェードゲインをまとめて設定する。</summary>
         private void SetRolesGain(float activeGain, float standbyGain)
         {
-            VideoPlayerManager active = GetActiveManager();
-            VideoPlayerManager standby = GetStandbyManager();
+            AunCastVideoPlayerManager active = GetActiveManager();
+            AunCastVideoPlayerManager standby = GetStandbyManager();
             if (active != null) active.SetFadeGain(activeGain);
             if (standby != null) standby.SetFadeGain(standbyGain);
         }
@@ -224,7 +224,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void CompleteSwitchRoles()
         {
-            VideoPlayerManager oldActiveManager = GetActiveManager();
+            AunCastVideoPlayerManager oldActiveManager = GetActiveManager();
             if (oldActiveManager != null)
             {
                 oldActiveManager.Stop();
@@ -235,7 +235,7 @@ namespace PasocomMate.AunCast
             _crossfading = false;
             if (_timelineLogging) TL($"a=SWITCH_ROLES");
 
-            VideoPlayerManager newActiveManager = GetActiveManager();
+            AunCastVideoPlayerManager newActiveManager = GetActiveManager();
             if (newActiveManager != null)
                 newActiveManager.SetFadeGain(1.0f);
 
@@ -252,7 +252,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void StopStandbyOnFailure()
         {
-            VideoPlayerManager standbyManager = GetStandbyManager();
+            AunCastVideoPlayerManager standbyManager = GetStandbyManager();
             if (standbyManager != null)
             {
                 standbyManager.Stop();
@@ -288,7 +288,7 @@ namespace PasocomMate.AunCast
         {
             if (_crossfading) return;
 
-            VideoPlayerManager active = GetActiveManager();
+            AunCastVideoPlayerManager active = GetActiveManager();
             if (active == null) return;
 
             if (!ownerPlaying && !active.IsPlaying())
@@ -324,7 +324,7 @@ namespace PasocomMate.AunCast
         /// 指定プレイヤーのテクスチャを強制的にスクリーンへ反映する。
         /// クロスフェード開始時に、取得済みの Standby 映像だけを表示へ出す用途で使用。
         /// </summary>
-        private bool TryUpdateRenderTextureFromManager(VideoPlayerManager manager)
+        private bool TryUpdateRenderTextureFromManager(AunCastVideoPlayerManager manager)
         {
             if (manager == null) return false;
 

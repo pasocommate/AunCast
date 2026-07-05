@@ -10987,7 +10987,7 @@ GameObject:
   - component: {fileID: 6467671380132453154}
   - component: {fileID: 8231059202971838055}
   m_Layer: 0
-  m_Name: LocalDualPlayerController
+  m_Name: DualPlayerController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
