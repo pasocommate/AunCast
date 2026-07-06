@@ -3942,6 +3942,18 @@ namespace PasocomMate.AunCast.Internal
             float newCrossfade = SliderField("クロスフェード時間 [秒]", "Crossfade Duration [s]", "crossfadeDurationSec",
                 "Active/Standby切替時のクロスフェード時間（秒）。", "Crossfade duration (seconds) when switching Active/Standby.",
                 settings.crossfadeDurationSec, 0f, 1f);
+            bool newAllowAudioOnlyFallback = ToggleField("音声のみ配信フォールバック", "Audio-only Fallback", "allowAudioOnlyFallback",
+                "映像テクスチャが取得できなくても、再生時刻が前進している場合は音声のみ配信として切替を完了します。",
+                "Completes the switch as audio-only when playback time advances but no video texture is available.",
+                settings.allowAudioOnlyFallback);
+            float newAudioOnlyFallbackDelay = SliderField("音声のみ判定待ち [秒]", "Audio-only Wait [s]", "audioOnlyFallbackDelaySec",
+                "音声のみ配信として扱うまで、Standby の映像テクスチャ到着を待つ時間（秒）。",
+                "Seconds to wait for the standby video texture before treating the stream as audio-only.",
+                settings.audioOnlyFallbackDelaySec, 0f, 10f);
+            float newAudioOnlyFallbackAdvance = SliderField("音声のみ前進判定 [秒]", "Audio-only Advance [s]", "audioOnlyFallbackMinAdvanceSec",
+                "音声のみ配信として扱うために必要な Standby の再生時刻前進量（秒）。",
+                "Required standby playback-time advance before treating the stream as audio-only.",
+                settings.audioOnlyFallbackMinAdvanceSec, 0f, 3f);
             var newIdleScreenTexture = (Texture2D)EditorGUILayout.ObjectField(
                 L("停止中のスクリーン画像", "Idle Screen Image", "idleScreenTexture",
                     "再生停止中にスクリーンへ表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。",
@@ -3956,6 +3968,9 @@ namespace PasocomMate.AunCast.Internal
             settings.maximumResolution = newResolution;
             settings.useLowLatency = newLowLatency;
             settings.crossfadeDurationSec = newCrossfade;
+            settings.allowAudioOnlyFallback = newAllowAudioOnlyFallback;
+            settings.audioOnlyFallbackDelaySec = newAudioOnlyFallbackDelay;
+            settings.audioOnlyFallbackMinAdvanceSec = newAudioOnlyFallbackAdvance;
             settings.idleScreenTexture = newIdleScreenTexture;
             EditorUtility.SetDirty(settings);
 
@@ -4277,6 +4292,9 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(switchers, so =>
             {
                 SetFloatProperty(so, "crossfadeDurationSec", settings.crossfadeDurationSec);
+                SetBoolProperty(so, "allowAudioOnlyFallback", settings.allowAudioOnlyFallback);
+                SetFloatProperty(so, "audioOnlyFallbackDelaySec", settings.audioOnlyFallbackDelaySec);
+                SetFloatProperty(so, "audioOnlyFallbackMinAdvanceSec", settings.audioOnlyFallbackMinAdvanceSec);
             });
         }
 
@@ -4514,6 +4532,13 @@ namespace PasocomMate.AunCast.Internal
             var prop = so.FindProperty(fieldName);
             if (prop != null)
                 prop.floatValue = value;
+        }
+
+        private static void SetBoolProperty(SerializedObject so, string fieldName, bool value)
+        {
+            var prop = so.FindProperty(fieldName);
+            if (prop != null)
+                prop.boolValue = value;
         }
 
         private static bool SetFloatPropertyIfChanged(SerializedObject so, string fieldName, float value)

@@ -15,6 +15,9 @@ namespace PasocomMate.AunCast.Internal
         private static readonly string[] SETTINGS_PROPERTY_NAMES =
         {
             "crossfadeDurationSec",
+            "allowAudioOnlyFallback",
+            "audioOnlyFallbackDelaySec",
+            "audioOnlyFallbackMinAdvanceSec",
         };
 
         private static readonly string[] WIRING_PROPERTY_NAMES =

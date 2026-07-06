@@ -28,6 +28,14 @@ namespace PasocomMate.AunCast
         [Tooltip("クロスフェード時間（秒）")]
         [SerializeField] private float crossfadeDurationSec = 0.3f;
 
+        [Header("Audio Only Fallback")]
+        [Tooltip("映像テクスチャが取得できなくても、再生時刻が前進している場合は音声のみ配信として切替を完了する")]
+        [SerializeField] private bool allowAudioOnlyFallback = true;
+        [Tooltip("音声のみ配信として扱うまで、Standby の映像テクスチャ到着を待つ時間（秒）")]
+        [SerializeField] private float audioOnlyFallbackDelaySec = 3.0f;
+        [Tooltip("音声のみ配信として扱うために必要な Standby の再生時刻前進量（秒）")]
+        [SerializeField] private float audioOnlyFallbackMinAdvanceSec = 0.5f;
+
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
@@ -48,9 +56,13 @@ namespace PasocomMate.AunCast
         /// <summary>null テクスチャ警告のスロットル用タイムスタンプ</summary>
         private float _lastNullTextureWarnAt;
         private float _lastSwitchTextureWaitWarnAt;
+        private float _switchTextureWaitStartedAt;
+        private float _audioOnlyFallbackBaseTime;
 
         private bool _crossfading;
         private bool _switchTextureDisplayed;
+        private bool _switchingAudioOnlyFallback;
+        private bool _activeAudioOnlyFallback;
 
         // =================================================================
         //  Active/Standby 取得
@@ -97,6 +109,8 @@ namespace PasocomMate.AunCast
         public void InitializeToA()
         {
             _activeIsA = true;
+            _activeAudioOnlyFallback = false;
+            _switchingAudioOnlyFallback = false;
             if (playerManagerA != null) playerManagerA.SetFadeGain(1.0f);
             if (playerManagerB != null) playerManagerB.SetFadeGain(0.0f);
         }
@@ -118,6 +132,8 @@ namespace PasocomMate.AunCast
                 playerManagerB.SetFadeGain(0.0f);
             }
             _activeIsA = true;
+            _activeAudioOnlyFallback = false;
+            _switchingAudioOnlyFallback = false;
         }
 
         // =================================================================
@@ -154,6 +170,10 @@ namespace PasocomMate.AunCast
             _crossfadeStartedAt = now;
             _crossfading = true;
             _switchTextureDisplayed = false;
+            _switchingAudioOnlyFallback = false;
+            _switchTextureWaitStartedAt = now;
+            AunCastVideoPlayerManager standby = GetStandbyManager();
+            _audioOnlyFallbackBaseTime = standby != null ? standby.GetTime() : 0f;
 
             // Standby の実テクスチャが取れない間は旧映像を保持し、白フレームを出さない。
             TryEnsureSwitchTextureDisplayed(now);
@@ -239,6 +259,9 @@ namespace PasocomMate.AunCast
             if (newActiveManager != null)
                 newActiveManager.SetFadeGain(1.0f);
 
+            _activeAudioOnlyFallback = _switchingAudioOnlyFallback;
+            _switchingAudioOnlyFallback = false;
+
             SwitchAudioLinkSource();
         }
 
@@ -301,9 +324,21 @@ namespace PasocomMate.AunCast
                 return;
             }
 
-            Texture tex = active.GetVideoTexture();
+            Texture tex = _activeAudioOnlyFallback
+                ? active.GetVideoTextureSilent()
+                : active.GetVideoTexture();
             if (tex == null)
             {
+                if (_activeAudioOnlyFallback)
+                {
+                    if (_lastAssignedRenderTexture != null)
+                    {
+                        BroadcastVideoTexture(null);
+                        _lastAssignedRenderTexture = null;
+                    }
+                    return;
+                }
+
                 float now = Time.time;
                 if (now - _lastNullTextureWarnAt > 2.0f)
                 {
@@ -318,6 +353,7 @@ namespace PasocomMate.AunCast
             BroadcastVideoTexture(tex);
 
             _lastAssignedRenderTexture = tex;
+            _activeAudioOnlyFallback = false;
         }
 
         /// <summary>
@@ -358,12 +394,46 @@ namespace PasocomMate.AunCast
                 return true;
             }
 
+            if (TryAcceptAudioOnlyFallback(now))
+                return true;
+
             if (now - _lastSwitchTextureWaitWarnAt > 2.0f)
             {
                 _lastSwitchTextureWaitWarnAt = now;
                 LogWarning("Waiting for standby texture before completing switch");
             }
             return false;
+        }
+
+        /// <summary>
+        /// 映像テクスチャが来ないが Standby の時間が前進している場合、音声のみ配信として切替を許可する。
+        /// </summary>
+        private bool TryAcceptAudioOnlyFallback(float now)
+        {
+            if (!allowAudioOnlyFallback) return false;
+
+            AunCastVideoPlayerManager standby = GetStandbyManager();
+            if (standby == null || !standby.IsPlaying()) return false;
+
+            float elapsed = now - _switchTextureWaitStartedAt;
+            if (elapsed < Mathf.Max(0f, audioOnlyFallbackDelaySec)) return false;
+
+            float timeAdvance = standby.GetTime() - _audioOnlyFallbackBaseTime;
+            if (timeAdvance < Mathf.Max(0f, audioOnlyFallbackMinAdvanceSec)) return false;
+
+            _switchTextureDisplayed = true;
+            _switchingAudioOnlyFallback = true;
+            _crossfadeStartedAt = now;
+
+            if (_lastAssignedRenderTexture != null)
+            {
+                BroadcastVideoTexture(null);
+                _lastAssignedRenderTexture = null;
+            }
+
+            if (_timelineLogging) TL($"a=AUDIO_ONLY_FALLBACK adv={timeAdvance:F2} wait={elapsed:F2}");
+            LogMessage($"Audio-only fallback accepted (advance={timeAdvance:F2}s, wait={elapsed:F2}s)");
+            return true;
         }
 
         /// <summary>AunCastEventBus 経由で全スクリーン購読者へテクスチャを配信する。</summary>

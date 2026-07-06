@@ -146,6 +146,15 @@ namespace PasocomMate.AunCast
         [Tooltip("クロスフェード時間（秒）")]
         public float crossfadeDurationSec = 0.1f;
 
+        [Tooltip("映像テクスチャが取得できなくても、再生時刻が前進している場合は音声のみ配信として切替を完了する")]
+        public bool allowAudioOnlyFallback = true;
+
+        [Tooltip("音声のみ配信として扱うまで、Standby の映像テクスチャ到着を待つ時間（秒）")]
+        public float audioOnlyFallbackDelaySec = 3.0f;
+
+        [Tooltip("音声のみ配信として扱うために必要な Standby の再生時刻前進量（秒）")]
+        public float audioOnlyFallbackMinAdvanceSec = 0.5f;
+
         [Header("Screen")]
         // 再生していない間（停止中）にスクリーンへ表示する固定画像。
         // 未指定の場合は、各スクリーンのマテリアル / RawImage に初期割り当てされていたテクスチャへ復元する。

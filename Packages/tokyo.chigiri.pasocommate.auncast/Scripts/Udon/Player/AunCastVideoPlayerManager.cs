@@ -125,6 +125,19 @@ namespace PasocomMate.AunCast
         /// </summary>
         public Texture GetVideoTexture()
         {
+            return GetVideoTextureInternal(true);
+        }
+
+        /// <summary>
+        /// 音声のみフォールバック中に、null 警告を出さず映像テクスチャの復帰だけを確認する。
+        /// </summary>
+        public Texture GetVideoTextureSilent()
+        {
+            return GetVideoTextureInternal(false);
+        }
+
+        private Texture GetVideoTextureInternal(bool warnOnNull)
+        {
             // 取得経路の違い（material / sharedMaterial）を順に吸収する
             Texture tex;
 
@@ -161,7 +174,7 @@ namespace PasocomMate.AunCast
                 }
             }
 
-            if (avProPlayer.IsPlaying)
+            if (warnOnNull && avProPlayer.IsPlaying)
             {
                 float now = Time.time;
                 if (now - _lastNullTextureWarnAt > 2.0f)

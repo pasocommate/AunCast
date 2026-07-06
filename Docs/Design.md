@@ -1135,6 +1135,7 @@ sequenceDiagram
 
 - `StandbyVerifying → Switching` 後、Standby の `AunCastVideoPlayerManager` から非 null のテクスチャを取得できた時点で、`AunCastEventBus` 経由で登録済みの全 `AunCastScreen` / `AunCastUiScreen` のテクスチャソースを新系へ切り替える
 - テクスチャ未取得時は旧映像を保持し、null テクスチャをスクリーンへ配信しない。これにより切替時の白/黒フレームを避ける
+- 音声のみ配信（例: 映像トラックがなく AVPro が `0x0@0.00` で再生するケース）では、`allowAudioOnlyFallback` が有効で、Standby の `GetTime()` が `audioOnlyFallbackMinAdvanceSec` 以上前進し、かつ `audioOnlyFallbackDelaySec` だけテクスチャ到着を待っても null の場合に限り、音声のみフォールバックとして切替を完了する。この場合は旧映像を保持せず、スクリーンへ null を配信して停止中画像へ戻す
 - 各 `AunCastScreen` は `sharedMaterials[rendererIndex]` のテクスチャプロパティを更新するため、同一マテリアルを共有するスクリーンが何枚あっても CPU/GPU 負荷はほぼ一定。`AunCastUiScreen` は RawImage に直接テクスチャを設定する
 
 ## 16.3 音声切替・無音検知
