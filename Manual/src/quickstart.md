@@ -35,22 +35,22 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 ## スタッフ：配信管理 {#staff}
 
-1. 壁パネルの鍵アイコン（<span class="material-symbol" aria-hidden="true">lock</span>）を押し、**暗証番号** でスタッフビューを解錠します。**スタッフ許可ユーザー名** に登録されている場合、この手順は不要です。
+1. 壁パネルの鍵アイコン（<span class="material-symbol" aria-hidden="true">&#xE899;</span>）を押し、**暗証番号** でスタッフビューを解錠します。**スタッフ許可ユーザー名** に登録されている場合、この手順は不要です。
 
     ![壁パネル（暗証番号の入力）](assets/wall-panel-staff-passcode.png){ width="260" }
 
-2. 手元パネルを表示します。壁パネルの **Spawn Panel** ボタン（<span class="material-symbol" aria-hidden="true">menu</span>）、または **Spawn Gesture** で選択したジェスチャー・キーバインドで呼び出せます。初期状態では、VRは右スティック上方向長押し、デスクトップはTabキー２回押しです。
+2. 手元パネルを表示します。壁パネルの **Spawn Panel** ボタン（<span class="material-symbol" aria-hidden="true">&#xE5D2;</span>）、または **Spawn Gesture** で選択したジェスチャー・キーバインドで呼び出せます。初期状態では、VRは右スティック上方向長押し、デスクトップはTabキー２回押しです。
 
     <div class="figure-row">
       <img src="../assets/wall-panel-user-desktop.png" alt="壁パネル（近づいたとき）" width="270">
       <img src="../assets/portable-panel-viewer.png" alt="手元パネル（観客ビュー）" width="324">
     </div>
 
-3. 手元パネルをスタッフビューへ切り替えます。ジェスチャーをもう一度行うか、パネル右上の **ビュー切替ボタン**（<span class="material-symbol" aria-hidden="true">swap_horiz</span>）を押します。
+3. 手元パネルをスタッフビューへ切り替えます。ジェスチャーをもう一度行うか、パネル右上の **ビュー切替ボタン**（<span class="material-symbol" aria-hidden="true">&#xE8D4;</span>）を押します。
 
     ![スタッフ操作画面](assets/portable-panel-staff.png){ width="360" }
 
-4. **Next URL** に配信URLを入力し、右側の **送信ボタン**（<span class="material-symbol" aria-hidden="true">swap_vert</span>）で配信を開始します。
+4. **Next URL** に配信URLを入力し、右側の **送信ボタン**（<span class="material-symbol" aria-hidden="true">&#xE8D5;</span>）で配信を開始します。
 5. 配信を終えたら **Stop All** で停止します。
 
 [→ 壁パネルと手元パネル](operation/panels.md) / [手元パネル：スタッフビュー](operation/panel-staff.md)
@@ -65,6 +65,6 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 2. **音声がズレた**ときは **Resync ボタン**を押します。しばらく待てば順番が回り、音声が途切れることなく復旧します。通常は自動検知で行われるため、この操作は不要です。
 
-3. 再生が安定せず復旧しない・Resync の順番が回ってこない場合は、**Reboot ボタン**（<span class="material-symbol" aria-hidden="true">bolt</span>）を使用します。音声・映像が一時的に途切れます（[→ Reboot ボタン](operation/panel-viewer.md#reboot-button)）。
+3. 再生が安定せず復旧しない・Resync の順番が回ってこない場合は、**Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>）を使用します。音声・映像が一時的に途切れます（[→ Reboot ボタン](operation/panel-viewer.md#reboot-button)）。
 
 [→ 手元パネル：観客ビュー](operation/panel-viewer.md)

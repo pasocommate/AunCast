@@ -24,14 +24,14 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 詳細な操作が可能な表示になります。
 
 - **Resync ボタン** … 再同期をリクエストする
-- **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">bolt</span>）… 切断後に再接続する（音声・映像に途切れが発生します）
+- **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>）… 切断後に再接続する（音声・映像に途切れが発生します）
 - **Spawn Gesture** … 手元パネルの呼び出し方法を選択する
-- <span class="material-symbol" aria-hidden="true">menu</span> **Spawn Panel ボタン** … 手元パネルを目の前に呼び出す
+- <span class="material-symbol" aria-hidden="true">&#xE5D2;</span> **Spawn Panel ボタン** … 手元パネルを目の前に呼び出す
 
 ![壁パネル（近づいたとき）](../assets/wall-panel-user-desktop.png){ width="300" }
 
 !!! info "スタッフ暗証番号もここで入力します"
-    右下の鍵アイコン（<span class="material-symbol" aria-hidden="true">lock</span>）から、スタッフ用の暗証番号を入力する画面に切り替えられます。詳細は[スタッフビューを解錠する](panel-staff.md#unlock)を参照してください。このボタンは壁パネルごとに非表示にすることもできます（[壁パネルごとに鍵アイコンを隠せます](../setup/parts-placement.md#wall-panels)）。
+    右下の鍵アイコン（<span class="material-symbol" aria-hidden="true">&#xE899;</span>）から、スタッフ用の暗証番号を入力する画面に切り替えられます。詳細は[スタッフビューを解錠する](panel-staff.md#unlock)を参照してください。このボタンは壁パネルごとに非表示にすることもできます（[壁パネルごとに鍵アイコンを隠せます](../setup/parts-placement.md#wall-panels)）。
 
 ---
 

@@ -21,7 +21,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 表示の意味を知りたい（Drift, Audio Level 等） | [手元パネルの各部](../operation/panel-viewer.md#controls) |
 | 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#playback-status) |
 | Resync ボタンが押せない | [Resync ボタン](../operation/panel-viewer.md#resync-button) |
-| AunCast のバージョンを確認したい | 壁パネルの **情報ボタン**（<span class="material-symbol" aria-hidden="true">info</span>）で表示されます |
+| AunCast のバージョンを確認したい | 壁パネルの **情報ボタン**（<span class="material-symbol" aria-hidden="true">&#xE88E;</span>）で表示されます |
 
 ---
 
