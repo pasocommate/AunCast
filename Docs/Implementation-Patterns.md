@@ -343,6 +343,9 @@ private bool CleanupStaleSlots()
 - `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` は AunCast ルート配下に限定せず、
   AunCastSettings と同一シーン全体から収集する。建物階層など AunCast 外に置いた
   出力コンポーネントも、宣言済みであれば自動再配線の対象になる
+- ただし `EditorOnly` タグが付いた GameObject またはその配下の出力コンポーネントは、
+  ビルド時に除外されるため再配線対象に含めない。非アクティブ GameObject はエディタ上で
+  一時的に隠す用途があるため、従来通り再配線対象に含める
 - `AunCastAudioOutputTunnel` も同一シーン全体から収集し、`inputA` / `inputB` は
   PlayerA / PlayerB の `AunCastSpeaker` から自動設定する。通常の音声出力は
   `AunCastSpeaker` 直結を優先し、トンネルは既存 `AudioOutputTunnel` 構成の互換用途に限定する
@@ -353,7 +356,7 @@ private bool CleanupStaleSlots()
 シーン依存のため不可能。新規 prefab をシーンに配置した直後は `eventBus = null`
 だが、以下の経路で配線が反映される:
 
-1. **手動**: `AunCastSettings` Inspector の **「AunCast参照を再配線」
+1. **手動**: `AunCastSettings` Inspector の **「参照関係を再配線」
    ボタン** を押下
 2. **Play モード遷移時** (`AunCastAutoRewire`): `playModeStateChanged` の
    `ExitingEditMode` で開いている全シーンに対して再配線

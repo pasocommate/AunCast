@@ -60,25 +60,25 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 
 | AVPro 系 | AunCast 系（宣言型） | 実体 |
 |---|---|---|
-| VRCAVProVideoScreen | **AunCastScreen** | 既存 VideoMeshScreen のリネーム |
-| （UI 向け） | **AunCastUiScreen** | 既存 VideoUiScreen のリネーム |
-| VRCAVProVideoSpeaker | **AunCastSpeaker** | 既存 AudioSilenceDetector のリネーム + 機能追加 |
+| VRCAVProVideoScreen | **AunCastScreen** | 3D スクリーン出力 |
+| （UI 向け） | **AunCastUiScreen** | UI RawImage 出力 |
+| VRCAVProVideoSpeaker | **AunCastSpeaker** | 音声出力宣言 + RMS 無音検知 |
 
-**AunCastSpeaker（AudioSilenceDetector の兼任化）**: 既存の RMS 無音検知機能に加えて、「この AudioSource を AunCast の音声出力にする」という宣言マーカーの役割と、所属系統（PlayerA / PlayerB）・チャンネルモード（Stereo / Left / Right — `VRCAVProVideoSpeaker.mode` 相当）の指定を持たせる。**ボリューム設定プロパティも AunCastSpeaker 側に持つ**: `AudioSource.volume` は AunCast がランタイムで管理する出力値（ユーザー音量 × fadeGain 等の積）とし、設計上の基準音量は宣言側で保持する。現行の「シーン上の初期 volume を BaseVolume として暗黙にキャッシュする」方式より意図が明確になり、ランタイムに上書きされる値をユーザーが編集してしまう混乱も防げる。
+**AunCastSpeaker（音声出力宣言と RMS 無音検知）**: 既存の RMS 無音検知機能に加えて、「この AudioSource を AunCast の音声出力にする」という宣言マーカーの役割と、所属系統（PlayerA / PlayerB）・チャンネルモード（Stereo / Left / Right — `VRCAVProVideoSpeaker.mode` 相当）の指定を持たせる。**ボリューム設定プロパティも AunCastSpeaker 側に持つ**: `AudioSource.volume` は AunCast がランタイムで管理する出力値（ユーザー音量 × fadeGain 等の積）とし、設計上の基準音量は宣言側で保持する。現行の「シーン上の初期 volume を BaseVolume として暗黙にキャッシュする」方式より意図が明確になり、ランタイムに上書きされる値をユーザーが編集してしまう混乱も防げる。
 
 **クローン生成は行わない（2026-07-04 ユーザー決定）**: AunCastSpeaker 付き AudioSource **そのもの**がランタイムのスピーカーであり、再配線はこれをそのまま配線して利用する。
-- プレハブに既に含まれる PlayerA / PlayerB の AudioSource は、AudioSilenceDetector が AunCastSpeaker に差し替われば**そのまま使える**（系統指定は差し替え時に確定済み）。
+- プレハブに既に含まれる PlayerA / PlayerB の AudioSource は、AunCastSpeaker に差し替え済みなら**そのまま使える**（系統指定は差し替え時に確定済み）。
 - 別の AudioSource を使いたい場合は、内蔵のものを削除し、使いたい AudioSource を変換ユーティリティで AunCastSpeaker 化（A/B 各系統分）して再配線するだけ。
 - 位置・音量・3D 設定の調整は該当 AudioSource を直接編集するだけで済む。「クローンへの反映」「調整のたびの再セットアップ」という概念自体がなくなる。
 
-**再配線は冪等な純粋配線処理（破棄 → 再構築）**: 現在の配線を一旦破棄したうえで、シーン全体（提案 1）から AunCastScreen / AunCastUiScreen / AunCastSpeaker を収集し、eventBus 購読・`AunCastVideoPlayerManager.audioSources`・SilenceDetector 参照・背後の VRCAVProVideoSpeaker（存在保証と videoPlayer 参照の修復）を配線し直す。**オブジェクトの生成・削除・複製は一切行わない**。何度実行しても同じ結果になり、Play/ビルド時の自動実行も安全になる。
+**再配線は冪等な純粋配線処理（破棄 → 再構築）**: 現在の配線を一旦破棄したうえで、シーン全体（提案 1）から AunCastScreen / AunCastUiScreen / AunCastSpeaker を収集し、eventBus 購読・`AunCastVideoPlayerManager.audioSources`・AunCastSpeaker 参照・背後の VRCAVProVideoSpeaker（存在保証と videoPlayer 参照の修復）を配線し直す。**オブジェクトの生成・削除・複製は一切行わない**。何度実行しても同じ結果になり、Play/ビルド時の自動実行も安全になる。
 
 **変換（明示的・一回きりの操作。オブジェクトの作成・改変はこちらに集約）**: 手動付与（コンポーネントを Add してプロパティを設定）と、3 の一括変換ツールの 2 通り。変換の内容は共通:
 - VRCAVProVideoScreen → AunCastScreen: `textureProperty` をそのまま引き継ぐ。AVPro コンポーネントを除去。プロパティ名の手動調査が不要になる。
 - VRCAVProVideoSpeaker 付き AudioSource → AunCastSpeaker 化: 所属系統を指定して変換（`mode` はそのまま引き継ぎ、元の `AudioSource.volume` は AunCastSpeaker のボリュームへ転写）。AudioSource の設定（3D・ロールオフ・フィルタ等）は無傷で維持。
 - 接続先の選択肢は **PlayerA / PlayerB / 自動複製 (A/B)** の 3 つ。「自動複製」は、同じ位置に同じ設定の AudioSource を A/B 用に用意したいケース向けに、その AudioSource を同じ階層の直後に複製し、オリジナルを PlayerA・複製を PlayerB へ割り当てる（この変換時に明示的に一度だけ複製する）。
 
-**プロパティ命名の原則**: AunCast 系コンポーネントのプロパティ名は、**なるべく VRCAVPro 系コンポーネントと共通の名称にする**。AunCastScreen のテクスチャプロパティ指定は現 VideoMeshScreen の `texParam` から `textureProperty` へ改名、AunCastSpeaker のチャンネルモードは `mode`、など。AVPro 系との対応関係が名前から自明になり、変換時の転写も同名コピーになる。
+**プロパティ命名の原則**: AunCast 系コンポーネントのプロパティ名は、**なるべく VRCAVPro 系コンポーネントと共通の名称にする**。AunCastScreen のテクスチャプロパティ指定は `textureProperty`、AunCastSpeaker のチャンネルモードは `mode`、など。AVPro 系との対応関係が名前から自明になり、変換時の転写も同名コピーになる。
 
 **留意点**: 公開クラスのリネームは `.cs` / `.asset` の GUID を維持して行い、既存ワールドの参照を壊さない（UdonSharp はクラス名とファイル名の一致が必要なため、ファイルリネームで対応）。AunCast.prefab 内の既定スクリーン・スピーカーも同モデルへ移行し、マニュアル・Design.md を更新する。既存の「AVPro Speaker 出力先セットアップ」（複製方式: `AunCastSpeakerRefs_A/B` コンテナ生成 + 元の EditorOnly 化）は本モデルで置き換えて廃止する。系統指定の持ち方（AunCastSpeaker のフィールドか、背後の VRCAVProVideoSpeaker.videoPlayer 参照を正とするか）は実装時に確定。
 

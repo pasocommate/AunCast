@@ -189,7 +189,7 @@ Late Joiner は参加時点での Coordinator 状態を再構築できなけれ�
 Resync の発動方法は以下の 3 種類を含む。
 
 - **手動トリガー（グローバル）**: スタッフ（Master または許可されたユーザー）が UI 操作で全ユーザーの一斉 Resync を発行する
-- **手動トリガー（個別）**: 各ユーザーが ViewerPanel の Resync ボタンで自身の Resync を要求する
+- **手動トリガー（個別）**: 各ユーザーが AunCastPortablePanel の Viewer ビューの Resync ボタンで自身の Resync を要求する
 - **自動トリガー（個別）**: 各クライアントが Audio RMS 無音検知やストール検知に基づき、自動的に自身の Resync を Coordinator キューに投入する。連続発火を防ぐため `silenceSuppressSec` によるクールダウンを設ける
 
 ### FR-14: Resync モニタリング
@@ -197,7 +197,7 @@ Resync の発動方法は以下の 3 種類を含む。
 
 - **数値サマリ**: 再生中ユーザー数 / 接続中ユーザー数 / インスタンス内ユーザー数 / インスタンス収容上限
 - **スロットインジケーター**: 各ユーザーの状態（正常再生 / 接続中 / Resync 待機 / Resync 実行中 / エラー）を色分けアイコンで一覧表示し、異常度の高い順にソートする
-- **推定残り時間（ユーザー向け）**: Resync 待機が発生したとき、待機列が解消して自身の Resync が完了するまでの推定残り時間を ViewerPanel に表示する
+- **推定残り時間（ユーザー向け）**: Resync 待機が発生したとき、待機列が解消して自身の Resync が完了するまでの推定残り時間を AunCastPortablePanel の Viewer ビューに表示する
 - **推定残り時間（スタッフ向け）**: 待機列がある場合、全体の Resync が完了するまでの推定残り時間を AunCastStaffControlPanel に表示する
 
 ### FR-15: スタッフ操作パネル
@@ -1497,7 +1497,7 @@ void TickScheduler()
 
 ### 22.1 映像スクリーン
 
-3D スクリーン側は `AunCastScreen`、UI RawImage 側は `AunCastUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `AunCastScreen` / `AunCastUiScreen` を追加し、AunCastSettings の `AunCast参照を再配線` を実行する。再配線は AunCast ルート配下だけでなく、同一シーン全体の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` を収集するため、建物階層など AunCast 外に置いた出力もサポートする。映像は `AunCastPlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
+3D スクリーン側は `AunCastScreen`、UI RawImage 側は `AunCastUiScreen` を割り当てる簡易なスクリーン構成とする。利用者（ワールド制作者）が自身のワールドに合わせて改造する前提であり、本システムでは凝った UI デザインは提供しない。スクリーンを増やしたい場合は、対象 GameObject に `AunCastScreen` / `AunCastUiScreen` を追加し、AunCastSettings の `参照関係を再配線` を実行する。再配線は AunCast ルート配下だけでなく、同一シーン全体の `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` を収集するため、建物階層など AunCast 外に置いた出力もサポートする。映像は `AunCastPlaybackSwitcher` から `AunCastEventBus` 経由で配信され、配信負荷を増やさずに複数スクリーンへ出力できる。
 
 停止中（`AunCastPlaybackSwitcher` が `null` テクスチャを配信した状態）は、各スクリーンを**アイドル画像**へ復元する。アイドル画像は `AunCastSettings.idleScreenTexture` で指定でき、再配線処理が各 `AunCastScreen` / `AunCastUiScreen` の `idleTexture` へ転写する。未指定の場合は、`Start` 時にマテリアル / RawImage へ初期割り当てされていたテクスチャへ戻す。ワールド起動直後にも同じ停止表示を適用する。これにより、停止時に `null` テクスチャがそのまま残って白飛びする問題を防ぐ。
 

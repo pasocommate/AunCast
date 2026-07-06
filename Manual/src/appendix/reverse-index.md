@@ -42,12 +42,12 @@
 | 導入の最短手順を知りたい | [クイックスタート](../quickstart.md#setup) |
 | 接続上限を設定したい | [接続上限の設定](../setup/settings.md#connection-limits) |
 | 停止中の待機画像を設定したい | [設定と調整](../setup/settings.md) |
-| スクリーンを追加したい | [スクリーンを増やす](../setup/replication.md#screens) |
-| 壁パネルを追加したい | [壁パネルを増やす](../setup/replication.md#wall-panels) |
-| 音声出力を配線したい | [音声（AunCastSpeaker 配線）](../setup/replication.md#speaker) |
-| 既存ワールドのビデオプレイヤーから移行したい | [既存ワールドからの移行](../setup/replication.md#migration) |
-| TopazChat「+ Reverb Filter」構成を移行したい | [AudioOutputTunnel 構成を移行する場合](../setup/replication.md#tunnel) |
-| AudioLink と連携したい・`AudioLinkInput` が無効化された | [AudioLink をお使いの場合](../setup/replication.md#audiolink) |
+| 壁パネルを追加したい | [壁パネルを増やす (AunCastWallControlPanel)](../setup/parts-placement.md#wall-panels) |
+| スクリーンを追加したい | [スクリーンを増やす (AunCastScreen)](../setup/parts-placement.md#screens) |
+| 音声出力を配線したい | [スピーカーを増やす (AunCastSpeaker)](../setup/parts-placement.md#speaker) |
+| 既存ワールドのビデオプレイヤーから移行したい | [既存ワールドからの移行](../setup/parts-placement.md#migration) |
+| TopazChat「+ Reverb Filter」構成を移行したい | [AudioOutputTunnel 構成を移行する場合](../setup/parts-placement.md#tunnel) |
+| AudioLink と連携したい・`AudioLinkInput` が無効化された | [AudioLink をお使いの場合](../setup/parts-placement.md#audiolink) |
 | 何名まで耐えられるか知りたい | [同時接続上限の管理](../concepts/connection-limit.md) |
 | 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#server-selection) |
 | 配信のビットレートや遅延の目安を知りたい | [配信・運用上の注意](../operation/streaming.md) |

@@ -621,20 +621,21 @@ namespace PasocomMate.AunCast.Internal
         {
             using (new EditorGUILayout.VerticalScope(PaddedHelpBoxStyle()))
             {
+                using (new EditorGUI.DisabledScope(root == null))
+                {
+                    if (GUILayout.Button(
+                        AunCastEditorLocalization.Localize("参照関係を再配線", "Re-wire Reference Relationships"),
+                        GUILayout.Height(24)))
+                    {
+                        RewireEventBusAndConsumers(root, recordUndo: true, writeLog: true);
+                    }
+                }
+
                 EditorGUILayout.HelpBox(
                     AunCastEditorLocalization.Localize(
                         "AunCast 配下の中核参照と､ 同一シーン全体の AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel を再スキャンして再配線します｡",
                         "Re-scans and re-wires core AunCast references plus all AunCastScreen / AunCastUiScreen / AunCastSpeaker / AunCastAudioOutputTunnel components in the same scene."),
                     MessageType.None);
-                using (new EditorGUI.DisabledScope(root == null))
-                {
-                    if (!GUILayout.Button(
-                        AunCastEditorLocalization.Localize("AunCast参照を再配線", "Re-wire AunCast References"),
-                        GUILayout.Height(24)))
-                        return;
-
-                    RewireEventBusAndConsumers(root, recordUndo: true, writeLog: true);
-                }
             }
         }
 
@@ -642,24 +643,30 @@ namespace PasocomMate.AunCast.Internal
         {
             if (root == null) return;
 
-            var controller = root.GetComponentInChildren<AunCastDualPlayerController>(true);
-            var staffPanel = root.GetComponentInChildren<AunCastStaffControlPanel>(true);
-            var portablePanel = root.GetComponentInChildren<AunCastPortablePanel>(true);
+            var controller = GetRuntimeComponentInChildren<AunCastDualPlayerController>(root);
+            var staffPanel = GetRuntimeComponentInChildren<AunCastStaffControlPanel>(root);
+            var portablePanel = GetRuntimeComponentInChildren<AunCastPortablePanel>(root);
             var settings = root.GetComponent<PasocomMate.AunCast.AunCastSettings>();
             var idleScreenTexture = settings != null ? settings.idleScreenTexture : null;
             Scene scene = root.gameObject.scene;
             var eventBus = FindOrCreateEventBus(root, createIfMissing: recordUndo, writeLog: writeLog);
-            var switchers = root.GetComponentsInChildren<AunCastPlaybackSwitcher>(true);
+            var switchers = GetRuntimeComponentsInChildren<AunCastPlaybackSwitcher>(root);
             AutoAssignAudioLinkBehaviour(switchers, recordUndo);
             // AudioLink 付属の内蔵スピーカー（AudioLinkInput）を無効化＋EditorOnly 化する。
             // AunCast が AudioLink 入力をランタイムで差し替えるため付属スピーカーは不要（冪等）。
             int audioLinkInputNeutralized = NeutralizeAudioLinkInputs(scene, recordUndo);
-            var meshScreens = FindSceneComponents<AunCastScreen>(scene);
-            var uiScreens = FindSceneComponents<AunCastUiScreen>(scene);
-            var speakers = FindSceneComponents<AunCastSpeaker>(scene);
-            var audioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
-            var wallPanels = root.GetComponentsInChildren<AunCastWallControlPanel>(true);
-            var userPanels = root.GetComponentsInChildren<AunCastPortablePanel>(true);
+            int editorOnlySkipped = 0;
+            int skippedMeshScreens;
+            int skippedUiScreens;
+            int skippedSpeakers;
+            int skippedTunnels;
+            var meshScreens = FindSceneComponents<AunCastScreen>(scene, true, out skippedMeshScreens);
+            var uiScreens = FindSceneComponents<AunCastUiScreen>(scene, true, out skippedUiScreens);
+            var speakers = FindSceneComponents<AunCastSpeaker>(scene, true, out skippedSpeakers);
+            var audioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene, true, out skippedTunnels);
+            editorOnlySkipped += skippedMeshScreens + skippedUiScreens + skippedSpeakers + skippedTunnels;
+            var wallPanels = GetRuntimeComponentsInChildren<AunCastWallControlPanel>(root);
+            var userPanels = GetRuntimeComponentsInChildren<AunCastPortablePanel>(root);
 
             if (controller == null || staffPanel == null || portablePanel == null)
             {
@@ -697,7 +704,7 @@ namespace PasocomMate.AunCast.Internal
                         publisherUpdated++;
                 }
 
-                var controllers = root.GetComponentsInChildren<AunCastDualPlayerController>(true);
+                var controllers = GetRuntimeComponentsInChildren<AunCastDualPlayerController>(root);
                 foreach (var ctrl in controllers)
                 {
                     if (ctrl == null) continue;
@@ -768,7 +775,7 @@ namespace PasocomMate.AunCast.Internal
             int notifyUpdated = 0;
             if (staffPanel != null)
             {
-                foreach (var ctrl in root.GetComponentsInChildren<AunCastDualPlayerController>(true))
+                foreach (var ctrl in GetRuntimeComponentsInChildren<AunCastDualPlayerController>(root))
                 {
                     if (ctrl == null) continue;
                     var so = new SerializedObject(ctrl);
@@ -776,7 +783,7 @@ namespace PasocomMate.AunCast.Internal
                         && ApplyUdonSerializedChanges(ctrl, so, "Rewire AunCastDualPlayerController StaffNotifyTarget", recordUndo))
                         notifyUpdated++;
                 }
-                foreach (var coord in root.GetComponentsInChildren<AunCastResyncCoordinator>(true))
+                foreach (var coord in GetRuntimeComponentsInChildren<AunCastResyncCoordinator>(root))
                 {
                     if (coord == null) continue;
                     var so = new SerializedObject(coord);
@@ -784,7 +791,7 @@ namespace PasocomMate.AunCast.Internal
                         && ApplyUdonSerializedChanges(coord, so, "Rewire AunCastResyncCoordinator StaffNotifyTarget", recordUndo))
                         notifyUpdated++;
                 }
-                foreach (var monitor in root.GetComponentsInChildren<AunCastPlaybackMonitor>(true))
+                foreach (var monitor in GetRuntimeComponentsInChildren<AunCastPlaybackMonitor>(root))
                 {
                     if (monitor == null) continue;
                     var so = new SerializedObject(monitor);
@@ -815,6 +822,9 @@ namespace PasocomMate.AunCast.Internal
                 }
             }
 
+            if (writeLog && editorOnlySkipped > 0)
+                Debug.Log($"[AunCast] EditorOnly 階層の出力 {editorOnlySkipped} 件は、ビルド時に除外されるため再配線対象から外しました。");
+
             if (writeLog)
                 Debug.Log($"[AunCast] EventBus参照を再配線しました。Bus: {busUpdated}件 / Publisher: {publisherUpdated}件 / AunCastWallControlPanel: {wallUpdated}件 / AunCastPortablePanel: {userUpdated}件 / Screen: {screenUpdated}件 / Speaker: {speakerUpdated}件 / Tunnel: {tunnelUpdated}件 / シンク不可聴化: {sinkMutedUpdated}件 / AudioLink入力無効化: {audioLinkInputNeutralized}件 / 通知先: {notifyUpdated}件");
         }
@@ -827,16 +837,18 @@ namespace PasocomMate.AunCast.Internal
             // 旧名 "AunCastEventHub" や Unpack 後にリネーム/移動されたバスも拾う。
             // 名前一致のみに頼ると既存シーンで二重生成・旧バス孤立が起きるため、型で補完する。
             Transform eventBusTransform = root.Find(EVENT_BUS_OBJECT_NAME);
-            AunCastEventBus existingEventBus = eventBusTransform != null
+            bool namedEventBusIsRuntime = eventBusTransform != null
+                && !IsInEditorOnlyHierarchy(eventBusTransform.gameObject);
+            AunCastEventBus existingEventBus = namedEventBusIsRuntime
                 ? eventBusTransform.gameObject.GetComponent<AunCastEventBus>()
                 : null;
             if (existingEventBus == null)
-                existingEventBus = root.GetComponentInChildren<AunCastEventBus>(true);
+                existingEventBus = GetRuntimeComponentInChildren<AunCastEventBus>(root);
 
             GameObject eventBusObject;
             if (existingEventBus != null)
                 eventBusObject = existingEventBus.gameObject;
-            else if (eventBusTransform != null)
+            else if (namedEventBusIsRuntime)
                 eventBusObject = eventBusTransform.gameObject;
             else
             {
@@ -926,6 +938,7 @@ namespace PasocomMate.AunCast.Internal
             UdonSharp.UdonSharpBehaviour component)
         {
             if (subscribers == null || component == null) return;
+            if (IsInEditorOnlyHierarchy(component.gameObject)) return;
             var udon = UdonSharpEditorUtility.GetBackingUdonBehaviour(component);
             if (udon != null)
                 subscribers.Add(udon);
@@ -933,6 +946,16 @@ namespace PasocomMate.AunCast.Internal
 
         private static T[] FindSceneComponents<T>(Scene scene) where T : Component
         {
+            int unused;
+            return FindSceneComponents<T>(scene, false, out unused);
+        }
+
+        private static T[] FindSceneComponents<T>(
+            Scene scene,
+            bool excludeEditorOnly,
+            out int excludedEditorOnly) where T : Component
+        {
+            excludedEditorOnly = 0;
             if (!scene.IsValid()) return Array.Empty<T>();
 
             T[] all = UnityEngine.Object.FindObjectsOfType<T>(true);
@@ -942,6 +965,11 @@ namespace PasocomMate.AunCast.Internal
                 T component = all[i];
                 if (component == null) continue;
                 if (!component.gameObject.scene.IsValid() || component.gameObject.scene != scene) continue;
+                if (excludeEditorOnly && IsInEditorOnlyHierarchy(component.gameObject))
+                {
+                    excludedEditorOnly++;
+                    continue;
+                }
                 list.Add(component);
             }
 
@@ -949,6 +977,27 @@ namespace PasocomMate.AunCast.Internal
                 GetHierarchyPath(a != null ? a.transform : null),
                 GetHierarchyPath(b != null ? b.transform : null),
                 StringComparison.Ordinal));
+            return list.ToArray();
+        }
+
+        private static T GetRuntimeComponentInChildren<T>(Transform root) where T : Component
+        {
+            T[] components = GetRuntimeComponentsInChildren<T>(root);
+            return components.Length > 0 ? components[0] : null;
+        }
+
+        private static T[] GetRuntimeComponentsInChildren<T>(Transform root) where T : Component
+        {
+            if (root == null) return Array.Empty<T>();
+            T[] all = root.GetComponentsInChildren<T>(true);
+            var list = new List<T>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                T component = all[i];
+                if (component == null) continue;
+                if (IsInEditorOnlyHierarchy(component.gameObject)) continue;
+                list.Add(component);
+            }
             return list.ToArray();
         }
 
@@ -973,6 +1022,7 @@ namespace PasocomMate.AunCast.Internal
             {
                 AunCastSpeaker speaker = speakers[i];
                 if (speaker == null) continue;
+                if (IsInEditorOnlyHierarchy(speaker.gameObject)) continue;
 
                 AudioSource source = speaker.GetComponent<AudioSource>();
                 if (source == null)
@@ -1020,6 +1070,7 @@ namespace PasocomMate.AunCast.Internal
             {
                 AunCastSpeaker speaker = speakers[i];
                 if (speaker == null || speaker.GetPlayerIndex() != playerIndex) continue;
+                if (IsInEditorOnlyHierarchy(speaker.gameObject)) continue;
                 AudioSource source = speaker.GetComponent<AudioSource>();
                 if (source != null)
                     return source;
@@ -1040,6 +1091,7 @@ namespace PasocomMate.AunCast.Internal
             {
                 AunCastAudioOutputTunnel tunnel = tunnels[i];
                 if (tunnel == null) continue;
+                if (IsInEditorOnlyHierarchy(tunnel.gameObject)) continue;
 
                 var so = new SerializedObject(tunnel);
                 bool changed = false;

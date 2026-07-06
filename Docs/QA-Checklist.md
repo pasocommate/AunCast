@@ -72,12 +72,12 @@ Unity Editor で `Window > General > Test Runner > EditMode` から実行する�
 
 | # | 手順 | 確認ポイント | 結果 | 備考 |
 |---|------|-------------|------|------|
-| A1 | StaffPanel で HLS URL を入力し再生ボタン押下 | 5 秒以内に映像・音声が出力される | | |
+| A1 | AunCastStaffControlPanel で HLS URL を入力し再生ボタン押下 | 5 秒以内に映像・音声が出力される | | |
 | A2 | Tab キーを繰り返し押す | Viewer → Staff → 非表示のサイクルで切り替わる | | |
 | A3 | 停止 → 別 URL → 再生を 3 回繰り返す | 毎回正常に遷移し、停止中に Resync が発火しない | | |
 | A4 | 音量スライダーを 0 → 最大 → 中間で操作 | ローカルのみ音量変化、ミュート/復帰正常 | | |
-| A5 | 再生中に StaffPanel のステータス表示を確認 | 状態・ドリフト値がリアルタイム更新される | | |
-| A6 | 非スタッフアカウントで StaffPanel を操作しようとする | 操作不可（パスコード要求） | | |
+| A5 | 再生中に AunCastStaffControlPanel のステータス表示を確認 | 状態・ドリフト値がリアルタイム更新される | | |
+| A6 | 非スタッフアカウントで AunCastStaffControlPanel を操作しようとする | 操作不可（パスコード要求） | | |
 
 ---
 
@@ -103,9 +103,9 @@ Unity Editor で `Window > General > Test Runner > EditMode` から実行する�
 
 | # | 手順 | 確認ポイント | 結果 | 備考 |
 |---|------|-------------|------|------|
-| C1 | ViewerPanel の Resync ボタンを押す | 自分のみ Resync される | | |
+| C1 | AunCastPortablePanel の Viewer ビューで Resync ボタンを押す | 自分のみ Resync される | | |
 | C2 | クールダウン中に再度ボタン押下 | ボタン無効、残り時間表示あり | | |
-| C3 | StaffPanel のグローバル Resync ボタンを押す | Coordinator が全スロットをキューイング | | |
+| C3 | AunCastStaffControlPanel のグローバル Resync ボタンを押す | Coordinator が全スロットをキューイング | | |
 | C4 | maxConcurrentResyncUsers を 1 に変更 | 順次処理（同時 1 件のみ GRANTED/RUNNING） | | |
 | C5 | Resync 完了後にスロット状態確認 | 即座に STATE_NONE に戻る | | |
 

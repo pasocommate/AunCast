@@ -56,7 +56,7 @@ nav:
       - 同時接続上限の管理: concepts/connection-limit.md
   - セットアップガイド:
       - 設定と調整: setup/settings.md
-      - 複製配置と再配線: setup/replication.md
+      - 部品の配置と移行: setup/parts-placement.md
   - 運用ガイド:
       - 壁パネルと手元パネル: operation/panels.md
       - 手元パネル：観客ビュー: operation/panel-viewer.md
