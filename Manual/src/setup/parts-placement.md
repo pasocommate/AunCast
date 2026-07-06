@@ -138,6 +138,3 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 AudioLink と連携する場合、追加の配線作業は不要です。AunCast が実行時に、現用系統のスピーカーを AudioLink の入力へ自動的に割り当てます。
 
 このため、AudioLink プレハブに付属する入力用スピーカー（`AudioLinkInput` の `AudioSource` + `VRCAVProVideoSpeaker`）は不要になります。再配線を実行すると、`AudioLinkInput` は自動的に **非アクティブ化＋EditorOnly タグ化**（ビルドから除外。削除はされません）され、理由を示す英語名の注記オブジェクトが直後に生成されます。この処理は AunCast の正常な動作で、AudioLink の反応が損なわれることはありません。`AudioLinkInput` は変換候補一覧にも表示されません。
-
-<!--@ph Hierarchy ビュー。再配線後の AudioLink プレハブ配下：非アクティブ化された AudioLinkInput と、その直後に生成された注記オブジェクト（AudioLink's referenced audio source is managed automatically by AunCast）が写るように撮影-->
-![再配線後の AudioLinkInput と注記オブジェクト](../assets/hierarchy-audiolink-input-note.png){ width="280" }

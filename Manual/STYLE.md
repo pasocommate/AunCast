@@ -67,6 +67,7 @@
 ## 6. スクリーンショット
 
 - 実 UI のスクリーンショットを使い、`Manual/src/assets/` に意味のある名前で配置する。
+- **番号バッジ（①②…）付きの図は手描きしない**。素の画像（`*-annotated` でない方）を配置し、[`Tools/annotate-manual-screenshots.py`](../Tools/annotate-manual-screenshots.py) の `JOBS` にバッジ座標を追記して再実行する。フォント・色は同スクリプトの定数（紫 #5a4aa8・Arial Bold）で統一され、番号を追加・変更してもスタイルが揺れない。
 
 ## 7. プレースホルダ（未確定事項）
 

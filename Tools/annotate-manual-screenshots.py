@@ -16,7 +16,7 @@ FONT_PATH = r"C:\Windows\Fonts\arialbd.ttf"
 FONT_SIZE = 46
 
 # ジョブ定義: (元画像, 出力画像, [(番号, x, y), ...])
-# panel-viewer.md「手元パネルの各部」の表①〜⑧に対応
+# panel-viewer.md「手元パネルの各部」の表①〜⑨に対応
 JOBS = [
     (
         f"{ASSETS}/portable-panel-viewer.png",
@@ -30,9 +30,10 @@ JOBS = [
             (6, 76, 783),    # Volume
             (7, 76, 621),    # 再生ステータス表示（サムネイル下）
             (8, 1372, 68),   # × ボタン
+            (9, 1165, 68),   # ビュー切替ボタン（⇔）
         ],
     ),
-    # panel-staff.md「スタッフビュー」の各部①〜⑩に対応
+    # panel-staff.md「スタッフビュー」の各部①〜⑭に対応
     (
         f"{ASSETS}/portable-panel-staff.png",
         f"{ASSETS}/portable-panel-staff-annotated.png",
@@ -47,6 +48,10 @@ JOBS = [
             (8, 1360, 500),  # 人数表示（Playing / Instance / Queued）
             (9, 82, 665),    # Connections / Concurrent の Edit
             (10, 230, 945),  # ヘルプ表示（言語切替）
+            (11, 1018, 866), # Resync ボタン（下部・観客ビューと同じ）
+            (12, 114, 866),  # Reboot ボタン（⚡・下部・観客ビューと同じ）
+            (13, 1042, 122), # スタッフ操作ロックボタン（🔒・右上）
+            (14, 76, 548),   # Timeline Log トグル
         ],
     ),
 ]
