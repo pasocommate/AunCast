@@ -18,10 +18,10 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 映像が止まった・カクつく | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Reboot ボタン](../operation/panel-viewer.md#reboot-button) |
 | 自動的に再同期されるのを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
 | 音量を変えたい | [Volume](../operation/panel-viewer.md#volume) |
-| 表示の意味を知りたい（Drift, Audio Level, ステータス等） | [手元パネルの各部](../operation/panel-viewer.md#controls) |
+| 表示の意味を知りたい（Drift, Audio Level 等） | [手元パネルの各部](../operation/panel-viewer.md#controls) |
 | 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#playback-status) |
 | Resync ボタンが押せない | [Resync ボタン](../operation/panel-viewer.md#resync-button) |
-| AunCast のバージョンを確認したい | 壁パネルの (i) ボタンで表示される製品情報に記載されています |
+| AunCast のバージョンを確認したい | 壁パネルの **情報ボタン**（<span class="material-symbol" aria-hidden="true">info</span>）で表示されます |
 
 ---
 

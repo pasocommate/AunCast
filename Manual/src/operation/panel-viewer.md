@@ -19,15 +19,15 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 | 要素 | 機能 |
 |---|---|
-| ① **Resync ボタン** | 配信への接続を再同期する |
-| ② **Reboot ボタン**（⚡） | いったん切断してから接続し直す |
+| ① **Resync ボタン**（<span class="material-symbol" aria-hidden="true">sync</span>） | 配信への接続を再同期する |
+| ② **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">bolt</span>） | いったん切断してから接続し直す |
 | ③ **Drift** | 接続確立時からの「音声・映像のズレ量」のメーター |
 | ④ **Audio Level** | 現在 音声が出ているかを示すメーター |
-| ⑤ **Silence Resync** | 無音時に自動的に再同期するかの切り替え |
-| ⑥ **Volume** | 音量 |
+| ⑤ **Silence Resync**（<span class="material-symbol" aria-hidden="true">noise_control_off</span>） | 無音時に自動的に再同期するかの切り替え |
+| ⑥ **Volume**（<span class="material-symbol" aria-hidden="true">volume_up</span>） | 音量 |
 | ⑦ **再生ステータス表示**（スクリーン下部） | 現在のプレイヤーの状態（例: Idle＝待機中） |
-| ⑧ **× ボタン** | パネルを閉じる |
-| ⑨ **ビュー切替ボタン**（⇔） | [スタッフビュー](panel-staff.md)へ切り替える<br>解錠時のみ表示されます（→ [スタッフビューを解錠する](panel-staff.md#unlock)） |
+| ⑧ **閉じるボタン**（<span class="material-symbol" aria-hidden="true">close</span>） | パネルを閉じる |
+| ⑨ **ビュー切替ボタン**（<span class="material-symbol" aria-hidden="true">swap_horiz</span>） | [スタッフビュー](panel-staff.md)へ切り替える<br>解錠時のみ表示されます（→ [スタッフビューを解錠する](panel-staff.md#unlock)） |
 
 ここでは特に重要な２つのボタンを説明します。
 

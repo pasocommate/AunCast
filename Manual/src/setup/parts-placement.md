@@ -24,9 +24,9 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 3. `AunCastSettings` の **出力・参照の再配線** にある **「参照関係を再配線」** を押し、コンポーネントを関連付けます。
 
 !!! tip "壁パネルごとに鍵アイコンを隠せます"
-    スタッフ暗証番号を入力するための鍵アイコンは、壁パネルごとの設定 (`AunCastWallControlPanel` コンポーネントの **Disable Passcode View Switch Button**) で非表示にできます。たとえば会場内の壁パネルでは鍵アイコンを隠し、控室の壁パネルだけで解錠できるようにする、といった運用が可能です。
+    スタッフ暗証番号を入力するための鍵アイコン（<span class="material-symbol" aria-hidden="true">lock</span>）は、壁パネルごとの設定 (`AunCastWallControlPanel` コンポーネントの **Disable Passcode View Switch Button**) で非表示にできます。たとえば会場内の壁パネルではこのボタンを隠し、控室の壁パネルだけで解錠できるようにする、といった運用が可能です。
 
-    暗証番号を空欄にして無効化している場合は、入力しても解錠されないため、あわせて鍵アイコンも非表示にすることを推奨します。
+    暗証番号を空欄にして無効化している場合は、入力しても解錠されないため、あわせて鍵アイコン（<span class="material-symbol" aria-hidden="true">lock</span>）も非表示にすることを推奨します。
 
 ## スクリーンを増やす (AunCastScreen) {#screens}
 

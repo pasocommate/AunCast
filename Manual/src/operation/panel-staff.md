@@ -16,11 +16,11 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 スタッフビューの利用には **解錠**（アンロック）が必要です。解錠の方法は２通りです。
 
 1. **VRChat ディスプレイネームで許可されている**：あらかじめスタッフの VRChat ディスプレイネームを登録しておくと、その人は解錠操作なしでスタッフビューを使用できます。
-2. **暗証番号で解錠する**：壁パネルのカギのアイコンから、**４桁の暗証番号** を入力して解錠します。
+2. **暗証番号で解錠する**：壁パネルの鍵アイコン（<span class="material-symbol" aria-hidden="true">lock</span>）から、**４桁の暗証番号** を入力して解錠します。
 
 ![壁パネル（暗証番号の入力）](../assets/wall-panel-staff-passcode.png){ width="260" }
 
-解錠後は、手元パネル右上の **⇔ボタン** でスタッフビューへ移動できます。手元パネルを呼び出すジェスチャーをもう一度行っても切り替わります。
+解錠後は、手元パネル右上の **ビュー切替ボタン**（<span class="material-symbol" aria-hidden="true">swap_horiz</span>）でスタッフビューへ移動できます。手元パネルを呼び出すジェスチャーをもう一度行っても切り替わります。
 
 ---
 
@@ -34,20 +34,20 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 | 要素 | 機能 |
 |---|---|
-| ① **Playing** | 現在配信中のURL。ポイントすると入力者が表示される |
-| ② **Next URL** | 次に再生する配信URLの入力欄 |
-| ③ **送信ボタン**（↑↓） | Next URL を全員に反映する |
-| ④ **Stop All** | 全員の再生を停止する |
-| ⑤ **Reboot All** | 全員を強制リブートする（緊急用） |
-| ⑥ **Resync All** | 全員を一斉に再同期する |
+| ① **Playing**（<span class="material-symbol" aria-hidden="true">play_arrow</span>） | 現在配信中のURL。ポイントすると入力者が表示される |
+| ② **Next URL**（<span class="material-symbol" aria-hidden="true">skip_next</span>） | 次に再生する配信URLの入力欄 |
+| ③ **送信ボタン**（<span class="material-symbol" aria-hidden="true">swap_vert</span>） | Next URL を全員に反映する |
+| ④ **Stop All**（<span class="material-symbol" aria-hidden="true">cancel_presentation</span>） | 全員の再生を停止する |
+| ⑤ **Reboot All**（<span class="material-symbol" aria-hidden="true">charger</span>） | 全員を強制リブートする（緊急用） |
+| ⑥ **Resync All**（<span class="material-symbol" aria-hidden="true">change_circle</span>） | 全員を一斉に再同期する |
 | ⑦ **状態インジケーター** | 全員の状態を色で表示する（→ [モニタリング](monitoring.md)） |
 | ⑧ **人数表示** | Playing / Instance / Queued の人数（→ [モニタリング](monitoring.md)） |
-| ⑨ **Connection≤ / Concurrent≤** | 同時接続 / Resync上限の現在値と **Edit** ボタン |
+| ⑨ **Connection≤**（<span class="material-symbol" aria-hidden="true">cable</span>）<br>　 **Concurrent≤**（<span class="material-symbol" aria-hidden="true">mode_heat</span>） | 同時接続 / Resync上限の現在値と **Edit** ボタン（<span class="material-symbol" aria-hidden="true">edit</span>） |
 | ⑩ **ヘルプ表示** | ポイントしたUI部品の説明欄<br>インタラクトで日本語 / 英語を切替 |
-| ⑪ **Resync ボタン** | 自分の端末を再同期する。[観客ビューの Resync](panel-viewer.md#resync-button)と同じ |
-| ⑫ **Reboot ボタン**（⚡） | 自分の端末を切断→再接続する。[観客ビューの Reboot](panel-viewer.md#reboot-button)と同じ |
-| ⑬ **操作ロックボタン**（鍵アイコン） | スタッフ操作を一時的に施錠し、誤操作を防ぐ（→ [操作ロック](#staff-lock)） |
-| ⑭ **Timeline Log** | 診断用タイムラインログのオン / オフ（→ [タイムラインログ](#timeline-logging)） |
+| ⑪ **Resync ボタン**（<span class="material-symbol" aria-hidden="true">sync</span>） | 自分の端末を再同期する。[観客ビューの Resync](panel-viewer.md#resync-button)と同じ |
+| ⑫ **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">bolt</span>） | 自分の端末を切断→再接続する。[観客ビューの Reboot](panel-viewer.md#reboot-button)と同じ |
+| ⑬ **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">lock</span>） | スタッフ操作を一時的に施錠し、誤操作を防ぐ（→ [操作ロック](#staff-lock)） |
+| ⑭ **Timeline Log**（<span class="material-symbol" aria-hidden="true">bug_report</span>） | 診断用タイムラインログのオン / オフ（→ [タイムラインログ](#timeline-logging)） |
 
 ⑪⑫ の Resync / Reboot と Volume は、スタッフビューでも **自分の端末に対する操作** です。挙動は観客ビューと同じなので、[手元パネル：観客ビュー](panel-viewer.md)を参照してください。
 
@@ -58,7 +58,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 配信の接続先URLを設定・変更する操作です。
 
 1. **Next URL** の入力欄に、新しい配信URLを入力します。VRでは、入力欄を選択するとVRChatのキーボードが表示されます。
-2. 右の **送信ボタン**（↑↓）を押します。
+2. 右の **送信ボタン**（<span class="material-symbol" aria-hidden="true">swap_vert</span>）を押します。
 
 これでURLが **全員に反映** され、各観客が新しい配信を再生し始めます。現在配信中のURLは **Playing** の欄で確認できます。この欄をポイントすると、誰がそのURLを入力したのかが表示されます。
 
@@ -111,7 +111,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 ## 操作ロック（誤操作防止） {#staff-lock}
 
-スタッフビュー右上の **操作ロックボタン**（鍵アイコン）は、スタッフ操作を一時的に **施錠** して誤操作を防ぐスイッチです。
+スタッフビュー右上の **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">lock</span>）は、スタッフ操作を一時的に **施錠** して誤操作を防ぐスイッチです。
 
 - 施錠中は、送信・Stop All・Reboot All・Resync All などスタッフ操作のボタンが押せなくなります。
 - もう一度押すと解錠され、再び操作できます。アイコンは施錠中／解錠中で切り替わります。

@@ -45,11 +45,11 @@ AunCast の開発にあたり力を貸してくださったVRChatユーザーの
 
 ### フォント
 
-- [Anonymous Pro](https://fonts.google.com/specimen/Anonymous+Pro) (SIL Open Font License 1.1)
-- [Michroma](https://fonts.google.com/specimen/Michroma) (SIL Open Font License 1.1)
-- [Material Symbols](https://fonts.google.com/icons) (Apache License 2.0)
+- [Anonymous Pro (Mark Simonson)](https://fonts.google.com/specimen/Anonymous+Pro) (SIL Open Font License 1.1)
+- [Michroma (Vernon Adams)](https://fonts.google.com/specimen/Michroma) (SIL Open Font License 1.1)
+- [Material Symbols (Google)](https://fonts.google.com/icons) (Apache License 2.0)
 
 ### 依存パッケージ
 
-- [TMP 日本語フォールバックフォント by Narazaka](https://github.com/Narazaka/tmp-fallback-fonts-jp) (SIL Open Font License 1.1)
-- [AudioLink](https://github.com/llealloo/audiolink) (MIT License)
+- [TMP 日本語フォールバックフォント (Narazaka)](https://github.com/Narazaka/tmp-fallback-fonts-jp) (SIL Open Font License 1.1)
+- [AudioLink (llealloo)](https://github.com/llealloo/audiolink) (MIT License)
