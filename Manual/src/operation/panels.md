@@ -1,3 +1,8 @@
+---
+description: ワールドに固定設置された壁パネルの使い方と、手元パネルの呼び出し方法を説明します。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # 壁パネルと手元パネル
 
 このページでは、ワールドに固定設置された壁パネルの使い方と、手元パネルの呼び出し方法を説明します。呼び出した後の手元パネル（観客ビュー）の操作は[手元パネル：観客ビュー](panel-viewer.md)を、スタッフ専用の操作は[手元パネル：スタッフビュー](panel-staff.md)を参照してください。

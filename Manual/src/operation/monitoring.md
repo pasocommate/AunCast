@@ -1,3 +1,8 @@
+---
+description: スタッフビューで、インスタンス全体の再生・再同期の状況をリアルタイムに確認する方法と、同時Resync上限を調整する対処を解説します。スタッフ向け。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # モニタリングと上限調整（スタッフ向け）
 
 スタッフビューでは、インスタンス全体の再生・再同期の状況をリアルタイムに確認できます。これを随時確認することで、スタッフは[同時Resync上限](../concepts/connection-limit.md)を調整するなどの適切な対処ができます。

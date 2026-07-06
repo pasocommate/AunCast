@@ -1,3 +1,8 @@
+---
+description: 配信サーバーの同時接続上限という制約と、AunCast がそれをどう守るかを解説します。接続数は人数ではなく接続本数で数える点や、再同期中の接続消費を説明します。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # 同時接続上限の管理
 
 このページでは、AunCast の運用で避けて通れない **「配信サーバーが同時に受け付けられる人数には上限がある」** という制約と、AunCast がそれをどう守っているかを説明します。**スタッフにとって特に重要** な概念です。

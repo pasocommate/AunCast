@@ -1,3 +1,8 @@
+---
+description: AunCastSettings インスペクタの値を編集して行う設定と調整の一覧。各コンポーネントへの配線もインスペクタのボタンで実行できます。スタッフ向け。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # 設定と調整（スタッフ向け）
 
 このページは、AunCast をシーンに配置した後、`AunCastSettings` インスペクタの値を編集するだけで設定できる項目をまとめています。導入の最短手順は[クイックスタート](../quickstart.md#setup)を参照してください。

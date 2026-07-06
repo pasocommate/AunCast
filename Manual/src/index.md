@@ -1,3 +1,9 @@
+---
+title: AunCast ユーザーマニュアル
+description: VRChatワールド向けの低遅延ライブ専用ビデオプレイヤー AunCast のユーザーマニュアル。ライブ演奏やDJプレイの音声を、長時間ズレを蓄積させず途切れさせずにワールド内へ配信し続けます。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # AunCast ユーザーマニュアル
 
 ![AunCast ユーザーマニュアル](./assets/auncast-banner.jpg){ width="836" }
