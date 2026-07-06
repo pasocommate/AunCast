@@ -1,3 +1,8 @@
+---
+description: AunCast の導入から配信開始までの最短手順。スタッフの初期設定と、観客・スタッフそれぞれの基本操作をまとめています。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # クイックスタート
 
 本システム利用時の最短手順です。詳細な仕様は各リンク先を参照してください。

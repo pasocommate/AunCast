@@ -1,3 +1,8 @@
+---
+description: AunCast の作者(つつみちぎり)の紹介とクレジット。VRChatライブの出演依頼や各種リンクを掲載しています。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # クレジット
 
 <div class="author-profile" markdown>

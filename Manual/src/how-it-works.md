@@ -1,3 +1,8 @@
+---
+description: AunCast が低遅延ライブ配信を途切れさせずに続けられる理由を、再同期(Resync)と同時接続上限の管理という２つの仕組みから解説します。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # 動作原理
 
 AunCast が一般的な動画再生システムと異なる点は、**２つの仕組み**に集約されます。この２点を理解しておけば、各操作の意図を把握できます（詳細は各章を参照してください）。

@@ -1,3 +1,8 @@
+---
+description: 「○○したい」「○○が起きている」から該当ページへ案内する逆引きインデックス。観客・スタッフそれぞれの目的別に整理しています。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # 逆引きインデックス
 
 「○○したい」「○○が起きている」から、該当するページへ案内します。

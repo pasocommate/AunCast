@@ -1,3 +1,8 @@
+---
+description: AunCast の再同期(Resync)の内部動作。現用系統と予備系統の２系統により、音声を途切れさせずに再生位置のズレを復旧する手順を解説します。
+image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
+---
+
 # 再同期 (Resync) の仕組み
 
 このページでは、Resync の内部動作（どの順序で再接続し、何を確認して切り替えるか）を説明します。

@@ -28,6 +28,7 @@
 {% endif %}
 
 <!-- Open Graph (Facebook, LinkedIn) -->
+<meta property="og:type" content="website">
 <meta property="og:title" content="{{ seo_title | striptags | e }}">
 
 {% if page.meta.description %}
@@ -47,6 +48,7 @@
 {% endif %}
 
 <!-- Twitter Card -->
+<meta name="twitter:card" content="{{ 'summary_large_image' if page.meta.image else 'summary' }}">
 <meta name="twitter:title" content="{{ seo_title | striptags | e }}">
 
 {% if page.meta.description %}
