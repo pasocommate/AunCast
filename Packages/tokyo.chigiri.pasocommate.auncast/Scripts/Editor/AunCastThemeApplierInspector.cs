@@ -6,6 +6,7 @@ using UdonSharp;
 using UdonSharpEditor;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using VRC.Udon;
 
@@ -237,10 +238,11 @@ namespace PasocomMate.AunCast.Internal
                     targets.Add(videoScreen);
             }
 
-            foreach (var wallPanel in root.GetComponentsInChildren<AunCastWallControlPanel>(true))
+            foreach (var wallPanel in FindSceneWallPanels(root))
             {
                 if (wallPanel == null) continue;
 
+                AddThemeTargets(targets, wallPanel.transform);
                 targets.Add(wallPanel.transform);
                 var box = wallPanel.GetComponent<BoxCollider>();
                 if (box != null)
@@ -254,6 +256,23 @@ namespace PasocomMate.AunCast.Internal
             }
 
             Undo.RecordObjects(targets.ToArray(), "Apply AunCast Theme");
+        }
+
+        private static void AddThemeTargets(List<UnityEngine.Object> targets, Transform root)
+        {
+            if (targets == null || root == null) return;
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+                targets.Add(img);
+            foreach (var btn in root.GetComponentsInChildren<Button>(true))
+                targets.Add(btn);
+            foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
+                targets.Add(tmp);
+            foreach (var udon in root.GetComponentsInChildren<UdonBehaviour>(true))
+                targets.Add(udon);
+            foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
+                targets.Add(mr);
+            foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
+                targets.Add(raw);
         }
 
         private static void AddIfFound(List<UnityEngine.Object> targets, Transform root, string path)
@@ -274,7 +293,7 @@ namespace PasocomMate.AunCast.Internal
                 SetSerializedField(proxy, "disabledButtonLabelAlpha", theme.disabledButtonLabelAlpha);
             });
 
-            ApplyThemeToAllProxies<AunCastWallControlPanel>(root, proxy =>
+            ApplyThemeToSceneWallPanelProxies(root, proxy =>
             {
                 SetSerializedField(proxy, "disabledButtonLabelAlpha", theme.disabledButtonLabelAlpha);
             });
@@ -308,6 +327,41 @@ namespace PasocomMate.AunCast.Internal
                 apply(proxy);
                 UdonSharpEditorUtility.CopyProxyToUdon(proxy);
             }
+        }
+
+        private static void ApplyThemeToSceneWallPanelProxies(
+            Transform root,
+            Action<AunCastWallControlPanel> apply)
+        {
+            if (root == null || apply == null) return;
+
+            var proxies = FindSceneWallPanels(root);
+            foreach (var proxy in proxies)
+            {
+                if (proxy == null) continue;
+                apply(proxy);
+                UdonSharpEditorUtility.CopyProxyToUdon(proxy);
+            }
+        }
+
+        private static AunCastWallControlPanel[] FindSceneWallPanels(Transform root)
+        {
+            if (root == null) return Array.Empty<AunCastWallControlPanel>();
+
+            Scene scene = root.gameObject.scene;
+            if (!scene.IsValid()) return Array.Empty<AunCastWallControlPanel>();
+
+            AunCastWallControlPanel[] all = UnityEngine.Object.FindObjectsOfType<AunCastWallControlPanel>(true);
+            var list = new List<AunCastWallControlPanel>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                AunCastWallControlPanel panel = all[i];
+                if (panel == null) continue;
+                if (!panel.gameObject.scene.IsValid() || panel.gameObject.scene != scene) continue;
+                list.Add(panel);
+            }
+
+            return list.ToArray();
         }
 
         private static void SetSerializedField(UnityEngine.Object target, string fieldName, object value)

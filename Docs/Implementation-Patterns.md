@@ -340,14 +340,17 @@ private bool CleanupStaleSlots()
 - `AunCastSettingsInspector` の再配線処理だけが subscriber の具象型を集め、backing
   `UdonBehaviour` に変換してから
   Bus 配列と各 `eventBus` 参照を `SerializedObject` / `FindProperty` 経由で設定する
-- `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` は AunCast ルート配下に限定せず、
-  AunCastSettings と同一シーン全体から収集する。建物階層など AunCast 外に置いた
-  出力コンポーネントも、宣言済みであれば自動再配線の対象になる
-- ただし `EditorOnly` タグが付いた GameObject またはその配下の出力コンポーネントは、
+- `AunCastScreen` / `AunCastUiScreen` / `AunCastSpeaker` / `AunCastWallControlPanel`
+  は AunCast ルート配下に限定せず、AunCastSettings と同一シーン全体から収集する。
+  建物階層など AunCast 外に置いた出力・操作コンポーネントも、宣言済みであれば
+  自動再配線の対象になる
+- ただし `EditorOnly` タグが付いた GameObject またはその配下の対象コンポーネントは、
   ビルド時に除外されるため再配線対象に含めない。非アクティブ GameObject はエディタ上で
   一時的に隠す用途があるため、従来通り再配線対象に含める
-- `AunCastAudioOutputTunnel` も同一シーン全体から収集し、`inputA` / `inputB` は
-  PlayerA / PlayerB の `AunCastSpeaker` から自動設定する。通常の音声出力は
+- `AunCastAudioOutputTunnel` も同一シーン全体から収集する。`inputA` / `inputB` は
+  既存値を尊重し、未設定の場合のみ PlayerA / PlayerB の `AunCastSpeaker` から補完する。
+  旧 `AudioOutputTunnel` からの互換トンネル移行では、旧 `input` の AudioSource を
+  A/B 用に複製して `AunCastSpeaker` 化し、`inputA` / `inputB` に設定する。通常の音声出力は
   `AunCastSpeaker` 直結を優先し、トンネルは既存 `AudioOutputTunnel` 構成の互換用途に限定する
 
 ### プレハブ運用と自動再配線
@@ -522,6 +525,9 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   （エディタ時セットアップ）が上記の追従を一括適用する。書き換えた RectTransform /
   BoxCollider は `RecordPrefabInstancePropertyModifications` でプレハブオーバーライド
   記録する。
+- `AunCastWallControlPanel` は AunCast ルート外にも配置できるため、ThemeApplier は
+  AunCastSettings と同一シーン全体の壁パネルを収集して、テーマ色・マテリアル・フォント・
+  ContentScaler サイズ・Udon Proxy フィールドを反映する。
 - 注意: ContentScaler 配下の**個別 UI（ボタン等）は絶対配置**のものが多く、設計サイズを
   変えても自動リフローしない。アスペクト比を大きく変える場合は内部レイアウトの再調整が要る。
 - 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`AunCastPortablePanel`）

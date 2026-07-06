@@ -379,6 +379,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 
 ### I. AunCastWallControlPanel（壁掛け設置型）
 ワールド内に固定配置する小型の壁掛けパネル。3 つの表示状態を持つ: User ビュー / Staff ビュー / ResyncOnly ビュー。
+AunCastSettings の再配線は同一シーン全体の `AunCastWallControlPanel` を収集するため、AunCast ルート外の建物階層などにも配置できる。
 
 責務:
 - **User ビュー**: 個人 Resync リクエストボタン (`OnUserResyncButtonPress`) / 緊急リブートボタン (`OnUserRebootButtonPress`) / VR 呼び出しジェスチャー選択トグル（右スティック上倒し / 片手ダブルトリガー / 両手トリガー長押し）
@@ -442,7 +443,7 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 - `VideoTextureChanged`: `AunCastPlaybackSwitcher` が現在の映像テクスチャを `videoTexture` に格納し、`AunCastScreen` / `AunCastUiScreen` へ `OnVideoTextureChanged` を通知する
 - `LocalStateChanged`: `AunCastDualPlayerController` の FSM 状態変化を `AunCastWallControlPanel` へ通知する
 - `PortablePanelShown`: `AunCastPortablePanel` 表示時に `AunCastWallControlPanel` へ通知する。閉じたときの副作用は現状ないため Hidden イベントは持たない
-- 購読者配列は backing `UdonBehaviour[]` で保持し、配信は `SendCustomEvent(eventName)` で行う
+- 購読者配列は backing `UdonBehaviour[]` で保持し、配信は `SendCustomEvent(eventName)` で行う。`AunCastWallControlPanel` は再配線時に同一シーン全体から収集される
 
 ---
 
@@ -1165,10 +1166,10 @@ AVPro AudioSource B (同様の構成)
 
 TopazChat Player の「+ Reverb Filter」構成のように、`AudioOutputTunnel` で AVPro シンクから PCM を取り出して通常の Unity `AudioSource` へ流しているワールド向けに、`AunCastAudioOutputTunnel` を同梱する。
 
-- `inputA` / `inputB` は同一シーンの `AunCastSpeaker`（PlayerA / PlayerB）から再配線処理で自動設定される
+- 旧 `AudioOutputTunnel` からの移行時は、旧 `input` の AudioSource を A/B 用に複製して `AunCastSpeaker` 化し、`inputA` / `inputB` に設定する。再配線処理は既存の `inputA` / `inputB` を尊重し、未設定の場合のみ同一シーンの `AunCastSpeaker`（PlayerA / PlayerB）で補完する
 - `leftOutput` / `rightOutput` / `stereoOutput` に生成したループ `AudioClip` を割り当て、`AudioClip.SetData` で A/B 入力を合成して流す
 - `AudioSource.GetOutputData` は `AudioSource.volume` 適用後の PCM を返す前提で、A/B の単純加算により Standby ミュートとクロスフェードを反映する
-- 直結出力よりリングバッファ分の遅延が増えるため、通常の VRCAVProVideoSpeaker 直結構成では使用しない
+- 直結出力に比べて遅延がリングバッファ分だけ多い構成のため、通常の VRCAVProVideoSpeaker 直結構成では使用しない
 - Udon VM の制約により `OnAudioFilterRead` は使わず、メインスレッド `Update` で `blockSamples / sampleRate` 間隔の書き込みを行う
 
 ### クロスフェード

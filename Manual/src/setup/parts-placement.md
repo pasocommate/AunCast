@@ -70,7 +70,7 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 
 既存ワールドで稼働中のビデオプレイヤー（TopazChat Player / iwaSync3 / USharpVideo 等）から AunCast へ移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで、使用中のスクリーン・スピーカーをそのまま AunCast 用の出力へ変換できます。
 
-![既存プレイヤー出力の変換セクション](../assets/inspector-output-migration.png){ width="640" }
+![既存プレイヤー出力の変換セクション](../assets/inspector-output-migration.png){ width="560" }
 
 ### 変換の手順
 
@@ -85,7 +85,7 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 
 変換済みの行は **「設定済み」** と表示されます。旧コンポーネントが残っている行は **「修正」** ボタンに変わり、押すと旧コンポーネントだけを削除できます。
 
-![変換後の候補一覧（設定済みと修正）](../assets/inspector-output-migration-configured.png){ width="640" }
+![変換後の候補一覧（設定済みと修正）](../assets/inspector-output-migration-configured.png){ width="480" }
 
 ### AunCast 内蔵のスクリーン・スピーカーを使わない場合
 
@@ -116,8 +116,8 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 
 1. `AudioOutputTunnel` と表示された候補で **「互換トンネルへ移行」** を選び、**「トンネル移行」** を押します。
 2. 旧 `AudioOutputTunnel` の `leftOutput` / `rightOutput` / `stereoOutput` が `AunCastAudioOutputTunnel` へ引き継がれます。トンネルから先（リバーブ・外部音量制御・出力スピーカー）はそのまま流用できます。
-3. 旧 `AudioOutputTunnel` コンポーネントと、外部参照がない単純な入力用 AudioSource オブジェクトは自動で削除されます。入力用 AudioSource に他のコンポーネントや子オブジェクトがある場合、または外部参照がある場合は、旧スピーカーコンポーネントだけが削除されます。
-4. `AunCastAudioOutputTunnel.inputA` / `inputB` は、移行処理の最後に同一シーンの `AunCastSpeaker` から自動設定されます。
+3. 旧 `AudioOutputTunnel.input` の入力用 AudioSource は同じ階層の直後に複製され、オリジナルが PlayerA、複製が PlayerB の `AunCastSpeaker` として設定されます。
+4. `AunCastAudioOutputTunnel.inputA` / `inputB` には、この２つの入力用 AudioSource が設定されます。旧 `AudioOutputTunnel` コンポーネントは削除されます。
 
 **出力AudioSourceをスピーカー化** を選ぶ場合:
 
@@ -129,9 +129,9 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 
 旧 `AudioOutputTunnel` の出力先を読み取れない構成では、自動移行を中止します。その場合は、目的に応じて `AunCastAudioOutputTunnel` または `AunCastSpeaker` を手動で追加し、出力先を設定してから **「参照関係を再配線」** を押してください。
 
-トンネルが存在する構成では、再配線が入力側の `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
+トンネルが存在する構成では、再配線が `AunCastAudioOutputTunnel.inputA` / `inputB` に設定された入力用 `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
 
-この方式は直結出力よりリングバッファ分の遅延（数十ミリ秒程度）が増えるため、通常の直結構成では使わないでください。
+この方式は、直結出力に比べて遅延がリングバッファ分（数十ミリ秒程度）だけ多い構成です。通常の直結構成では使わないでください。
 
 ### AudioLink をお使いの場合 {#audiolink}
 

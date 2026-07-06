@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using VRC.SDKBase;
 
@@ -49,6 +50,7 @@ namespace PasocomMate.AunCast
             ApplyPortablePaddedMargins(root);
             ApplyPortableContentSize(root);
             ApplyWallPanelLayout(root);
+            ApplySharedWallPanelTheme(root);
 
             const string pp = "PortablePanel/ContentScaler";
             const string staff = pp + "/PortableContentArea/StaffContent/StaffPadded";
@@ -192,6 +194,7 @@ namespace PasocomMate.AunCast
 
             foreach (var wallRoot in CollectWallPanelRoots(root))
             {
+                RecordPrefabOverridesForTree(wallRoot);
                 UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(wallRoot);
                 var box = wallRoot.GetComponent<BoxCollider>();
                 if (box != null)
@@ -209,6 +212,21 @@ namespace PasocomMate.AunCast
                 if (topBar != null)
                     UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(topBar);
             }
+        }
+
+        private static void RecordPrefabOverridesForTree(Transform root)
+        {
+            if (root == null) return;
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(img);
+            foreach (var raw in root.GetComponentsInChildren<RawImage>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(raw);
+            foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(tmp);
+            foreach (var btn in root.GetComponentsInChildren<Button>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(btn);
+            foreach (var selectable in root.GetComponentsInChildren<Selectable>(true))
+                UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(selectable);
         }
 #endif
 
@@ -525,6 +543,18 @@ namespace PasocomMate.AunCast
             }
         }
 
+        private void ApplySharedWallPanelTheme(Transform root)
+        {
+            foreach (var wallRoot in CollectWallPanelRoots(root))
+            {
+                ApplyMaterials(wallRoot);
+                ApplyFonts(wallRoot);
+                ApplyDecalColors(wallRoot);
+                foreach (var btn in wallRoot.GetComponentsInChildren<Button>(true))
+                    btn.colors = theme.buttonTransitionColors;
+            }
+        }
+
 
         /// <summary>
         /// 現在シーンに表示中のビュー（viewer/staff）を読み取り、それに合った Background 色を適用する。
@@ -601,16 +631,29 @@ namespace PasocomMate.AunCast
             var roots = new List<Transform>();
             if (root == null) return roots;
 
-            var allTransforms = root.GetComponentsInChildren<Transform>(true);
+            Scene scene = root.gameObject.scene;
+            if (!scene.IsValid())
+                return roots;
+
+            foreach (var sceneRoot in scene.GetRootGameObjects())
+                AddWallPanelRootsFromTree(sceneRoot != null ? sceneRoot.transform : null, roots);
+            return roots;
+        }
+
+        private static void AddWallPanelRootsFromTree(Transform treeRoot, List<Transform> roots)
+        {
+            if (treeRoot == null || roots == null) return;
+
+            var allTransforms = treeRoot.GetComponentsInChildren<Transform>(true);
             foreach (var t in allTransforms)
             {
                 if (t == null) continue;
                 if (!HasWallControlPanelProxy(t)) continue;
                 if (t.Find("ContentScaler/WallContentArea") == null) continue;
                 if (t.Find("ContentScaler/WallContentArea/SharedContent/SpawnPanelButton") == null) continue;
-                roots.Add(t);
+                if (!roots.Contains(t))
+                    roots.Add(t);
             }
-            return roots;
         }
 
         private static bool HasWallControlPanelProxy(Transform root)

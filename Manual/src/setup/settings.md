@@ -10,7 +10,6 @@
 
 ## AunCastSettings インスペクタの構成
 
-<!--@ph 撮り直し：現画像は 2026-07-03 撮影で v4.0.0 の UI 刷新前。現行の AunCastSettings インスペクタ全体（既存プレイヤー出力の変換 / 旧プレイヤー本体の手動削除候補 / 出力・参照の再配線「参照関係を再配線」ボタンを含むセクション構成）を撮影して差し替える-->
 ![AunCastSettings インスペクタ](../assets/inspector-auncast-settings.png){ width="360" }
 
 **`AunCastSettings`** コンポーネントのインスペクタは、以下のセクションから構成されます。
