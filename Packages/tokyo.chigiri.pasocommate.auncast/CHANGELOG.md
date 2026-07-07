@@ -5,6 +5,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-07-07
+- 音声のみの再生フォールバックを追加（映像が取得できない場合などに音声のみで再生を継続）
+- 映像テクスチャの共有方式を整理し、ガンマ補正・上下反転の扱いを改善
+
 ## [4.1.0] - 2026-07-06
 - AudioOutputTunnel への移行導線を追加（出力移行 UI を行ごとの変換方式へ刷新し、再配線対象にトンネルを追加）
 - 利用規約同意の保存先を ProjectSettings ストアへ移行
