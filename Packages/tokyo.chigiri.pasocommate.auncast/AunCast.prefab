@@ -8512,6 +8512,9 @@ MonoBehaviour:
   retryCooldownMultiplier: 1.5
   maxRetryCooldownSec: 90
   crossfadeDurationSec: 0.1
+  allowAudioOnlyFallback: 1
+  audioOnlyFallbackDelaySec: 3
+  audioOnlyFallbackMinAdvanceSec: 0.5
   idleScreenTexture: {fileID: 2800000, guid: 229d41c5f9e1cce468fea785b31c1a0b, type: 3}
 --- !u!114 &5986956631821098715
 MonoBehaviour:
@@ -11109,6 +11112,9 @@ MonoBehaviour:
   eventBus: {fileID: 5688601582486852472}
   audioLinkBehaviour: {fileID: 0}
   crossfadeDurationSec: 0.1
+  allowAudioOnlyFallback: 1
+  audioOnlyFallbackDelaySec: 3
+  audioOnlyFallbackMinAdvanceSec: 0.5
   _timelineLogging: 0
 --- !u!114 &4408121560925559682
 MonoBehaviour:

@@ -52,6 +52,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>重複代入を避けるための前回テクスチャキャッシュ</summary>
         private Texture _lastAssignedRenderTexture;
+        private bool _lastAssignedVideoFlipY;
 
         /// <summary>null テクスチャ警告のスロットル用タイムスタンプ</summary>
         private float _lastNullTextureWarnAt;
@@ -318,8 +319,9 @@ namespace PasocomMate.AunCast
             {
                 if (_lastAssignedRenderTexture != null)
                 {
-                    BroadcastVideoTexture(null);
+                    BroadcastVideoTexture(null, false);
                     _lastAssignedRenderTexture = null;
+                    _lastAssignedVideoFlipY = false;
                 }
                 return;
             }
@@ -333,8 +335,9 @@ namespace PasocomMate.AunCast
                 {
                     if (_lastAssignedRenderTexture != null)
                     {
-                        BroadcastVideoTexture(null);
+                        BroadcastVideoTexture(null, false);
                         _lastAssignedRenderTexture = null;
+                        _lastAssignedVideoFlipY = false;
                     }
                     return;
                 }
@@ -347,12 +350,15 @@ namespace PasocomMate.AunCast
                 }
                 return;
             }
-            // 同一テクスチャなら Screen への再代入を省略
-            if (tex == _lastAssignedRenderTexture) return;
 
-            BroadcastVideoTexture(tex);
+            bool flipY = active.GetVideoFlipY();
+            // 同一テクスチャかつ同一反転なら Screen への再代入を省略
+            if (tex == _lastAssignedRenderTexture && flipY == _lastAssignedVideoFlipY) return;
+
+            BroadcastVideoTexture(tex, flipY);
 
             _lastAssignedRenderTexture = tex;
+            _lastAssignedVideoFlipY = flipY;
             _activeAudioOnlyFallback = false;
         }
 
@@ -376,10 +382,12 @@ namespace PasocomMate.AunCast
                 return false;
             }
 
-            if (tex != _lastAssignedRenderTexture)
-                BroadcastVideoTexture(tex);
+            bool flipY = manager.GetVideoFlipY();
+            if (tex != _lastAssignedRenderTexture || flipY != _lastAssignedVideoFlipY)
+                BroadcastVideoTexture(tex, flipY);
 
             _lastAssignedRenderTexture = tex;
+            _lastAssignedVideoFlipY = flipY;
             return true;
         }
 
@@ -427,8 +435,9 @@ namespace PasocomMate.AunCast
 
             if (_lastAssignedRenderTexture != null)
             {
-                BroadcastVideoTexture(null);
+                BroadcastVideoTexture(null, false);
                 _lastAssignedRenderTexture = null;
+                _lastAssignedVideoFlipY = false;
             }
 
             if (_timelineLogging) TL($"a=AUDIO_ONLY_FALLBACK adv={timeAdvance:F2} wait={elapsed:F2}");
@@ -437,10 +446,10 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>AunCastEventBus 経由で全スクリーン購読者へテクスチャを配信する。</summary>
-        private void BroadcastVideoTexture(Texture tex)
+        private void BroadcastVideoTexture(Texture tex, bool flipY)
         {
             if (eventBus != null)
-                eventBus.PublishVideoTexture(tex);
+                eventBus.PublishVideoTexture(tex, tex != null && flipY);
         }
 
         /// <summary>タイムラインログをローカルのみ設定する。</summary>

@@ -129,6 +129,18 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
+        /// AVPro が Grab マテリアルへ設定した _MainTex_ST から、映像の Y 反転状態を取得する。
+        /// </summary>
+        public bool GetVideoFlipY()
+        {
+            Material mat = EnsureFetchMaterial();
+            if (mat == null) return false;
+            if (!mat.HasProperty("_MainTex")) return false;
+
+            return mat.GetTextureScale("_MainTex").y < 0f;
+        }
+
+        /// <summary>
         /// 音声のみフォールバック中に、null 警告を出さず映像テクスチャの復帰だけを確認する。
         /// </summary>
         public Texture GetVideoTextureSilent()
@@ -143,14 +155,22 @@ namespace PasocomMate.AunCast
 
             Material mat = EnsureFetchMaterial();
             tex = GetTextureByKnownParams(mat);
-            if (tex != null) return tex;
+            if (tex != null)
+            {
+                avproFetchMaterial = mat;
+                return tex;
+            }
 
             if (avProTextureRenderer == null)
                 return null;
 
             mat = avProTextureRenderer.sharedMaterial;
             tex = GetTextureByKnownParams(mat);
-            if (tex != null) return tex;
+            if (tex != null)
+            {
+                avproFetchMaterial = mat;
+                return tex;
+            }
 
             Material[] mats = avProTextureRenderer.materials;
             if (mats != null && mats.Length > 0)

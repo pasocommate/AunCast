@@ -2306,6 +2306,7 @@ namespace PasocomMate.AunCast.Internal
 
             var so = new SerializedObject(screen);
             SetStringProperty(so, "textureProperty", textureProperty);
+            // textureStProperty は空のままにし､GetTextureStProperty() のフォールバックで textureProperty と同一扱いにする
             ApplyUdonSerializedChanges(screen, so, "Configure AunCastScreen");
 
             int removedLegacyScreens = DestroyComponentsByTypeName(candidate.gameObject, SCREEN_COMPONENT_TYPE_NAME);

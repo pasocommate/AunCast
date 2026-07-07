@@ -49,8 +49,6 @@ Shader "PasocomMate/AunCast/Standard Video Emission"
             [HideInInspector] _ZWrite("__zw", Float) = 1.0
 
         _MetaPassEmissiveBoost("Meta Pass Emissive Boost", Float) = 1.0
-        _TargetAspectRatio("Target Aspect Ratio", Float) = 1.7777777
-        [HideInInspector] _IsVideoTexture("Is Video Texture", Float) = 0
     }
 
         CGINCLUDE

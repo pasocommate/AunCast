@@ -82,7 +82,7 @@ Material:
     - _DissolveThreshold: 0
     - _FlipY: 0
     - _GRADIENT: 0
-    - _Gamma: 2.2
+    - _Gamma: 1
     - _GradientAngle: 0
     - _MSDFPixelRange: 4
     - _MatcapOn: 1

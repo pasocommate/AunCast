@@ -19,6 +19,10 @@ namespace PasocomMate.AunCast
         [FormerlySerializedAs("texParam")]
         public string textureProperty = "_EmissionMap";
 
+        [Tooltip("上下反転時に SetTextureScale/Offset で更新するテクスチャプロパティ名。空なら Texture Property と同じ。")]
+        /// <summary>Unity の _ST はテクスチャプロパティに付随するため、通常は textureProperty と同じ値を使う。</summary>
+        public string textureStProperty = "";
+
         [Tooltip("ビデオテクスチャを設定するレンダラーのインデックス")]
         /// <summary>マルチマテリアルのレンダラーで、どのスロットに適用するかを指定する。</summary>
         public int rendererIndex = 0;
@@ -31,18 +35,17 @@ namespace PasocomMate.AunCast
         private Renderer targetRenderer;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
         private Texture lastRenderTexture;
+        private bool _lastVideoFlipY;
         private bool _hasAppliedRenderTexture;
         private float _lastMaterialWarnAt;
         private Material _restoreMaterial;
-        private string _restoreParam0;
-        private Texture _restoreTex0;
-        private bool _restoreHas0;
-        private string _restoreParam1;
-        private Texture _restoreTex1;
-        private bool _restoreHas1;
-        private string _restoreParam2;
-        private Texture _restoreTex2;
-        private bool _restoreHas2;
+        private string _restoreTextureParam;
+        private Texture _restoreTexture;
+        private bool _restoreHasTexture;
+        private string _restoreStParam;
+        private Vector2 _restoreScale;
+        private Vector2 _restoreOffset;
+        private bool _restoreHasSt;
 
         /// <summary>レンダラーをキャッシュする。</summary>
         private void Start()
@@ -78,7 +81,8 @@ namespace PasocomMate.AunCast
         /// <summary>テクスチャをレンダラーのマテリアルに適用する。変化がなければスキップして負荷を抑える。</summary>
         private void UpdateVideoTexture(Texture renderTexture)
         {
-            if (_hasAppliedRenderTexture && renderTexture == lastRenderTexture)
+            bool flipY = renderTexture != null && eventBus != null && eventBus.videoFlipY;
+            if (_hasAppliedRenderTexture && renderTexture == lastRenderTexture && flipY == _lastVideoFlipY)
                 return;
 
             EnsureRenderer();
@@ -90,7 +94,7 @@ namespace PasocomMate.AunCast
                     CacheRestoreStateIfNeeded(rendererMat);
                     if (renderTexture == null)
                     {
-                        SetVideoTextureFlag(rendererMat, false);
+                        RestoreMaterialTextureTransforms();
                         if (idleTexture != null)
                             ApplyTextureToMaterial(rendererMat, idleTexture);
                         else
@@ -98,8 +102,8 @@ namespace PasocomMate.AunCast
                     }
                     else
                     {
-                        SetVideoTextureFlag(rendererMat, true);
                         ApplyTextureToMaterial(rendererMat, renderTexture);
+                        ApplyVideoTextureTransforms(rendererMat, flipY);
                     }
                     _hasAppliedRenderTexture = true;
                 }
@@ -110,16 +114,13 @@ namespace PasocomMate.AunCast
             }
 
             lastRenderTexture = renderTexture;
+            _lastVideoFlipY = flipY;
         }
 
-        /// <summary>設定値のプロパティを尊重しつつ、主要プロパティにも反映して表示失敗を避ける。</summary>
+        /// <summary>指定されたテクスチャプロパティにのみ反映する。</summary>
         private void ApplyTextureToMaterial(Material mat, Texture texture)
         {
             SetTextureIfPropertyExists(mat, textureProperty, texture);
-            if (textureProperty != "_EmissionMap")
-                SetTextureIfPropertyExists(mat, "_EmissionMap", texture);
-            if (textureProperty != "_MainTex")
-                SetTextureIfPropertyExists(mat, "_MainTex", texture);
         }
 
         private void EnsureRenderer()
@@ -156,60 +157,84 @@ namespace PasocomMate.AunCast
             if (_restoreMaterial != null) return;
 
             _restoreMaterial = mat;
-            CacheSingleTexture(mat, textureProperty);
-            if (textureProperty != "_EmissionMap")
-                CacheSingleTexture(mat, "_EmissionMap");
-            if (textureProperty != "_MainTex")
-                CacheSingleTexture(mat, "_MainTex");
+            CacheTextureState(mat, textureProperty);
+            CacheTextureTransformState(mat, GetTextureStProperty());
         }
 
-        private void CacheSingleTexture(Material mat, string param)
+        private void CacheTextureState(Material mat, string param)
         {
             if (mat == null || string.IsNullOrEmpty(param)) return;
             if (!mat.HasProperty(param)) return;
-            if (param == _restoreParam0 || param == _restoreParam1 || param == _restoreParam2) return;
 
-            if (!_restoreHas0)
-            {
-                _restoreParam0 = param;
-                _restoreTex0 = mat.GetTexture(param);
-                _restoreHas0 = true;
-                return;
-            }
+            _restoreTextureParam = param;
+            _restoreTexture = mat.GetTexture(param);
+            _restoreHasTexture = true;
+        }
 
-            if (!_restoreHas1)
-            {
-                _restoreParam1 = param;
-                _restoreTex1 = mat.GetTexture(param);
-                _restoreHas1 = true;
-                return;
-            }
+        private void CacheTextureTransformState(Material mat, string param)
+        {
+            if (mat == null || string.IsNullOrEmpty(param)) return;
+            if (!mat.HasProperty(param)) return;
 
-            if (!_restoreHas2)
-            {
-                _restoreParam2 = param;
-                _restoreTex2 = mat.GetTexture(param);
-                _restoreHas2 = true;
-            }
+            _restoreStParam = param;
+            _restoreScale = mat.GetTextureScale(param);
+            _restoreOffset = mat.GetTextureOffset(param);
+            _restoreHasSt = true;
         }
 
         private void RestoreMaterialTextures()
         {
             if (_restoreMaterial == null) return;
 
-            if (_restoreHas0 && _restoreMaterial.HasProperty(_restoreParam0))
-                _restoreMaterial.SetTexture(_restoreParam0, _restoreTex0);
-            if (_restoreHas1 && _restoreMaterial.HasProperty(_restoreParam1))
-                _restoreMaterial.SetTexture(_restoreParam1, _restoreTex1);
-            if (_restoreHas2 && _restoreMaterial.HasProperty(_restoreParam2))
-                _restoreMaterial.SetTexture(_restoreParam2, _restoreTex2);
-            SetVideoTextureFlag(_restoreMaterial, false);
+            if (_restoreHasTexture && _restoreMaterial.HasProperty(_restoreTextureParam))
+                _restoreMaterial.SetTexture(_restoreTextureParam, _restoreTexture);
+            RestoreMaterialTextureTransforms();
         }
 
-        private void SetVideoTextureFlag(Material mat, bool isVideo)
+        private void RestoreMaterialTextureTransforms()
         {
-            if (mat != null && mat.HasProperty("_IsVideoTexture"))
-                mat.SetFloat("_IsVideoTexture", isVideo ? 1f : 0f);
+            if (_restoreMaterial == null) return;
+
+            if (_restoreHasSt && _restoreMaterial.HasProperty(_restoreStParam))
+            {
+                _restoreMaterial.SetTextureScale(_restoreStParam, _restoreScale);
+                _restoreMaterial.SetTextureOffset(_restoreStParam, _restoreOffset);
+            }
+        }
+
+        private void ApplyVideoTextureTransforms(Material mat, bool flipY)
+        {
+            ApplySingleVideoTextureTransform(mat, GetTextureStProperty(), flipY);
+        }
+
+        private void ApplySingleVideoTextureTransform(Material mat, string param, bool flipY)
+        {
+            if (mat == null || string.IsNullOrEmpty(param)) return;
+            if (!mat.HasProperty(param))
+            {
+                if (Time.time - _lastMaterialWarnAt > 2.0f)
+                {
+                    _lastMaterialWarnAt = Time.time;
+                    LogWarning($"Material has no texture ST property: {param}");
+                }
+                return;
+            }
+
+            Vector2 scale = _restoreHasSt && param == _restoreStParam ? _restoreScale : mat.GetTextureScale(param);
+            Vector2 offset = _restoreHasSt && param == _restoreStParam ? _restoreOffset : mat.GetTextureOffset(param);
+            if (flipY)
+            {
+                offset.y += scale.y;
+                scale.y = -scale.y;
+            }
+
+            mat.SetTextureScale(param, scale);
+            mat.SetTextureOffset(param, offset);
+        }
+
+        private string GetTextureStProperty()
+        {
+            return string.IsNullOrEmpty(textureStProperty) ? textureProperty : textureStProperty;
         }
 
         /// <summary>プロパティの存在を確認してからテクスチャを設定する。存在しないシェーダーへの誤設定を防ぐ。</summary>

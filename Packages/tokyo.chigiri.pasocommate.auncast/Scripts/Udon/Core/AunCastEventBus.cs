@@ -15,14 +15,16 @@ namespace PasocomMate.AunCast
         public const string EVENT_PORTABLE_PANEL_SHOWN = "OnPortablePanelShown";
 
         [System.NonSerialized] public Texture videoTexture;
+        [System.NonSerialized] public bool videoFlipY;
 
         [SerializeField] private UdonBehaviour[] videoTextureSubscribers;
         [SerializeField] private UdonBehaviour[] localStateSubscribers;
         [SerializeField] private UdonBehaviour[] portablePanelShownSubscribers;
 
-        public void PublishVideoTexture(Texture tex)
+        public void PublishVideoTexture(Texture tex, bool flipY)
         {
             videoTexture = tex;
+            videoFlipY = flipY;
             Broadcast(videoTextureSubscribers, EVENT_VIDEO_TEXTURE_CHANGED);
         }
 

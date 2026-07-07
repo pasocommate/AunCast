@@ -21,9 +21,11 @@ namespace PasocomMate.AunCast
         private RawImage rawImage;
         /// <summary>重複適用を防ぐため、前回設定したテクスチャを保持。</summary>
         private Texture lastRenderTexture;
+        private bool _lastVideoFlipY;
         private bool _hasAppliedRenderTexture;
         /// <summary>起動時に RawImage へ割り当てられていた固定テクスチャ（停止時の復元先）。</summary>
         private Texture _initialTexture;
+        private Rect _initialUvRect;
         /// <summary>アスペクト比計算のために Start 時に測定した親 RectTransform のサイズ。</summary>
         private Vector2 _uiContainerSize;
 
@@ -34,6 +36,7 @@ namespace PasocomMate.AunCast
             if (rawImage != null)
             {
                 _initialTexture = rawImage.texture;
+                _initialUvRect = rawImage.uvRect;
                 Transform parent = rawImage.transform.parent;
                 if (parent != null)
                 {
@@ -53,6 +56,8 @@ namespace PasocomMate.AunCast
 
         private void OnDisable()
         {
+            if (rawImage != null)
+                rawImage.uvRect = _initialUvRect;
             _hasAppliedRenderTexture = false;
         }
 
@@ -65,7 +70,8 @@ namespace PasocomMate.AunCast
         /// <summary>テクスチャを RawImage に適用しアスペクト比フィットさせる。変化がなければスキップ。</summary>
         private void UpdateVideoTexture(Texture renderTexture)
         {
-            if (_hasAppliedRenderTexture && renderTexture == lastRenderTexture)
+            bool flipY = renderTexture != null && eventBus != null && eventBus.videoFlipY;
+            if (_hasAppliedRenderTexture && renderTexture == lastRenderTexture && flipY == _lastVideoFlipY)
                 return;
 
             if (rawImage != null)
@@ -76,7 +82,7 @@ namespace PasocomMate.AunCast
                     display = idleTexture != null ? idleTexture : _initialTexture;
 
                 rawImage.texture = display;
-                SetMaterialVideoParams(isVideo);
+                ApplyUvRect(isVideo, flipY);
                 if (display != null && _uiContainerSize.x > 0f)
                     FitRawImageToAspect(display);
                 _hasAppliedRenderTexture = true;
@@ -87,16 +93,15 @@ namespace PasocomMate.AunCast
             }
 
             lastRenderTexture = renderTexture;
+            _lastVideoFlipY = flipY;
         }
 
-        private void SetMaterialVideoParams(bool isVideo)
+        private void ApplyUvRect(bool isVideo, bool flipY)
         {
-            Material mat = rawImage.material;
-            if (mat == null) return;
-            if (mat.HasProperty("_Gamma"))
-                mat.SetFloat("_Gamma", isVideo ? 2.2f : 1f);
-            if (mat.HasProperty("_FlipY"))
-                mat.SetFloat("_FlipY", isVideo ? 1f : 0f);
+            Rect uvRect = _initialUvRect;
+            if (isVideo && flipY)
+                uvRect = new Rect(_initialUvRect.x, _initialUvRect.y + _initialUvRect.height, _initialUvRect.width, -_initialUvRect.height);
+            rawImage.uvRect = uvRect;
         }
 
         /// <summary>映像のアスペクト比を保ちつつ、コンテナ内に収まるよう RawImage サイズを調整する。</summary>
