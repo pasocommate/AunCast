@@ -71,6 +71,9 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 - 設定をやり直す場合は、不要な `AunCastSpeaker` を削除するか、`EditorOnly` タグを付与してから、再度 **「参照関係を再配線」** を押します。非アクティブ化だけでは再配線対象から外れません。
 - A/Bで同一 `AudioSource` を共有しているなどの配線不整合は、インスペクタ上に赤で警告表示されます。
 
+!!! warning "AudioSource のボリュームを外部から操作するには"
+    スピーカーとして設定されている `AudioSource` の volume を外部スクリプトで操作すると、`AunCastSpeaker` の挙動と干渉します（ボリュームスライダーが効かなくなったり、Resync時に複数の音が重なったりします）。音量を制御したい場合は、その `AudioSource` に付与されている `AunCastSpeaker` の `SetBaseVolume()` を使用してください。
+
 ## 既存ワールドからの移行（出力の変換） {#migration}
 
 既存ワールドで稼働中のビデオプレイヤー（TopazChat Player / iwaSync3 / USharpVideo 等）から AunCast へ移行する場合は、`AunCastSettings` の **既存プレイヤー出力の変換** セクションで、使用中のスクリーン・スピーカーをそのまま AunCast 用の出力へ変換できます。

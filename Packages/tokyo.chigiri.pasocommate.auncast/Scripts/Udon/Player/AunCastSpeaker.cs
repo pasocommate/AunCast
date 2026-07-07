@@ -32,6 +32,9 @@ namespace PasocomMate.AunCast
         [Range(0f, 1f)]
         public float baseVolume = 1f;
 
+        private float _adjustedUserVolume = 1f;
+        private float _fadeGain = 1f;
+
         [Header("Silence Detection")]
         [Tooltip("無音判定 RMS 閾値 (dBFS)")]
         [SerializeField] private float silenceRmsThresholdDbfs = -60f;
@@ -92,6 +95,32 @@ namespace PasocomMate.AunCast
             _lastRms = rms;
             _lastRmsFrame = Time.frameCount;
             return rms;
+        }
+
+        // --- 音量制御 ---
+
+        public void SetBaseVolume(float volume)
+        {
+            baseVolume = Mathf.Clamp01(volume);
+            ApplyVolume();
+        }
+
+        public void SetAdjustedUserVolume(float adjustedVolume)
+        {
+            _adjustedUserVolume = Mathf.Clamp01(adjustedVolume);
+            ApplyVolume();
+        }
+
+        public void SetFadeGain(float fadeGain)
+        {
+            _fadeGain = Mathf.Clamp01(fadeGain);
+            ApplyVolume();
+        }
+
+        private void ApplyVolume()
+        {
+            if (_audioSource == null) return;
+            _audioSource.volume = Mathf.Clamp01(baseVolume * _adjustedUserVolume * _fadeGain);
         }
 
         // --- Getters ---

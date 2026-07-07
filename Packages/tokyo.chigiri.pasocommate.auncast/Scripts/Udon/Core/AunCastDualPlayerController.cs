@@ -1141,11 +1141,10 @@ namespace PasocomMate.AunCast
             if (d == null) return -96f;
             float dbfs = d.GetLastRmsDbfs();
             // GetOutputData は AudioSource.volume 適用後の出力を返すため、実適用ゲインで逆補正する (#10)
-            AunCastVideoPlayerManager activeManager = switcher != null ? switcher.GetActiveManager() : null;
-            if (activeManager != null)
+            AudioSource source = d.GetAudioSource();
+            if (source != null)
             {
-                AudioSource source = d.GetComponent<AudioSource>();
-                float gain = activeManager.GetAppliedOutputGain(source);
+                float gain = source.volume;
                 if (gain > 0.001f)
                     dbfs -= 20f * Mathf.Log10(gain);
             }

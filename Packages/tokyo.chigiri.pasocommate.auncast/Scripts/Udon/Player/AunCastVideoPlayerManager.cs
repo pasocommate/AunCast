@@ -33,9 +33,8 @@ namespace PasocomMate.AunCast
         private Material avproFetchMaterial;
         private float _lastNullTextureWarnAt;
 
-        /// <summary>AudioSource ごとの基準音量。AunCastSpeaker.baseVolume を優先し、UI 音量・クロスフェードの最終出力に乗算して使う。</summary>
-        private float[] _audioSourceBaseVolumes;
-        private AudioSource[] _cachedAudioSourcesForBaseVolume;
+        /// <summary>AudioSource に対応する AunCastSpeaker。Start で取得しキャッシュする。</summary>
+        private AunCastSpeaker[] _speakers;
 
         private bool _initialized;
 
@@ -45,7 +44,7 @@ namespace PasocomMate.AunCast
             if (_initialized)
                 return;
 
-            CacheAudioSourceBaseVolumes();
+            CacheSpeakers();
             EnsureFetchMaterial();
 
             _initialized = true;
@@ -215,74 +214,29 @@ namespace PasocomMate.AunCast
         /// <summary>ユーザー設定のマスター音量を返す。</summary>
         public float GetVolume() => _currentVolume;
 
-        /// <summary>ユーザー設定のマスター音量を変更し、AudioSource に反映する。</summary>
+        /// <summary>ユーザー設定のマスター音量を変更し、全スピーカーに反映する。</summary>
         public void SetVolume(float volume)
         {
             _currentVolume = Mathf.Clamp01(volume);
-            ApplyVolume();
+            float adjusted = GetAdjustedVolume(_currentVolume);
+            if (_speakers == null) return;
+            for (int i = 0; i < _speakers.Length; i++)
+                if (_speakers[i] != null)
+                    _speakers[i].SetAdjustedUserVolume(adjusted);
         }
 
-        /// <summary>クロスフェード用のゲイン（0.0〜1.0）。AudioSource.volume に乗算される。</summary>
+        /// <summary>クロスフェード用のゲイン（0.0〜1.0）。全スピーカーに反映する。</summary>
         public void SetFadeGain(float fadeGain)
         {
             _fadeGain = Mathf.Clamp01(fadeGain);
-            ApplyVolume();
-        }
-
-        /// <summary>現在のクロスフェードゲインを返す。</summary>
-        public float GetFadeGain() => _fadeGain;
-
-        /// <summary>音量カーブとクロスフェードを反映した出力ゲインを返す。</summary>
-        public float GetCurrentOutputGain()
-        {
-            return GetAdjustedVolume(_currentVolume) * _fadeGain;
-        }
-
-        /// <summary>指定 AudioSource に実際に適用される出力ゲインを返す。</summary>
-        public float GetAppliedOutputGain(AudioSource target)
-        {
-            float baseVolume = 1f;
-            if (target != null && audioSources != null)
-            {
-                for (int i = 0; i < audioSources.Length; i++)
-                {
-                    if (audioSources[i] != target) continue;
-                    if (_audioSourceBaseVolumes != null && i < _audioSourceBaseVolumes.Length)
-                        baseVolume = _audioSourceBaseVolumes[i];
-                    break;
-                }
-            }
-            return Mathf.Clamp01(baseVolume * GetCurrentOutputGain());
-        }
-
-        /// <summary>
-        /// volume と fadeGain を合成して全 AudioSource に適用する。
-        /// 知覚リニアな音量変化のため、x^2 と指数カーブのブレンドを使用する。
-        /// </summary>
-        private void ApplyVolume()
-        {
-            if (audioSources == null) return;
-
-            float output = GetCurrentOutputGain();
-
-            for (int i = 0; i < audioSources.Length; i++)
-            {
-                AudioSource audioSource = audioSources[i];
-                if (audioSource == null) continue;
-                float baseVolume = 1f;
-                if (_audioSourceBaseVolumes != null && i < _audioSourceBaseVolumes.Length)
-                    baseVolume = _audioSourceBaseVolumes[i];
-
-                audioSource.volume = Mathf.Clamp01(baseVolume * output);
-            }
+            if (_speakers == null) return;
+            for (int i = 0; i < _speakers.Length; i++)
+                if (_speakers[i] != null)
+                    _speakers[i].SetFadeGain(_fadeGain);
         }
 
         private float GetAdjustedVolume(float volume)
         {
-            // スライダー値 0 はミュート扱い。それ以外は -34 dBFS (=0.02) より下の
-            // 死にゾーンを除去するため x∈(0,1] を t∈[0.15,1] にリマップしてから
-            // 既存の Dr. Lex 指数カーブ (50dB レンジ) を適用する。
-            // 指数カーブの参考: https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal
             float x = Mathf.Clamp01(volume);
             if (x <= 0f) return 0f;
 
@@ -291,41 +245,22 @@ namespace PasocomMate.AunCast
             return (1f - t) * t * t + t * expCurve;
         }
 
-        private void CacheAudioSourceBaseVolumes()
+        /// <summary>現在のクロスフェードゲインを返す。</summary>
+        public float GetFadeGain() => _fadeGain;
+
+        private void CacheSpeakers()
         {
             if (audioSources == null)
             {
-                _audioSourceBaseVolumes = null;
-                _cachedAudioSourcesForBaseVolume = null;
+                _speakers = null;
                 return;
             }
 
-            bool needsResize = _audioSourceBaseVolumes == null
-                || _cachedAudioSourcesForBaseVolume == null
-                || _audioSourceBaseVolumes.Length != audioSources.Length
-                || _cachedAudioSourcesForBaseVolume.Length != audioSources.Length;
-
-            if (needsResize)
-            {
-                _audioSourceBaseVolumes = new float[audioSources.Length];
-                _cachedAudioSourcesForBaseVolume = new AudioSource[audioSources.Length];
-            }
-
+            _speakers = new AunCastSpeaker[audioSources.Length];
             for (int i = 0; i < audioSources.Length; i++)
             {
-                AudioSource source = audioSources[i];
-                if (!needsResize && _cachedAudioSourcesForBaseVolume[i] == source)
-                    continue;
-
-                _cachedAudioSourcesForBaseVolume[i] = source;
-                if (source == null)
-                {
-                    _audioSourceBaseVolumes[i] = 1f;
-                    continue;
-                }
-
-                AunCastSpeaker speaker = source.GetComponent<AunCastSpeaker>();
-                _audioSourceBaseVolumes[i] = speaker != null ? speaker.GetBaseVolume() : source.volume;
+                if (audioSources[i] != null)
+                    _speakers[i] = audioSources[i].GetComponent<AunCastSpeaker>();
             }
         }
 
