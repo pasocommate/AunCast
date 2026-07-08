@@ -96,6 +96,7 @@
 - URL が未設定のままでは Start 時点で内部的な `PlayURL` は呼ばれず、`OnVideoStart` / `OnVideoReady` も発火しない。**空 URL + AutoPlay=true は「何もしない」が正しい挙動**（Editor ランタイム・VRChat 本番ともに同じ）。
 - 影響: URL を Udon 側から `LoadURL` で動的注入する設計では、`AutoPlay` の値に依らず初回 `LoadURL` まで状態機械は IDLE のままで良い。
 - テスト用スタブ (`AVProVideoStub` など) を使う場合は、スタブが「Start 時に自動ロード」する実装になっていないか確認する。乖離していると「Editor では再生中なのに状態は IDLE のまま」のような症状で本番との挙動差が現れる。
+- **実例（2026-07）**: AvpVideoStub の `StartAutoPlayIfNeeded()` はコンポーネントの `autoPlay` フィールドだけを見て（URL の有無を無視して）`PlayURL(default)` を呼ぶ。AunCast.prefab の `VRCAVProVideoPlayer` に `autoPlay: 1` が残っていたため、ClientSim では Join 直後に Udon を経由せずダミー音声・映像が再生され、「自動再生 OFF なのに再生される」ように見えた。Udon 側から `LoadURL` で駆動する設計ではプレハブの `autoPlay` は必ず 0 にしておく（本番では空 URL なら無害だが、スタブ挙動を歪めテストを誤誘導する）。スタブ側も「`videoURL` が空なら autoPlay しない」修正が望ましい。
 
 ### 9.6 `OnAudioFilterRead` と Udon VM ヒープは完全に分離されている
 - **メイン→オーディオ**: メインスレッドから UdonSharpBehaviour の public フィールド（例: `fadeGain`）を書き換えても、`OnAudioFilterRead`（オーディオスレッド）の読み出しが**古い値のままになる**。

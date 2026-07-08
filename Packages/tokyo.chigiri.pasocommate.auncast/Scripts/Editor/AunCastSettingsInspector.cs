@@ -4103,7 +4103,7 @@ namespace PasocomMate.AunCast.Internal
             string newDefaultUrl = TextField("デフォルト配信URL", "Default Stream URL", "defaultUrl",
                 "Next URL欄の初期値。インスタンス最初のJoin時の自動再生にも使用する。空欄で無効。",
                 "Initial value of the Next URL field. Also used for auto-play on the first join to the instance. Empty to disable.",
-                settings.defaultUrl != null ? settings.defaultUrl.Get() : "");
+                settings.defaultUrl ?? "");
             bool newAutoPlayDefault = ToggleField("最初のJoinで自動再生", "Auto-play on First Join", "autoPlayDefaultOnFirstJoin",
                 "インスタンスに最初のユーザーがJoinした時点で、デフォルト配信URLを自動再生する。",
                 "Auto-plays the default stream URL when the first user joins the instance.",
@@ -4183,7 +4183,7 @@ namespace PasocomMate.AunCast.Internal
 
             Undo.RecordObject(settings, "Change AunCast UI Settings");
             settings.defaultVolume = newDefaultVolume;
-            settings.defaultUrl = new VRC.SDKBase.VRCUrl(newDefaultUrl);
+            settings.defaultUrl = newDefaultUrl;
             settings.autoPlayDefaultOnFirstJoin = newAutoPlayDefault;
             settings.defaultSummonGesture = newSummonGesture;
             settings.defaultDesktopSummonGesture = newDesktopSummonGesture;
@@ -4300,6 +4300,14 @@ namespace PasocomMate.AunCast.Internal
                 EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
 
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("無音Resync", "Silence Resync"));
+            EditorGUI.indentLevel++;
+            bool newAutoSilence = ToggleField("初期状態で有効", "Enabled by Default", "defaultAutoSilenceResync",
+                "無音検知による自動Resync（各クライアントのローカルトグル）の初期値。オンで起動時に有効。",
+                "Initial value of the silence-triggered auto Resync (each client's local toggle). On means enabled at startup.",
+                settings.defaultAutoSilenceResync);
+            EditorGUI.indentLevel--;
+
             EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("同時接続制限", "Concurrent Connection Limit"));
             EditorGUI.indentLevel++;
             int newConcurrent = IntSliderField("同時Resync上限 [人]", "Max Concurrent Resyncs", "maxConcurrentResyncUsers",
@@ -4347,6 +4355,7 @@ namespace PasocomMate.AunCast.Internal
             if (!EditorGUI.EndChangeCheck()) return;
 
             Undo.RecordObject(settings, "Change AunCast Resync Settings");
+            settings.defaultAutoSilenceResync = newAutoSilence;
             settings.maxConcurrentResyncUsers = (byte)newConcurrent;
             settings.maxConnectionLimit = (byte)newConnLimit;
             settings.grantTimeoutSec = newGrant;
@@ -4373,7 +4382,7 @@ namespace PasocomMate.AunCast.Internal
             });
         }
 
-        private static void ApplyUiSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        internal static void ApplyUiSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             var userPanels = root.GetComponentsInChildren<AunCastPortablePanel>(true);
             ApplyToUdonComponents(userPanels, so =>
@@ -4419,7 +4428,7 @@ namespace PasocomMate.AunCast.Internal
                 {
                     var urlInner = defaultUrlProp.FindPropertyRelative("url");
                     if (urlInner != null)
-                        urlInner.stringValue = settings.defaultUrl != null ? settings.defaultUrl.Get() : "";
+                        urlInner.stringValue = settings.defaultUrl ?? "";
                 }
                 var autoPlayProp = so.FindProperty("autoPlayDefaultOnFirstJoin");
                 if (autoPlayProp != null) autoPlayProp.boolValue = settings.autoPlayDefaultOnFirstJoin;
@@ -4440,7 +4449,7 @@ namespace PasocomMate.AunCast.Internal
             if (changed) RepaintUiViews();
         }
 
-        private static void ApplyPlaybackMonitorSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        internal static void ApplyPlaybackMonitorSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             var detectors = FindSceneComponents<AunCastSpeaker>(root.gameObject.scene);
             ApplyToUdonComponents(detectors, so =>
@@ -4477,6 +4486,12 @@ namespace PasocomMate.AunCast.Internal
 
         internal static void ApplyResyncSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
+            var controllers = root.GetComponentsInChildren<AunCastDualPlayerController>(true);
+            ApplyToUdonComponents(controllers, so =>
+            {
+                SetBoolProperty(so, "_autoSilenceResyncEnabled", settings.defaultAutoSilenceResync);
+            });
+
             var coordinators = root.GetComponentsInChildren<AunCastResyncCoordinator>(true);
             ApplyToUdonComponents(coordinators, so =>
             {

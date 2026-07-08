@@ -76,6 +76,10 @@ namespace PasocomMate.AunCast
         [Tooltip("タイムラインログを出力する")]
         [SerializeField] private bool _timelineLogging;
 
+        [Header("Silence Resync")]
+        [Tooltip("無音検知による自動 Resync の初期有効状態。各クライアントのローカルトグルの初期値で、実行時に UI から切り替えられる。")]
+        [SerializeField] private bool _autoSilenceResyncEnabled = true;
+
         // =================================================================
         //  同期変数 (Design Section 14)
         // =================================================================
@@ -96,7 +100,6 @@ namespace PasocomMate.AunCast
         // FSM 現在状態と A/B どちらが Active かの基本ロール
         private int _localState;
         private bool _activeIsA = true;
-        private bool _autoSilenceResyncEnabled = true;
         private float _combinedSilenceDuration;
 
         // Standby Player 検証（Ready/Play 完了を待つためのフラグ群）

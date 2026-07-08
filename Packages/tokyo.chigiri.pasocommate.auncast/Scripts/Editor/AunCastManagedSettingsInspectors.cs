@@ -62,6 +62,7 @@ namespace PasocomMate.AunCast.Internal
             "defaultVolume",
             "defaultUrl",
             "autoPlayDefaultOnFirstJoin",
+            "_autoSilenceResyncEnabled",
         };
 
         private static readonly string[] WIRING_PROPERTY_NAMES =

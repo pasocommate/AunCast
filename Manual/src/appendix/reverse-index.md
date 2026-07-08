@@ -82,6 +82,9 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 ??? question "画面が上下逆さまに映る"
     `AunCastScreen` の `Texture St Property` を正しく設定してください。`Texture Property` に作用する Tiling, Offset を備えたプロパティ名を指定する必要があります。空（自動設定）でも逆さまになる場合は、一般的には `_MainTex` を設定してください（シェーダーによって異なる場合があります）。
 
+??? question "画面が白飛びする"
+    AVPro のビデオストリームは非sRGBテクスチャとしてデコードされるため、ガンマ値 2.2 で補正表示する必要があります。一般的なビデオプレイヤーはこれを考慮したシェーダー・マテリアルを同梱しており、AunCast でも `Standard Video Emission` というシェーダーを用意してあります（USharpVideo 由来）。しかし、ガンマ調整を考慮しないマテリアルをスクリーンに割り当てている場合は、本来の映像よりも明るく表示されてしまいます。付属シェーダーや、lilToonなどのガンマ設定が可能なシェーダーを用いて、スクリーンのマテリアルを調整してください。
+
 ??? question "ボリュームスライダーで音量が調節できない"
     既存のUdonスクリプトと競合し、AudioSource のボリュームが直接操作されている可能性があります。[スピーカーを増やす (AunCastSpeaker)](../setup/parts-placement.md#speaker) の「AudioSource のボリュームを外部から操作するには」をお読みください。
     

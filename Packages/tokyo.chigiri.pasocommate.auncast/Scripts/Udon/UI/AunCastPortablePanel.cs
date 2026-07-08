@@ -480,6 +480,8 @@ namespace PasocomMate.AunCast
         /// <summary>切替ボタンから呼ぶ: Viewer/Staff をトグルする。Staff へは解錠時のみ遷移可。</summary>
         public void OnSwitchViewButtonPress()
         {
+            ClearStaffInputFocus();
+
             if (_crossfadeTarget < 0.5f)
             {
                 if (!_staffUnlocked) return;
@@ -747,6 +749,10 @@ namespace PasocomMate.AunCast
         /// <summary>外部から表示状態を切り替える。</summary>
         public void SetMenuVisible(bool visible)
         {
+            bool wasVisible = menuVisible;
+            if (wasVisible && !visible)
+                ClearStaffInputFocus();
+
             menuVisible = visible;
 
             if (visible)
@@ -772,6 +778,12 @@ namespace PasocomMate.AunCast
             }
 
             if (visible) NotifyPortablePanelShownIfNeeded();
+        }
+
+        private void ClearStaffInputFocus()
+        {
+            if (staffControlPanel != null)
+                staffControlPanel.SendCustomEvent("ClearInputFocus");
         }
 
         private void NotifyPortablePanelShownIfNeeded()

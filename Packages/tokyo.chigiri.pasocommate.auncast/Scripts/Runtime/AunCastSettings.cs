@@ -44,8 +44,10 @@ namespace PasocomMate.AunCast
         public float defaultVolume = 0.6f;
 
         [Header("Default Playback")]
+        // VRCUrl ではなく string で保管する。VRCUrl（ネスト [Serializable]）はプレハブインスタンス上で
+        // オーバーライド追跡が不安定で「たまに空に戻る」ため。Udon コンポーネントへ転写する際に VRCUrl 化する。
         [Tooltip("Next URL欄の初期値として表示する配信URL。空欄なら未設定。")]
-        public VRCUrl defaultUrl = VRCUrl.Empty;
+        public string defaultUrl = "";
 
         [Tooltip("インスタンスに最初のユーザーがJoinした時点で defaultUrl を自動再生する")]
         public bool autoPlayDefaultOnFirstJoin;
@@ -114,6 +116,9 @@ namespace PasocomMate.AunCast
         public float driftWarmupSec = 5.0f;
 
         [Header("Resync Coordinator")]
+        [Tooltip("無音検知による自動 Resync（Silence Resync）を初期状態で有効にする。各クライアントのローカルトグルの初期値。")]
+        public bool defaultAutoSilenceResync = true;
+
         [Tooltip("同時Resync上限の初期値")]
         public byte maxConcurrentResyncUsers = 10;
 

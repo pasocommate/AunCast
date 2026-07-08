@@ -189,6 +189,7 @@ namespace PasocomMate.AunCast
             SyncUIFromState();
             UpdateNowPlayingDisplay();
             PrefillNextUrlIfEmpty();
+            UpdateActionButtonsInteractable();
             _redrawDirty = true;
             _lastRepaintTime = 0f;
         }
@@ -259,6 +260,7 @@ namespace PasocomMate.AunCast
         public void OnUrlChanged()
         {
             UpdateNowPlayingDisplay();
+            ConsumeNextUrlIfPlaying();
             UpdateActionButtonsInteractable();
         }
 
@@ -268,7 +270,24 @@ namespace PasocomMate.AunCast
             UpdateActionButtonsInteractable();
         }
 
-        /// <summary>Next URL 欄が空のとき、controller のデフォルト URL を初期表示する（入力補助・同期なし）。</summary>
+        /// <summary>パネルを閉じる/切り替える前に入力欄の選択状態を解除する。</summary>
+        public void ClearInputFocus()
+        {
+            if (nextUrlField == null) return;
+            Selectable selectable = nextUrlField.GetComponent<Selectable>();
+            if (selectable == null) return;
+
+            bool wasInteractable = selectable.interactable;
+            selectable.interactable = false;
+            if (wasInteractable)
+                selectable.interactable = true;
+        }
+
+        /// <summary>
+        /// Next URL 欄が空かつ未再生のとき、controller のデフォルト URL を初期表示する（入力補助・同期なし）。
+        /// VRCUrl はランタイムで文字列から生成できないため、値は controller.defaultUrl（エディタ転写で
+        /// シリアライズ済み）から取得し、SetUrl で欄へ反映する（Promote スワップと同じ機構）。
+        /// </summary>
         private void PrefillNextUrlIfEmpty()
         {
             if (nextUrlField == null || controller == null) return;
@@ -276,8 +295,34 @@ namespace PasocomMate.AunCast
             if (current != null && !string.IsNullOrEmpty(current.Get())) return;
             VRCUrl def = controller.GetDefaultUrl();
             if (def == null || string.IsNullOrEmpty(def.Get())) return;
+            // 何か再生中なら初期表示しない（「次」の提案として意味を持たないため）
+            VRCUrl playing = controller.GetCurrentURL();
+            if (playing != null && !string.IsNullOrEmpty(playing.Get())) return;
             nextUrlField.SetUrl(def);
-            UpdateActionButtonsInteractable();
+        }
+
+        /// <summary>
+        /// 再生中に Next URL 欄の陳腐化した内容をクリアする。対象は次の2つ:
+        /// (1) 再生中 URL と一致する内容（再生開始で「次」から「再生中」へ移ったとみなす）、
+        /// (2) デフォルト URL と一致する内容（prefill の初期表示は、何かが再生中なら
+        ///     もう「次」の提案として意味を持たない）。
+        /// 自動再生・手動 Promote のいずれで再生が始まっても、各クライアントの
+        /// OnUrlChanged 経由で消費される。手入力された別 URL はどちらにも一致しないため保持される。
+        /// </summary>
+        private void ConsumeNextUrlIfPlaying()
+        {
+            if (nextUrlField == null || controller == null) return;
+            VRCUrl next = nextUrlField.GetUrl();
+            if (next == null || string.IsNullOrEmpty(next.Get())) return;
+            VRCUrl playing = controller.GetCurrentURL();
+            if (playing == null || string.IsNullOrEmpty(playing.Get())) return;
+
+            string nextText = next.Get();
+            bool consumedByPlayback = nextText == playing.Get();
+            VRCUrl def = controller.GetDefaultUrl();
+            bool stalePrefill = def != null && nextText == def.Get();
+            if (consumedByPlayback || stalePrefill)
+                nextUrlField.SetUrl(VRCUrl.Empty);
         }
 
         /// <summary>
