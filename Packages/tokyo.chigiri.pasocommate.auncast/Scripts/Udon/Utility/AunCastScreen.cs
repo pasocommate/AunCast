@@ -17,7 +17,7 @@ namespace PasocomMate.AunCast
         [Tooltip("このレンダラーのシェーダーがビデオテクスチャに使用するパラメーター名")]
         /// <summary>シェーダーごとにテクスチャプロパティ名が異なるため、設定で切り替え可能にしている。</summary>
         [FormerlySerializedAs("texParam")]
-        public string textureProperty = "_EmissionMap";
+        public string textureProperty = "_MainTex";
 
         [Tooltip("上下反転時に SetTextureScale/Offset で更新するテクスチャプロパティ名。空なら Texture Property と同じ。")]
         /// <summary>Unity の _ST はテクスチャプロパティに付随するため、通常は textureProperty と同じ値を使う。</summary>
