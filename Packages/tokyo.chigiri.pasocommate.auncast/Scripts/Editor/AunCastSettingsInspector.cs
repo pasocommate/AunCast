@@ -34,6 +34,16 @@ namespace PasocomMate.AunCast.Internal
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
         private const string AUDIO_OUTPUT_TUNNEL_COMPONENT_TYPE_NAME = "AudioOutputTunnel";
         private const string VRC_SPATIAL_AUDIO_SOURCE_COMPONENT_TYPE_NAME = "VRCSpatialAudioSource";
+
+        private static readonly Type[] AUDIO_FILTER_TYPES = new[]
+        {
+            typeof(AudioReverbFilter),
+            typeof(AudioLowPassFilter),
+            typeof(AudioHighPassFilter),
+            typeof(AudioDistortionFilter),
+            typeof(AudioEchoFilter),
+            typeof(AudioChorusFilter),
+        };
         private const string AUDIO_LINK_AUDIO_SOURCE_VARIABLE_NAME = "audioSource";
         private const string EVENT_BUS_OBJECT_NAME = "EventBus";
         private const string AUNCAST_EVENT_BUS_ASSET_GUID = "86f742d2e8954336a9cd87f1e4527d80";
@@ -1656,10 +1666,20 @@ namespace PasocomMate.AunCast.Internal
                                     "Migrates the old AudioOutputTunnel outputs to AunCastAudioOutputTunnel and duplicates the input AudioSource as A/B AunCastSpeakers. This setup has one ring buffer's worth of latency compared with direct output."),
                             MessageType.None);
 
-                        if (nextMode == TUNNEL_MIGRATION_MODE_DIRECT_SPEAKERS
-                            && HasReferenceWarning(candidate.referenceWarning))
+                        if (nextMode == TUNNEL_MIGRATION_MODE_DIRECT_SPEAKERS)
                         {
-                            DrawReferenceWarning(root, context, cache, candidate.referenceWarning);
+                            Component tunnelForFilter = GetAudioOutputTunnelCandidateComponent(candidate);
+                            if (tunnelForFilter != null && HasAudioFiltersOnTunnelOutputs(tunnelForFilter))
+                            {
+                                EditorGUILayout.HelpBox(
+                                    AunCastEditorLocalization.Localize(
+                                        "出力 AudioSource にオーディオフィルター (ReverbFilter 等) が付いています｡ VRCAVProVideoSpeaker が非対応のため､ スピーカー化時に自動で削除されます｡",
+                                        "Output AudioSources have audio filters (e.g. ReverbFilter). These are not supported by VRCAVProVideoSpeaker and will be removed automatically during conversion."),
+                                    MessageType.Warning);
+                            }
+
+                            if (HasReferenceWarning(candidate.referenceWarning))
+                                DrawReferenceWarning(root, context, cache, candidate.referenceWarning);
                         }
                     }
                     else if (candidate.kind == MigrationCandidateKind.AudioOutputTunnel && candidate.isConfigured)
@@ -1676,6 +1696,17 @@ namespace PasocomMate.AunCast.Internal
                                 "直結化すると､ AunCastAudioOutputTunnel の出力先 AudioSource を A/B 用の AunCastSpeaker に変換し､ AunCastAudioOutputTunnel を削除します｡ トンネルによる出力合成機能は失われますが､ リングバッファ由来の遅延は解消されます｡ ",
                                 "Direct Output converts the AunCastAudioOutputTunnel output AudioSources into A/B AunCastSpeaker outputs and removes AunCastAudioOutputTunnel. Tunnel output mixing is lost, but ring-buffer latency is removed."),
                             MessageType.Warning);
+                        {
+                            Component tunnelForFilter = GetAunCastAudioOutputTunnelCandidateComponent(candidate);
+                            if (tunnelForFilter != null && HasAudioFiltersOnTunnelOutputs(tunnelForFilter))
+                            {
+                                EditorGUILayout.HelpBox(
+                                    AunCastEditorLocalization.Localize(
+                                        "出力 AudioSource にオーディオフィルター (ReverbFilter 等) が付いています｡ VRCAVProVideoSpeaker が非対応のため､ 直結化時に自動で削除されます｡",
+                                        "Output AudioSources have audio filters (e.g. ReverbFilter). These are not supported by VRCAVProVideoSpeaker and will be removed automatically during direct output conversion."),
+                                    MessageType.Warning);
+                            }
+                        }
                         DrawReferenceWarning(root, context, cache, candidate.referenceWarning);
                     }
                     else if (candidate.kind == MigrationCandidateKind.Speaker && !candidate.isConfigured)
@@ -2652,6 +2683,10 @@ namespace PasocomMate.AunCast.Internal
             DestroyComponentsByTypeName(duplicate, AUDIO_OUTPUT_TUNNEL_COMPONENT_TYPE_NAME);
             DestroyComponentsByTypeName(duplicate, nameof(AunCastAudioOutputTunnel));
 
+            int removedFilters = DestroyAudioFilters(original) + DestroyAudioFilters(duplicate);
+            if (removedFilters > 0)
+                Debug.Log($"[AunCast] VRCAVProVideoSpeaker 非対応のオーディオフィルターを {removedFilters} 件削除しました｡ {GetHierarchyPath(original.transform)}", original);
+
             int converted = 0;
             if (ConvertSpeakerObject(original, null, output.source, settings, AunCastSpeaker.PLAYER_A, output.mode))
                 converted++;
@@ -2707,6 +2742,45 @@ namespace PasocomMate.AunCast.Internal
                 $"トンネルの出力 AudioSource を参照するコンポーネント: {references.Length} 件 (出力AudioSourceをスピーカー化すると A/B に分かれるため要確認) ",
                 $"components referencing tunnel output AudioSources: {references.Length} (review before converting outputs into A/B speakers)");
             return new ReferenceWarning(message, references, audioLinkReferences, MessageType.Warning);
+        }
+
+        private static bool HasAudioFiltersOnTunnelOutputs(Component tunnel)
+        {
+            TunnelOutputSource[] outputs = CollectAudioOutputTunnelOutputs(tunnel);
+            for (int i = 0; i < outputs.Length; i++)
+            {
+                if (outputs[i].source == null) continue;
+                if (HasAudioFilters(outputs[i].source.gameObject))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool HasAudioFilters(GameObject gameObject)
+        {
+            if (gameObject == null) return false;
+            for (int i = 0; i < AUDIO_FILTER_TYPES.Length; i++)
+            {
+                if (gameObject.GetComponent(AUDIO_FILTER_TYPES[i]) != null)
+                    return true;
+            }
+            return false;
+        }
+
+        private static int DestroyAudioFilters(GameObject gameObject)
+        {
+            if (gameObject == null) return 0;
+            int removed = 0;
+            for (int i = 0; i < AUDIO_FILTER_TYPES.Length; i++)
+            {
+                Component filter;
+                while ((filter = gameObject.GetComponent(AUDIO_FILTER_TYPES[i])) != null)
+                {
+                    DestroyComponentWithUndo(filter);
+                    removed++;
+                }
+            }
+            return removed;
         }
 
         private static Component[] CollectExternalReferencesToTunnelOutputs(
