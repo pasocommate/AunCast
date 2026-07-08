@@ -79,6 +79,14 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 ??? question "Quest（Android 単体機）のユーザーにも視聴できるか？"
     いいえ。AunCast は **PC（Windows）のみ対応** で、Quest などの Android 単体機には対応していません。Quest 環境では配信の音声・映像が正常に再生されません。PC/Quest 混在のイベントでは、そのことを前提に運用してください。
 
+??? question "画面が上下逆さまに映る"
+    `AunCastScreen` の `Texture St Property` を正しく設定してください。`Texture Property` に作用する Tiling, Offset を備えたプロパティ名を指定する必要があります。空（自動設定）でも逆さまになる場合は、一般的には `_MainTex` を設定してください（シェーダーによって異なる場合があります）。
+
+??? question "ボリュームスライダーで音量が調節できない"
+    既存のUdonスクリプトと競合し、AudioSource のボリュームが直接操作されている可能性があります。[スピーカーを増やす (AunCastSpeaker)](../setup/parts-placement.md#speaker) の「AudioSource のボリュームを外部から操作するには」をお読みください。
+    
+    また、`AunCastSpeaker` の付いたオブジェクトに Audio Filter（`AudioReverbFilter` など）が付与されている場合も、音量の挙動に問題が生じるため、削除する必要があります。リバーブ等のエフェクトをかけるには、[AudioOutputTunnel 構成を移行する場合](../setup/parts-placement.md#tunnel) をお読みください（遅延とのトレードオフになります）。
+
 ---
 
 ## 解決しない場合は
