@@ -12,11 +12,11 @@
     "com.anatawa12.vpm-package-auto-installer.creator": {
       "version": "1.1.5"
     },
-    "tokyo.chigiri.pasocommate.rendermate": {
-      "version": "4.0.0"
-    },
     "tokyo.chigiri.pasocommate.avpvideostub": {
       "version": "1.1.0"
+    },
+    "tokyo.chigiri.pasocommate.rendermate": {
+      "version": "4.0.0"
     }
   },
   "locked": {
@@ -42,16 +42,16 @@
       "version": "1.1.5",
       "dependencies": {}
     },
-    "tokyo.chigiri.pasocommate.rendermate": {
-      "version": "4.0.0",
-      "dependencies": {
-        "com.llealloo.audiolink": ">=3.1.2"
-      }
-    },
     "tokyo.chigiri.pasocommate.avpvideostub": {
       "version": "1.1.0",
       "dependencies": {
         "com.vrchat.worlds": ">=3.10.2"
+      }
+    },
+    "tokyo.chigiri.pasocommate.rendermate": {
+      "version": "4.0.0",
+      "dependencies": {
+        "com.llealloo.audiolink": ">=3.1.2"
       }
     }
   }
