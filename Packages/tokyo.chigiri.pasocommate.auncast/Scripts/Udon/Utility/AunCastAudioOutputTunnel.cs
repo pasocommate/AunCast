@@ -177,11 +177,6 @@ namespace PasocomMate.AunCast
             WarnIfInputsMissing();
         }
 
-        public void RestartOutputs()
-        {
-            ResetOutputs();
-        }
-
         private void ResetOutputs()
         {
             _leftHead = 0;

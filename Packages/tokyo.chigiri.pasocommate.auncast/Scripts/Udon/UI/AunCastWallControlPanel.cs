@@ -581,13 +581,6 @@ namespace PasocomMate.AunCast
             UpdatePasscodeDisplay();
         }
 
-        public void OnPasscodeClear()
-        {
-            if (_isStaff) return;
-            _passcodeBuffer = "";
-            UpdatePasscodeDisplay();
-        }
-
         private void AppendPasscodeDigit(string digit)
         {
             if (_isStaff || _passcodeBuffer.Length >= 4) return;

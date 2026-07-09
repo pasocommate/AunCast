@@ -8,6 +8,8 @@
 > - ドキュメント修正: Design.md の旧設計残滓（FR-16b の非表示条件・長い Cooldown、18.3/21.1 の `Failed` 状態、`maxFailBeforeAlert`）、既定値の誤記（`localCooldownSec` 6.5s、`wallNearDistance` 2.8m、`silenceRmsThresholdDbfs`、`crossfadeDurationSec` の Settings 既定 0.1s）、音量カーブの帰属クラス（`GetAdjustedVolume` / `AunCastSpeaker.ApplyVolume`）、QA-Checklist のテスト名、Implementation-Patterns の見出し番号重複、release コマンドのファイル名誤記。
 > - Phase 3 の項目 9（`MAX_PLAYERS` 重複）: `AunCastResyncCoordinator.MAX_PLAYERS` を `public const` にし、`AunCastPlaybackMonitor` から定数参照する形で統一（値は 82 のまま。要 `Refresh All UdonSharp Programs`）。
 > - コード整理: URL 検証を `AunCastDualPlayerController.IsValidStreamUrl` に集約、未使用メソッド削除（`IsUnderTransform` / `ApplyThemeToAllProxies`）、`LoadAssetByGuid` を `AunCastEditorAssetUtility` へ集約、Migration.cs の汎用ヘルパーを `AunCastSettingsInspector.Common.cs` へ移動、スタッフパネルのインジケータ描画の配列使い回し化と到達不能分岐の削除、`GetAdjustedVolume` へのコメント追記。
+> - 未使用 public メソッドの削除（ユーザー確認済み: マニュアル記載の `SetBaseVolume` 以外は外部呼び出しを想定しない）: `Reload` / `RestartOutputs` / `GetActiveResyncCount` / `GetAssignedUserCount` / `GetBaseVolume` / `GetLastRms` / `GetLastRmsSampleCount`（フィールド `_lastRmsSampleCount` ごと） / `GetCoordinator` / `IsResyncRequested` / `GetRequestStartedAt` / `GetSilenceSuppressSec` / `GetLastResyncCompletedAt` / `GetStallStartedAt` / `IsMenuVisible` / `OnPasscodeClear`。`OnMenuOpened` / `OnMenuClosed` は VRChat メニューイベントの受信口（`_isVRChatMenuOpen` 経由で表示制御に使用）のため存続。
+> - `crossfadeDurationSec` はユーザー確認により 0.1 秒が正: `AunCastPlaybackSwitcher` の既定値を 0.3f → 0.1f に変更し、Design.md も 0.1 秒に統一。
 
 ## 前提
 

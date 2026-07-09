@@ -281,7 +281,6 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 - `AunCastVideoPlayerManager` のコールバックハブ（`OnManagerVideoReady` / `OnManagerVideoStart` / `OnManagerVideoError` 等）
 - `AsStaff` API（`PlayVideoAsStaff` / `StopVideoAsStaff`）の提供
 - `Reboot()`: 緊急リブート（Resync キャンセル → 全断 → Active 直接再接続）
-- `Reload()`: Active プレイヤーの再読み込み（Resync キャンセル → Active 停止 → 再接続）
 - `RequestManualResync()`: 観客からの手動 Resync リクエスト
 - `AunCastPlaybackMonitor` への再生状態レポート（スロットル付き、10 秒ごと + 変化時）
 - `OnDeserialization`: 非 Owner の URL 変更検知と再生停止同期
@@ -1178,7 +1177,7 @@ float activeGain = Mathf.Cos(angle);   // 旧系: 1 → 0
 float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 ```
 
-- `crossfadeDurationSec`: 推奨 0.3〜0.5 秒（Inspector 調整可能、`AunCastPlaybackSwitcher` で管理。コンポーネント既定値 0.3 秒。`AunCastSettings` 側の既定値は 0.1 秒で、設定適用時はこちらが転写される）
+- `crossfadeDurationSec`: 既定 0.1 秒（Inspector 調整可能、`AunCastPlaybackSwitcher` で管理。`AunCastSettings` から設定適用時に転写される）
 - Controller が `STATE_SWITCHING` 遷移時に `StartCrossfade` を呼ぶ。新系テクスチャを取得できるまで旧映像を保持し、取得後に切り替える
 - 両系統が同時に AudioListener に出力されるため、等パワー特性により音量の落ち込みなく自然にミックスされる
 - フェード完了後、`CompleteSwitchRoles()` で旧系プレイヤーを停止しロールを交換する

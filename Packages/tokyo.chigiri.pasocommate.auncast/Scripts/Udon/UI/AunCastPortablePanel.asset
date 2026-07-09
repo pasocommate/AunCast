@@ -434,8 +434,7 @@ MonoBehaviour:
       Data: 30|UnityEngine.TooltipAttribute, UnityEngine.CoreModule
     - Name: tooltip
       Entry: 1
-      Data: "\u30C7\u30A3\u30EC\u30A4\u30D0\u30C3\u30D5\u30A1\u6B8B\u308A\u30B2\u30FC\u30B8
-        (0\u301CabsorptionLimit)"
+      Data: "\u84C4\u7A4D\u30C9\u30EA\u30D5\u30C8\u306E\u3057\u304D\u3044\u5024\u306B\u5BFE\u3059\u308B\u5272\u5408\u3092\u793A\u3059\u30B2\u30FC\u30B8"
     - Name: 
       Entry: 8
       Data: 

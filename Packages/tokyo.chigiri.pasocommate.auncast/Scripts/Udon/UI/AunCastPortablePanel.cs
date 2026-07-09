@@ -744,8 +744,6 @@ namespace PasocomMate.AunCast
             transform.rotation = Quaternion.LookRotation(camFwd, Vector3.up);
         }
 
-        public bool IsMenuVisible() { return menuVisible; }
-
         /// <summary>外部から表示状態を切り替える。</summary>
         public void SetMenuVisible(bool visible)
         {

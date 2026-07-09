@@ -334,14 +334,11 @@ namespace PasocomMate.AunCast
         /// <summary>連続失敗回数（指数バックオフの計算に使用）。</summary>
         public int GetConsecutiveFailCount() { return _consecutiveFailCount; }
         public void SetConsecutiveFailCount(int value) { _consecutiveFailCount = value; }
-        /// <summary>現在 Resync 要求中かどうか。</summary>
-        public bool IsResyncRequested() { return _resyncRequested; }
+        /// <summary>Resync 要求中フラグを更新する（要求受理・完了・キャンセル時に Controller が呼ぶ）。</summary>
         public void SetResyncRequested(bool value) { _resyncRequested = value; }
         /// <summary>直近の要求理由コード（UI 表示・ログ用）。</summary>
         public int GetRequestReason() { return _requestReason; }
         public void SetRequestReason(int value) { _requestReason = value; }
-        /// <summary>要求を送信した Time.time（待ち時間表示に使用）。</summary>
-        public float GetRequestStartedAt() { return _requestStartedAt; }
         /// <summary>切替サイクル開始を記録（タイムアウト判定の起点）。</summary>
         public void MarkCycleStarted(float now) { _cycleStartedAt = now; }
         /// <summary>切替サイクルが許容時間を超過したか判定。</summary>
@@ -354,11 +351,6 @@ namespace PasocomMate.AunCast
         public float GetRetryCooldownMultiplier() { return Mathf.Clamp(retryCooldownMultiplier, 1.0f, 2.0f); }
         /// <summary>指数バックオフの上限秒数。</summary>
         public float GetMaxRetryCooldownSec() { return maxRetryCooldownSec; }
-        /// <summary>無音検知による自動 Resync の抑制秒数。</summary>
-        public float GetSilenceSuppressSec() { return silenceSuppressSec; }
-
-        /// <summary>最後に Resync が完了した Time.time。</summary>
-        public float GetLastResyncCompletedAt() { return _lastResyncCompletedAt; }
         /// <summary>Resync 完了時刻を記録する。無音検知の抑制判定に使う。</summary>
         public void OnResyncCompleted(float now) { _lastResyncCompletedAt = now; }
 
@@ -370,9 +362,6 @@ namespace PasocomMate.AunCast
         {
             return (now - _lastResyncCompletedAt) > silenceSuppressSec;
         }
-
-        /// <summary>Coordinator 参照（外部からの状態確認用）。</summary>
-        public AunCastResyncCoordinator GetCoordinator() { return coordinator; }
 
         /// <summary>タイムラインログをローカルのみ設定する。</summary>
         public void SetTimelineLoggingLocal(bool value)
