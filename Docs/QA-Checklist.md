@@ -42,13 +42,13 @@ Unity Editor で `Window > General > Test Runner > EditMode` から実行する�
 | `ClearSlot_ClearsAllArrays` | 3 配列を同時クリア |
 | `AfterWarmup_EmaConvergesToRawDrift` | ドリフト EMA の収束 |
 | `Alpha_Formula_IsCorrect` | EMA 係数の数式検証 |
-| `DetectActiveFailure_StallTimeout_True` | 停滞タイムアウトで障害検出 |
-| `DetectActiveFailure_DriftOverThreshold_True` | ドリフト超過で障害検出 |
-| `DetectActiveFailure_Normal_False` | 正常時は検出しない |
+| `DetectActiveFailure_StallTimeout_ReturnsTrue` | 停滞タイムアウトで障害検出 |
+| `DetectActiveFailure_DriftOverThreshold_ReturnsTrue` | ドリフト超過で障害検出 |
+| `DetectActiveFailure_Normal_ReturnsFalse` | 正常時は検出しない |
 | `DetectActiveFailure_DuringWarmup_IgnoresDrift` | ウォームアップ中はドリフト無視 |
-| `IsVerifySatisfied_EnoughAdvances_True` | Standby 検証の合格条件 |
-| `IsVerifySatisfied_NotEnoughAdvances_False` | カウント不足 |
-| `IsVerifySatisfied_NotEnoughTime_False` | 時間不足 |
+| `IsVerifySatisfied_EnoughAdvances_ReturnsTrue` | Standby 検証の合格条件 |
+| `IsVerifySatisfied_NotEnoughAdvances_ReturnsFalse` | カウント不足 |
+| `IsVerifySatisfied_NotEnoughTime_ReturnsFalse` | 時間不足 |
 | `WithinSuppressSec_NotEligible` | 無音 Resync 抑制期間中 |
 | `AfterSuppressSec_Eligible` | 抑制期間後は適格 |
 

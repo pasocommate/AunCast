@@ -3,6 +3,11 @@
 この計画書は、現在のコード挙動を正として、ドキュメント・コメント・設計上の不自然さを整理し、他のエージェントが実装に移れる粒度まで分解したものです。
 
 > 更新: Phase 1 のドキュメント・コメント修正は 2026-07-09 に実施済み。Phase 2 の `AunCastSettingsInspector` partial 分割も同日に実施済み。以下の Phase 1 / Phase 2 は実施内容の記録として残す。
+>
+> 更新（第 2 ラウンド、2026-07-09）: 追加調査で発見した項目を実施済み。
+> - ドキュメント修正: Design.md の旧設計残滓（FR-16b の非表示条件・長い Cooldown、18.3/21.1 の `Failed` 状態、`maxFailBeforeAlert`）、既定値の誤記（`localCooldownSec` 6.5s、`wallNearDistance` 2.8m、`silenceRmsThresholdDbfs`、`crossfadeDurationSec` の Settings 既定 0.1s）、音量カーブの帰属クラス（`GetAdjustedVolume` / `AunCastSpeaker.ApplyVolume`）、QA-Checklist のテスト名、Implementation-Patterns の見出し番号重複、release コマンドのファイル名誤記。
+> - Phase 3 の項目 9（`MAX_PLAYERS` 重複）: `AunCastResyncCoordinator.MAX_PLAYERS` を `public const` にし、`AunCastPlaybackMonitor` から定数参照する形で統一（値は 82 のまま。要 `Refresh All UdonSharp Programs`）。
+> - コード整理: URL 検証を `AunCastDualPlayerController.IsValidStreamUrl` に集約、未使用メソッド削除（`IsUnderTransform` / `ApplyThemeToAllProxies`）、`LoadAssetByGuid` を `AunCastEditorAssetUtility` へ集約、Migration.cs の汎用ヘルパーを `AunCastSettingsInspector.Common.cs` へ移動、スタッフパネルのインジケータ描画の配列使い回し化と到達不能分岐の削除、`GetAdjustedVolume` へのコメント追記。
 
 ## 前提
 

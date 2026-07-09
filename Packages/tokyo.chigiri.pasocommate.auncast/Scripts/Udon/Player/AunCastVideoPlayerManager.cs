@@ -235,13 +235,19 @@ namespace PasocomMate.AunCast
                     _speakers[i].SetFadeGain(_fadeGain);
         }
 
+        /// <summary>
+        /// スライダー値を知覚的に自然な音量ゲインへ変換する（Design 22.4「音量カーブ」）。
+        /// x² ベースと Dr. Lex 指数カーブ（50dB レンジ）を、入力値自体を補間係数として lerp する。
+        /// </summary>
         private float GetAdjustedVolume(float volume)
         {
             float x = Mathf.Clamp01(volume);
-            if (x <= 0f) return 0f;
+            if (x <= 0f) return 0f;              // スライダー最小値はミュート
 
-            float t = 0.15f + 0.85f * x;
+            float t = 0.15f + 0.85f * x;         // -34 dBFS 未満の死にゾーンを除去するリマップ
+            // 3.1623e-3 = 10^(-50/20)（50dB レンジの下端）。t=1 付近でほぼ 1.0 に達する指数カーブ
             float expCurve = Mathf.Clamp01(3.1623e-3f * Mathf.Exp(t * 5.757f) - 3.1623e-3f);
+            // 低音量域は t²（滑らかな立ち上がり）、高音量域は指数カーブ（知覚的リニア）が支配的
             return (1f - t) * t * t + t * expCurve;
         }
 

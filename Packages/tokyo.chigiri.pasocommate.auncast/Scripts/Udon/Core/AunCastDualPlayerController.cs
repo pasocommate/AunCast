@@ -909,17 +909,22 @@ namespace PasocomMate.AunCast
         //  URL 管理 (Design Section 14)
         // =================================================================
 
+        /// <summary>配信 URL として妥当な形式かを判定する（スキーム区切り `://` の位置 1〜8、長さ 4096 文字以内）。</summary>
+        [PublicAPI]
+        public bool IsValidStreamUrl(string urlStr)
+        {
+            if (string.IsNullOrEmpty(urlStr)) return false;
+            int idx = urlStr.IndexOf("://", System.StringComparison.Ordinal);
+            if (idx < 1 || idx > 8) return false;
+            return urlStr.Length <= 4096;
+        }
+
         /// <summary>スタッフによる配信 URL 設定。オーナーシップ取得→既存停止→新 URL で再生開始→全員に同期する。</summary>
         [PublicAPI]
         public void PlayVideoAsStaff(VRCUrl url)
         {
             string urlStr = url.Get();
-            if (string.IsNullOrEmpty(urlStr)) return;
-
-            // プロトコルチェック
-            int idx = urlStr.IndexOf("://", System.StringComparison.Ordinal);
-            if (idx < 1 || idx > 8) return;
-            if (urlStr.Length > 4096) return;
+            if (!IsValidStreamUrl(urlStr)) return;
 
             bool wasOwner = Networking.IsOwner(gameObject);
             if (!wasOwner)

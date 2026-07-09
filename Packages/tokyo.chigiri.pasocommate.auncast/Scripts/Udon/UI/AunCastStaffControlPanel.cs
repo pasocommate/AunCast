@@ -73,6 +73,8 @@ namespace PasocomMate.AunCast
         // OnPlayerJoined で allowedUserNames 該当、またはパスコード入力で true。ローカルのみ・同期なし。
         private bool _isStaff;
         private string[] _indicatorHexColors;
+        // インジケーター描画のたびに配列を確保しないための使い回しバッファ（長さは MAX_PLAYERS 固定）。
+        private int[] _indicatorSortKeys;
 
         // インジケーター色インデックス。値がソートキーを兼ね、小さいほど上位（異常度高）に表示される。
         // 赤(エラー) → 青(待機) → 黄(Resync中) → 橙(接続中) → 白(正常) の順。
@@ -372,8 +374,8 @@ namespace PasocomMate.AunCast
             string parsedUrlText = parsedUrl.Get();
             if (string.IsNullOrEmpty(parsedUrlText)) return;
 
-            int schemeIndex = parsedUrlText.IndexOf("://", System.StringComparison.Ordinal);
-            if (schemeIndex < 1 || schemeIndex > 8 || parsedUrlText.Length > 4096)
+            // 無効 URL は Next URL 欄を消費せずそのまま残す（判定は Controller と共通）
+            if (!controller.IsValidStreamUrl(parsedUrlText))
                 return;
 
             VRCUrl previousUrl = controller.GetCurrentURL();
@@ -789,7 +791,9 @@ namespace PasocomMate.AunCast
 
             // ソートキー: スタイル（Playing=0, 停止=1）× 色（赤=0, 青=1, 黄=2, 橙=3, 白=4）
             int assigned = 0;
-            int[] sortKeys = new int[coordSlots];
+            if (_indicatorSortKeys == null || _indicatorSortKeys.Length != coordSlots)
+                _indicatorSortKeys = new int[coordSlots];
+            int[] sortKeys = _indicatorSortKeys;
             for (int i = 0; i < coordSlots; i++)
             {
                 int playerId = coordinator.GetUserPlayerId(i);
@@ -848,29 +852,20 @@ namespace PasocomMate.AunCast
                 return;
             }
 
-            // リッチテキスト組み立て
+            // リッチテキスト組み立て（10 個ごとに改行）
             string result = "";
-            int rendered = 0;
             for (int i = 0; i < displaySlots; i++)
             {
-                if (rendered > 0 && rendered % 10 == 0) result += "\n";
+                if (i > 0 && i % 10 == 0) result += "\n";
 
-                if (i < assigned)
-                {
-                    int key = sortKeys[i];
-                    bool playing = key < 10;
-                    int colorIdx = key % 10;
+                int key = sortKeys[i];
+                bool playing = key < 10;
+                int colorIdx = key % 10;
 
-                    string hex = _indicatorHexColors[colorIdx];
+                string hex = _indicatorHexColors[colorIdx];
 
-                    string ch = playing ? "■" : "□";
-                    result += $"<color={hex}>{ch}</color>";
-                }
-                else
-                {
-                    result += "<color=#000000>□</color>";
-                }
-                rendered++;
+                string ch = playing ? "■" : "□";
+                result += $"<color={hex}>{ch}</color>";
             }
 
             indicatorText.text = result;

@@ -16,9 +16,9 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class AunCastPlaybackMonitor : UdonSharpBehaviour
     {
-        // AunCastResyncCoordinator.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
-        // 本クラスのビットパック配列長と Coordinator の配列長が食い違う。
-        private const int MAX_PLAYERS = 82;
+        // スロット数の定義元は AunCastResyncCoordinator。定数参照で配列長の一致を保証する
+        // （ずれると本クラスのビットパック配列長と Coordinator の配列長が食い違う）。
+        private const int MAX_PLAYERS = AunCastResyncCoordinator.MAX_PLAYERS;
 
         [Header("Settings")]
         [Tooltip("デバッグログを有効にする")]

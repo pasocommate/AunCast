@@ -269,7 +269,7 @@ if (coordinator.GetResyncState(_mySlotIndex) == AunCastResyncCoordinator.STATE_N
 | クライアント→Coordinator の状態変更 | `SendCustomNetworkEvent` + `[NetworkCallable]` | 競合排除、パケット削減 |
 | スタッフ操作（Global Resync 等） | `TryTakeOwnership` → 直接書換 | 全スロットの原子的更新が必要 |
 
-## 6. ownership 分離オブジェクトの退室クリーンアップ
+## 7. ownership 分離オブジェクトの退室クリーンアップ
 
 複数の `[UdonSynced]` オブジェクトを意図的に分離してある場合（例: `AunCastResyncCoordinator` と
 `AunCastPlaybackMonitor`）、各オブジェクトの ownership は独立に移動する。スタッフ操作で
@@ -324,7 +324,7 @@ private bool CleanupStaleSlots()
   退室直後のスロットが同じ `OnPlayerJoined` 内で再利用されると、割当済み判定だけでは
   以前の利用者が残したビットと新しい利用者の状態を区別できない。
 
-## 7. N 個配置 subscriber 群への AunCastEventBus 配信
+## 8. N 個配置 subscriber 群への AunCastEventBus 配信
 
 シーン内に複数配置されうる `AunCastScreen` / `AunCastUiScreen` / `AunCastWallControlPanel`
 のような購読者へ publisher から通知するときは、publisher 側に具象型配列を持たせず
@@ -373,12 +373,12 @@ private bool CleanupStaleSlots()
 **毎回シーン内全件に戻される** ことに注意（バスの意味論として「シーン内 subscriber
 全件に配信する」を維持しているため）。
 
-## 8. 2 つの behaviour が相互参照する循環の片方向化
+## 9. 2 つの behaviour が相互参照する循環の片方向化
 
 2 つの UdonSharpBehaviour が互いを具象型フィールドで参照し合うと、型レベルの循環
 （ループ参照）になる。これは UdonSharp ではコンパイル/初期化順序の問題は起こさない
 （Inspector 配線のコンポーネント参照に過ぎない）が、結合度が上がりテスト・再利用・
-変更波及の面で不利になる。`AunCastEventBus`（§7）が複数購読者向けなのに対し、
+変更波及の面で不利になる。`AunCastEventBus`（§8）が複数購読者向けなのに対し、
 **1 対 1 の相互参照**はこのパターンで片方向化する。Core→UI の `staffNotifyTarget`
 や UI↔UI の `AunCastPortablePanel`↔`AunCastStaffControlPanel` がこの形。
 
@@ -389,7 +389,7 @@ private bool CleanupStaleSlots()
 - **基底型辺は `SendCustomEvent(メソッド名)` で呼ぶ。** 引数なしの通知・命令のみ
   送れる。呼び先メソッドは `public` であること。
 - **bool / enum などの値は、具象のまま残した逆辺から push してキャッシュする。**
-  基底型辺では値を渡せず（§7 のとおり `SetProgramVariable` 多用や「値ごとにイベント
+  基底型辺では値を渡せず（§8 のとおり `SetProgramVariable` 多用や「値ごとにイベント
   分割」は避けたい）、クエリ（戻り値あり）も `SendCustomEvent` では呼べないため。
   例: 解錠状態は所有者の `AunCastStaffControlPanel` が `viewerStatusPanel.SetStaffUnlocked(bool)`
   （具象呼び出し）で `AunCastPortablePanel` に push し、UI 側は `_staffUnlocked` を読む。
@@ -403,7 +403,7 @@ private bool CleanupStaleSlots()
   `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行し、Inspector で配線を
   確認・必要なら再アサインする。
 
-## 9. PlayerData 永続化パターン
+## 10. PlayerData 永続化パターン
 
 VRChat の `PlayerData` API を使い、ローカル設定をワールド再参加後も復元する。
 
@@ -434,7 +434,7 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   PlayerData に文字列保存しても VRCUrl に復元できない
   （`VRChat-Udon-Development-Notes.md` §1 参照）。
 
-## 10. エディタ設定のプロジェクト単位永続化パターン
+## 11. エディタ設定のプロジェクト単位永続化パターン
 
 ワールド制作者向けのエディタ状態（利用規約への同意など）を **プロジェクト単位** で
 保存する場合は、`ProjectSettings/` 配下へ直接シリアライズする。
@@ -476,7 +476,7 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 - これは導線上の抑止であり実行時の動作は止めない。アップロード自体をブロックするには
   VRCSDK の `IVRCSDKBuildRequestedCallback` で中断する必要がある（本実装は未対応）。
 
-## 11. インスペクタのローカライズ規約
+## 12. インスペクタのローカライズ規約
 
 カスタムエディタの **UI 表示文字列は日英両対応** とする。コメント・`Debug.Log`・
 `Undo` 名は対象外で、コメントは日本語のまま維持する（プロジェクト方針）。
@@ -504,7 +504,7 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
 - ソースコメント、`Debug.Log` / `Debug.LogWarning`（コンソール出力）、
   `Undo.RecordObject` などの操作名。
 
-## 12. ContentScaler「設計キャンバス」パターンとサイズ追従
+## 13. ContentScaler「設計キャンバス」パターンとサイズ追従
 
 パネル（`PortablePanel` / `AunCastWallControlPanel`）配下の `ContentScaler` は、
 **固定の設計解像度（PortablePanel は 900×640）を持つ単一キャンバス**であり、

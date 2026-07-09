@@ -69,9 +69,9 @@ namespace PasocomMate.AunCast
         private float[] _ownerTimestamp;
         private float _tickTimer;
         private const float TICK_INTERVAL = 1.0f;
-        // AunCastPlaybackMonitor.MAX_PLAYERS と同値に保つこと。スロット数が一致しないと
-        // AunCastPlaybackMonitor 側のビットパック配列長と Coordinator の配列長が食い違う。
-        private const int MAX_PLAYERS = 82;
+        // 同期スロット配列の固定長上限。定義元は本クラスで、AunCastPlaybackMonitor は
+        // この値を参照してビットパック配列長を Coordinator の配列長に一致させる。
+        public const int MAX_PLAYERS = 82;
         private const int DEFAULT_CONNECTION_LIMIT = 100;
         private const int MIN_CONNECTION_LIMIT = 1;
         private const int MAX_CONNECTION_LIMIT = 255;
