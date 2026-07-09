@@ -5,6 +5,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+- 初回 Join 時のデフォルト URL 自動再生機能を撤去し、配信開始をスタッフ操作に一本化
+- インスタンス起動時に前回の同期 URL 状態が残っていても再生開始しないよう初期化を強化
+
 ## [4.2.2] - 2026-07-08
 - 停止中スクリーン画像の縦横比が崩れる問題を修正
 

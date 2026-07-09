@@ -5099,11 +5099,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
-      propertyPath: autoPlayDefaultOnFirstJoin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4898888684788546692, guid: 0d617877712537147a584eb2a1ef735c,
-        type: 3}
       propertyPath: defaultDesktopSummonGesture
       value: 1
       objectReference: {fileID: 0}
@@ -5600,7 +5595,7 @@ PrefabInstance:
     - target: {fileID: 6303899231048617589, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}
       propertyPath: _syncMethod
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6303899231048617589, guid: 0d617877712537147a584eb2a1ef735c,
         type: 3}

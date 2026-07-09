@@ -61,7 +61,6 @@ namespace PasocomMate.AunCast.Internal
         {
             "defaultVolume",
             "defaultUrl",
-            "autoPlayDefaultOnFirstJoin",
             "_autoSilenceResyncEnabled",
         };
 

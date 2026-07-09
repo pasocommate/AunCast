@@ -8482,7 +8482,6 @@ MonoBehaviour:
   hudDesktopLocalOffset: {x: 0, y: -0.1, z: 0.6}
   defaultVolume: 0.6
   defaultUrl: 
-  autoPlayDefaultOnFirstJoin: 0
   panelAutoDismissDistance: 3
   panelOutOfSightDismissSec: 20
   wallNearDistance: 2.8
@@ -11047,7 +11046,6 @@ MonoBehaviour:
   defaultVolume: 0.6
   defaultUrl:
     url: 
-  autoPlayDefaultOnFirstJoin: 0
   _timelineLogging: 0
   _autoSilenceResyncEnabled: 1
 --- !u!114 &6303899231048617589

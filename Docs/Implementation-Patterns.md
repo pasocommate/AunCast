@@ -367,6 +367,16 @@ private bool CleanupStaleSlots()
 3. **ビルド・アップロード時** (`AunCastBuildCallback`): `IProcessSceneWithReport`
    で VRC SDK のシーンビルド処理直前に再配線
 
+Play/Build 時の自動経路では、`AunCastSettings` から焼き込む管理設定も同時に最新化する。
+特に A/B 内蔵 `VRCAVProVideoPlayer.autoPlay` は必ず `false` に戻す。AunCast の再生開始は
+`AunCastDualPlayerController` からの `LoadURL` に一本化しており、AVPro 側 AutoPlay が残ると
+ClientSim スタブなどで「AunCast の自動再生は OFF なのに再生される」状態を作るため。
+Join 時のデフォルト URL 自動再生は提供しない。`defaultUrl` はスタッフパネルの Next URL
+初期表示専用で、実際の再生開始はスタッフ操作 (`OnPromoteNextUrl`) だけに集約する。
+また、インスタンス起動直後の Owner は、シーンや prefab に残った `_syncedURL` /
+`_syncedVideoIdx` / `_ownerPlaying` を必ず初期化してから同期する。これらは実行時状態であり、
+ワールドインスタンスをまたいで永続化してはいけない。
+
 `SetObjectProperty` / `SetObjectArrayProperty` の差分検知により、配線が既に最新の
 場合は no-op になるので、これらの自動経路がユーザーの手動編集を無闇に上書きする
 ことはない。ただし subscriber 配列をシーン内全件より少なく絞った手動編集は

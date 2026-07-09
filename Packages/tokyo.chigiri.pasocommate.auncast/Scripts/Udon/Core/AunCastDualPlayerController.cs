@@ -65,12 +65,9 @@ namespace PasocomMate.AunCast
         [Tooltip("デフォルト音量（x^2 と Dr. Lex 指数カーブの lerp。0.6 で約 -13dB）")]
         [SerializeField] private float defaultVolume = 0.6f;
 
-        [Header("Default Playback")]
-        [Tooltip("Next URL 欄の初期値。インスタンス最初の Join 時の自動再生にも使用する。")]
+        [Header("Next URL Prefill")]
+        [Tooltip("Next URL 欄の初期値。再生はスタッフ操作でのみ開始する。")]
         [SerializeField] private VRCUrl defaultUrl = VRCUrl.Empty;
-
-        [Tooltip("インスタンスに最初のユーザーが Join した時点で defaultUrl を自動再生する")]
-        [SerializeField] private bool autoPlayDefaultOnFirstJoin;
 
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
@@ -138,6 +135,10 @@ namespace PasocomMate.AunCast
         // FSM 状態変化通知用 (-1 = 未通知)
         private int _lastReportedLocalState = -1;
 
+        private bool _startupSyncResetFinished;
+        private float _startupSyncResetStartedAt;
+        private const float STARTUP_SYNC_RESET_WINDOW_SEC = 10.0f;
+
         // =================================================================
         //  Unity ライフサイクル
         // =================================================================
@@ -147,6 +148,7 @@ namespace PasocomMate.AunCast
         {
             if (_ranInit) return;
             _ranInit = true;
+            _startupSyncResetStartedAt = Time.time;
 
             SetVolume(defaultVolume);
 
@@ -159,13 +161,39 @@ namespace PasocomMate.AunCast
                 switcher.SwitchAudioLinkSource();
             }
 
+            ResetPlaybackSyncStateForNewInstance();
             QueueSerialize();
             LogMessage("AunCastDualPlayerController initialized");
+        }
 
-            // インスタンス最初の参加者なら、デフォルト URL の自動再生を遅延スケジュールする。
-            // Owner 判定とネットワーク初期化が安定するよう数秒待ってから実行する。
-            if (autoPlayDefaultOnFirstJoin && defaultUrl != null && !string.IsNullOrEmpty(defaultUrl.Get()))
-                SendCustomEventDelayedSeconds("AutoPlayDefaultUrlIfFirstJoiner", AUTO_PLAY_DELAY_SEC);
+        private bool ResetPlaybackSyncStateForNewInstance()
+        {
+            if (_startupSyncResetFinished) return false;
+            if (Time.time - _startupSyncResetStartedAt > STARTUP_SYNC_RESET_WINDOW_SEC)
+            {
+                _startupSyncResetFinished = true;
+                return false;
+            }
+            if (!Networking.IsOwner(gameObject)) return false;
+            if (_localState != STATE_IDLE || _ownerPlaying)
+            {
+                _startupSyncResetFinished = true;
+                return false;
+            }
+
+            _syncedURL = VRCUrl.Empty;
+            _syncedUrlSubmitterName = "";
+            _syncedVideoIdx = 0;
+            _currentVideoIdx = 0;
+            _ownerPlaying = false;
+            _startupSyncResetFinished = true;
+            return true;
+        }
+
+        public override void OnOwnershipTransferred(VRCPlayerApi player)
+        {
+            if (ResetPlaybackSyncStateForNewInstance())
+                QueueSerialize();
         }
 
         public override void OnPlayerRestored(VRCPlayerApi player)
@@ -1054,8 +1082,17 @@ namespace PasocomMate.AunCast
                 switcher.ResetBothPlayersToA();
                 _activeIsA = true;
 
-                StartActivePlayback(_syncedURL);
-                LogMessage($"Playing synced URL: {_syncedURL}");
+                if (HasPlayableSyncedUrl())
+                {
+                    StartActivePlayback(_syncedURL);
+                    LogMessage($"Playing synced URL: {_syncedURL}");
+                }
+                else
+                {
+                    switcher.ClearVideoTexture();
+                    ResetFsmToIdle();
+                    LogMessage("Empty URL sync received: playback remains stopped");
+                }
             }
 
             if ((stopReceived || urlChanged) && staffNotifyTarget != null)
@@ -1073,24 +1110,6 @@ namespace PasocomMate.AunCast
         {
             if (!Networking.IsOwner(gameObject)) return;
             RequestSerialization();
-        }
-
-        // インスタンス最初の Join 時の自動再生の発火遅延（秒）。Owner 判定とネットワーク初期化の安定待ち。
-        private const float AUTO_PLAY_DELAY_SEC = 3.0f;
-
-        /// <summary>
-        /// インスタンス最初の参加者（起動時の Owner）のみが、未再生状態のとき defaultUrl を自動再生する。
-        /// Late Joiner は Owner でないため何もしない。Start からの遅延イベントで呼ばれる。
-        /// </summary>
-        public void AutoPlayDefaultUrlIfFirstJoiner()
-        {
-            if (!Networking.IsOwner(gameObject)) return;
-            if (_localState != STATE_IDLE) return;
-            if (_syncedURL != null && !string.IsNullOrEmpty(_syncedURL.Get())) return;
-            if (defaultUrl == null || string.IsNullOrEmpty(defaultUrl.Get())) return;
-
-            LogMessage("Auto-playing default URL on first join");
-            PlayVideoAsStaff(defaultUrl);
         }
 
         // =================================================================

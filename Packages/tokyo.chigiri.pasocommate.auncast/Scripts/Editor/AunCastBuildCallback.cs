@@ -23,8 +23,9 @@ namespace PasocomMate.AunCast.Internal
             AunCastSettingsInspector.RewireEventBusAndConsumers(
                 settings.transform, recordUndo: false, writeLog: false);
             // 各コンポーネントへ焼き込む管理設定を最新化する。AunCastSettings は IEditorOnly で
-            // ビルドから除外されるため、ここで転写しないとコントローラ側の defaultUrl /
-            // autoPlayDefaultOnFirstJoin 等がインスペクタ最終編集時の古い値のまま残る。
+            // ビルドから除外されるため、ここで転写しないとコントローラ側の defaultUrl や
+            // 内蔵 AVPro の autoPlay 等がインスペクタ最終編集時の古い値のまま残る。
+            AunCastSettingsInspector.ApplyVideoPlayerSettingsToScene(settings.transform, settings);
             AunCastSettingsInspector.ApplyResyncSettingsToScene(settings.transform, settings);
             AunCastSettingsInspector.ApplyUiSettingsToScene(settings.transform, settings);
             AunCastSettingsInspector.ApplyPlaybackMonitorSettingsToScene(settings.transform, settings);

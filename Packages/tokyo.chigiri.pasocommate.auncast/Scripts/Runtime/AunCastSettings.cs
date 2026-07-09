@@ -43,14 +43,11 @@ namespace PasocomMate.AunCast
         [Tooltip("起動時のローカル再生デフォルト音量（0〜1）")]
         public float defaultVolume = 0.6f;
 
-        [Header("Default Playback")]
+        [Header("Next URL Prefill")]
         // VRCUrl ではなく string で保管する。VRCUrl（ネスト [Serializable]）はプレハブインスタンス上で
         // オーバーライド追跡が不安定で「たまに空に戻る」ため。Udon コンポーネントへ転写する際に VRCUrl 化する。
         [Tooltip("Next URL欄の初期値として表示する配信URL。空欄なら未設定。")]
         public string defaultUrl = "";
-
-        [Tooltip("インスタンスに最初のユーザーがJoinした時点で defaultUrl を自動再生する")]
-        public bool autoPlayDefaultOnFirstJoin;
 
         [Header("Portable Panel Auto Dismiss")]
         // パネルから離れすぎたら自動で閉じる

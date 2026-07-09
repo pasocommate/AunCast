@@ -452,8 +452,7 @@ namespace PasocomMate.AunCast.Internal
             EditorGUILayout.Space(8);
 
             // ── 映像プレイヤー ──
-            var avProPlayers = root.GetComponentsInChildren<VRCAVProVideoPlayer>(true);
-            DrawVideoPlayerSettings(root, settings, avProPlayers);
+            DrawVideoPlayerSettings(root, settings);
 
             EditorGUILayout.Space(8);
 

@@ -308,8 +308,8 @@ namespace PasocomMate.AunCast
         /// (1) 再生中 URL と一致する内容（再生開始で「次」から「再生中」へ移ったとみなす）、
         /// (2) デフォルト URL と一致する内容（prefill の初期表示は、何かが再生中なら
         ///     もう「次」の提案として意味を持たない）。
-        /// 自動再生・手動 Promote のいずれで再生が始まっても、各クライアントの
-        /// OnUrlChanged 経由で消費される。手入力された別 URL はどちらにも一致しないため保持される。
+        /// 手動 Promote で再生が始まると、各クライアントの OnUrlChanged 経由で消費される。
+        /// 手入力された別 URL はどちらにも一致しないため保持される。
         /// </summary>
         private void ConsumeNextUrlIfPlaying()
         {
@@ -361,7 +361,7 @@ namespace PasocomMate.AunCast
         /// <summary>統合パネル側が切替ボタンの可視判定などに使う。パスコード解錠済みか allowedUserNames 該当で true。</summary>
         public bool IsLocallyUnlocked() { return _isStaff; }
 
-        /// <summary>Next URL を再生し、再生前の URL を Next URL 欄へ戻す。</summary>
+        /// <summary>Next URL を再生し、再生前に表示されていた Playing URL を Next URL 欄へ戻す。</summary>
         public void OnPromoteNextUrl()
         {
             if (!_isStaff)
@@ -378,8 +378,13 @@ namespace PasocomMate.AunCast
             if (!controller.IsValidStreamUrl(parsedUrlText))
                 return;
 
-            VRCUrl previousUrl = controller.GetCurrentURL();
-            string previousUrlText = previousUrl != null ? previousUrl.Get() : "";
+            VRCUrl previousUrl = null;
+            string previousUrlText = "";
+            if (!string.IsNullOrEmpty(_nowPlayingUrl))
+            {
+                previousUrl = controller.GetCurrentURL();
+                previousUrlText = previousUrl != null ? previousUrl.Get() : "";
+            }
             controller.PlayVideoAsStaff(parsedUrl);
             nextUrlField.SetUrl(string.IsNullOrEmpty(previousUrlText) ? VRCUrl.Empty : previousUrl);
         }

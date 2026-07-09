@@ -15,8 +15,7 @@ namespace PasocomMate.AunCast.Internal
     {
         private void DrawVideoPlayerSettings(
             Transform root,
-            PasocomMate.AunCast.AunCastSettings settings,
-            VRCAVProVideoPlayer[] avProPlayers)
+            PasocomMate.AunCast.AunCastSettings settings)
         {
             EditorGUILayout.LabelField(
                 AunCastEditorLocalization.Localize("映像プレイヤー", "Video Player"),
@@ -72,18 +71,7 @@ namespace PasocomMate.AunCast.Internal
             settings.idleScreenTexture = newIdleScreenTexture;
             EditorUtility.SetDirty(settings);
 
-            foreach (var avPro in avProPlayers)
-            {
-                var so = new SerializedObject(avPro);
-                var resProp = so.FindProperty("maximumResolution");
-                if (resProp != null)
-                    resProp.intValue = newResolution;
-                var latencyProp = so.FindProperty("useLowLatency");
-                if (latencyProp != null)
-                    latencyProp.boolValue = newLowLatency;
-                so.ApplyModifiedProperties();
-            }
-
+            ApplyVideoPlayerSettingsToScene(root, settings);
             ApplyCrossfadeSettingsToScene(root, settings);
             if (idleScreenTextureChanged)
                 RewireEventBusAndConsumers(root, recordUndo: true, writeLog: false);
@@ -124,13 +112,9 @@ namespace PasocomMate.AunCast.Internal
                 "Default local playback volume (0-1) for each user at startup.",
                 settings.defaultVolume, 0f, 1f);
             string newDefaultUrl = TextField("デフォルト配信URL", "Default Stream URL", "defaultUrl",
-                "Next URL欄の初期値。インスタンス最初のJoin時の自動再生にも使用する。空欄で無効。",
-                "Initial value of the Next URL field. Also used for auto-play on the first join to the instance. Empty to disable.",
+                "Next URL欄の初期値。空欄なら未設定。再生はスタッフ操作でのみ開始する。",
+                "Initial value of the Next URL field. Empty to disable. Playback starts only by staff action.",
                 settings.defaultUrl ?? "");
-            bool newAutoPlayDefault = ToggleField("最初のJoinで自動再生", "Auto-play on First Join", "autoPlayDefaultOnFirstJoin",
-                "インスタンスに最初のユーザーがJoinした時点で、デフォルト配信URLを自動再生する。",
-                "Auto-plays the default stream URL when the first user joins the instance.",
-                settings.autoPlayDefaultOnFirstJoin);
 
             EditorGUILayout.LabelField(L("VR呼び出しジェスチャー初期値", "Default VR Summon Gesture", "defaultSummonGesture",
                 "VRモードでHUDを呼び出すジェスチャーの初期有効設定。",
@@ -207,7 +191,6 @@ namespace PasocomMate.AunCast.Internal
             Undo.RecordObject(settings, "Change AunCast UI Settings");
             settings.defaultVolume = newDefaultVolume;
             settings.defaultUrl = newDefaultUrl;
-            settings.autoPlayDefaultOnFirstJoin = newAutoPlayDefault;
             settings.defaultSummonGesture = newSummonGesture;
             settings.defaultDesktopSummonGesture = newDesktopSummonGesture;
             settings.gestureHoldDuration = newHold;
@@ -393,6 +376,26 @@ namespace PasocomMate.AunCast.Internal
             ApplyResyncSettingsToScene(root, settings);
         }
 
+        internal static void ApplyVideoPlayerSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
+        {
+            var avProPlayers = root.GetComponentsInChildren<VRCAVProVideoPlayer>(true);
+            foreach (var avPro in avProPlayers)
+            {
+                if (avPro == null) continue;
+
+                var so = new SerializedObject(avPro);
+                SetIntProperty(so, "maximumResolution", settings.maximumResolution);
+                SetBoolProperty(so, "useLowLatency", settings.useLowLatency);
+                // AunCast は Udon 側の LoadURL で再生を開始する。AVPro 自身の AutoPlay は
+                // ClientSim スタブの起動時再生を誘発するため、内蔵プレイヤーでは常に無効化する。
+                SetBoolProperty(so, "autoPlay", false);
+
+                if (!so.ApplyModifiedProperties()) continue;
+                EditorUtility.SetDirty(avPro);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(avPro);
+            }
+        }
+
         private static void ApplyCrossfadeSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
             var switchers = root.GetComponentsInChildren<AunCastPlaybackSwitcher>(true);
@@ -453,8 +456,6 @@ namespace PasocomMate.AunCast.Internal
                     if (urlInner != null)
                         urlInner.stringValue = settings.defaultUrl ?? "";
                 }
-                var autoPlayProp = so.FindProperty("autoPlayDefaultOnFirstJoin");
-                if (autoPlayProp != null) autoPlayProp.boolValue = settings.autoPlayDefaultOnFirstJoin;
             });
 
             // 表示用 UI を実値へ揃える（Play せずとも見た目を一致させる）。
