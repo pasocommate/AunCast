@@ -313,11 +313,14 @@ namespace PasocomMate.AunCast
         {
             if (!Networking.IsOwner(gameObject)) return;
             if (!ValidateSlotIndex(slotIndex)) return;
-            if (resyncState[slotIndex] != STATE_RUNNING) return;
+
+            int state = resyncState[slotIndex];
+            if (state != STATE_RUNNING && state != STATE_GRANTED) return;
 
             resyncState[slotIndex] = STATE_NONE;
             MarkDirty();
             TickScheduler();
+            LogMessage($"Report success cleared slot {slotIndex} from state {state}");
         }
 
         /// <summary>Resync 失敗をクライアントが報告する。スロットを解放する。</summary>
@@ -333,6 +336,7 @@ namespace PasocomMate.AunCast
             resyncState[slotIndex] = STATE_NONE;
             MarkDirty();
             TickScheduler();
+            LogMessage($"Report fail cleared slot {slotIndex} from state {state}");
         }
 
         /// <summary>クライアントが Resync をキャンセルする。</summary>
@@ -346,6 +350,7 @@ namespace PasocomMate.AunCast
             resyncState[slotIndex] = STATE_NONE;
             MarkDirty();
             TickScheduler();
+            LogMessage($"Cancel cleared slot {slotIndex}");
         }
 
         /// <summary>スロット未割当のクライアントが空きスロットを要求する（Late-Joiner 向けフォールバック）。</summary>

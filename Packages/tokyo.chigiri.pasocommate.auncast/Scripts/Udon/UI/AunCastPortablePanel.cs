@@ -1217,9 +1217,10 @@ namespace PasocomMate.AunCast
 
             UpdateGauges();
 
-            bool canRequestLocal = localState == AunCastDualPlayerController.STATE_ACTIVE_PLAYING;
+            bool canRequestLocal = controller.CanRequestManualResync();
+            bool canRebootLocal = controller.CanRebootLocal();
             if (rebootButton != null)
-                SetButtonInteractable(rebootButton, canRequestLocal);
+                SetButtonInteractable(rebootButton, canRebootLocal);
             if (resyncButton != null)
             {
                 SetButtonInteractable(resyncButton, canRequestLocal);
@@ -1458,7 +1459,6 @@ namespace PasocomMate.AunCast
         public void OnResyncButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.RequestManualResync();
         }
 
@@ -1466,7 +1466,6 @@ namespace PasocomMate.AunCast
         public void OnRebootButtonPress()
         {
             if (controller == null) return;
-            if (controller.GetLocalState() != AunCastDualPlayerController.STATE_ACTIVE_PLAYING) return;
             controller.Reboot();
         }
 

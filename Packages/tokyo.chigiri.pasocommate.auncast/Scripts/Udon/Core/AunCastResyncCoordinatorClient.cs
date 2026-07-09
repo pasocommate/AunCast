@@ -40,7 +40,7 @@ namespace PasocomMate.AunCast
 
         [Header("Cooldown")]
         [Tooltip("LoadURL 完了後のクールダウン（秒）")]
-        [SerializeField] private float localCooldownSec = 5.0f;
+        [SerializeField] private float localCooldownSec = 6.5f;
 
         [Header("Retry")]
         [Tooltip("再試行の基本待機時間（秒）")]
@@ -279,6 +279,7 @@ namespace PasocomMate.AunCast
             string eventName = success ? "OnReportSuccess" : "OnReportFail";
             coordinator.SendCustomNetworkEvent(
                 NetworkEventTarget.Owner, eventName, _mySlotIndex);
+            LogMessage($"Reported Resync result: success={(success ? 1 : 0)}, slot={_mySlotIndex}");
         }
 
         // =================================================================

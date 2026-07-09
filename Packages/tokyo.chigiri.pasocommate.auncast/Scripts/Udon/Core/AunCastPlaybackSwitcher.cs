@@ -445,6 +445,15 @@ namespace PasocomMate.AunCast
             return true;
         }
 
+        /// <summary>停止時にスクリーン購読者へ idle 表示を即時配信する。</summary>
+        public void ClearVideoTexture()
+        {
+            BroadcastVideoTexture(null, false);
+            _lastAssignedRenderTexture = null;
+            _lastAssignedVideoFlipY = false;
+            LogMessage("Video texture cleared to idle");
+        }
+
         /// <summary>AunCastEventBus 経由で全スクリーン購読者へテクスチャを配信する。</summary>
         private void BroadcastVideoTexture(Texture tex, bool flipY)
         {

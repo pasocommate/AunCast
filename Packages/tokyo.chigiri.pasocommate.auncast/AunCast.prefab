@@ -8507,7 +8507,7 @@ MonoBehaviour:
   grantTimeoutSec: 10
   runningTimeoutSec: 50
   resyncCycleTimeoutSec: 45
-  localCooldownSec: 5
+  localCooldownSec: 6.5
   baseCooldownSec: 5
   retryCooldownMultiplier: 1.5
   maxRetryCooldownSec: 90
@@ -11234,7 +11234,7 @@ MonoBehaviour:
   coordinator: {fileID: 8200345231049393443}
   resyncCycleTimeoutSec: 45
   silenceSuppressSec: 150
-  localCooldownSec: 5
+  localCooldownSec: 6.5
   baseCooldownSec: 5
   retryCooldownMultiplier: 1.5
   maxRetryCooldownSec: 90

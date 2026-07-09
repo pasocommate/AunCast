@@ -136,7 +136,7 @@ namespace PasocomMate.AunCast
         public float resyncCycleTimeoutSec = 45.0f;
 
         [Tooltip("LoadURL完了後のクールダウン（秒）")]
-        public float localCooldownSec = 5.0f;
+        public float localCooldownSec = 6.5f;
 
         [Tooltip("再試行の基本待機時間（秒）")]
         public float baseCooldownSec = 5.0f;

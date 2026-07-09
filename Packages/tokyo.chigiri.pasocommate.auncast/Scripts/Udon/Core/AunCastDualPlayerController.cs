@@ -116,6 +116,7 @@ namespace PasocomMate.AunCast
         private int _currentVideoIdx;
         private bool _waitForSync;
         private bool _pendingConnectingReport;
+        private bool _loggedMissingResyncSlot;
 
         // PlaybackActive レポートのスロットル（AunCastPlaybackMonitor への過剰通知を防止）
         private float _lastPlaybackReportAt;
@@ -188,15 +189,30 @@ namespace PasocomMate.AunCast
                 Reboot();
                 return;
             }
-            if (!resyncClient.TryEnsureSlotAssigned()) return;
-            InitializePlaybackMonitorSlotIfNeeded();
-
-            // スロット確保直後の connecting レポート遅延送信
-            if (_pendingConnectingReport)
+            bool hasSlot = resyncClient.TryEnsureSlotAssigned();
+            if (hasSlot)
             {
-                _pendingConnectingReport = false;
-                if (_localState == STATE_IDLE)
-                    ReportConnecting(true);
+                if (_loggedMissingResyncSlot)
+                {
+                    _loggedMissingResyncSlot = false;
+                    LogMessage($"Resync slot assigned; Coordinator reports resumed (slot={resyncClient.GetMySlotIndex()})");
+                }
+
+                InitializePlaybackMonitorSlotIfNeeded();
+
+                // スロット確保直後の connecting レポート遅延送信
+                if (_pendingConnectingReport)
+                {
+                    _pendingConnectingReport = false;
+                    if (_localState == STATE_IDLE)
+                        ReportConnecting(true);
+                }
+            }
+            else if (!_loggedMissingResyncSlot)
+            {
+                _loggedMissingResyncSlot = true;
+                if (_timelineLogging) TL($"a=SLOT_PENDING_LOCAL_PLAYBACK");
+                LogMessage("Resync slot not assigned yet; continuing local playback without Coordinator reports");
             }
 
             if (_timelineLogging && !_tlClientIdentified)
@@ -209,13 +225,16 @@ namespace PasocomMate.AunCast
                 }
             }
 
-            // Coordinator から Resync スロットの予約通知を受け取り FSM 状態を更新
-            int pollResult = resyncClient.PollResyncCoordinator(now, _localState);
-            if (pollResult >= 0)
+            if (hasSlot)
             {
-                if (pollResult == STATE_RESERVED)
-                    resyncClient.MarkCycleStarted(now);
-                _localState = pollResult;
+                // Coordinator から Resync スロットの予約通知を受け取り FSM 状態を更新
+                int pollResult = resyncClient.PollResyncCoordinator(now, _localState);
+                if (pollResult >= 0)
+                {
+                    if (pollResult == STATE_RESERVED)
+                        resyncClient.MarkCycleStarted(now);
+                    _localState = pollResult;
+                }
             }
 
             PollSyncWait(now);
@@ -227,7 +246,8 @@ namespace PasocomMate.AunCast
 
             if (switcher != null) switcher.UpdateRenderTexture(_localState, _ownerPlaying);
             PollSilenceDetection(now);
-            ReportPlaybackStateToCoordinator();
+            if (hasSlot)
+                ReportPlaybackStateToCoordinator();
             NotifyLocalStateChangeIfNeeded();
         }
 
@@ -637,6 +657,12 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public void Reboot()
         {
+            if (!HasPlayableSyncedUrl())
+            {
+                LogWarning("Reboot ignored: no synced URL");
+                return;
+            }
+
             float now = Time.time;
             // 実行中の Resync をキャンセル（どの状態でも Coordinator 側のスロットを解放する）
             CancelResync();
@@ -646,18 +672,80 @@ namespace PasocomMate.AunCast
             LogMessage("Reboot initiated");
         }
 
-        /// <summary>ユーザー操作による手動 Resync 要求。再生中のみ受け付け、Coordinator にスロットを申請する。</summary>
+        /// <summary>ユーザー操作による手動 Resync 要求。通常時は予約制、両系停止時はローカル Reboot に昇格する。</summary>
         [PublicAPI]
         public bool RequestManualResync()
         {
-            float now = Time.time;
-            if (_localState != STATE_ACTIVE_PLAYING) return false;
-            if (!resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
+            if (!HasPlayableSyncedUrl()) return false;
 
-            _tlAction = "MANUAL_RESYNC";
-            _localState = STATE_REQUEST_PENDING;
-            LogMessage("Manual resync requested");
+            float now = Time.time;
+            if (_localState == STATE_ACTIVE_PLAYING && !IsBothPlayersUnavailable())
+            {
+                if (!resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
+
+                _tlAction = "MANUAL_RESYNC";
+                _localState = STATE_REQUEST_PENDING;
+                LogMessage("Manual resync requested");
+                return true;
+            }
+
+            if (!ShouldEscalateManualResyncToReboot()) return false;
+
+            Reboot();
+            _tlAction = "MANUAL_RESYNC_REBOOT";
+            LogWarning("Manual resync escalated to reboot because both players are unavailable");
             return true;
+        }
+
+        /// <summary>Viewer/Wall UI が Resync ボタンを有効化してよいかを返す。</summary>
+        [PublicAPI]
+        public bool CanRequestManualResync()
+        {
+            if (!HasPlayableSyncedUrl()) return false;
+            if (_localState == STATE_ACTIVE_PLAYING) return true;
+            return ShouldEscalateManualResyncToReboot();
+        }
+
+        /// <summary>Viewer/Wall UI がローカル Reboot ボタンを有効化してよいかを返す。</summary>
+        [PublicAPI]
+        public bool CanRebootLocal()
+        {
+            return HasPlayableSyncedUrl();
+        }
+
+        private bool HasPlayableSyncedUrl()
+        {
+            return _syncedURL != null && !string.IsNullOrEmpty(_syncedURL.Get());
+        }
+
+        private bool ShouldEscalateManualResyncToReboot()
+        {
+            if (_awaitingActiveReboot) return true;
+            if (_localState == STATE_RETRY_WAIT) return true;
+            if (_localState == STATE_IDLE
+                || _localState == STATE_REQUEST_PENDING
+                || _localState == STATE_RESERVED
+                || _localState == STATE_STANDBY_CONNECTING
+                || _localState == STATE_STANDBY_VERIFYING
+                || _localState == STATE_SWITCHING
+                || _localState == STATE_COOLDOWN)
+            {
+                return IsBothPlayersUnavailable();
+            }
+
+            return false;
+        }
+
+        private bool IsBothPlayersUnavailable()
+        {
+            return IsPlayerUnavailable(playerManagerA) && IsPlayerUnavailable(playerManagerB);
+        }
+
+        private bool IsPlayerUnavailable(AunCastVideoPlayerManager manager)
+        {
+            if (manager == null) return true;
+            if (!manager.IsPlaying()) return true;
+            return manager.GetTime() <= 0f;
         }
 
         // =================================================================
@@ -878,12 +966,14 @@ namespace PasocomMate.AunCast
             activeMonitor.ResetTimeAdvanceForPlayer(true);
             activeMonitor.ResetTimeAdvanceForPlayer(false);
             switcher.ResetBothPlayersToA();
+            switcher.ClearVideoTexture();
             _activeIsA = true;
 
             ResetFsmToIdle();
 
             QueueSerialize();
             if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnUrlChanged");
+            LogMessage("StopVideo completed: texture cleared");
         }
 
         /// <summary>FSM 状態・フラグをアイドルに一括リセットし、Coordinator への報告も行う。</summary>
@@ -955,9 +1045,11 @@ namespace PasocomMate.AunCast
             bool stopReceived = !_ownerPlaying && _localState != STATE_IDLE;
             if (stopReceived)
             {
-                playerManagerA.Stop();
-                playerManagerB.Stop();
+                switcher.ResetBothPlayersToA();
+                switcher.ClearVideoTexture();
+                _activeIsA = true;
                 ResetFsmToIdle();
+                LogMessage("Stop sync received: texture cleared");
             }
 
             // URL 変更の検知
