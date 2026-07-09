@@ -224,12 +224,7 @@ Resync の発動方法は以下の 3 種類を含む。
 各観客は自身の Resync を手動でリクエストできなければならない。Cooldown 中の重複リクエストは抑止する。
 
 ### FR-16b: 観客向け緊急再接続
-Resync リクエストが長時間応答なし、または `GetTime()` が長時間停止している場合に限り、観客自身が Coordinator を介さず強制的に再接続できなければならない。動作は Active・Standby 両方を切断し Active で再接続する（Section 18.3 の Active 直接再接続と同等）。通常時はボタンを非表示とし、以下の条件を満たした場合のみ表示する。
-
-- Resync リクエスト後、一定時間（例: 30 秒）経過しても Grant されない
-- `GetTime()` が一定時間（例: 10 秒）以上停止している
-
-緊急再接続後のローカル Cooldown は長めに設定する（例: 60 秒）。
+観客自身が Coordinator を介さず強制的に再接続できなければならない。動作は Active・Standby 両方を切断し Active で再接続する（Section 18.3 の Active 直接再接続と同等）。ボタンは常時表示し、同期 URL が設定されている場合のみ操作可能（`interactable`）とする（FR-17 参照）。緊急再接続後のローカル Cooldown は通常時と同じ `localCooldownSec` を適用する。
 
 ### FR-17: 観客向けポータブルパネル
 各観客が自身の再生状態を確認できるポータブルパネルを提供しなければならない。VR ジェスチャー（複数方式選択可）またはデスクトップの Tab キーで呼び出す形式とする。少なくとも以下の情報・操作を含む。
@@ -423,7 +418,7 @@ AunCastSettings の再配線は同一シーン全体の `AunCastWallControlPanel
 責務:
 - 出力 PCM の RMS 算出 (`GetRms`)
 - 基準音量、調整済みユーザー音量、フェードゲインから `AudioSource.volume` を最終反映
-- 無音判定パラメータの提供 (`silenceRmsThreshold`, `silenceConsecutiveSec`)
+- 無音判定パラメータの提供 (`silenceRmsThresholdDbfs`, `silenceConsecutiveSec`)
 
 > **設計変更履歴**: 当初は `OnAudioFilterRead` を用いたリングバッファ遅延・バッファアンダーラン吸収を計画していたが、Udon VM がオーディオスレッドのフィールド書き込みをメインスレッドに反映できない制約（`VRChat-Udon-Development-Notes.md` 9.6 参照）から、`GetOutputData` を用いた RMS 取得のみの簡易実装に切り替えた。リングバッファ遅延・吸収機構は未実装で、Section 24 の今後の拡張案として残す。
 
@@ -1183,7 +1178,7 @@ float activeGain = Mathf.Cos(angle);   // 旧系: 1 → 0
 float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 ```
 
-- `crossfadeDurationSec`: 推奨 0.3〜0.5 秒（Inspector 調整可能、`AunCastPlaybackSwitcher` で管理。デフォルト 0.3 秒）
+- `crossfadeDurationSec`: 推奨 0.3〜0.5 秒（Inspector 調整可能、`AunCastPlaybackSwitcher` で管理。コンポーネント既定値 0.3 秒。`AunCastSettings` 側の既定値は 0.1 秒で、設定適用時はこちらが転写される）
 - Controller が `STATE_SWITCHING` 遷移時に `StartCrossfade` を呼ぶ。新系テクスチャを取得できるまで旧映像を保持し、取得後に切り替える
 - 両系統が同時に AudioListener に出力されるため、等パワー特性により音量の落ち込みなく自然にミックスされる
 - フェード完了後、`CompleteSwitchRoles()` で旧系プレイヤーを停止しロールを交換する
@@ -1192,7 +1187,7 @@ float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 
 `AunCastSpeaker.GetRms()` を Active 系で定期的に呼び出し、メインスレッドで RMS と閾値を比較する。
 
-- `silenceRmsThreshold`: 推奨 0.001（デフォルト値）
+- `silenceRmsThresholdDbfs`: 推奨 -60 dBFS（デフォルト値。線形換算で約 0.001。`GetSilenceRmsThreshold()` が線形値へ変換して返す）
 - `silenceConsecutiveSec`: 推奨 2.0 秒（デフォルト値）
 - 無音検知は各クライアントの個人 Resync 自動トリガー（Section 12.5）に利用する
 - ローカルクライアントは `_autoSilenceResyncEnabled` フラグでこの自動トリガーを抑制できる
@@ -1235,7 +1230,7 @@ GRANTED（RESERVED 遷移）から切替完了までの包括的タイムアウ�
 | Ready待ち | 5.0秒 | URL解決・接続失敗 |
 | Play待ち | 3.0秒 | Ready後に再生開始しない |
 | Verify待ち | 2.0秒 | GetTimeが前進しない |
-| Cooldown | 15.0〜60.0秒 | 再予約拒否期間 |
+| Cooldown | 6.5秒 | 再予約拒否期間（`localCooldownSec` 既定値、Inspector 調整可） |
 
 ### 17.3 Coordinator 側タイムアウト
 
@@ -1278,24 +1273,22 @@ Active が停止し、Standby 接続も失敗した場合（「全滅」状態�
 #### 状態遷移
 
 ```
-Failed → RetryWait → RequestPending（再試行）
+RetryWait →（バックオフ経過後）Active 直接再接続 → ActivePlaying（成功時）
 ```
 
-- `Failed` に遷移した時点で `_consecutiveFailCount` をインクリメントする
+- `RetryWait` に遷移した時点で `_consecutiveFailCount` をインクリメントする
 - 再試行までの待機時間: `min(baseCooldownSec × retryCooldownMultiplier^(_consecutiveFailCount - 1), maxRetryCooldownSec)`
   - 例: 基本 5 秒、倍率 1.5、最大 90 秒 → 5s, 7.5s, 11.25s, 16.875s, ...
 - 再試行時は **Active 側で直接再接続**を試みる（Standby 経由ではなく、切れている Active に URL を再発行）
   - これは Coordinator の Grant を必要としない緊急再接続であり、旧系が完全に死んでいるためリスクは低い
 - 直接再接続が成功した場合、`_consecutiveFailCount` をリセットし、通常の `ActivePlaying` に復帰する
-- 直接再接続も失敗した場合、再び `Failed` → `RetryWait` に入る
+- 直接再接続も失敗した場合、再び `RetryWait` に入る
 
 #### ユーザー通知
 
 - 観客向けパネルに状態を表示する
-  - `Failed`: 「再接続待機中（あと○秒）」
-  - `RetryWait` 中の再接続試行: 「再接続中...」
-  - 複数回失敗: 「ストリーム接続に問題が発生しています」
-- `_consecutiveFailCount >= maxFailBeforeAlert`（例: 3）の場合、スタッフ向けパネルにもアラートを表示する
+  - `RetryWait` 中は状態テキスト「Retry Wait」に連続 Stall / Fail カウントを付記する（例: `Retry Wait (Fail=2)`）
+  - エラー発生時は状態テキストより優先して「Error: <メッセージ>」を表示する
 
 ---
 
@@ -1355,7 +1348,7 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 
 - `resyncCycleTimeoutSec` (45s)
 - `silenceSuppressSec` (150s)
-- `localCooldownSec` (5s)
+- `localCooldownSec` (6.5s)
 - `baseCooldownSec` (5s)
 - `retryCooldownMultiplier` (1.5)
 - `maxRetryCooldownSec` (90s)
@@ -1371,12 +1364,12 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 
 ### AunCastWallControlPanel 側
 
-- `wallNearDistance` (2.5m) — AunCastSettings 経由
+- `wallNearDistance` (2.8m) — AunCastSettings 経由（コンポーネント単体の既定値は 2.5m）
 - `wallFarDistance` (3m) — AunCastSettings 経由
 
 ### AunCastSpeaker 側
 
-- `silenceRmsThreshold` — AunCastSettings 経由
+- `silenceRmsThresholdDbfs` (-60 dBFS) — AunCastSettings 経由
 - `silenceConsecutiveSec` — AunCastSettings 経由
 
 ### AunCastHudProgressOverlay 側
@@ -1419,15 +1412,10 @@ void Update()
             break;
 
         case STATE_STANDBY_CONNECTING:
-            if (CycleTimedOut())
+            if (CycleTimedOut() || StandbyErrorOrTimeout())
             {
                 CancelResync();
-                localState = STATE_FAILED;
-            }
-            else if (StandbyErrorOrTimeout())
-            {
-                ReportFail();
-                localState = STATE_FAILED;
+                HandleFailed();   // 旧 Active 生存時: STATE_COOLDOWN / 両系統失敗時: STATE_RETRY_WAIT
             }
             else if (standbyReady && standbyPlayStarted)
             {
@@ -1438,15 +1426,10 @@ void Update()
             break;
 
         case STATE_STANDBY_VERIFYING:
-            if (CycleTimedOut())
+            if (CycleTimedOut() || StandbyErrorOrTimeout())
             {
                 CancelResync();
-                localState = STATE_FAILED;
-            }
-            else if (StandbyErrorOrTimeout())
-            {
-                ReportFail();
-                localState = STATE_FAILED;
+                HandleFailed();   // 旧 Active 生存時: STATE_COOLDOWN / 両系統失敗時: STATE_RETRY_WAIT
             }
             else if (CheckStandbyTimeAdvance())
             {
@@ -1587,7 +1570,7 @@ Tab ダブルタップ（デフォルト有効）/ F5 ダブルタップ / ESC �
 
 #### 音量カーブ
 
-`AunCastVideoPlayerManager.ApplyVolume()` で適用される音量カーブは、x² ベースと Dr. Lex 指数カーブ (50dB レンジ) を入力値 x 自体を補間係数として lerp する方式。スライダー値 0 は完全ミュート扱いとし、それ以外は x∈(0,1] を t∈[0.15,1] にリマップしてからカーブを適用する:
+`AunCastVideoPlayerManager.GetAdjustedVolume()` で算出される音量カーブは、x² ベースと Dr. Lex 指数カーブ (50dB レンジ) を入力値 x 自体を補間係数として lerp する方式。スライダー値 0 は完全ミュート扱いとし、それ以外は x∈(0,1] を t∈[0.15,1] にリマップしてからカーブを適用する。算出した調整済み音量とフェードゲインは `AunCastSpeaker` へ渡され、`AudioSource.volume` への最終書き込みは `AunCastSpeaker.ApplyVolume()` が行う:
 
 ```csharp
 if (x <= 0f) return 0f;                          // スライダー最小値はミュート
@@ -1602,7 +1585,7 @@ float output = adjustedVolume * _fadeGain;
 - 左半分（低音量域）: x² が支配的で知覚的に滑らかな立ち上がり
 - 右半分（高音量域）: 指数カーブが支配的で知覚的にリニアな音量上昇を維持
 - デフォルト音量 0.6 で約 -10dB
-- 各 AudioSource の初期音量（`_audioSourceBaseVolumes`）を乗算することで、AudioSource ごとの音量バランスを維持する
+- 各 `AunCastSpeaker` の基準音量（`baseVolume`）を乗算することで、AudioSource ごとの音量バランスを維持する
 - ミュート時は `AunCastSpeaker` の GetOutputData が全ゼロを返し正規化が成立しないため、`PollSilenceDetection` は両系統ミュート時に検知をスキップする
 
 > **設計変更履歴**: 当初は「ボリューム UI を提供しない」方針だったが、観客ごとに最適な音量が異なる現実的なユースケースを踏まえ、ローカル設定として提供する形に変更した。

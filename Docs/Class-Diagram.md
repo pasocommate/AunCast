@@ -24,6 +24,7 @@ classDiagram
         ~[UdonSynced] bool _ownerPlaying
         -int _localState
         -bool _activeIsA
+        +IsValidStreamUrl(string) bool
         +PlayVideoAsStaff(VRCUrl)
         +StopVideoAsStaff()
         +Reboot()

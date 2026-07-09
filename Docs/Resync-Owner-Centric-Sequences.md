@@ -32,7 +32,7 @@ sequenceDiagram
 
     C->>O: SendCustomNetworkEvent(Owner, "OnReportSuccess", slotIndex)
     O->>O: resyncState[slot] = NONE<br/>MarkDirty()
-    Note over C: _localState = COOLDOWN (5秒)
+    Note over C: _localState = COOLDOWN (6.5秒)
 ```
 
 ## 2. 個人 Resync: 失敗時
@@ -48,7 +48,7 @@ sequenceDiagram
     O->>O: resyncState[slot] = NONE<br/>MarkDirty()
 
     alt Active がまだ生存
-        Note over C: _localState = COOLDOWN (5秒)
+        Note over C: _localState = COOLDOWN (6.5秒)
     else 両系統失敗
         Note over C: _localState = RETRY_WAIT<br/>exponential backoff
     end
@@ -86,7 +86,7 @@ sequenceDiagram
 
     C1->>O: SendCustomNetworkEvent(Owner, "OnReportSuccess", slotIndex)
     O->>O: resyncState[slot] = NONE<br/>MarkDirty()
-    Note over C1: _localState = COOLDOWN (5秒)
+    Note over C1: _localState = COOLDOWN (6.5秒)
 
     Note over O: 枠が空いたので次の TickScheduler で<br/>Client B が QUEUED → GRANTED
     Note over C2: 同様のフローで Resync 実行
