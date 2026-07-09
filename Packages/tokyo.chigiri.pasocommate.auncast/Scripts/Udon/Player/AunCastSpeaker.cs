@@ -55,11 +55,8 @@ namespace PasocomMate.AunCast
         /// <summary>この音量以下は無音確定として GetOutputData を省略する。</summary>
         private const float VOLUME_EPSILON = 0.0001f;
 
-        /// <summary>直近の RMS 値。デバッグ UI 表示用にキャッシュ。</summary>
+        /// <summary>直近の RMS 値。同一フレーム内の再計算を避けるキャッシュ。</summary>
         private float _lastRms;
-
-        /// <summary>直近の計測で使用したサンプル数。UI 側でバッファサイズを表示するため。</summary>
-        private int _lastRmsSampleCount;
         private int _lastRmsFrame = -1;
 
         private void Start()
@@ -79,13 +76,11 @@ namespace PasocomMate.AunCast
             if (_audioSource.volume <= VOLUME_EPSILON)
             {
                 _lastRms = 0f;
-                _lastRmsSampleCount = _outputBuffer.Length;
                 _lastRmsFrame = Time.frameCount;
                 return 0f;
             }
 
             _audioSource.GetOutputData(_outputBuffer, 0);
-            _lastRmsSampleCount = _outputBuffer.Length;
 
             float acc = 0f;
             for (int i = 0; i < _outputBuffer.Length; i++)
@@ -133,19 +128,13 @@ namespace PasocomMate.AunCast
         public float GetSilenceRmsThresholdDbfs() { return Mathf.Clamp(silenceRmsThresholdDbfs, MIN_DBFS, 0f); }
         public int GetPlayerIndex() { return playerIndex == PLAYER_B ? PLAYER_B : PLAYER_A; }
         public int GetMode() { return Mathf.Clamp(mode, MODE_STEREO, MODE_RIGHT); }
-        public float GetBaseVolume() { return Mathf.Clamp01(baseVolume); }
         public AudioSource GetAudioSource() { return _audioSource != null ? _audioSource : GetComponent<AudioSource>(); }
 
-        /// <summary>直近の RMS 値をデバッグ UI に公開する。</summary>
-        public float GetLastRms() { return _lastRms; }
         public float GetLastRmsDbfs()
         {
             float rms = GetRms();
             if (rms <= DBFS_EPSILON) return MIN_DBFS;
             return Mathf.Clamp(20f * Mathf.Log10(rms), MIN_DBFS, 0f);
         }
-
-        /// <summary>直近の計測サンプル数をデバッグ UI に公開する。</summary>
-        public int GetLastRmsSampleCount() { return _lastRmsSampleCount; }
     }
 }

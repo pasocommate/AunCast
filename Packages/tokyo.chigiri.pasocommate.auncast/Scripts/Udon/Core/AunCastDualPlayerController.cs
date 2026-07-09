@@ -1010,23 +1010,6 @@ namespace PasocomMate.AunCast
             _lastPlaybackReportAt = Time.time;
         }
 
-        /// <summary>現在の URL で Active を再ロードする（Resync ではなく単純なリロード）。</summary>
-        [PublicAPI]
-        public void Reload()
-        {
-            _tlAction = "RELOAD";
-            if ((_ownerPlaying || Networking.IsOwner(gameObject))
-                && _localState != STATE_IDLE)
-            {
-                // 実行中の Resync をキャンセル
-                if (_localState >= STATE_REQUEST_PENDING && _localState <= STATE_SWITCHING)
-                    CancelResync();
-
-                switcher.GetActiveManager().Stop();
-                StartActivePlayback(_syncedURL);
-            }
-        }
-
         /// <summary>Active プレイヤーに URL をロードし、接続中状態に入る共通ヘルパー。</summary>
         private void StartActivePlayback(VRCUrl url)
         {

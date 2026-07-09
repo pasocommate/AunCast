@@ -361,8 +361,6 @@ namespace PasocomMate.AunCast
             if (_stallStartedAt <= 0f) return 0f;
             return Time.time - _stallStartedAt;
         }
-        /// <summary>停滞開始時刻を返す。停滞していなければ 0。</summary>
-        public float GetStallStartedAt() { return _stallStartedAt; }
         /// <summary>
         /// 現在の Active プレイヤーが最初のフレームデコードを完了しているかを返す。
         /// false の間は停滞検出が抑制されている。

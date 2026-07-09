@@ -539,20 +539,6 @@ namespace PasocomMate.AunCast
             return count;
         }
 
-        public int GetActiveResyncCount()
-        {
-            return CountGrantedOrRunning();
-        }
-
-        public int GetAssignedUserCount()
-        {
-            if (userPlayerId == null) return 0;
-            int count = 0;
-            for (int i = 0; i < MAX_PLAYERS; i++)
-                if (userPlayerId[i] != 0) count++;
-            return count;
-        }
-
         public int GetPlayingEstimateCount()
         {
             return playbackMonitor != null ? playbackMonitor.GetPlayingEstimateCount() : 0;

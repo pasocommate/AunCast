@@ -29,7 +29,6 @@ classDiagram
         +StopVideoAsStaff()
         +Reboot()
         +RequestManualResync() bool
-        +Reload()
         +SetVolume(float)
         +SetVolumeLocal(float)
         +GetLocalState() int
@@ -202,7 +201,6 @@ classDiagram
         +SetFadeGain(float)
         +GetPlayerIndex() int
         +GetMode() int
-        +GetBaseVolume() float
         +GetAudioSource() AudioSource
         +GetRms() float
         +GetLastRmsDbfs() float
@@ -265,7 +263,6 @@ classDiagram
         +OnSwitchViewButtonPress()
         +SetMenuVisible(bool)
         +SummonInFrontOfLocalPlayer()
-        +IsMenuVisible() bool
         +IsStaffInteractable() bool
         +SetStaffUnlocked(bool)
         +SetSummonGestureFlag(int, bool)
@@ -311,7 +308,6 @@ classDiagram
         -float outputGain
         -bool playOnStart
         -bool readRightChannel
-        +RestartOutputs()
     }
 
     %% ========================================

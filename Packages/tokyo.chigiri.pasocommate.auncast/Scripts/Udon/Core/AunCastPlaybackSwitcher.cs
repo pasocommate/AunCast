@@ -26,7 +26,7 @@ namespace PasocomMate.AunCast
         // =================================================================
         [Header("Crossfade")]
         [Tooltip("クロスフェード時間（秒）")]
-        [SerializeField] private float crossfadeDurationSec = 0.3f;
+        [SerializeField] private float crossfadeDurationSec = 0.1f;
 
         [Header("Audio Only Fallback")]
         [Tooltip("映像テクスチャが取得できなくても、再生時刻が前進している場合は音声のみ配信として切替を完了する")]
