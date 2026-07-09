@@ -148,7 +148,7 @@ header img[alt="icon"] {
 
 /* ヘッダーのサイトタイトル右にバージョン番号を表示する */
 header h1::after {
-  content: "v4.2.2";
+  content: "v5.0.0";
   font-weight: 400;
   font-size: 0.75em;
   margin-left: 0.5em;

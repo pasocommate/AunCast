@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [5.0.0] - 2026-07-10
 - 初回 Join 時のデフォルト URL 自動再生機能を撤去し、配信開始をスタッフ操作に一本化
 - インスタンス起動時に前回の同期 URL 状態が残っていても再生開始しないよう初期化を強化
+- 直結化時に `VRCAVProVideoSpeaker` 非対応のオーディオフィルターを自動削除するよう改善
+- スクリーンの上下反転に対応するためテクスチャプロパティの既定値を調整
+- 持ち運びパネルのアセット参照不備を修正
+- AunCast 設定の焼き込みと Staff 操作 UI の反映を調整
 
 ## [4.2.2] - 2026-07-08
 - 停止中スクリーン画像の縦横比が崩れる問題を修正
