@@ -271,7 +271,7 @@ namespace PasocomMate.AunCast.Internal
 
             EnsureCanonicalEventBusName(eventBusObject);
 
-            if (LoadAssetByGuid<UnityEngine.Object>(AUNCAST_EVENT_BUS_ASSET_GUID) == null)
+            if (AunCastEditorAssetUtility.LoadAssetByGuid<UnityEngine.Object>(AUNCAST_EVENT_BUS_ASSET_GUID) == null)
             {
                 if (writeLog)
                     Debug.LogWarning("[AunCast] AunCastEventBus.asset が見つからないため、AunCastEventBus を作成できません。");

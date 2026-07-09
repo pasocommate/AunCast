@@ -18,7 +18,7 @@ namespace PasocomMate.AunCast.Internal
         [MenuItem("GameObject/PasocomMate/AunCast/Create AunCast", false, 10)]
         private static void CreateAunCast()
         {
-            var prefab = LoadAssetByGuid<GameObject>(AUNCAST_PREFAB_GUID);
+            var prefab = AunCastEditorAssetUtility.LoadAssetByGuid<GameObject>(AUNCAST_PREFAB_GUID);
             if (prefab == null)
             {
                 EditorUtility.DisplayDialog(
@@ -66,13 +66,6 @@ namespace PasocomMate.AunCast.Internal
                 if (source == prefab) return true;
             }
             return false;
-        }
-
-        private static T LoadAssetByGuid<T>(string guid) where T : UnityEngine.Object
-        {
-            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-            if (string.IsNullOrEmpty(assetPath)) return null;
-            return AssetDatabase.LoadAssetAtPath<T>(assetPath);
         }
     }
 }

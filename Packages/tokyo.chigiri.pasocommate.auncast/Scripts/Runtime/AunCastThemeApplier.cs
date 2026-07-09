@@ -656,6 +656,8 @@ namespace PasocomMate.AunCast
             }
         }
 
+        // PasocomMate.AunCast.Runtime.asmdef は Udon アセンブリ（AunCastWallControlPanel の定義先）を
+        // 参照しないため、直接の型参照ができず型名・名前空間の文字列比較で判定する。
         private static bool HasWallControlPanelProxy(Transform root)
         {
             var behaviours = root.GetComponents<MonoBehaviour>();

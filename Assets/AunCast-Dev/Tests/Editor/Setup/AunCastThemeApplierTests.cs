@@ -541,7 +541,7 @@ namespace PasocomMate.AunCast.Tests
             foreach (var path in paths)
             {
                 var rect = (RectTransform)_instance.transform.Find(path);
-                Assert.IsNotNull(rect, $"RectTransform 縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {path}");
+                Assert.IsNotNull(rect, $"RectTransform が見つかりません: {path}");
                 Assert.AreEqual(_theme.portableHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
                 Assert.AreEqual(_theme.portableHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
                 Assert.AreEqual(_theme.portableVerticalMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");
@@ -554,7 +554,7 @@ namespace PasocomMate.AunCast.Tests
         {
             const string path = "PortablePanel/ContentScaler/PortableContentArea/TopBarPadded";
             var rect = (RectTransform)_instance.transform.Find(path);
-            Assert.IsNotNull(rect, $"RectTransform 縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {path}");
+            Assert.IsNotNull(rect, $"RectTransform が見つかりません: {path}");
             Assert.AreEqual(_theme.portableHorizontalMargin, rect.offsetMin.x, 0.01f, $"{path} left margin");
             Assert.AreEqual(_theme.portableHorizontalMargin, -rect.offsetMax.x, 0.01f, $"{path} right margin");
             Assert.AreEqual(_theme.portableVerticalMargin, -rect.offsetMax.y, 0.01f, $"{path} top margin");

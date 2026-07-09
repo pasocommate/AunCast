@@ -96,7 +96,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void OpenLicensePdf(string guid)
         {
-            var asset = LoadAssetByGuid<UnityEngine.Object>(guid);
+            var asset = AunCastEditorAssetUtility.LoadAssetByGuid<UnityEngine.Object>(guid);
             if (asset == null)
             {
                 EditorUtility.DisplayDialog(

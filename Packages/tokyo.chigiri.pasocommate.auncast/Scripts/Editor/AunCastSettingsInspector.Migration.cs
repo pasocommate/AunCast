@@ -2517,19 +2517,6 @@ namespace PasocomMate.AunCast.Internal
             return null;
         }
 
-        private static bool IsUnderTransform(Transform target, Transform root)
-        {
-            if (target == null || root == null) return false;
-            Transform current = target;
-            while (current != null)
-            {
-                if (current == root) return true;
-                current = current.parent;
-            }
-
-            return false;
-        }
-
         private static string GetHierarchyPath(Transform target)
         {
             if (target == null) return "<null>";

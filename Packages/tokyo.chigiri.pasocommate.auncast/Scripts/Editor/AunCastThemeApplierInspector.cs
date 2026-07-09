@@ -315,20 +315,6 @@ namespace PasocomMate.AunCast.Internal
             UdonSharpEditorUtility.CopyProxyToUdon(proxy);
         }
 
-        private static void ApplyThemeToAllProxies<T>(Transform root, Action<T> apply)
-            where T : UdonSharpBehaviour
-        {
-            if (root == null) return;
-
-            var proxies = root.GetComponentsInChildren<T>(true);
-            foreach (var proxy in proxies)
-            {
-                if (proxy == null) continue;
-                apply(proxy);
-                UdonSharpEditorUtility.CopyProxyToUdon(proxy);
-            }
-        }
-
         private static void ApplyThemeToSceneWallPanelProxies(
             Transform root,
             Action<AunCastWallControlPanel> apply)

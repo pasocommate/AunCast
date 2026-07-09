@@ -494,8 +494,8 @@ namespace PasocomMate.AunCast.Internal
                     "TMP Settings was not found. Open Edit > Project Settings > TextMesh Pro and import TMP Essentials first.");
             }
 
-            var defaultFontAsset = LoadAssetByGuid<TMP_FontAsset>(TMP_FALLBACK_DEFAULT_FONT_GUID);
-            var fallbackFontAsset = LoadAssetByGuid<TMP_FontAsset>(TMP_FALLBACK_NOTO_FONT_GUID);
+            var defaultFontAsset = AunCastEditorAssetUtility.LoadAssetByGuid<TMP_FontAsset>(TMP_FALLBACK_DEFAULT_FONT_GUID);
+            var fallbackFontAsset = AunCastEditorAssetUtility.LoadAssetByGuid<TMP_FontAsset>(TMP_FALLBACK_NOTO_FONT_GUID);
             if (defaultFontAsset == null || fallbackFontAsset == null)
             {
                 return AunCastEditorLocalization.Localize(
@@ -522,13 +522,6 @@ namespace PasocomMate.AunCast.Internal
             return AunCastEditorLocalization.Localize(
                 $"TMP フォールバック設定が未適用です｡ {TMP_FALLBACK_MENU_PATH} を実行してください｡ 実行後はシーンを開き直してください｡",
                 $"TMP fallback font settings are not applied. Run {TMP_FALLBACK_MENU_PATH}. After that, reopen the scene.");
-        }
-
-        private static T LoadAssetByGuid<T>(string guid) where T : UnityEngine.Object
-        {
-            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-            if (string.IsNullOrEmpty(assetPath)) return null;
-            return AssetDatabase.LoadAssetAtPath<T>(assetPath);
         }
 
     }
