@@ -19,6 +19,7 @@ classDiagram
         -UdonSharpBehaviour staffNotifyTarget
         -AunCastEventBus eventBus
         ~[UdonSynced] VRCUrl _syncedURL
+        ~[UdonSynced] string _syncedUrlSubmitterName
         ~[UdonSynced] int _syncedVideoIdx
         ~[UdonSynced] bool _ownerPlaying
         -int _localState
@@ -147,10 +148,11 @@ classDiagram
     class AunCastEventBus {
         <<NoVariableSync>>
         +Texture videoTexture
+        +bool videoFlipY
         -UdonBehaviour[] videoTextureSubscribers
         -UdonBehaviour[] localStateSubscribers
         -UdonBehaviour[] portablePanelShownSubscribers
-        +PublishVideoTexture(Texture)
+        +PublishVideoTexture(Texture, bool)
         +PublishLocalStateChanged()
         +PublishPortablePanelShown()
     }
@@ -175,10 +177,10 @@ classDiagram
         +GetTime() float
         +IsPlaying() bool
         +GetVideoTexture() Texture
+        +GetVolume() float
         +SetVolume(float)
         +SetFadeGain(float)
         +GetFadeGain() float
-        +GetAppliedOutputGain(AudioSource) float
         +OnVideoReady()
         +OnVideoStart()
         +OnVideoError(VideoError)
@@ -189,12 +191,18 @@ classDiagram
         +int playerIndex
         +int mode
         +float baseVolume
+        -float _adjustedUserVolume
+        -float _fadeGain
         -float silenceRmsThresholdDbfs
         -float silenceConsecutiveSec
         -AudioSource _audioSource
+        +SetBaseVolume(float)
+        +SetAdjustedUserVolume(float)
+        +SetFadeGain(float)
         +GetPlayerIndex() int
         +GetMode() int
         +GetBaseVolume() float
+        +GetAudioSource() AudioSource
         +GetRms() float
         +GetLastRmsDbfs() float
         +GetSilenceRmsThreshold() float
@@ -298,8 +306,10 @@ classDiagram
         +AudioSource leftOutput
         +AudioSource rightOutput
         +AudioSource stereoOutput
-        -int blockSamples
-        -int ringBufferSamples
+        -int bufferLength
+        -float outputGain
+        -bool playOnStart
+        -bool readRightChannel
         +RestartOutputs()
     }
 

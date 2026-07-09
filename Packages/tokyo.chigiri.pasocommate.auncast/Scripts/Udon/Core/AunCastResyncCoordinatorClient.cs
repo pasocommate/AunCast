@@ -34,7 +34,7 @@ namespace PasocomMate.AunCast
         [Tooltip("GRANTED 後、切替完了までの最大許容時間（秒）")]
         [SerializeField] private float resyncCycleTimeoutSec = 45.0f;
 
-        [Header("Silence-Triggered Global Resync")]
+        [Header("Silence-Triggered Individual Resync")]
         [Tooltip("最後の Resync から無音検知を再有効化するまでの時間（秒）")]
         [SerializeField] private float silenceSuppressSec = 150.0f;
 

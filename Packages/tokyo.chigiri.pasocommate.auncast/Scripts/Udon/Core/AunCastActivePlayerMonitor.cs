@@ -93,7 +93,7 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// 現在どちらのプレイヤーが Active ロールかを設定する。
-        /// AunCastPlaybackSwitcher が切替を行うたびに呼ばれ、以降の監視対象を決定する。
+        /// AunCastDualPlayerController がロール変更を確定したタイミングで呼ばれ、以降の監視対象を決定する。
         /// </summary>
         public void BindRoles(bool activeIsA)
         {
@@ -309,7 +309,7 @@ namespace PasocomMate.AunCast
         /// <summary>
         /// Active プレイヤーに障害が発生しているかを判定する。
         /// 停滞タイムアウト超過、またはドリフト閾値超過のいずれかで true を返す。
-        /// 呼び出し元（AunCastPlaybackSwitcher）はこの結果を受けて Resync フローを起動する。
+        /// 呼び出し元（AunCastDualPlayerController）はこの結果を受けて Resync フローを起動する。
         /// </summary>
         public bool DetectActiveFailure(float now)
         {

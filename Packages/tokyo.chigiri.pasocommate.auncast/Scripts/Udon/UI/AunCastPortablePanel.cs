@@ -28,7 +28,7 @@ namespace PasocomMate.AunCast
         [SerializeField] private float errorDisplayDurationSec = 10f;
 
         [Header("Gauges")]
-        [Tooltip("ディレイバッファ残りゲージ (0〜absorptionLimit)")]
+        [Tooltip("蓄積ドリフトのしきい値に対する割合を示すゲージ")]
         [SerializeField] private Slider headroomGauge;
         [Tooltip("現在RMSレベルゲージ (dBFS)")]
         [SerializeField] private Slider silenceGauge;

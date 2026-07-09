@@ -10,9 +10,10 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 
 既存例: `PlayVideoAsStaff` / `StopVideoAsStaff`
 
-> **注意**: 音量 (`_localVolume`) と Silence Resync (`_autoSilenceResyncEnabled`) は
-> 各クライアントのローカル設定に変更済み。同期不要のため `AsStaff` パターンではなく、
-> `SetVolumeLocal` / `SetAutoSilenceResyncEnabled` でローカル値を直接書き換える。
+> **注意**: 音量（PlayerData `AunCast-Volume` と `AunCastVideoPlayerManager._currentVolume`）と
+> Silence Resync (`_autoSilenceResyncEnabled`) は各クライアントのローカル設定に変更済み。
+> 同期不要のため `AsStaff` パターンではなく、
+> `SetVolumeLocal` / `SetAutoSilenceResyncEnabled` でローカル値を更新する。
 > UI は AunCastPortablePanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
 >
 > **注意（ロック機構）**: 旧設計の `SetLockedAsStaff` 系（同期 lock フラグ）は廃止され、

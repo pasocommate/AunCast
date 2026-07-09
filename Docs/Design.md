@@ -33,7 +33,7 @@
 - 切替トリガーは「音が出たこと」ではなく「新系ストリームが前進していること」とする
 - Resync 実行は即時ではなく予約制とし、世界全体でスケジュールする
 - 予約キューと同時Resync上限の管理は Coordinator が担い、CDN 同時接続上限を超えないよう制御する
-- 個別の異常検知による自動 Resync に加え、スタッフ操作や無音区間検知によるグローバル Resync をサポートする
+- 個別の異常検知・無音区間検知による個人 Resync に加え、スタッフ操作によるグローバル Resync をサポートする
 
 ---
 
@@ -280,7 +280,7 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 責務:
 - ローカル状態機械 (`_localState`) の管理と TickStateMachine
 - URL の同期・適用 (`_syncedURL`, `_syncedUrlSubmitterName`, `_syncedVideoIdx`, `_ownerPlaying`)
-- ローカル音量 (`_localVolume`) と Silence Resync フラグ (`_autoSilenceResyncEnabled`) の保持
+- ローカル音量の適用 (`SetVolumeLocal` → A/B `AunCastVideoPlayerManager`) と PlayerData 永続化、Silence Resync フラグ (`_autoSilenceResyncEnabled`) の保持
 - 無音検知ポーリング (`PollSilenceDetection`): 全 audible プレイヤーの RMS を確認し、連続無音で個人 Resync 発行
 - サブコンポーネント (`AunCastActivePlayerMonitor`, `AunCastPlaybackSwitcher`, `AunCastResyncCoordinatorClient`, `AunCastPlaybackMonitor`) への委譲・調停
 - `AunCastVideoPlayerManager` のコールバックハブ（`OnManagerVideoReady` / `OnManagerVideoStart` / `OnManagerVideoError` 等）
@@ -298,8 +298,8 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 責務:
 - `OnVideoReady` / `OnVideoStart` / `OnVideoEnd` / `OnVideoError` / `OnVideoLoop` のイベント受信と Controller への通知（`receiver._lastCallbackPlayerIndex` + `receiver.OnManagerXxx()` パターン）
 - `GetTime()` / `IsPlaying` の取得
-- 音量制御（x² と Dr. Lex 指数カーブの lerp 補間による知覚的にリニアなカーブ。各 AudioSource の初期音量 × `_fadeGain` × 調整済み音量を `AudioSource.volume` に反映）
-- クロスフェード用ゲイン（`_fadeGain`）の保持と `ApplyVolume()` への反映
+- 音量制御（x² と Dr. Lex 指数カーブの lerp 補間による知覚的にリニアなカーブ。調整済み音量を `AunCastSpeaker` へ渡し、`AudioSource.volume` への最終反映は `AunCastSpeaker.ApplyVolume()` が行う）
+- クロスフェード用ゲイン（`_fadeGain`）の保持と `AunCastSpeaker` への反映
 - テクスチャ取得（`_MainTex` / `_EmissionMap` / `_BaseMap` / `_BaseColorMap` を順に探索）
 
 ### C. AunCastActivePlayerMonitor
@@ -397,17 +397,17 @@ AunCastSettings の再配線は同一シーン全体の `AunCastWallControlPanel
 
 責務:
 - 個人 Resync リクエストボタン / 緊急リブートボタン
-- 状態テキス���表示（ローカル状態 + エラーメッセージ + Stall/Fail カウント）
+- 状態テキスト表示（ローカル状態 + エラーメッセージ + Stall/Fail カウント）
 - ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示
 - サイレンスゲージ（`silenceGauge`）: 無音検出の連続時間を表示。抑制中はグレーアウト
 - ローカル音量スライダー (`volumeSlider` → `SetVolumeLocal`)
 - Silence Resync トグル (`autoSilenceResyncToggle` → `SetAutoSilenceResyncEnabled`)
 - Resync ボタンのクールダウン / ETA 表示（`_resyncCooldownLabel`）
 - **VR ジェスチャー呼び出し**: 複数方式を同時有効可能（ビットフラグ制御）
-  - 片手ダブルトリガー (`GESTURE_DOUBLE_TRIGGER`、デフォルト有効)
+  - 右スティック上方向倒し続け (`GESTURE_RIGHT_STICK_UP_HOLD`、デフォルト有効)
+  - 片手ダブルトリガー（`GESTURE_DOUBLE_TRIGGER_LEFT` / `GESTURE_DOUBLE_TRIGGER_RIGHT`）
   - 両手トリガー長押し (`GESTURE_BOTH_TRIGGERS_HOLD`)
-  - 右スティック上方向倒し続け (`GESTURE_RIGHT_STICK_UP_HOLD`)
-- **Desktop 呼び出し**: Tab キー（Viewer → Staff → 閉じる の 3 ステート切替）
+- **Desktop 呼び出し**: Tab ダブルタップ（デフォルト有効）/ F5 ダブルタップ / ESC 長押しをビットフラグで選択可能。表示中は Viewer → Staff（解錠時）→ 閉じるの順に切り替わる
 - **HUD プログレス表示**: VR ジェスチャー長押し中に `AunCastHudProgressOverlay` で視界にプログレスを表示
 - **グラブムーブ (VR)**: グリップボタンで近傍判定 → パネルを手に追従させて移動
 - **Dissolve アニメーション**: 開閉時に背景の Dissolve + コンテンツ alpha フェード
@@ -422,6 +422,7 @@ AunCastSettings の再配線は同一シーン全体の `AunCastWallControlPanel
 
 責務:
 - 出力 PCM の RMS 算出 (`GetRms`)
+- 基準音量、調整済みユーザー音量、フェードゲインから `AudioSource.volume` を最終反映
 - 無音判定パラメータの提供 (`silenceRmsThreshold`, `silenceConsecutiveSec`)
 
 > **設計変更履歴**: 当初は `OnAudioFilterRead` を用いたリングバッファ遅延・バッファアンダーラン吸収を計画していたが、Udon VM がオーディオスレッドのフィールド書き込みをメインスレッドに反映できない制約（`VRChat-Udon-Development-Notes.md` 9.6 参照）から、`GetOutputData` を用いた RMS 取得のみの簡易実装に切り替えた。リングバッファ遅延・吸収機構は未実装で、Section 24 の今後の拡張案として残す。
@@ -432,7 +433,7 @@ VR ジェスチャー長押し中に視界へ重ねるプログレス表示。�
 責務:
 - `SetHoldProgress(elapsed, duration)` による進捗更新。`showThreshold` 未満では非表示
 - `Hide()` による長押し成立 / キャンセル時のフェードアウト（`fadeOutDuration`）
-- Bar モード / Pie モー��切替（`usePieMode`���
+- Bar モード / Pie モード切替（`usePieMode`）
 - LateUpdate で頭部追従（`localOffset`）
 - 表示はローカル限定（同期なし）
 
@@ -527,7 +528,7 @@ flowchart TB
 - `Cooldown` (7)
 - `RetryWait` (8)
 
-> **実装変更**: 旧設計にあった `Failed` 状態は廃止。失敗時は旧 Active の生存状態に基づき `Cooldown`（旧系生存時）または `RetryWait`（���系統失敗時）に直接遷移する。
+> **実装変更**: 旧設計にあった `Failed` 状態は廃止。失敗時は旧 Active の生存状態に基づき `Cooldown`（旧系生存時）または `RetryWait`（両系統失敗時）に直接遷移する。
 
 ### 状態遷移図
 
@@ -598,7 +599,7 @@ stateDiagram-v2
 主判定に加え、以下を **推奨** の補助情報として併用する。
 
 - **`IsPlaying`**（推奨）: `GetTime()` が前進していても `IsPlaying == false` の場合、バッファリング中や内部エラーの可能性がある。`GetTime()` 前進 + `IsPlaying == false` が一定時間続いた場合は異常候補とする
-- **Audio RMS**（推奨）: `AunCastSpeaker` の `GetRms()` から算出。無音検知はグローバル Resync の自動トリガーに利用する。個別の異常検知には使わない（コンテンツ無音との区別が困難なため）
+- **Audio RMS**（推奨）: `AunCastSpeaker` の `GetRms()` から算出。現在の実装では、無音検知は各クライアントの個人 Resync (`REQUEST_REASON_SILENCE`) に利用する。停止・スタック検知の主判定には使わない（コンテンツ無音との区別が困難なため）
 - フレーム描画状態（任意）
 - 任意の外部フラグ（任意）
 
@@ -742,7 +743,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 - Granted + Running の合計が `maxConcurrentResyncUsers` 未満のときだけ Grant 可能
 - Grant 後、ユーザーは `Running` になるまで `grantTimeoutSec` (10s) 以内に開始報告すること
 - `Running` 状態で `runningTimeoutSec` (50s) を超過した場合は強制解放する
-- クライアント側では GRANTED〜切替完了の全体を `resyncCycleTimeoutSec` (45s) で制限し、Coordinator 側より先にタ���ムアウトして失敗報告する
+- クライアント側では GRANTED〜切替完了の全体を `resyncCycleTimeoutSec` (45s) で制限し、Coordinator 側より先にタイムアウトして失敗報告する
 
 ## 12.5 グローバル Resync
 
@@ -951,7 +952,6 @@ private bool _activeIsA = true;                // AunCastPlaybackSwitcher と同
 
 // --- ローカル設定（同期しない） ---
 private bool _autoSilenceResyncEnabled = true; // Silence Resync 切替
-private float _localVolume;                    // ローカル音量
 private float _combinedSilenceDuration;        // 全 audible プレイヤーの無音連続時間
 
 // --- Standby Player 検証 ---
@@ -1140,7 +1140,7 @@ sequenceDiagram
 
 ## 16.3 音声切替・無音検知
 
-クロスフェードは `AunCastVideoPlayerManager` が `AudioSource.volume` を制御する方式で実装する。Active/Standby 切替の物理的な制御は `AunCastPlaybackSwitcher` が担う。
+クロスフェードは `AunCastPlaybackSwitcher` が各 `AunCastVideoPlayerManager` の `_fadeGain` を制御し、Manager が対応する `AunCastSpeaker` へ反映する方式で実装する。`AudioSource.volume` への最終書き込みは `AunCastSpeaker` が担う。Active/Standby 切替の物理的な制御は `AunCastPlaybackSwitcher` が担う。
 
 ### AunCastSpeaker コンポーネント
 
@@ -1157,7 +1157,7 @@ AVPro AudioSource B (同様の構成)
 
 - `playerIndex` で PlayerA / PlayerB のどちらへ接続するかを指定する
 - `mode` は `VRCAVProVideoSpeaker.mode` 相当のチャンネル指定（Stereo / Left / Right）を保持する
-- `baseVolume` は設計上の基準音量。`AudioSource.volume` は `AunCastVideoPlayerManager` がランタイム出力値（ユーザー音量 × fadeGain × baseVolume）として上書きする
+- `baseVolume` は設計上の基準音量。`AunCastVideoPlayerManager` がユーザー音量カーブと `_fadeGain` を `AunCastSpeaker` へ渡し、`AunCastSpeaker.ApplyVolume()` がランタイム出力値（baseVolume × 調整済みユーザー音量 × fadeGain）として `AudioSource.volume` を上書きする
 - 出力 PCM はそのまま AudioListener + AudioLink へ流れる
 - `OnAudioFilterRead` は使用しない（Udon VM のオーディオスレッドからメインスレッドへフィールド書き込みを反映できないため。`VRChat-Udon-Development-Notes.md` 9.6 参照）
 
@@ -1175,7 +1175,7 @@ TopazChat Player の「+ Reverb Filter」構成のように、`AudioOutputTunnel
 
 ### クロスフェード
 
-`AunCastPlaybackSwitcher.StartCrossfade` / `TickCrossfade` が制御し、各 `AunCastVideoPlayerManager` の `_fadeGain` (0.0〜1.0) を**等パワーパニングカーブ (cos/sin)** でランプする。`AunCastVideoPlayerManager.SetFadeGain` は調整済み音量 × `_fadeGain` を `AudioSource.volume` に反映する。
+`AunCastPlaybackSwitcher.StartCrossfade` / `TickCrossfade` が制御し、各 `AunCastVideoPlayerManager` の `_fadeGain` (0.0〜1.0) を**等パワーパニングカーブ (cos/sin)** でランプする。`AunCastVideoPlayerManager.SetFadeGain` は `_fadeGain` を各 `AunCastSpeaker` へ渡し、`AunCastSpeaker.ApplyVolume()` が `AudioSource.volume` に最終反映する。
 
 ```csharp
 float angle = t * Mathf.PI * 0.5f;
@@ -1194,7 +1194,7 @@ float standbyGain = Mathf.Sin(angle);  // 新系: 0 → 1
 
 - `silenceRmsThreshold`: 推奨 0.001（デフォルト値）
 - `silenceConsecutiveSec`: 推奨 2.0 秒（デフォルト値）
-- 無音検知はグローバル Resync の自動トリガー（Section 12.5）に利用する
+- 無音検知は各クライアントの個人 Resync 自動トリガー（Section 12.5）に利用する
 - ローカルクライアントは `_autoSilenceResyncEnabled` フラグでこの自動トリガーを抑制できる
 - 異常検知（Section 11）の補助判定としても利用可能
 
@@ -1526,6 +1526,7 @@ AunCastPortablePanel 内の Staff ビューとして動作する。パスコー�
   - 橙: 接続中 (connecting)
   - 赤: エラー
   - ■ = 再生中、□ = 停止
+  - 表示色は Resync 状態、接続中、エラー、正常の順で決定し、最終的な色と再生中/停止のスタイルでソートする
 - **ユーザー数表示** (`userCountText`): Playing (+connecting) / In Instance / Queued
 - **Now Playing 表示** (`nowPlayingText`): 現在再生中のストリーム URL
 
@@ -1556,14 +1557,14 @@ VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポ
 
 #### VR ジェスチャー呼び出し
 複数方式を同時有効にできる（ビットフラグ `summonGesture`。AunCastWallControlPanel のトグルで設定可能）:
-- **片手ダブルトリガー** (`GESTURE_DOUBLE_TRIGGER`): デフォルト有効。左右いずれかのトリガーを所定時間内に 2 回連続押し
+- **右スティック上倒し続け** (`GESTURE_RIGHT_STICK_UP_HOLD`): デフォルト有効。閾値を超えて一定秒数倒し続けで発動
+- **片手ダブルトリガー** (`GESTURE_DOUBLE_TRIGGER_LEFT` / `GESTURE_DOUBLE_TRIGGER_RIGHT`): 左右いずれかのトリガーを所定時間内に 2 回連続押し
 - **両手トリガー長押し** (`GESTURE_BOTH_TRIGGERS_HOLD`): 左右同時に一定秒数握り続け
-- **右スティック上倒し続け** (`GESTURE_RIGHT_STICK_UP_HOLD`): 閾値を超えて一定秒数倒し続けで発動
 
 ジェスチャー長押し中は `AunCastHudProgressOverlay` で視界にプログレスバーを表示する。長押し成立 / キャンセルでフェードアウト。表示閾値 (`showThreshold`) 未満では非表示のままとなる。
 
 #### Desktop 呼び出し
-Tab キーで Viewer 表示 → Staff 表示（解錠時）→ 非表示 の 3 ステート切替。
+Tab ダブルタップ（デフォルト有効）/ F5 ダブルタップ / ESC 長押しをビットフラグで選択できる。入力成立時は Viewer 表示 → Staff 表示（解錠時）→ 非表示の順に切り替わる。Desktop では VRChat メニューを開いたときにも手元パネルを表示する。
 
 #### グラブムーブ (VR)
 グリップボタンでパネル近傍に手がある場合、パネルを掴んで手に追従させて移動できる。判定は `grabHalfExtents` で定義したローカルボックス内で行う。
@@ -1582,7 +1583,7 @@ Tab キーで Viewer 表示 → Staff 表示（解錠時）→ 非表示 の 3 �
 
 ### 22.4 ボリューム
 
-各観客が AunCastPortablePanel の音量スライダーで自身のローカル音量を調整できる。`SetVolumeLocal` で `AunCastDualPlayerController._localVolume` に書き込み、各 `AunCastVideoPlayerManager.SetVolume` 経由で適用する。同期は不要（クライアントローカル設定）。
+各観客が AunCastPortablePanel の音量スライダーで自身のローカル音量を調整できる。`SetVolumeLocal` で PlayerData (`AunCast-Volume`) に保存し、各 `AunCastVideoPlayerManager.SetVolume` 経由で `AunCastSpeaker` へ適用する。同期は不要（クライアントローカル設定）。
 
 #### 音量カーブ
 
@@ -1660,8 +1661,8 @@ float output = adjustedVolume * _fadeGain;
 
 | リスク | 内容 | 対策 |
 |---|---|---|
-| 無音誤判定 | 番組側の無音で誤発火 | 主判定を `GetTime()` に置く。Audio RMS はグローバル Resync 自動トリガーのみに使用 |
-| レート制限違反 | URL 発行過多 | 予約制、Grant 間隔（5.5 秒）、Cooldown |
+| 無音誤判定 | 番組側の無音で誤発火 | 主判定を `GetTime()` に置く。Audio RMS は個人 Silence Resync のみに使用し、観客がトグルで無効化可能 |
+| レート制限違反 | URL 発行過多 | 予約制、ローカルクールダウン、RateLimited 時の backoff |
 | CDN 同時接続過多 | 2 ストリーム化で 100 接続上限超過 | `maxConcurrentResyncUsers`（10〜15）を Coordinator で制御 |
 | owner 交代 | キュー消失 | synced state を真実にする |
 | Standby 起動失敗 | 接続不能 | timeout + fail release |
@@ -1699,7 +1700,7 @@ float output = adjustedVolume * _fadeGain;
 10. グローバル Resync（手動トリガー） + `AunCastStaffControlPanel`（停止・Resync・強制リブート・上限編集）を実装
 11. `AunCastWallControlPanel`（パスコード解錠 + Summon）を実装
 12. 観客向けステータスパネル（Resync ボタン・ドリフト表示・音量・Silence Resync）を実装
-13. `AunCastSpeaker`（GetOutputData 方式の RMS）→ グローバル Resync 自動トリガーを実装
+13. `AunCastSpeaker`（GetOutputData 方式の RMS）→ 個人 Silence Resync 自動トリガーを実装
 14. AudioLink 接続を実装
 15. 長時間テスト（30 / 60 / 120 分）としきい値調整
 
@@ -1715,10 +1716,10 @@ float output = adjustedVolume * _fadeGain;
 
 - 2 台の AVPro を使い、待機系を先に接続する
 - 切替判定は音量ではなく `GetTime()` 前進 + `IsPlaying` で行う
-- 切替時は音声クロスフェード（`AunCastVideoPlayerManager` の `AudioSource.volume` 制御）で滑らかに移行する
+- 切替時は音声クロスフェード（`AunCastVideoPlayerManager` の `_fadeGain` と `AunCastSpeaker` の `AudioSource.volume` 反映）で滑らかに移行する
 - Resync は即時実行ではなく予約制とし、CDN 同時接続上限（100 接続プラン前提）を超えないよう制御する
 - 世界全体の同時Resync上限とクールダウンを Coordinator が管理する
-- スタッフによる手動グローバル Resync と、無音区間検知による自動グローバル Resync をサポートする
+- スタッフによる手動グローバル Resync と、無音区間検知による個人 Silence Resync をサポートする
 - 観客は拡張メニューで自身の再生状態・ドリフト・Resync 待ち時間を確認できる
 - 真実の状態は同期変数で保持し、owner 変更や Late Joiner に耐える
 
