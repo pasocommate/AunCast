@@ -38,8 +38,9 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 別のシェーダー / マテリアルを使用する場合は、複製した `AunCastScreen` の以下の項目を合わせてください。
 
-- **テクスチャプロパティ名**（`textureProperty`、既定 `_EmissionMap`）… そのシェーダーが映像に使用するテクスチャプロパティ名
-- **レンダラーインデックス**（`rendererIndex`）… マルチマテリアルのどのスロットに適用するか
+- **テクスチャプロパティ名**（Texture Property、既定 `_EmissionMap`）… そのシェーダーが映像に使用するテクスチャプロパティ名
+- **テクスチャUV設定用プロパティ名**（Texture St Property、既定 `_MainTex`）… AVProの出力映像が上下反転を必要とするときに、UV設定（スケール・オフセット）を書き込む基準とするテクスチャプロパティ名（空なら Texture Property と同じ）
+- **レンダラーインデックス**（Renderer Index）… 複数マテリアルのどのスロットに適用するか
 
 既存の `MeshRenderer` に `AunCastScreen` コンポーネントを付与し、同様の設定と再配線をすることでもスクリーン化できます。
 
