@@ -1023,9 +1023,7 @@ namespace PasocomMate.AunCast.Internal
                     : isConfigured
                         ? BuildConfiguredSpeakerStatusLabel(source)
                         : BuildSpeakerStatusLabel(source);
-                ReferenceWarning referenceWarning = isTunnelInput
-                    ? BuildTunnelInputManagedReferenceInfo()
-                    : BuildAudioSourceReferenceWarning(source);
+                ReferenceWarning referenceWarning = BuildAudioSourceReferenceWarning(source, isTunnelInput);
                 int inferredPlayerIndex = isConfigured
                     ? GetAunCastSpeakerPlayerIndex(declaredSpeaker)
                     : InferSpeakerPlayerIndex(speaker, context);
@@ -1062,9 +1060,7 @@ namespace PasocomMate.AunCast.Internal
                     isTunnelInput
                         ? BuildTunnelInputSpeakerStatusLabel(source)
                         : BuildConfiguredSpeakerStatusLabel(source),
-                    isTunnelInput
-                        ? BuildTunnelInputManagedReferenceInfo()
-                        : BuildAudioSourceReferenceWarning(source),
+                    BuildAudioSourceReferenceWarning(source, isTunnelInput),
                     "speaker:" + path,
                     GetAunCastSpeakerPlayerIndex(speaker),
                     true));
@@ -2085,7 +2081,7 @@ namespace PasocomMate.AunCast.Internal
             return hasInput || hasOutput;
         }
 
-        private static ReferenceWarning BuildAudioSourceReferenceWarning(AudioSource source)
+        private static ReferenceWarning BuildAudioSourceReferenceWarning(AudioSource source, bool tunnelInput = false)
         {
             if (source == null || !source.gameObject.scene.IsValid()) return default;
 
@@ -2099,6 +2095,8 @@ namespace PasocomMate.AunCast.Internal
                 Component component = components[i];
                 if (component == null || component == source) continue;
                 if (!component.gameObject.scene.IsValid() || component.gameObject.scene != source.gameObject.scene) continue;
+                // トンネル入力の場合、トンネル配線コンポーネント自身による参照は正常な構成のため除外する
+                if (tunnelInput && IsTunnelWiringComponent(component)) continue;
                 if (!SerializedObjectReferences(component, source)) continue;
                 int instanceId = component.GetInstanceID();
                 if (IsAudioLinkReferenceComponent(component))
@@ -2114,20 +2112,38 @@ namespace PasocomMate.AunCast.Internal
 
             if (references.Count == 0)
             {
+                if (tunnelInput)
+                    return BuildTunnelInputManagedReferenceInfo();
                 return audioLinkUsed.Count > 0
                     ? BuildAudioLinkManagedReferenceInfo(audioLinkReferences.ToArray())
                     : default;
             }
 
-            string prefix = audioLinkUsed.Count > 0
-                ? AunCastEditorLocalization.Localize(
-                    "AudioLink の参照は AunCast が自動管理します｡ その他に､ ",
-                    "AudioLink references are managed automatically by AunCast. Other ")
-                : string.Empty;
+            string prefix;
+            if (tunnelInput)
+            {
+                prefix = AunCastEditorLocalization.Localize(
+                    "この AudioSource は AudioOutputTunnel の入力として使用されています (音が届かない設定は正常)｡ トンネル配線以外に､ ",
+                    "This AudioSource is used as the AudioOutputTunnel input (the inaudible attenuation is intended). Besides the tunnel wiring, ");
+            }
+            else
+            {
+                prefix = audioLinkUsed.Count > 0
+                    ? AunCastEditorLocalization.Localize(
+                        "AudioLink の参照は AunCast が自動管理します｡ その他に､ ",
+                        "AudioLink references are managed automatically by AunCast. Other ")
+                    : string.Empty;
+            }
             string message = prefix + AunCastEditorLocalization.Localize(
                 $"この AudioSource を参照するコンポーネント: {references.Count} 件 (A/B に分かれると単一入力の参照元は要対応) ",
                 $"components referencing this AudioSource: {references.Count} (single-input referrers need attention once split into A/B)");
             return new ReferenceWarning(message, references.ToArray(), audioLinkReferences.ToArray(), MessageType.Warning);
+        }
+
+        /// <summary>トンネル配線を構成するコンポーネント（委譲アダプタと旧 AudioOutputTunnel）かどうかを判定する。</summary>
+        private static bool IsTunnelWiringComponent(Component component)
+        {
+            return component is AunCastAudioOutputTunnel || IsAudioOutputTunnelComponent(component);
         }
 
         private static ReferenceWarning BuildAudioLinkManagedReferenceInfo(Component[] audioLinkReferences)

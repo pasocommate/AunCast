@@ -126,6 +126,7 @@ AVPro 系コンポーネントと 1:1 対応する AunCast 系コンポーネン
 - 警告内容: AunCast ではシンクが A/B の 2 系統に分かれるため、**単一の AudioSource 入力しか受けない参照元は、A/B 両系統への複数対応（またはクロスフェードを断念して Active 側へ動的に切り替える改修）をしない限り移行できない**。内容が不明なワールド独自の Udon コンポーネントに対して AunCast ができるのはこの警告までで、自動差し替え・自動改修は行わない。
 - 誤警報の抑制: 旧プレイヤー本体が自分のスピーカーを参照しているだけのケース（iwaSync3 / VizVid / USharpVideo で確認した共通パターン）は旧プレイヤーごと削除されるため、参照元がシンクと同一プレハブ/階層内にある場合はその旨をラベルで区別表示する。
 - 例外: AudioLink の `audioSource` 参照は `AunCastPlaybackSwitcher.SwitchAudioLinkSource()` が Active 系の AudioSource へ自動差し替えするため、手動対応が必要な警告から除外し、自動管理の情報表示に留める。
+- 例外（2026-07-10 追加）: 移行済み `AunCastAudioOutputTunnel` の `inputA` / `inputB`（および委譲先 `AudioOutputTunnel` の `input`）に使われている AudioSource は、不可聴化が正常構成のため「音が届かない設定」「volume 0」ラベルを表示せず、トンネル配線コンポーネント（`AudioOutputTunnel` / `AunCastAudioOutputTunnel`）自身による参照を警告の集計から除外する。トンネル配線以外の外部参照は引き続き警告し、参照がなければ「トンネル用途のため現状維持でよい」旨の情報表示に留める。非アクティブ / AudioSource 無効 / EditorOnly はトンネルの入力選択から外れる実害があるためラベル表示を続ける。
 
 **AudioOutputTunnel 複数対応版（AunCastAudioOutputTunnel）の同梱提供**:
 - TopazChatPlayer は利用者が多いため、付属の AudioOutputTunnel に限り **クロスフェードなし前提で Active 側へ動的切替する互換アダプタ**を AunCast に同梱し、型名 `AudioOutputTunnel`（+ `input`/`leftOutput`/`rightOutput`/`stereoOutput` の変数構成ヒューリスティック）で検知した際に組み合わせる。名称は他の AunCast 系コンポーネントと同様に **AunCast プレフィックスを付けて `AunCastAudioOutputTunnel`** とする。

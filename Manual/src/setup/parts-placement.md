@@ -107,7 +107,7 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 - **[非アクティブ] [AudioSource無効] [volume 0] [音が届かない設定]** … 現状では聞こえない設定の `AudioSource` です。「音が届かない設定」は、AudioSource の距離減衰カーブにより音が直接聞こえない状態を指します。
 - **この AudioSource を参照するコンポーネント: ○件** … その `AudioSource` を参照する外部コンポーネント（音量制御スクリプト等）がシーン内に存在します。警告には参照元コンポーネントへのリンク一覧が表示されます。AunCast ではスピーカーがA/Bの２系統に分かれるため、**単一の `AudioSource` 入力しか受けない参照元は、そのままでは移行できません**。参照元の仕様を確認してください（AunCast による自動差し替えは行われません）。
 
-`AunCastAudioOutputTunnel` の入力（`inputA` / `inputB`）として使われている `AudioSource` は、これらの「音が届かない設定」ラベルや外部参照の警告を表示しません。代わりに、トンネル用のため現状のままでよい旨の案内が表示されます。
+`AunCastAudioOutputTunnel` の入力（`inputA` / `inputB`）として使われている `AudioSource` は、「音が届かない設定」などのラベルを表示せず、トンネル配線（`AudioOutputTunnel` / `AunCastAudioOutputTunnel`）自身による参照も警告に数えません。代わりに、トンネル用のため現状のままでよい旨の案内が表示されます。トンネル配線以外の外部コンポーネントがこの `AudioSource` を参照している場合は、引き続き警告が表示されます。
 
 AudioLink の `AudioSource` 参照は AunCast が自動管理するため、手動対応が必要な警告としては扱われません。
 
