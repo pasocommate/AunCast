@@ -90,6 +90,16 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
     
     また、`AunCastSpeaker` の付いたオブジェクトに Audio Filter（`AudioReverbFilter` など）が付与されている場合も、音量の挙動に問題が生じるため、削除する必要があります。リバーブ等のエフェクトをかけるには、[AudioOutputTunnel 構成を移行する場合](../setup/parts-placement.md#tunnel) をお読みください（遅延とのトレードオフになります）。
 
+??? question "音とアバターの動きのズレをギリギリまで詰めたい"
+    AunCast はズレの「蓄積」を解消することを目的としており、接続確立時から既に発生している音と動きのズレは AunCast だけでは解消できません。配信側のOBSに [obs-delay-stream](https://mz1987records.booth.pm/items/8134637) または [AunSync](https://github.com/pasocommate/AunSync) を導入・併用し、AunCast の **Resync閾値** を小さくしてください（→ [主要パラメータ一覧](../setup/settings.md#params)）。ただし、小さくしすぎるとResyncが発生しすぎて不安定になります。なお、初期値の 0.1 秒は以下と同等です。
+    
+    - 150BPMの16分音符
+    - 60FPSの6フレーム
+    
+    参考として、VRChatのアバターの動きがネットワーク越しに同期される頻度は最高でも 0.1 秒に１回と言われています（[出典](https://creators.vrchat.com/avatars/animator-parameters/#sync-types)）。したがって、閾値を詰めすぎても結果に大きな差異はありません。この値に比べて十分な効果が見込める範囲に抑えてください。
+    
+    また、再接続時のサーバー・ネットワークに起因して発生する定常的なズレは、一般的な配信サーバーやAVProの設計からして解消できません。このズレは、Resyncが頻繁すぎると大きくなると思われますので、やはり閾値を小さくしすぎないよう注意してください。
+
 ---
 
 ## 解決しない場合は

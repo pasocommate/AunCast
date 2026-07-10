@@ -41,7 +41,7 @@ AunCast に先行し、OBSフィルタプラグイン [obs-delay-stream](https:/
 ![obs-delay-stream（スクリーンショット）](./assets/obs-delay-stream-capture.png){ width="455" }
 
 !!! note "AunSync"
-    現在、単独出演者が自分一人のタイミングを合わせることに目的を絞ったOBSフィルタプラグイン **AunSync** も開発中です。
+    現在、単独出演者が自分一人のタイミングを合わせることに目的を絞ったOBSフィルタプラグイン **[AunSync](https://github.com/pasocommate/AunSync)** も開発中です。
 
 ---
 

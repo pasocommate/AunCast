@@ -140,7 +140,7 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 
 トンネルが存在する構成では、再配線が `AunCastAudioOutputTunnel.inputA` / `inputB` に設定された入力用 `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
 
-この方式は、直結出力に比べて遅延がリングバッファ分（数十ミリ秒程度）だけ多い構成です。通常の直結構成では使わないでください。
+この方式は、直結出力に比べて遅延がバッファ分（数十ミリ秒程度）だけ多い構成です。[obs-delay-stream](https://mz1987records.booth.pm/items/8134637) や [AunSync](https://github.com/pasocommate/AunSync) との併用時には使わないでください。
 
 ### AudioLink をお使いの場合 {#audiolink}
 
