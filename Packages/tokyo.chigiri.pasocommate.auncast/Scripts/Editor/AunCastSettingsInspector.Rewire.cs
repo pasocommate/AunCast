@@ -206,7 +206,7 @@ namespace PasocomMate.AunCast.Internal
                 speakerUpdated = RewireDeclaredSpeakers(settings, speakerContext, speakers, recordUndo, writeLog);
                 AudioSource fallbackTunnelInputA = FindFirstSpeakerSource(speakers, AunCastSpeaker.PLAYER_A);
                 AudioSource fallbackTunnelInputB = FindFirstSpeakerSource(speakers, AunCastSpeaker.PLAYER_B);
-                tunnelUpdated = RewireAudioOutputTunnels(audioOutputTunnels, fallbackTunnelInputA, fallbackTunnelInputB, recordUndo);
+                tunnelUpdated = RewireAudioOutputTunnels(audioOutputTunnels, fallbackTunnelInputA, fallbackTunnelInputB, controller, recordUndo);
 
                 // トンネル入力は「トンネル出力」経由でのみ鳴らすため、シンク自身は不可聴化する。
                 // GetOutputData は volume の影響を受ける（＝トンネルが読む信号は volume 反映済み）ため、
@@ -475,6 +475,7 @@ namespace PasocomMate.AunCast.Internal
             AunCastAudioOutputTunnel[] tunnels,
             AudioSource inputA,
             AudioSource inputB,
+            AunCastDualPlayerController controller,
             bool recordUndo)
         {
             if (tunnels == null || tunnels.Length == 0) return 0;
@@ -492,6 +493,8 @@ namespace PasocomMate.AunCast.Internal
                     changed |= SetObjectProperty(so, "inputA", inputA);
                 if (ReadAudioSourceProperty(tunnel, "inputB") == null)
                     changed |= SetObjectProperty(so, "inputB", inputB);
+                // 停止時のリングバッファ・クリア判定に使う再生状態ソースを配線する
+                changed |= SetObjectProperty(so, "controller", controller);
                 if (ResolveTunnelDelegate(tunnel) == null)
                 {
                     Component delegateTunnel = FindAudioOutputTunnelInAncestors(tunnel.gameObject);
