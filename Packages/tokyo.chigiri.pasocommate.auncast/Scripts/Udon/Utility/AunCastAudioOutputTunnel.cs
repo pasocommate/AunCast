@@ -1,20 +1,20 @@
-using System;
 using UdonSharp;
 using UnityEngine;
 
 namespace PasocomMate.AunCast
 {
     /// <summary>
-    /// A/B 2 系統の AunCastSpeaker 出力（AVPro シンク）を GetOutputData で読み取り、
-    /// AudioClip 再生に変換して通常の Unity AudioSource フィルタチェーンへ渡す互換トンネル。
+    /// ワールドに既存の AudioOutputTunnel（TopazChat Player 付属の PCM トンネル）を
+    /// AunCast の A/B 2 系統構成へ適応させるアダプタ。
     ///
-    /// 書き込みは DSP クロック（AudioSettings.dspTime）に同期し、フレーム落ちで大量に遅延した場合や
-    /// 書込ヘッドが再生ヘッドへ追いつく/追い越す場合はバッファをリセットして復帰する
-    /// （参考実装 TopazChat AudioOutputTunnel と同じリングバッファ手法）。
+    /// PCM の読み出し・リングバッファ書き込みは一切行わず、トンネル処理はすべて委譲先の
+    /// AudioOutputTunnel に任せる。本コンポーネントは委譲先の input 変数を、A/B のうち
+    /// 可聴側（AudioSource.volume が大きい側）の AunCastSpeaker AudioSource へ動的に
+    /// 差し替えることだけを担う。AunCast は Standby 側の volume を 0 にするため、
+    /// volume の大小比較で Active 側を特定できる。
     ///
-    /// 注意: inputA と inputB は無条件に加算する。GetOutputData は AudioSource.volume の影響を受ける（検証済み）ため、
-    /// AunCast が Standby 側を volume 0 にすることで A+B ≒ Active となり、クロスフェードも自然に反映される。
-    /// 出力遅延はリングバッファ分（bufferLength サンプル）増える。
+    /// 注意: 委譲先の入力は常に 1 系統のため、クロスフェード中の A+B 合成はトンネル経由の
+    /// 出力には反映されず、A/B の音量が逆転した時点でのハード切替になる。
     /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class AunCastAudioOutputTunnel : UdonSharpBehaviour
@@ -26,316 +26,69 @@ namespace PasocomMate.AunCast
         [Tooltip("PlayerB 側の AunCastSpeaker AudioSource")]
         public AudioSource inputB;
 
-        [Header("Tunnel Outputs")]
-        [Tooltip("左チャンネルを出力する AudioSource")]
-        public AudioSource leftOutput;
+        [Header("Delegation Target")]
+        [Tooltip("委譲先の AudioOutputTunnel（TopazChat Player 付属）。この input 変数を A/B の可聴側へ差し替える。")]
+        [SerializeField] private UdonSharpBehaviour targetTunnel;
 
-        [Tooltip("右チャンネルを出力する AudioSource")]
-        public AudioSource rightOutput;
+        /// <summary>委譲先 AudioOutputTunnel の入力変数名。</summary>
+        private const string TUNNEL_INPUT_VARIABLE = "input";
+        private const float WARN_INTERVAL_SEC = 5.0f;
 
-        [Tooltip("ステレオを出力する AudioSource")]
-        public AudioSource stereoOutput;
-
-        [Header("Buffer")]
-        [Tooltip("GetOutputData で読み取るサンプル数。出力遅延はこの値に比例して増える。")]
-        [SerializeField] private int bufferLength = 4096;
-
-        [Tooltip("トンネル出力に乗算するゲイン")]
-        [Range(0f, 2f)]
-        [SerializeField] private float outputGain = 1f;
-
-        [Tooltip("Start 時に出力 AudioSource を再生する")]
-        [SerializeField] private bool playOnStart = true;
-
-        [Tooltip("右チャンネルも読み取る。無効時は左チャンネルを複製する。")]
-        [SerializeField] private bool readRightChannel = true;
-
-        private const int MIN_BUFFER_LENGTH = 256;
-        private const int STEREO_CHANNELS = 2;
-
-        private int _outputSampleRate;
-        private int _outputClipFrames;
-        private long _previousDspSample = -1;
-
-        private int _leftHead;
-        private int _rightHead;
-        private int _stereoHead;
-
-        private float[] _readA0;
-        private float[] _readA1;
-        private float[] _readB0;
-        private float[] _readB1;
-        private float[] _monoLeft;
-        private float[] _monoRight;
-        private float[] _stereoInterleaved;
-
-        private AudioClip _leftClip;
-        private AudioClip _rightClip;
-        private AudioClip _stereoClip;
-        private bool _initialized;
+        private AudioSource _currentInput;
         private float _lastWarnAt;
-
-        private void Start()
-        {
-            Initialize();
-        }
 
         private void OnEnable()
         {
-            if (_initialized && playOnStart)
-                PlayOutputs();
-        }
-
-        private void OnDisable()
-        {
-            StopOutputs();
-        }
-
-        private void Initialize()
-        {
-            if (bufferLength < MIN_BUFFER_LENGTH)
-                bufferLength = MIN_BUFFER_LENGTH;
-
-            _outputSampleRate = AudioSettings.outputSampleRate;
-            if (_outputSampleRate <= 0)
-                _outputSampleRate = 48000;
-            _outputClipFrames = bufferLength * 2;
-
-            _readA0 = new float[bufferLength];
-            _readA1 = new float[bufferLength];
-            _readB0 = new float[bufferLength];
-            _readB1 = new float[bufferLength];
-            _monoLeft = new float[bufferLength];
-            _monoRight = new float[bufferLength];
-            _stereoInterleaved = new float[bufferLength * STEREO_CHANNELS];
-
-            _leftClip = AudioClip.Create("AunCastTunnel_Left", _outputClipFrames, 1, _outputSampleRate, false);
-            _rightClip = AudioClip.Create("AunCastTunnel_Right", _outputClipFrames, 1, _outputSampleRate, false);
-            _stereoClip = AudioClip.Create("AunCastTunnel_Stereo", _outputClipFrames, STEREO_CHANNELS, _outputSampleRate, false);
-
-            AssignClip(leftOutput, _leftClip);
-            AssignClip(rightOutput, _rightClip);
-            AssignClip(stereoOutput, _stereoClip);
-
-            _previousDspSample = -1;
-            _leftHead = 0;
-            _rightHead = 0;
-            _stereoHead = 0;
-            _initialized = _leftClip != null || _rightClip != null || _stereoClip != null;
-
-            if (_initialized && playOnStart)
-                PlayOutputs();
+            // 無効化中に構成が変わっている可能性があるため、再有効化時に必ず差し替え直す
+            _currentInput = null;
         }
 
         private void Update()
         {
-            if (!_initialized)
-                Initialize();
-            if (!_initialized) return;
-
-            long currentDspSample = (long)Math.Floor(AudioSettings.dspTime * _outputSampleRate);
-            if (_previousDspSample < 0)
+            if (targetTunnel == null)
             {
-                _previousDspSample = currentDspSample;
+                WarnThrottled("targetTunnel (AudioOutputTunnel) is not assigned.");
                 return;
             }
 
-            int fresh = (int)(currentDspSample - _previousDspSample);
-            if (fresh <= 0) return;
-            if (fresh > bufferLength)
+            AudioSource desired = SelectAudibleInput();
+            if (desired == null)
             {
-                // メインスレッドが停止しすぎた。バッファをクリアして再スタートする。
-                _previousDspSample = currentDspSample;
-                ResetOutputs();
-                WarnIfInputsMissing();
+                WarnThrottled("inputA/inputB are not assigned.");
                 return;
             }
 
-            _previousDspSample = currentDspSample;
-
-            int readBegin = bufferLength - fresh;
-            ReadInput(inputA, _readA0, _readA1);
-            ReadInput(inputB, _readB0, _readB1);
-
-            float gain = Mathf.Clamp(outputGain, 0f, 2f);
-            for (int k = 0; k < fresh; k++)
-            {
-                int src = readBegin + k;
-                float l = (_readA0[src] + _readB0[src]) * gain;
-                float r = (_readA1[src] + _readB1[src]) * gain;
-                _monoLeft[k] = l;
-                _monoRight[k] = r;
-                int stereoIndex = k * STEREO_CHANNELS;
-                _stereoInterleaved[stereoIndex] = l;
-                _stereoInterleaved[stereoIndex + 1] = r;
-            }
-
-            WriteMonoOutput(leftOutput, _leftClip, _monoLeft, fresh, true);
-            WriteMonoOutput(rightOutput, _rightClip, _monoRight, fresh, false);
-            WriteStereoOutput(stereoOutput, _stereoClip, _stereoInterleaved, fresh);
-
-            WarnIfInputsMissing();
+            if (desired == _currentInput) return;
+            targetTunnel.SetProgramVariable(TUNNEL_INPUT_VARIABLE, desired);
+            _currentInput = desired;
         }
 
-        private void ResetOutputs()
+        /// <summary>
+        /// A/B のうち可聴側の入力を選ぶ。音量が同値の間は現在の選択を維持し、
+        /// クロスフェード中に選択が行き来しないようにする。
+        /// </summary>
+        private AudioSource SelectAudibleInput()
         {
-            _leftHead = 0;
-            _rightHead = 0;
-            _stereoHead = 0;
-            StopOutputs();
+            bool aAvailable = IsAvailable(inputA);
+            bool bAvailable = IsAvailable(inputB);
+            if (!aAvailable) return bAvailable ? inputB : null;
+            if (!bAvailable) return inputA;
+
+            if (_currentInput == inputB)
+                return inputA.volume > inputB.volume ? inputA : inputB;
+            return inputB.volume > inputA.volume ? inputB : inputA;
         }
 
-        // --- 出力書き込み（参考実装のリングバッファ衝突検知を踏襲） ---
-
-        private void WriteMonoOutput(AudioSource output, AudioClip clip, float[] mono, int fresh, bool isLeft)
+        private bool IsAvailable(AudioSource source)
         {
-            if (output == null || clip == null) return;
-
-            int head = isLeft ? _leftHead : _rightHead;
-
-            if (!output.gameObject.activeInHierarchy)
-            {
-                head = 0;
-            }
-            else
-            {
-                if (output.isPlaying && IsRingExhausted(head, output.timeSamples))
-                {
-                    // 書込ヘッドが再生ヘッドに追いつかれた。停止してリセットする。
-                    head = 0;
-                    output.Stop();
-                    if (isLeft) _leftHead = head; else _rightHead = head;
-                    return;
-                }
-
-                clip.SetData(mono, head);
-                head += fresh;
-
-                if (!output.isPlaying && head >= bufferLength)
-                    output.Play();
-
-                if (head >= _outputClipFrames)
-                    head -= _outputClipFrames;
-            }
-
-            if (isLeft) _leftHead = head; else _rightHead = head;
+            return source != null && source.enabled && source.gameObject.activeInHierarchy;
         }
 
-        private void WriteStereoOutput(AudioSource output, AudioClip clip, float[] interleaved, int fresh)
+        private void WarnThrottled(string message)
         {
-            if (output == null || clip == null) return;
-
-            int head = _stereoHead;
-
-            if (!output.gameObject.activeInHierarchy)
-            {
-                head = 0;
-            }
-            else
-            {
-                if (output.isPlaying && IsRingExhausted(head, output.timeSamples))
-                {
-                    head = 0;
-                    output.Stop();
-                    _stereoHead = head;
-                    return;
-                }
-
-                clip.SetData(interleaved, head);
-                head += fresh;
-
-                if (!output.isPlaying && head >= bufferLength)
-                    output.Play();
-
-                if (head >= _outputClipFrames)
-                    head -= _outputClipFrames;
-            }
-
-            _stereoHead = head;
-        }
-
-        /// <summary>書込ヘッドが再生ヘッドを追い越す（リングバッファ枯渇）かどうかを判定する。</summary>
-        private bool IsRingExhausted(int head, int timeSamples)
-        {
-            return (head <= timeSamples && timeSamples < head + bufferLength)
-                || (timeSamples < head && timeSamples + _outputClipFrames < head + bufferLength);
-        }
-
-        // --- 入出力ユーティリティ ---
-
-        private void ReadInput(AudioSource source, float[] left, float[] right)
-        {
-            if (source == null || left == null || right == null || !source.enabled)
-            {
-                Clear(left);
-                Clear(right);
-                return;
-            }
-
-            source.GetOutputData(left, 0);
-            if (readRightChannel)
-                source.GetOutputData(right, 1);
-            else
-                CopyBuffer(left, right);
-        }
-
-        private void AssignClip(AudioSource output, AudioClip clip)
-        {
-            if (output == null || clip == null) return;
-            output.clip = clip;
-            output.loop = true;
-        }
-
-        private void PlayOutputs()
-        {
-            PlayOutput(leftOutput);
-            PlayOutput(rightOutput);
-            PlayOutput(stereoOutput);
-        }
-
-        private void PlayOutput(AudioSource output)
-        {
-            if (output == null || output.clip == null) return;
-            if (!output.isPlaying)
-                output.Play();
-        }
-
-        private void StopOutputs()
-        {
-            StopOutput(leftOutput);
-            StopOutput(rightOutput);
-            StopOutput(stereoOutput);
-        }
-
-        private void StopOutput(AudioSource output)
-        {
-            if (output == null) return;
-            if (output.isPlaying)
-                output.Stop();
-        }
-
-        private void WarnIfInputsMissing()
-        {
-            if (inputA == null && inputB == null && Time.time - _lastWarnAt > 5.0f)
-            {
-                _lastWarnAt = Time.time;
-                Debug.LogWarning("[AunCast/AudioOutputTunnel] inputA/inputB are not assigned.", this);
-            }
-        }
-
-        private void Clear(float[] buffer)
-        {
-            if (buffer == null) return;
-            for (int i = 0; i < buffer.Length; i++)
-                buffer[i] = 0f;
-        }
-
-        private void CopyBuffer(float[] source, float[] destination)
-        {
-            if (source == null || destination == null) return;
-            int count = Mathf.Min(source.Length, destination.Length);
-            for (int i = 0; i < count; i++)
-                destination[i] = source[i];
+            if (Time.time - _lastWarnAt <= WARN_INTERVAL_SEC) return;
+            _lastWarnAt = Time.time;
+            Debug.LogWarning("[AunCast/AudioOutputTunnel] " + message, this);
         }
     }
 }

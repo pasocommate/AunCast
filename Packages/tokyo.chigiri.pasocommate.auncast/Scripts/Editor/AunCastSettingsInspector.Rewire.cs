@@ -492,11 +492,34 @@ namespace PasocomMate.AunCast.Internal
                     changed |= SetObjectProperty(so, "inputA", inputA);
                 if (ReadAudioSourceProperty(tunnel, "inputB") == null)
                     changed |= SetObjectProperty(so, "inputB", inputB);
+                if (ResolveTunnelDelegate(tunnel) == null)
+                {
+                    Component delegateTunnel = FindAudioOutputTunnelOnGameObject(tunnel.gameObject);
+                    if (delegateTunnel != null)
+                        changed |= SetObjectProperty(so, "targetTunnel", delegateTunnel);
+                    else
+                        Debug.LogWarning(
+                            "[AunCast] AunCastAudioOutputTunnel の委譲先 AudioOutputTunnel が見つかりません｡ 同じ GameObject に AudioOutputTunnel を配置するか､ targetTunnel を手動で設定してください｡",
+                            tunnel);
+                }
                 if (changed && ApplyUdonSerializedChanges(tunnel, so, "Rewire AunCastAudioOutputTunnel Inputs", recordUndo))
                     updated++;
             }
 
             return updated;
+        }
+
+        /// <summary>同一 GameObject 上から委譲先候補の旧 AudioOutputTunnel を探す。</summary>
+        private static Component FindAudioOutputTunnelOnGameObject(GameObject gameObject)
+        {
+            if (gameObject == null) return null;
+            Component[] components = gameObject.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                if (IsAudioOutputTunnelComponent(components[i]))
+                    return components[i];
+            }
+            return null;
         }
 
         private static int MakeAudioOutputTunnelInputsInaudible(
