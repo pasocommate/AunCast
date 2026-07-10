@@ -53,3 +53,8 @@ AunCast の開発にあたり力を貸してくださったVRChatユーザーの
 
 - [TMP 日本語フォールバックフォント (Narazaka)](https://github.com/Narazaka/tmp-fallback-fonts-jp) (SIL Open Font License 1.1)
 - [AudioLink (llealloo)](https://github.com/llealloo/audiolink) (MIT License)
+
+### 参考
+
+- [USharpVideo (Merlin)](https://github.com/MerlinVR/USharpVideo) (MIT License)
+- [TopazChat Player (H.Yoshitaka)](https://tyounanmoti.booth.pm/items/1752066)
