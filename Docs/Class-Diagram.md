@@ -301,13 +301,7 @@ classDiagram
         <<NoVariableSync>>
         +AudioSource inputA
         +AudioSource inputB
-        +AudioSource leftOutput
-        +AudioSource rightOutput
-        +AudioSource stereoOutput
-        -int bufferLength
-        -float outputGain
-        -bool playOnStart
-        -bool readRightChannel
+        -UdonSharpBehaviour targetTunnel
     }
 
     %% ========================================
@@ -360,6 +354,7 @@ classDiagram
     AunCastScreen --> AunCastEventBus : eventBus (購読)
     AunCastUiScreen --> AunCastEventBus : eventBus (購読)
     AunCastAudioOutputTunnel --> AunCastSpeaker : inputA/B AudioSource
+    AunCastAudioOutputTunnel ..> AudioOutputTunnel : targetTunnel (SetProgramVariable input)
 ```
 
 > **凡例**: 破線矢印 (`..>`) は `SendCustomEvent` による通知依存を表す。Core レイヤは AunCastStaffControlPanel の具象型に依存せず、`UdonSharpBehaviour` 基底参照経由で `OnUrlChanged` / `OnCoordinatorChanged` を発火する（疎結合化）。同様に **UI↔UI の `AunCastPortablePanel`→`AunCastStaffControlPanel` も基底型化済み**で、通知/命令は `SendCustomEvent`、解錠 bool は逆辺（`AunCastStaffControlPanel`→`AunCastPortablePanel`、具象）から `SetStaffUnlocked` で push してキャッシュする。これにより具象型の相互参照（循環）は解消されている。実線矢印 (`-->`) は具象型フィールドによる参照（コマンド・クエリ）。
@@ -383,7 +378,7 @@ classDiagram
 | | `AunCastHudProgressOverlay` | VR ジェスチャー長押し中の HUD プログレス表示 |
 | **Utility** | `AunCastScreen` | MeshRenderer にビデオテクスチャを適用 |
 | | `AunCastUiScreen` | RawImage にビデオテクスチャを適用 (アスペクト比フィット) |
-| | `AunCastAudioOutputTunnel` | AudioOutputTunnel 構成向けに A/B 音声を Unity AudioSource 出力へ流す互換トンネル |
+| | `AunCastAudioOutputTunnel` | 既存 AudioOutputTunnel の `input` を A/B の可聴側へ動的に差し替える互換アダプタ |
 
 ## 同期モード一覧
 

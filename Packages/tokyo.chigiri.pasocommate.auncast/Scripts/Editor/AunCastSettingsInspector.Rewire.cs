@@ -492,11 +492,42 @@ namespace PasocomMate.AunCast.Internal
                     changed |= SetObjectProperty(so, "inputA", inputA);
                 if (ReadAudioSourceProperty(tunnel, "inputB") == null)
                     changed |= SetObjectProperty(so, "inputB", inputB);
+                if (ResolveTunnelDelegate(tunnel) == null)
+                {
+                    Component delegateTunnel = FindAudioOutputTunnelInAncestors(tunnel.gameObject);
+                    if (delegateTunnel != null)
+                        changed |= SetObjectProperty(so, "targetTunnel", delegateTunnel);
+                    else
+                        Debug.LogWarning(
+                            "[AunCast] AunCastAudioOutputTunnel の委譲先 AudioOutputTunnel が見つかりません｡ AunCastAudioOutputTunnel を AudioOutputTunnel と同じ GameObject または子に配置するか､ targetTunnel を手動で設定してください｡",
+                            tunnel);
+                }
                 if (changed && ApplyUdonSerializedChanges(tunnel, so, "Rewire AunCastAudioOutputTunnel Inputs", recordUndo))
                     updated++;
             }
 
             return updated;
+        }
+
+        /// <summary>
+        /// 自身または祖先の GameObject 上から委譲先候補の旧 AudioOutputTunnel を探す。
+        /// 移行処理はビルド済み Network ID の署名を変えないよう、旧トンネルの子 GameObject に
+        /// AunCastAudioOutputTunnel を配置するため、親方向を探索する。
+        /// </summary>
+        private static Component FindAudioOutputTunnelInAncestors(GameObject gameObject)
+        {
+            Transform current = gameObject != null ? gameObject.transform : null;
+            while (current != null)
+            {
+                Component[] components = current.GetComponents<Component>();
+                for (int i = 0; i < components.Length; i++)
+                {
+                    if (IsAudioOutputTunnelComponent(components[i]))
+                        return components[i];
+                }
+                current = current.parent;
+            }
+            return null;
         }
 
         private static int MakeAudioOutputTunnelInputsInaudible(

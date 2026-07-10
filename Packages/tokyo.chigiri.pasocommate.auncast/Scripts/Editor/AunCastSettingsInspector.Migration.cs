@@ -532,8 +532,8 @@ namespace PasocomMate.AunCast.Internal
                                     "旧 AudioOutputTunnel を使わず､ leftOutput / rightOutput / stereoOutput の AudioSource を通常の AunCast スピーカーとして変換します｡ 各出力は A/B 用に複製されます｡ ",
                                     "Does not use the old AudioOutputTunnel. Converts the leftOutput / rightOutput / stereoOutput AudioSources as normal AunCast speakers, duplicating each output for A/B.")
                                 : AunCastEditorLocalization.Localize(
-                                    "旧 AudioOutputTunnel の出力先を AunCastAudioOutputTunnel へ引き継ぎ､ 入力側 AudioSource は A/B 用に複製して AunCastSpeaker として設定します｡ これは直結出力に比べて遅延がリングバッファ分だけ多い構成です｡ ",
-                                    "Migrates the old AudioOutputTunnel outputs to AunCastAudioOutputTunnel and duplicates the input AudioSource as A/B AunCastSpeakers. This setup has one ring buffer's worth of latency compared with direct output."),
+                                    "旧 AudioOutputTunnel は削除せず温存し､ その input を A/B の可聴側へ切替える AunCastAudioOutputTunnel を追加します｡ 入力側 AudioSource は A/B 用に複製して AunCastSpeaker として設定します｡ これは直結出力に比べて遅延がリングバッファ分だけ多い構成です｡ ",
+                                    "Keeps the old AudioOutputTunnel in place and adds an AunCastAudioOutputTunnel that switches its input to the audible A/B side. The input AudioSource is duplicated as A/B AunCastSpeakers. This setup has one ring buffer's worth of latency compared with direct output."),
                             MessageType.None);
 
                         if (nextMode == TUNNEL_MIGRATION_MODE_DIRECT_SPEAKERS)
@@ -554,6 +554,16 @@ namespace PasocomMate.AunCast.Internal
                     }
                     else if (candidate.kind == MigrationCandidateKind.AudioOutputTunnel && candidate.isConfigured)
                     {
+                        AunCastAudioOutputTunnel migratedTunnel = GetAunCastAudioOutputTunnelCandidateComponent(candidate);
+                        if (migratedTunnel != null && ResolveTunnelDelegate(migratedTunnel) == null)
+                        {
+                            EditorGUILayout.HelpBox(
+                                AunCastEditorLocalization.Localize(
+                                    "委譲先の AudioOutputTunnel が設定されていません｡ AudioOutputTunnel (TopazChat Player 付属) をこの GameObject または親に配置して「参照関係を再配線」を実行するか､ targetTunnel を手動で設定してください｡",
+                                    "The delegation target AudioOutputTunnel is not assigned. Place an AudioOutputTunnel (bundled with TopazChat Player) on this GameObject or a parent and run Rewire References, or assign targetTunnel manually."),
+                                MessageType.Error);
+                        }
+
                         using (new EditorGUILayout.HorizontalScope())
                         {
                             GUILayout.FlexibleSpace();
@@ -563,8 +573,8 @@ namespace PasocomMate.AunCast.Internal
 
                         EditorGUILayout.HelpBox(
                             AunCastEditorLocalization.Localize(
-                                "直結化すると､ AunCastAudioOutputTunnel の出力先 AudioSource を A/B 用の AunCastSpeaker に変換し､ AunCastAudioOutputTunnel を削除します｡ トンネルによる出力合成機能は失われますが､ リングバッファ由来の遅延は解消されます｡ ",
-                                "Direct Output converts the AunCastAudioOutputTunnel output AudioSources into A/B AunCastSpeaker outputs and removes AunCastAudioOutputTunnel. Tunnel output mixing is lost, but ring-buffer latency is removed."),
+                                "直結化すると､ 委譲先 AudioOutputTunnel の出力先 AudioSource を A/B 用の AunCastSpeaker に変換し､ AunCastAudioOutputTunnel と委譲先 AudioOutputTunnel を削除します｡ トンネルによる出力合成機能は失われますが､ リングバッファ由来の遅延は解消されます｡ ",
+                                "Direct Output converts the delegated AudioOutputTunnel output AudioSources into A/B AunCastSpeaker outputs and removes both AunCastAudioOutputTunnel and the delegated AudioOutputTunnel. Tunnel output mixing is lost, but ring-buffer latency is removed."),
                             MessageType.Warning);
                         {
                             Component tunnelForFilter = GetAunCastAudioOutputTunnelCandidateComponent(candidate);
@@ -929,12 +939,29 @@ namespace PasocomMate.AunCast.Internal
                     true));
             }
 
+            AunCastAudioOutputTunnel[] migratedAudioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
+            var delegatedTunnelIds = new HashSet<int>();
+            var migratedTunnelInputSourceIds = new HashSet<int>();
+            for (int i = 0; i < migratedAudioOutputTunnels.Length; i++)
+            {
+                AunCastAudioOutputTunnel migratedTunnel = migratedAudioOutputTunnels[i];
+                if (migratedTunnel == null) continue;
+                Component delegateTunnel = ResolveTunnelDelegate(migratedTunnel);
+                if (delegateTunnel != null)
+                    delegatedTunnelIds.Add(delegateTunnel.GetInstanceID());
+                AddAudioSourceInstanceId(migratedTunnelInputSourceIds, ReadAudioSourceProperty(migratedTunnel, "inputA"));
+                AddAudioSourceInstanceId(migratedTunnelInputSourceIds, ReadAudioSourceProperty(migratedTunnel, "inputB"));
+                AddAudioSourceInstanceId(migratedTunnelInputSourceIds, ReadAudioSourceProperty(delegateTunnel, "input"));
+            }
+
             var tunnelInputSourceIds = new HashSet<int>();
             Component[] audioOutputTunnels = FindSceneComponentsByTypeName(scene, AUDIO_OUTPUT_TUNNEL_COMPONENT_TYPE_NAME);
             for (int i = 0; i < audioOutputTunnels.Length; i++)
             {
                 Component tunnel = audioOutputTunnels[i];
                 if (!IsAudioOutputTunnelComponent(tunnel)) continue;
+                // 既に AunCastAudioOutputTunnel の委譲先になっている旧トンネルは移行済みのため列挙しない
+                if (delegatedTunnelIds.Contains(tunnel.GetInstanceID())) continue;
 
                 AudioSource inputSource = ReadAudioSourceProperty(tunnel, "input");
                 if (inputSource != null)
@@ -954,7 +981,6 @@ namespace PasocomMate.AunCast.Internal
                     false));
             }
 
-            AunCastAudioOutputTunnel[] migratedAudioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
             for (int i = 0; i < migratedAudioOutputTunnels.Length; i++)
             {
                 AunCastAudioOutputTunnel tunnel = migratedAudioOutputTunnels[i];
@@ -990,11 +1016,14 @@ namespace PasocomMate.AunCast.Internal
 
                 AunCastSpeaker declaredSpeaker = source.gameObject.GetComponent<AunCastSpeaker>();
                 bool isConfigured = declaredSpeaker != null;
+                bool isTunnelInput = migratedTunnelInputSourceIds.Contains(source.GetInstanceID());
                 string path = GetHierarchyPath(source.transform);
-                string status = isConfigured
-                    ? BuildConfiguredSpeakerStatusLabel(source)
-                    : BuildSpeakerStatusLabel(source);
-                ReferenceWarning referenceWarning = BuildAudioSourceReferenceWarning(source);
+                string status = isTunnelInput
+                    ? BuildTunnelInputSpeakerStatusLabel(source)
+                    : isConfigured
+                        ? BuildConfiguredSpeakerStatusLabel(source)
+                        : BuildSpeakerStatusLabel(source);
+                ReferenceWarning referenceWarning = BuildAudioSourceReferenceWarning(source, isTunnelInput);
                 int inferredPlayerIndex = isConfigured
                     ? GetAunCastSpeakerPlayerIndex(declaredSpeaker)
                     : InferSpeakerPlayerIndex(speaker, context);
@@ -1020,6 +1049,7 @@ namespace PasocomMate.AunCast.Internal
                 if (source == null) continue;
                 if (tunnelInputSourceIds.Contains(source.GetInstanceID())) continue;
 
+                bool isTunnelInput = migratedTunnelInputSourceIds.Contains(source.GetInstanceID());
                 string path = GetHierarchyPath(source.transform);
                 AddMigrationCandidate(byKey, new MigrationCandidate(
                     MigrationCandidateKind.Speaker,
@@ -1027,8 +1057,10 @@ namespace PasocomMate.AunCast.Internal
                     source,
                     null,
                     path,
-                    BuildConfiguredSpeakerStatusLabel(source),
-                    BuildAudioSourceReferenceWarning(source),
+                    isTunnelInput
+                        ? BuildTunnelInputSpeakerStatusLabel(source)
+                        : BuildConfiguredSpeakerStatusLabel(source),
+                    BuildAudioSourceReferenceWarning(source, isTunnelInput),
                     "speaker:" + path,
                     GetAunCastSpeakerPlayerIndex(speaker),
                     true));
@@ -1274,6 +1306,21 @@ namespace PasocomMate.AunCast.Internal
             return DestroyComponentsByTypeName(inputGameObject, SPEAKER_COMPONENT_TYPE_NAME) > 0;
         }
 
+        /// <summary>Transform 以外のコンポーネントも子も持たない GameObject かどうかを判定する。</summary>
+        private static bool IsBareGameObject(GameObject gameObject)
+        {
+            if (gameObject == null || gameObject.transform.childCount > 0) return false;
+
+            Component[] components = gameObject.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null || component is Transform) continue;
+                return false;
+            }
+            return true;
+        }
+
         private static bool IsSimpleLegacyAudioInputObject(GameObject gameObject)
         {
             if (gameObject == null || gameObject.transform.childCount > 0) return false;
@@ -1383,9 +1430,24 @@ namespace PasocomMate.AunCast.Internal
                 }
             }
 
+            // ビルド済みシーンでは旧トンネルの GameObject に Network ID がコンポーネント構成の署名付きで
+            // 焼き付けられており、同じ GameObject に UdonBehaviour を追加すると署名不一致
+            // (IncompatibleTypes / Network Components Changed) でビルドが失敗する。
+            // そのため AunCastAudioOutputTunnel は既存 GameObject には追加せず、新規の子 GameObject に配置する。
             GameObject tunnelGameObject = oldTunnel.gameObject;
-            AunCastAudioOutputTunnel tunnel = tunnelGameObject.GetComponent<AunCastAudioOutputTunnel>();
-            tunnel = EnsureUdonSharpComponent(tunnelGameObject, tunnel, recordUndo: true, nameof(AunCastAudioOutputTunnel));
+            AunCastAudioOutputTunnel tunnel = tunnelGameObject.GetComponentInChildren<AunCastAudioOutputTunnel>(true);
+            GameObject adapterGameObject;
+            if (tunnel != null)
+            {
+                adapterGameObject = tunnel.gameObject;
+            }
+            else
+            {
+                adapterGameObject = new GameObject(nameof(AunCastAudioOutputTunnel));
+                Undo.RegisterCreatedObjectUndo(adapterGameObject, "Create AunCastAudioOutputTunnel");
+                adapterGameObject.transform.SetParent(tunnelGameObject.transform, false);
+            }
+            tunnel = EnsureUdonSharpComponent(adapterGameObject, tunnel, recordUndo: true, nameof(AunCastAudioOutputTunnel));
             if (tunnel == null) return false;
 
             var so = new SerializedObject(tunnel);
@@ -1395,17 +1457,15 @@ namespace PasocomMate.AunCast.Internal
                 changed |= SetObjectProperty(so, "inputA", inputA);
                 changed |= SetObjectProperty(so, "inputB", inputB);
             }
-            changed |= SetObjectProperty(so, "leftOutput", leftOutput);
-            changed |= SetObjectProperty(so, "rightOutput", rightOutput);
-            changed |= SetObjectProperty(so, "stereoOutput", stereoOutput);
+            // 旧 AudioOutputTunnel は削除せず温存し、委譲先として設定する。
+            // PCM トンネル処理はすべて旧コンポーネント側が担い、AunCast 側は input の A/B 切替のみ行う。
+            changed |= SetObjectProperty(so, "targetTunnel", oldTunnel);
             if (changed && !ApplyUdonSerializedChanges(tunnel, so, "Configure AunCastAudioOutputTunnel", recordUndo: true))
                 return false;
 
-            DestroyComponentWithUndo(oldTunnel);
-
             EditorUtility.SetDirty(tunnelGameObject);
             PrefabUtility.RecordPrefabInstancePropertyModifications(tunnelGameObject);
-            Debug.Log($"[AunCast] AudioOutputTunnel を AunCastAudioOutputTunnel に移行しました｡ {GetHierarchyPath(tunnelGameObject.transform)}", tunnelGameObject);
+            Debug.Log($"[AunCast] AudioOutputTunnel を委譲先とする AunCastAudioOutputTunnel を設定しました｡ {GetHierarchyPath(adapterGameObject.transform)}", adapterGameObject);
             return true;
         }
 
@@ -1471,11 +1531,25 @@ namespace PasocomMate.AunCast.Internal
             }
 
             GameObject tunnelGameObject = tunnel.gameObject;
+            string tunnelPath = GetHierarchyPath(tunnelGameObject.transform);
+            // スピーカー化した出力へ委譲先の旧トンネルが書き込み続けないよう、旧トンネルも削除する
+            Component delegateTunnel = ResolveTunnelDelegate(tunnel);
+            if (delegateTunnel != null)
+                DestroyComponentWithUndo(delegateTunnel);
             DestroyComponentWithUndo(tunnel);
 
-            EditorUtility.SetDirty(tunnelGameObject);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(tunnelGameObject);
-            Debug.Log($"[AunCast] AunCastAudioOutputTunnel を直結化しました｡ {GetHierarchyPath(tunnelGameObject.transform)}", tunnelGameObject);
+            // 移行時に作成したアダプタ用の子 GameObject が空になった場合は残骸として削除する
+            // (プレハブインスタンスの構成物は Destroy できないため除外する)
+            if (IsBareGameObject(tunnelGameObject) && !PrefabUtility.IsPartOfPrefabInstance(tunnelGameObject))
+            {
+                Undo.DestroyObjectImmediate(tunnelGameObject);
+            }
+            else
+            {
+                EditorUtility.SetDirty(tunnelGameObject);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(tunnelGameObject);
+            }
+            Debug.Log($"[AunCast] AunCastAudioOutputTunnel を直結化しました｡ {tunnelPath}");
             return converted;
         }
 
@@ -1568,8 +1642,25 @@ namespace PasocomMate.AunCast.Internal
             return converted;
         }
 
-        private static TunnelOutputSource[] CollectAudioOutputTunnelOutputs(Component oldTunnel)
+        /// <summary>
+        /// AunCastAudioOutputTunnel が渡された場合は委譲先の旧 AudioOutputTunnel を返す。
+        /// 出力先 (leftOutput / rightOutput / stereoOutput) は委譲先だけが保持するため、
+        /// 出力を読むヘルパーはこの解決を経由する。
+        /// </summary>
+        private static Component ResolveTunnelDelegate(Component tunnel)
         {
+            if (!(tunnel is AunCastAudioOutputTunnel)) return tunnel;
+
+            var so = new SerializedObject(tunnel);
+            SerializedProperty prop = so.FindProperty("targetTunnel");
+            if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference)
+                return null;
+            return prop.objectReferenceValue as Component;
+        }
+
+        private static TunnelOutputSource[] CollectAudioOutputTunnelOutputs(Component tunnel)
+        {
+            Component oldTunnel = ResolveTunnelDelegate(tunnel);
             if (oldTunnel == null) return Array.Empty<TunnelOutputSource>();
 
             var outputs = new List<TunnelOutputSource>();
@@ -1662,6 +1753,9 @@ namespace PasocomMate.AunCast.Internal
             if (tunnel == null || outputs == null || outputs.Length == 0) return Array.Empty<Component>();
             if (!tunnel.gameObject.scene.IsValid()) return Array.Empty<Component>();
 
+            // 委譲先の旧 AudioOutputTunnel が出力を参照しているのは正常な構成のため除外する
+            Component delegateTunnel = ResolveTunnelDelegate(tunnel);
+
             var referrers = new HashSet<int>();
             var audioLinkReferrers = new HashSet<int>();
             var audioLinkReferenceList = new List<Component>();
@@ -1670,7 +1764,7 @@ namespace PasocomMate.AunCast.Internal
             for (int i = 0; i < components.Length; i++)
             {
                 Component component = components[i];
-                if (component == null || component == tunnel || component is Transform) continue;
+                if (component == null || component == tunnel || component == delegateTunnel || component is Transform) continue;
                 if (!component.gameObject.scene.IsValid() || component.gameObject.scene != tunnel.gameObject.scene) continue;
 
                 for (int j = 0; j < outputs.Length; j++)
@@ -1862,6 +1956,40 @@ namespace PasocomMate.AunCast.Internal
                 : FormatStatusTags(labels);
         }
 
+        /// <summary>
+        /// トンネル入力用スピーカーの状態ラベル。volume 0 や音が届かない設定は
+        /// トンネルへ音を渡すための正常な構成のためラベルにしない（トンネル入力である旨は
+        /// 案内メッセージ側で表示する）。非アクティブ・無効はトンネルの入力選択から外れる
+        /// 実害があるため引き続き表示する。
+        /// </summary>
+        private static string BuildTunnelInputSpeakerStatusLabel(AudioSource source)
+        {
+            if (source == null) return string.Empty;
+            var labels = new List<string>();
+            if (IsInEditorOnlyHierarchy(source.gameObject))
+                labels.Add(AunCastEditorLocalization.Localize("EditorOnly階層", "EditorOnly hierarchy"));
+            if (!source.gameObject.activeInHierarchy)
+                labels.Add(AunCastEditorLocalization.Localize("非アクティブ", "Inactive"));
+            if (!source.enabled)
+                labels.Add(AunCastEditorLocalization.Localize("AudioSource無効", "AudioSource disabled"));
+
+            return labels.Count == 0 ? string.Empty : FormatStatusTags(labels);
+        }
+
+        private static ReferenceWarning BuildTunnelInputManagedReferenceInfo()
+        {
+            string message = AunCastEditorLocalization.Localize(
+                "この AudioSource は AudioOutputTunnel の入力として使用されています｡ 音が届かない設定はトンネルへ音を渡すための正常な構成のため､ そのままにしておいてください｡",
+                "This AudioSource is used as the AudioOutputTunnel input. The inaudible attenuation is the intended configuration for feeding the tunnel; leave it as is.");
+            return new ReferenceWarning(message, Array.Empty<Component>(), Array.Empty<Component>(), MessageType.Info);
+        }
+
+        private static void AddAudioSourceInstanceId(HashSet<int> ids, AudioSource source)
+        {
+            if (ids == null || source == null) return;
+            ids.Add(source.GetInstanceID());
+        }
+
         private static string FormatStatusTags(List<string> labels)
         {
             if (labels == null || labels.Count == 0) return string.Empty;
@@ -1953,7 +2081,7 @@ namespace PasocomMate.AunCast.Internal
             return hasInput || hasOutput;
         }
 
-        private static ReferenceWarning BuildAudioSourceReferenceWarning(AudioSource source)
+        private static ReferenceWarning BuildAudioSourceReferenceWarning(AudioSource source, bool tunnelInput = false)
         {
             if (source == null || !source.gameObject.scene.IsValid()) return default;
 
@@ -1967,6 +2095,8 @@ namespace PasocomMate.AunCast.Internal
                 Component component = components[i];
                 if (component == null || component == source) continue;
                 if (!component.gameObject.scene.IsValid() || component.gameObject.scene != source.gameObject.scene) continue;
+                // トンネル入力の場合、トンネル配線コンポーネント自身による参照は正常な構成のため除外する
+                if (tunnelInput && IsTunnelWiringComponent(component)) continue;
                 if (!SerializedObjectReferences(component, source)) continue;
                 int instanceId = component.GetInstanceID();
                 if (IsAudioLinkReferenceComponent(component))
@@ -1982,20 +2112,38 @@ namespace PasocomMate.AunCast.Internal
 
             if (references.Count == 0)
             {
+                if (tunnelInput)
+                    return BuildTunnelInputManagedReferenceInfo();
                 return audioLinkUsed.Count > 0
                     ? BuildAudioLinkManagedReferenceInfo(audioLinkReferences.ToArray())
                     : default;
             }
 
-            string prefix = audioLinkUsed.Count > 0
-                ? AunCastEditorLocalization.Localize(
-                    "AudioLink の参照は AunCast が自動管理します｡ その他に､ ",
-                    "AudioLink references are managed automatically by AunCast. Other ")
-                : string.Empty;
+            string prefix;
+            if (tunnelInput)
+            {
+                prefix = AunCastEditorLocalization.Localize(
+                    "この AudioSource は AudioOutputTunnel の入力として使用されています (音が届かない設定は正常)｡ トンネル配線以外に､ ",
+                    "This AudioSource is used as the AudioOutputTunnel input (the inaudible attenuation is intended). Besides the tunnel wiring, ");
+            }
+            else
+            {
+                prefix = audioLinkUsed.Count > 0
+                    ? AunCastEditorLocalization.Localize(
+                        "AudioLink の参照は AunCast が自動管理します｡ その他に､ ",
+                        "AudioLink references are managed automatically by AunCast. Other ")
+                    : string.Empty;
+            }
             string message = prefix + AunCastEditorLocalization.Localize(
                 $"この AudioSource を参照するコンポーネント: {references.Count} 件 (A/B に分かれると単一入力の参照元は要対応) ",
                 $"components referencing this AudioSource: {references.Count} (single-input referrers need attention once split into A/B)");
             return new ReferenceWarning(message, references.ToArray(), audioLinkReferences.ToArray(), MessageType.Warning);
+        }
+
+        /// <summary>トンネル配線を構成するコンポーネント（委譲アダプタと旧 AudioOutputTunnel）かどうかを判定する。</summary>
+        private static bool IsTunnelWiringComponent(Component component)
+        {
+            return component is AunCastAudioOutputTunnel || IsAudioOutputTunnelComponent(component);
         }
 
         private static ReferenceWarning BuildAudioLinkManagedReferenceInfo(Component[] audioLinkReferences)

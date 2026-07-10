@@ -342,9 +342,7 @@ namespace PasocomMate.AunCast.Internal
         {
             "inputA",
             "inputB",
-            "leftOutput",
-            "rightOutput",
-            "stereoOutput",
+            "targetTunnel",
         };
 
         protected override string[] WiringPropertyNames => WIRING_PROPERTY_NAMES;

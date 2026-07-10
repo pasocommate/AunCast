@@ -1161,11 +1161,12 @@ AVPro AudioSource B (同様の構成)
 
 TopazChat Player の「+ Reverb Filter」構成のように、`AudioOutputTunnel` で AVPro シンクから PCM を取り出して通常の Unity `AudioSource` へ流しているワールド向けに、`AunCastAudioOutputTunnel` を同梱する。
 
-- 旧 `AudioOutputTunnel` からの移行時は、旧 `input` の AudioSource を A/B 用に複製して `AunCastSpeaker` 化し、`inputA` / `inputB` に設定する。再配線処理は既存の `inputA` / `inputB` を尊重し、未設定の場合のみ同一シーンの `AunCastSpeaker`（PlayerA / PlayerB）で補完する
-- `leftOutput` / `rightOutput` / `stereoOutput` に生成したループ `AudioClip` を割り当て、`AudioClip.SetData` で A/B 入力を合成して流す
-- `AudioSource.GetOutputData` は `AudioSource.volume` 適用後の PCM を返す前提で、A/B の単純加算により Standby ミュートとクロスフェードを反映する
+- **PCM の読み出し・リングバッファ書き込みは AunCast 側では実装しない**（オリジナル `AudioOutputTunnel` のライセンス上、由来コードを同梱できないため）。トンネル処理はワールドに既存の `AudioOutputTunnel`（TopazChat Player 付属）へ委譲し、`AunCastAudioOutputTunnel` は `targetTunnel` 参照（`UdonSharpBehaviour` 基底型）経由で委譲先の `input` 変数を `SetProgramVariable` で差し替えるアダプタに徹する
+- A/B の選択は `inputA` / `inputB` の `AudioSource.volume` 比較で行う。AunCast は Standby 側の volume を 0 にするため、volume が大きい側 = Active 側となる。音量が同値の間は現在の選択を維持する
+- 委譲先の入力は常に 1 系統のため、クロスフェード中の A+B 合成はトンネル経由の出力には反映されず、A/B の音量が逆転した時点でのハード切替になる
+- 旧 `AudioOutputTunnel` からの移行時は、旧コンポーネントを削除せず温存して `targetTunnel` に設定し、旧 `input` の AudioSource を A/B 用に複製して `AunCastSpeaker` 化し、`inputA` / `inputB` に設定する。再配線処理は既存の `inputA` / `inputB` を尊重し、未設定の場合のみ同一シーンの `AunCastSpeaker`（PlayerA / PlayerB）で補完する。`targetTunnel` が未設定の場合は自身または祖先の GameObject 上の `AudioOutputTunnel` で補完する
+- `AunCastAudioOutputTunnel` は旧 `AudioOutputTunnel` と同じ GameObject には追加せず、**新規の子 GameObject に配置**する。ビルド済みシーンでは既存 GameObject の Network ID がコンポーネント構成の署名付きで焼き付けられており、UdonBehaviour を追加すると署名不一致（`IncompatibleTypes`）でビルドが失敗するため（`Docs/VRChat-Udon-Development-Notes.md` 9.15）
 - 直結出力に比べて遅延がリングバッファ分だけ多い構成のため、通常の VRCAVProVideoSpeaker 直結構成では使用しない
-- Udon VM の制約により `OnAudioFilterRead` は使わず、メインスレッド `Update` で `blockSamples / sampleRate` 間隔の書き込みを行う
 
 ### クロスフェード
 
