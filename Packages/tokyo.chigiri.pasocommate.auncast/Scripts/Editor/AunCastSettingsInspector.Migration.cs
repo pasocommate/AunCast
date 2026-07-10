@@ -941,11 +941,17 @@ namespace PasocomMate.AunCast.Internal
 
             AunCastAudioOutputTunnel[] migratedAudioOutputTunnels = FindSceneComponents<AunCastAudioOutputTunnel>(scene);
             var delegatedTunnelIds = new HashSet<int>();
+            var migratedTunnelInputSourceIds = new HashSet<int>();
             for (int i = 0; i < migratedAudioOutputTunnels.Length; i++)
             {
-                Component delegateTunnel = ResolveTunnelDelegate(migratedAudioOutputTunnels[i]);
+                AunCastAudioOutputTunnel migratedTunnel = migratedAudioOutputTunnels[i];
+                if (migratedTunnel == null) continue;
+                Component delegateTunnel = ResolveTunnelDelegate(migratedTunnel);
                 if (delegateTunnel != null)
                     delegatedTunnelIds.Add(delegateTunnel.GetInstanceID());
+                AddAudioSourceInstanceId(migratedTunnelInputSourceIds, ReadAudioSourceProperty(migratedTunnel, "inputA"));
+                AddAudioSourceInstanceId(migratedTunnelInputSourceIds, ReadAudioSourceProperty(migratedTunnel, "inputB"));
+                AddAudioSourceInstanceId(migratedTunnelInputSourceIds, ReadAudioSourceProperty(delegateTunnel, "input"));
             }
 
             var tunnelInputSourceIds = new HashSet<int>();
@@ -1010,11 +1016,16 @@ namespace PasocomMate.AunCast.Internal
 
                 AunCastSpeaker declaredSpeaker = source.gameObject.GetComponent<AunCastSpeaker>();
                 bool isConfigured = declaredSpeaker != null;
+                bool isTunnelInput = migratedTunnelInputSourceIds.Contains(source.GetInstanceID());
                 string path = GetHierarchyPath(source.transform);
-                string status = isConfigured
-                    ? BuildConfiguredSpeakerStatusLabel(source)
-                    : BuildSpeakerStatusLabel(source);
-                ReferenceWarning referenceWarning = BuildAudioSourceReferenceWarning(source);
+                string status = isTunnelInput
+                    ? BuildTunnelInputSpeakerStatusLabel(source)
+                    : isConfigured
+                        ? BuildConfiguredSpeakerStatusLabel(source)
+                        : BuildSpeakerStatusLabel(source);
+                ReferenceWarning referenceWarning = isTunnelInput
+                    ? BuildTunnelInputManagedReferenceInfo()
+                    : BuildAudioSourceReferenceWarning(source);
                 int inferredPlayerIndex = isConfigured
                     ? GetAunCastSpeakerPlayerIndex(declaredSpeaker)
                     : InferSpeakerPlayerIndex(speaker, context);
@@ -1040,6 +1051,7 @@ namespace PasocomMate.AunCast.Internal
                 if (source == null) continue;
                 if (tunnelInputSourceIds.Contains(source.GetInstanceID())) continue;
 
+                bool isTunnelInput = migratedTunnelInputSourceIds.Contains(source.GetInstanceID());
                 string path = GetHierarchyPath(source.transform);
                 AddMigrationCandidate(byKey, new MigrationCandidate(
                     MigrationCandidateKind.Speaker,
@@ -1047,8 +1059,12 @@ namespace PasocomMate.AunCast.Internal
                     source,
                     null,
                     path,
-                    BuildConfiguredSpeakerStatusLabel(source),
-                    BuildAudioSourceReferenceWarning(source),
+                    isTunnelInput
+                        ? BuildTunnelInputSpeakerStatusLabel(source)
+                        : BuildConfiguredSpeakerStatusLabel(source),
+                    isTunnelInput
+                        ? BuildTunnelInputManagedReferenceInfo()
+                        : BuildAudioSourceReferenceWarning(source),
                     "speaker:" + path,
                     GetAunCastSpeakerPlayerIndex(speaker),
                     true));
@@ -1942,6 +1958,40 @@ namespace PasocomMate.AunCast.Internal
             return labels.Count == 0
                 ? FormatStatusTag(AunCastEditorLocalization.Localize("通常出力候補", "normal output candidate"))
                 : FormatStatusTags(labels);
+        }
+
+        /// <summary>
+        /// トンネル入力用スピーカーの状態ラベル。volume 0 や音が届かない設定は
+        /// トンネルへ音を渡すための正常な構成のためラベルにしない（トンネル入力である旨は
+        /// 案内メッセージ側で表示する）。非アクティブ・無効はトンネルの入力選択から外れる
+        /// 実害があるため引き続き表示する。
+        /// </summary>
+        private static string BuildTunnelInputSpeakerStatusLabel(AudioSource source)
+        {
+            if (source == null) return string.Empty;
+            var labels = new List<string>();
+            if (IsInEditorOnlyHierarchy(source.gameObject))
+                labels.Add(AunCastEditorLocalization.Localize("EditorOnly階層", "EditorOnly hierarchy"));
+            if (!source.gameObject.activeInHierarchy)
+                labels.Add(AunCastEditorLocalization.Localize("非アクティブ", "Inactive"));
+            if (!source.enabled)
+                labels.Add(AunCastEditorLocalization.Localize("AudioSource無効", "AudioSource disabled"));
+
+            return labels.Count == 0 ? string.Empty : FormatStatusTags(labels);
+        }
+
+        private static ReferenceWarning BuildTunnelInputManagedReferenceInfo()
+        {
+            string message = AunCastEditorLocalization.Localize(
+                "この AudioSource は AudioOutputTunnel の入力として使用されています｡ 音が届かない設定はトンネルへ音を渡すための正常な構成のため､ そのままにしておいてください｡",
+                "This AudioSource is used as the AudioOutputTunnel input. The inaudible attenuation is the intended configuration for feeding the tunnel; leave it as is.");
+            return new ReferenceWarning(message, Array.Empty<Component>(), Array.Empty<Component>(), MessageType.Info);
+        }
+
+        private static void AddAudioSourceInstanceId(HashSet<int> ids, AudioSource source)
+        {
+            if (ids == null || source == null) return;
+            ids.Add(source.GetInstanceID());
         }
 
         private static string FormatStatusTags(List<string> labels)

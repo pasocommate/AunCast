@@ -107,6 +107,8 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 - **[非アクティブ] [AudioSource無効] [volume 0] [音が届かない設定]** … 現状では聞こえない設定の `AudioSource` です。「音が届かない設定」は、AudioSource の距離減衰カーブにより音が直接聞こえない状態を指します。
 - **この AudioSource を参照するコンポーネント: ○件** … その `AudioSource` を参照する外部コンポーネント（音量制御スクリプト等）がシーン内に存在します。警告には参照元コンポーネントへのリンク一覧が表示されます。AunCast ではスピーカーがA/Bの２系統に分かれるため、**単一の `AudioSource` 入力しか受けない参照元は、そのままでは移行できません**。参照元の仕様を確認してください（AunCast による自動差し替えは行われません）。
 
+`AunCastAudioOutputTunnel` の入力（`inputA` / `inputB`）として使われている `AudioSource` は、これらの「音が届かない設定」ラベルや外部参照の警告を表示しません。代わりに、トンネル用のため現状のままでよい旨の案内が表示されます。
+
 AudioLink の `AudioSource` 参照は AunCast が自動管理するため、手動対応が必要な警告としては扱われません。
 
 ### 旧プレイヤー本体の削除
@@ -127,6 +129,8 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 2. `AudioOutputTunnel` は削除されずにそのまま動作を続けます。トンネルから先（リバーブ・外部音量制御・出力スピーカー）もそのまま流用できます。
 3. `AudioOutputTunnel.input` の入力用 AudioSource は同じ階層の直後に複製され、オリジナルが PlayerA、複製が PlayerB の `AunCastSpeaker` として設定されます。
 4. `AudioOutputTunnel` の GameObject の子として `AunCastAudioOutputTunnel` が追加され、`inputA` / `inputB` にこの２つの入力用 AudioSource が、`targetTunnel` に `AudioOutputTunnel` が設定されます。以後は再生系統の切替に合わせて、`AudioOutputTunnel` の入力が現用系統側へ自動で切り替わります。
+
+移行後に「候補を再検出」すると、入力用 AudioSource のスピーカー行には、トンネル用のため現状のままでよい旨の案内が表示されます。音が届かない設定のままで正常なため、そのままにしてください。
 
 この構成では、`AudioOutputTunnel` を通る音声は常に現用系統の１系統のみです。系統切替の瞬間は、トンネル出力側ではクロスフェードにならず即時切替になります。
 
