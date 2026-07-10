@@ -351,11 +351,15 @@ private bool CleanupStaleSlots()
 - `AunCastAudioOutputTunnel` も同一シーン全体から収集する。`inputA` / `inputB` は
   既存値を尊重し、未設定の場合のみ PlayerA / PlayerB の `AunCastSpeaker` から補完する。
   `targetTunnel`（委譲先の旧 `AudioOutputTunnel`）も既存値を尊重し、未設定の場合のみ
-  同一 GameObject 上の `AudioOutputTunnel` で補完する（見つからなければ警告ログ）。
+  自身または祖先の GameObject 上の `AudioOutputTunnel` で補完する（見つからなければ警告ログ）。
   旧 `AudioOutputTunnel` からの互換トンネル移行では、旧コンポーネントを削除せず温存して
   `targetTunnel` に設定し、旧 `input` の AudioSource を A/B 用に複製して `AunCastSpeaker` 化し、
   `inputA` / `inputB` に設定する。通常の音声出力は `AunCastSpeaker` 直結を優先し、
   トンネルは既存 `AudioOutputTunnel` 構成の互換用途に限定する
+- 移行ツールがビルド済みシーンの既存 GameObject へ UdonBehaviour を追加すると、焼付け済み
+  Network ID の署名不一致でビルドが失敗する。追加が必要な場合は新規の子 GameObject に
+  配置する（`AunCastAudioOutputTunnel` のトンネル移行が実例。詳細は
+  `Docs/VRChat-Udon-Development-Notes.md` 9.15）
 
 ### プレハブ運用と自動再配線
 

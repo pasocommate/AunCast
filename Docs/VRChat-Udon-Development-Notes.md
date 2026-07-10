@@ -171,6 +171,14 @@
 - Udon からの動的制御: `GetComponent<AudioEchoFilter>()` でのコンポーネント取得、`delay` プロパティの読み書きともに Udon から動作する。VRChat 本番環境で `delay` を毎フレーム動的に変更し、遅延が聴覚上リアルタイムに追従することを確認済み。
 - ドリフト吸収への応用: `OnAudioFilterRead` のリングバッファ方式（9.6 で不可能と判明）の代替として、`AudioEchoFilter.delay` をメインスレッドから動的に制御することで、DSP レベルの遅延吸収が実現可能。
 
+### 9.15 ビルド済み GameObject への UdonBehaviour 追加は Network ID 署名を壊す
+- VRChat SDK はビルド時に GameObject ごとの Network ID を `VRCWorld` の `NetworkIDs` コレクションへ焼き付け、**その GameObject 上のネットワークコンポーネントの型リスト（`SerializedTypeNames`）を署名として一緒に記録**する。
+- 次回ビルドの `ConfigureNetworkIDs` は記録済み署名と実体を照合し、不一致だと `IncompatibleTypes`（Network Components Changed）でビルドを中断する（`Failed to assign network IDs`）。
+- したがって、**一度でもビルドしたシーンの既存 GameObject に UdonBehaviour を追加・削除する**と、このエラーが発生する。同期モード（NoVariableSync 含む）に関係なく、UdonBehaviour は個数・型で照合される。
+- 対策: エディタツールが既存構成へコンポーネントを足す場合は、既存 GameObject に追加せず**新規 GameObject（子など）を作成してそこに配置**する。新規 GameObject には焼付け済みエントリがないため、新しい ID が割り当てられるだけで衝突しない。
+- ユーザー側の復旧手段は `VRChat SDK → Utilities → Network ID Utility` での再解決。
+- 実例: AunCast のトンネル移行で旧 `AudioOutputTunnel` の GameObject に `AunCastAudioOutputTunnel` を追加した際、記録済み署名（UdonBehaviour 1 個）と実体（2 個）が食い違いビルドが失敗した。移行処理を子 GameObject 配置へ変更して解消。
+
 ## 10. 推奨デバッグ手順
 1. Console の Udon 露出エラーを最優先で潰す。
 2. UI が押せない場合は `VRCUiShape` / Layer / EventSystem / InputModule を確認。

@@ -126,7 +126,7 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 1. `AudioOutputTunnel` と表示された候補で **「互換トンネルへ移行」** を選び、**「トンネル移行」** を押します。
 2. `AudioOutputTunnel` は削除されずにそのまま動作を続けます。トンネルから先（リバーブ・外部音量制御・出力スピーカー）もそのまま流用できます。
 3. `AudioOutputTunnel.input` の入力用 AudioSource は同じ階層の直後に複製され、オリジナルが PlayerA、複製が PlayerB の `AunCastSpeaker` として設定されます。
-4. 同じ GameObject に `AunCastAudioOutputTunnel` が追加され、`inputA` / `inputB` にこの２つの入力用 AudioSource が、`targetTunnel` に `AudioOutputTunnel` が設定されます。以後は再生系統の切替に合わせて、`AudioOutputTunnel` の入力が現用系統側へ自動で切り替わります。
+4. `AudioOutputTunnel` の GameObject の子として `AunCastAudioOutputTunnel` が追加され、`inputA` / `inputB` にこの２つの入力用 AudioSource が、`targetTunnel` に `AudioOutputTunnel` が設定されます。以後は再生系統の切替に合わせて、`AudioOutputTunnel` の入力が現用系統側へ自動で切り替わります。
 
 この構成では、`AudioOutputTunnel` を通る音声は常に現用系統の１系統のみです。系統切替の瞬間は、トンネル出力側ではクロスフェードにならず即時切替になります。
 
@@ -138,7 +138,7 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 
 トンネルの出力先 AudioSource を参照する外部コンポーネントがある場合は、**「出力AudioSourceをスピーカー化」** を選んだ時点で、参照元コンポーネントへのリンク一覧付きの警告が表示されます。参照元が単一の AudioSource だけを扱う構成では、A/B再生系統への複製後に手動調整が必要になることがあります。
 
-`AudioOutputTunnel` の出力先を読み取れない構成では、自動移行を中止します。その場合は、互換トンネルとして使うなら `AudioOutputTunnel` と同じ GameObject に `AunCastAudioOutputTunnel` を、直結出力にするなら出力先の AudioSource に `AunCastSpeaker` を手動で追加してから、**「参照関係を再配線」** を押してください。
+`AudioOutputTunnel` の出力先を読み取れない構成では、自動移行を中止します。その場合は、互換トンネルとして使うなら `AudioOutputTunnel` の GameObject の子に `AunCastAudioOutputTunnel` を、直結出力にするなら出力先の AudioSource に `AunCastSpeaker` を手動で追加してから、**「参照関係を再配線」** を押してください。
 
 トンネルが存在する構成では、再配線が `AunCastAudioOutputTunnel.inputA` / `inputB` に設定された入力用 `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
 

@@ -559,8 +559,8 @@ namespace PasocomMate.AunCast.Internal
                         {
                             EditorGUILayout.HelpBox(
                                 AunCastEditorLocalization.Localize(
-                                    "委譲先の AudioOutputTunnel が設定されていません｡ 同じ GameObject に AudioOutputTunnel (TopazChat Player 付属) を配置して「参照関係を再配線」を実行するか､ targetTunnel を手動で設定してください｡",
-                                    "The delegation target AudioOutputTunnel is not assigned. Place an AudioOutputTunnel (bundled with TopazChat Player) on the same GameObject and run Rewire References, or assign targetTunnel manually."),
+                                    "委譲先の AudioOutputTunnel が設定されていません｡ AudioOutputTunnel (TopazChat Player 付属) をこの GameObject または親に配置して「参照関係を再配線」を実行するか､ targetTunnel を手動で設定してください｡",
+                                    "The delegation target AudioOutputTunnel is not assigned. Place an AudioOutputTunnel (bundled with TopazChat Player) on this GameObject or a parent and run Rewire References, or assign targetTunnel manually."),
                                 MessageType.Error);
                         }
 
@@ -1294,6 +1294,21 @@ namespace PasocomMate.AunCast.Internal
             return DestroyComponentsByTypeName(inputGameObject, SPEAKER_COMPONENT_TYPE_NAME) > 0;
         }
 
+        /// <summary>Transform 以外のコンポーネントも子も持たない GameObject かどうかを判定する。</summary>
+        private static bool IsBareGameObject(GameObject gameObject)
+        {
+            if (gameObject == null || gameObject.transform.childCount > 0) return false;
+
+            Component[] components = gameObject.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null || component is Transform) continue;
+                return false;
+            }
+            return true;
+        }
+
         private static bool IsSimpleLegacyAudioInputObject(GameObject gameObject)
         {
             if (gameObject == null || gameObject.transform.childCount > 0) return false;
@@ -1403,9 +1418,24 @@ namespace PasocomMate.AunCast.Internal
                 }
             }
 
+            // ビルド済みシーンでは旧トンネルの GameObject に Network ID がコンポーネント構成の署名付きで
+            // 焼き付けられており、同じ GameObject に UdonBehaviour を追加すると署名不一致
+            // (IncompatibleTypes / Network Components Changed) でビルドが失敗する。
+            // そのため AunCastAudioOutputTunnel は既存 GameObject には追加せず、新規の子 GameObject に配置する。
             GameObject tunnelGameObject = oldTunnel.gameObject;
-            AunCastAudioOutputTunnel tunnel = tunnelGameObject.GetComponent<AunCastAudioOutputTunnel>();
-            tunnel = EnsureUdonSharpComponent(tunnelGameObject, tunnel, recordUndo: true, nameof(AunCastAudioOutputTunnel));
+            AunCastAudioOutputTunnel tunnel = tunnelGameObject.GetComponentInChildren<AunCastAudioOutputTunnel>(true);
+            GameObject adapterGameObject;
+            if (tunnel != null)
+            {
+                adapterGameObject = tunnel.gameObject;
+            }
+            else
+            {
+                adapterGameObject = new GameObject(nameof(AunCastAudioOutputTunnel));
+                Undo.RegisterCreatedObjectUndo(adapterGameObject, "Create AunCastAudioOutputTunnel");
+                adapterGameObject.transform.SetParent(tunnelGameObject.transform, false);
+            }
+            tunnel = EnsureUdonSharpComponent(adapterGameObject, tunnel, recordUndo: true, nameof(AunCastAudioOutputTunnel));
             if (tunnel == null) return false;
 
             var so = new SerializedObject(tunnel);
@@ -1423,7 +1453,7 @@ namespace PasocomMate.AunCast.Internal
 
             EditorUtility.SetDirty(tunnelGameObject);
             PrefabUtility.RecordPrefabInstancePropertyModifications(tunnelGameObject);
-            Debug.Log($"[AunCast] AudioOutputTunnel を委譲先とする AunCastAudioOutputTunnel を設定しました｡ {GetHierarchyPath(tunnelGameObject.transform)}", tunnelGameObject);
+            Debug.Log($"[AunCast] AudioOutputTunnel を委譲先とする AunCastAudioOutputTunnel を設定しました｡ {GetHierarchyPath(adapterGameObject.transform)}", adapterGameObject);
             return true;
         }
 
@@ -1489,15 +1519,25 @@ namespace PasocomMate.AunCast.Internal
             }
 
             GameObject tunnelGameObject = tunnel.gameObject;
+            string tunnelPath = GetHierarchyPath(tunnelGameObject.transform);
             // スピーカー化した出力へ委譲先の旧トンネルが書き込み続けないよう、旧トンネルも削除する
             Component delegateTunnel = ResolveTunnelDelegate(tunnel);
             if (delegateTunnel != null)
                 DestroyComponentWithUndo(delegateTunnel);
             DestroyComponentWithUndo(tunnel);
 
-            EditorUtility.SetDirty(tunnelGameObject);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(tunnelGameObject);
-            Debug.Log($"[AunCast] AunCastAudioOutputTunnel を直結化しました｡ {GetHierarchyPath(tunnelGameObject.transform)}", tunnelGameObject);
+            // 移行時に作成したアダプタ用の子 GameObject が空になった場合は残骸として削除する
+            // (プレハブインスタンスの構成物は Destroy できないため除外する)
+            if (IsBareGameObject(tunnelGameObject) && !PrefabUtility.IsPartOfPrefabInstance(tunnelGameObject))
+            {
+                Undo.DestroyObjectImmediate(tunnelGameObject);
+            }
+            else
+            {
+                EditorUtility.SetDirty(tunnelGameObject);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(tunnelGameObject);
+            }
+            Debug.Log($"[AunCast] AunCastAudioOutputTunnel を直結化しました｡ {tunnelPath}");
             return converted;
         }
 
