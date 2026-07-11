@@ -84,3 +84,7 @@ Assets/PackageMakerWindowData.asset*
 
 # MkDocs（ユーザーマニュアル）のローカルビルド出力
 /Manual/site/
+
+# Python ツール（Tools/*.py）のバイトコードキャッシュ
+__pycache__/
+*.pyc
