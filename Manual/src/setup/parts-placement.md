@@ -49,9 +49,9 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 ## スピーカーを増やす (AunCastSpeaker) {#speaker}
 
-AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため、音声出力も２系統の `AudioSource` (+ `VRCSpatialAudioSource`) が必要です。実際のスピーカーは `ExampleOutput/SpeakerA`, `ExampleOutput/SpeakerB` として配置されており、`AunCastSpeaker` コンポーネントが付与されています。
+AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため、音声出力も２系統の `AudioSource` (+ `VRCSpatialAudioSource`) が必要です。つまり、一つのスピーカーにつき、同じ位置・同じ設定の `AudioSource` を２つ配置して、それぞれを `PlayerA` / `PlayerB` として指定しておく必用があります。
 
-スピーカーを増やすには、これらを複製するか、または新しく用意した `AudioSource` (+ `VRCSpatialAudioSource`) に `AunCastSpeaker` を付け、接続先を `PlayerA` または `PlayerB` に指定してから再配線します。
+プレハブ同梱のスピーカーは `ExampleOutput/SpeakerA`, `ExampleOutput/SpeakerB` として配置されており、`AunCastSpeaker` コンポーネントが付与されています。スピーカーを増やすには、これらを複製するか、または新しく用意した `AudioSource` に `AunCastSpeaker` を付け、接続先を `PlayerA` または `PlayerB` に指定してから再配線します。
 
 ### 手順
 
@@ -107,13 +107,9 @@ AunCast は内部に `PlayerA` / `PlayerB`（A/B再生系統）を持つため�
 - **[非アクティブ] [AudioSource無効] [volume 0] [音が届かない設定]** … 現状では聞こえない設定の `AudioSource` です。「音が届かない設定」は、AudioSource の距離減衰カーブにより音が直接聞こえない状態を指します。
 - **この AudioSource を参照するコンポーネント: ○件** … その `AudioSource` を参照する外部コンポーネント（音量制御スクリプト等）がシーン内に存在します。警告には参照元コンポーネントへのリンク一覧が表示されます。AunCast ではスピーカーがA/Bの２系統に分かれるため、**単一の `AudioSource` 入力しか受けない参照元は、そのままでは移行できません**。参照元の仕様を確認してください（AunCast による自動差し替えは行われません）。
 
-`AunCastAudioOutputTunnel` の入力（`inputA` / `inputB`）として使われている `AudioSource` は、「音が届かない設定」などのラベルを表示せず、トンネル配線（`AudioOutputTunnel` / `AunCastAudioOutputTunnel`）自身による参照も警告に数えません。代わりに、トンネル用のため現状のままでよい旨の案内が表示されます。トンネル配線以外の外部コンポーネントがこの `AudioSource` を参照している場合は、引き続き警告が表示されます。
-
-AudioLink の `AudioSource` 参照は AunCast が自動管理するため、手動対応が必要な警告としては扱われません。
-
 ### 旧プレイヤー本体の削除
 
-変換候補では扱わない旧 `VRCAVProVideoPlayer` 本体は、**旧プレイヤー本体の手動削除候補** セクションに一覧表示されます。AunCast への移行が完了し、不要であることを確認できたら手動で削除してください（AunCast は自動削除しません）。
+変換候補では扱わない旧 `VRCAVProVideoPlayer` 本体は、**旧プレイヤー本体の手動削除候補** セクションに一覧表示されます。AunCast への移行が完了し、不要であることを確認できたら手動で削除してください（AunCast は自動削除しません）。また、付随する操作パネルUIなども同様に削除してください。
 
 ![旧プレイヤー本体の手動削除候補セクション](../assets/inspector-legacy-player-cleanup.png){ width="640" }
 
@@ -142,11 +138,10 @@ TopazChat Player の「+ Reverb Filter」など、`AudioOutputTunnel` コンポ�
 
 トンネルの出力先 AudioSource を参照する外部コンポーネントがある場合は、**「出力AudioSourceをスピーカー化」** を選んだ時点で、参照元コンポーネントへのリンク一覧付きの警告が表示されます。参照元が単一の AudioSource だけを扱う構成では、A/B再生系統への複製後に手動調整が必要になることがあります。
 
-`AudioOutputTunnel` の出力先を読み取れない構成では、自動移行を中止します。その場合は、互換トンネルとして使うなら `AudioOutputTunnel` の GameObject の子に `AunCastAudioOutputTunnel` を、直結出力にするなら出力先の AudioSource に `AunCastSpeaker` を手動で追加してから、**「参照関係を再配線」** を押してください。
-
-トンネルが存在する構成では、再配線が `AunCastAudioOutputTunnel.inputA` / `inputB` に設定された入力用 `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
-
-この方式は、直結出力に比べて遅延がバッファ分（数十ミリ秒程度）だけ多い構成です。[obs-delay-stream](https://mz1987records.booth.pm/items/8134637) や [AunSync](https://github.com/pasocommate/AunSync) との併用時には使わないでください。
+!!! note "トンネル使用時の注意点"
+    - `AudioOutputTunnel` の出力先を読み取れない構成では、自動移行を中止します。その場合は、互換トンネルとして使うなら `AudioOutputTunnel` の GameObject の子に `AunCastAudioOutputTunnel` を、直結出力にするなら出力先の AudioSource に `AunCastSpeaker` を手動で追加してから、**「参照関係を再配線」** を押してください。
+    - トンネルが存在する構成では、再配線が `AunCastAudioOutputTunnel.inputA` / `inputB` に設定された入力用 `AunCastSpeaker`（`AudioSource`）を自動で不可聴設定（3D化＋ロールオフ全域０）にします。音声はトンネルの出力側からのみ聞こえるようになりますが、これは正常な動作です。
+    - この方式は、直結出力に比べて遅延がバッファ分（数十ミリ秒程度）だけ多い構成です。[obs-delay-stream](https://mz1987records.booth.pm/items/8134637) や [AunSync](https://github.com/pasocommate/AunSync) との併用時には、トンネルで発生する遅延時間を考慮する必要があります。
 
 ### AudioLink をお使いの場合 {#audiolink}
 
