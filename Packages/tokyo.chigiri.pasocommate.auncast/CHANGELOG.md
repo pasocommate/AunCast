@@ -5,6 +5,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.2] - 2026-07-11
+- AudioLink を必須依存として明示しました（VCC で AudioLink が自動導入されるようになります）。
+
 ## [5.1.1] - 2026-07-11
 - AunCastAudioOutputTunnel 構成で配信を Stop All した際、委譲先トンネルのリングバッファに残った音が短いループとして鳴り続ける問題を修正しました。停止(IDLE)中は無音側の入力を流し込んでバッファをクリアします。
   - この修正には `AunCastAudioOutputTunnel` への `controller` 参照が追加されます。既存ワールドでは `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行後、AunCast 設定の「参照関係を再配線」を実行して配線を更新してください。
