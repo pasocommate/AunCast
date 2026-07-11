@@ -52,7 +52,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 音声出力を配線したい | [スピーカーを増やす (AunCastSpeaker)](../setup/parts-placement.md#speaker) |
 | 既存ワールドのビデオプレイヤーから移行したい | [既存ワールドからの移行](../setup/parts-placement.md#migration) |
 | TopazChat「+ Reverb Filter」構成を移行したい | [AudioOutputTunnel 構成を移行する場合](../setup/parts-placement.md#tunnel) |
-| AudioLink と連携したい・`AudioLinkInput` が無効化された | [AudioLink をお使いの場合](../setup/parts-placement.md#audiolink) |
+| AudioLink と連携したい<br>`AudioLinkInput` が無効化された | [AudioLink をお使いの場合](../setup/parts-placement.md#audiolink) |
 | 何名まで耐えられるか知りたい | [同時接続上限の管理](../concepts/connection-limit.md) |
 | 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#server-selection) |
 | 配信のビットレートや遅延の目安を知りたい | [配信・運用上の注意](../operation/streaming.md) |
@@ -84,6 +84,8 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 ??? question "画面が白飛びする"
     AVPro のビデオストリームは非sRGBテクスチャとしてデコードされるため、ガンマ値 2.2 で補正表示する必要があります。一般的なビデオプレイヤーはこれを考慮したシェーダー・マテリアルを同梱しており、AunCast でも `Standard Video Emission` というシェーダーを用意してあります（USharpVideo 由来）。しかし、ガンマ調整を考慮しないマテリアルをスクリーンに割り当てている場合は、本来の映像よりも明るく表示されてしまいます。付属シェーダーや、lilToonなどのガンマ設定が可能なシェーダーを用いて、スクリーンのマテリアルを調整してください。
+    
+    停止中のスクリーン画像が白飛びする場合は、テクスチャ設定の sRGB がオフになっているかを確認してください（→ [主要パラメータ一覧](../setup/settings.md#params)）。
 
 ??? question "ボリュームスライダーで音量が調節できない"
     既存のUdonスクリプトと競合し、AudioSource のボリュームが直接操作されている可能性があります。[スピーカーを増やす (AunCastSpeaker)](../setup/parts-placement.md#speaker) の「AudioSource のボリュームを外部から操作するには」をお読みください。
@@ -111,3 +113,5 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 - **[機能要望](https://github.com/pasocommate/AunCast/issues/new?template=feature-request.yml)**：新しい機能や改善の提案
 
 [Issue 一覧はこちら](https://github.com/pasocommate/AunCast/issues)で確認できます。
+
+GitHub の Issue に書くのが難しく感じる方は、[つつみちぎりのＸアカウント](https://x.com/chigiri_vrc) にリプライまたはＤＭでご連絡ください。
