@@ -11,6 +11,7 @@
   "gitDependencies": {},
   "vpmDependencies": {
     "com.vrchat.worlds": ">=3.10.2",
+    "com.llealloo.audiolink": ">=3.1.2",
     "net.narazaka.vrchat.tmp-fallback-fonts-jp": ">=1.0.0",
     "tokyo.chigiri.pasocommate.rendermate": ">=4.0.0 <5.0.0"
   }
