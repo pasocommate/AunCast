@@ -440,7 +440,7 @@ namespace PasocomMate.AunCast
                 _lastAssignedVideoFlipY = false;
             }
 
-            if (_timelineLogging) TL($"a=AUDIO_ONLY_FALLBACK adv={timeAdvance:F2} wait={elapsed:F2}");
+            TL($"a=AUDIO_ONLY_FALLBACK adv={timeAdvance:F2} wait={elapsed:F2}");
             LogMessage($"Audio-only fallback accepted (advance={timeAdvance:F2}s, wait={elapsed:F2}s)");
             return true;
         }

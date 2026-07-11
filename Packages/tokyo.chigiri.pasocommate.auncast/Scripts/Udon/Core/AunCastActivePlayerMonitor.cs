@@ -86,6 +86,8 @@ namespace PasocomMate.AunCast
         private float _stablePlaybackStartedAt;
         /// <summary>この時刻まではドリフト積算を抑制する。安定再生開始直後の偽陽性を防ぐ。</summary>
         private float _driftWarmupUntil;
+        /// <summary>DRIFT_THRESHOLD ログの一回性ガード。監視セッションごとにリセットする。</summary>
+        private bool _driftThresholdLogged;
 
         // =================================================================
         //  ロールバインド
@@ -127,7 +129,8 @@ namespace PasocomMate.AunCast
             _driftWarmupUntil = 0f;
             _baseWallTime = 0f;
             _basePlayerTime = 0f;
-            if (_timelineLogging) TL($"a=INIT_ACTIVE");
+            _driftThresholdLogged = false;
+            TL($"a=INIT_ACTIVE");
         }
 
         // =================================================================
@@ -189,7 +192,7 @@ namespace PasocomMate.AunCast
                 {
                     if (_activeIsA) _hasSeenTimeAdvanceA = true;
                     else _hasSeenTimeAdvanceB = true;
-                    if (_timelineLogging) TL($"a=FIRST_ADVANCE");
+                    TL($"a=FIRST_ADVANCE");
                 }
                 else
                 {
@@ -216,7 +219,7 @@ namespace PasocomMate.AunCast
                 if (_stallStartedAt <= 0f)
                 {
                     _stallStartedAt = now;
-                    if (_timelineLogging) TL($"a=STALL_START");
+                    TL($"a=STALL_START");
                 }
             }
 
@@ -320,7 +323,12 @@ namespace PasocomMate.AunCast
                 && now >= _driftWarmupUntil
                 && Mathf.Abs(_driftAccumulator) > driftResyncThresholdSec)
             {
-                if (_timelineLogging) TL($"a=DRIFT_THRESHOLD drift={_driftAccumulator:F4}");
+                // Resync 要求が通らない間は毎ポーリング true が続くため、初回のみ記録する
+                if (!_driftThresholdLogged)
+                {
+                    _driftThresholdLogged = true;
+                    TL($"a=DRIFT_THRESHOLD drift={_driftAccumulator:F4}");
+                }
                 return true;
             }
 
@@ -407,7 +415,7 @@ namespace PasocomMate.AunCast
             _driftAccumulator = 0f;
             _baseWallTime = 0f;
             _basePlayerTime = 0f;
-            if (_timelineLogging) TL($"a=STABLE_PLAYBACK warmupUntil={_driftWarmupUntil:F3}");
+            TL($"a=STABLE_PLAYBACK warmupUntil={_driftWarmupUntil:F3}");
         }
 
         // =================================================================

@@ -239,11 +239,11 @@ namespace PasocomMate.AunCast
             else if (!_loggedMissingResyncSlot)
             {
                 _loggedMissingResyncSlot = true;
-                if (_timelineLogging) TL($"a=SLOT_PENDING_LOCAL_PLAYBACK");
+                TL($"a=SLOT_PENDING_LOCAL_PLAYBACK");
                 LogMessage("Resync slot not assigned yet; continuing local playback without Coordinator reports");
             }
 
-            if (_timelineLogging && !_tlClientIdentified)
+            if (!_tlClientIdentified)
             {
                 VRCPlayerApi local = Networking.LocalPlayer;
                 if (local != null)
@@ -560,6 +560,7 @@ namespace PasocomMate.AunCast
             activeMonitor.ResetTimeAdvanceForPlayer(!_activeIsA);
             if (_activeIsA) _tlLoadingB = true; else _tlLoadingA = true;
             switcher.StartStandbyConnect(now, _syncedURL);
+            MarkMeasLoad(_activeIsA ? 1 : 0);
             resyncClient.ReportRunning();
             ReportConnecting(true);
 
@@ -574,6 +575,7 @@ namespace PasocomMate.AunCast
         /// <summary>クロスフェード開始。Standby 検証合格後に呼ばれ、音声を滑らかに移行する。</summary>
         private void StartSwitch(float now)
         {
+            LogMeasSwitch("MEAS_SWITCH_START");
             switcher.StartCrossfade(now);
             _localState = STATE_SWITCHING;
         }
@@ -581,6 +583,9 @@ namespace PasocomMate.AunCast
         /// <summary>クロスフェード完了後のロール交換。旧 Active 停止→新 Active 確定→クールダウンに移行する。</summary>
         private void CompleteSwitch(float now)
         {
+            // 旧 Active 停止前に両プレイヤーの再生位置を記録する
+            LogMeasSwitch("MEAS_SWITCH_DONE");
+
             // ロール交換: 旧 Active 停止 → _activeIsA トグル → 新 Active フル音量 → AudioLink 切替
             switcher.CompleteSwitchRoles();
             _activeIsA = switcher.GetActiveIsA();
@@ -675,6 +680,7 @@ namespace PasocomMate.AunCast
             ReportConnecting(true);
             _tlLoadingA = true;
             switcher.StartActiveDirectReboot(_syncedURL);
+            MarkMeasLoad(0);
         }
 
         // =================================================================
@@ -785,6 +791,7 @@ namespace PasocomMate.AunCast
         {
             bool isActiveEvent = IsActiveEvent();
             _tlAction = "VIDEO_READY";
+            LogMeasReady(_lastCallbackPlayerIndex);
 
             if (isActiveEvent)
             {
@@ -812,6 +819,7 @@ namespace PasocomMate.AunCast
         {
             bool isActiveEvent = IsActiveEvent();
             _tlAction = "VIDEO_START";
+            LogMeasStart(_lastCallbackPlayerIndex);
 
             if (isActiveEvent)
             {
@@ -1049,6 +1057,7 @@ namespace PasocomMate.AunCast
                 _pendingConnectingReport = true;
             if (_activeIsA) _tlLoadingA = true; else _tlLoadingB = true;
             switcher.GetActiveManager().LoadURL(url);
+            MarkMeasLoad(_activeIsA ? 0 : 1);
             LogMessage($"Started playback: {url}");
         }
 
@@ -1406,6 +1415,75 @@ namespace PasocomMate.AunCast
         private void TL(string eventAndData)
         {
             Debug.Log($"[AunCast:TL] st={Networking.GetServerTimeInMilliseconds()} c=LDPC {eventAndData}");
+        }
+
+        // =================================================================
+        //  計測ログ (MEAS): 再生開始位置バラつきの定量化
+        //  LoadURL → Ready → Start の所要時間・イベント時フレーム時間・再生位置を
+        //  タイムラインログへ出力する。GOP 境界待ちやフレームヒッチとの相関分析に使う。
+        //  接続試行・切替時にしか発火しない低頻度ログのため、_timelineLogging に
+        //  かかわらず常時出力する。
+        // =================================================================
+
+        // LoadURL / Ready の発行時刻 (Time.realtimeSinceStartup)。0 = 未計測
+        private float _measLoadAtA;
+        private float _measLoadAtB;
+        private float _measReadyAtA;
+        private float _measReadyAtB;
+
+        /// <summary>LoadURL 発行を記録する。以降の Ready/Start 計測の起点となる。</summary>
+        private void MarkMeasLoad(int playerIndex)
+        {
+            float now = Time.realtimeSinceStartup;
+            if (playerIndex == 0) { _measLoadAtA = now; _measReadyAtA = 0f; }
+            else { _measLoadAtB = now; _measReadyAtB = 0f; }
+            TL($"a=MEAS_LOAD p={playerIndex}");
+        }
+
+        /// <summary>OnVideoReady 時点の計測。load2ready = 接続確立〜デコード準備完了の所要秒。</summary>
+        private void LogMeasReady(int playerIndex)
+        {
+            float now = Time.realtimeSinceStartup;
+            float loadAt = playerIndex == 0 ? _measLoadAtA : _measLoadAtB;
+            if (playerIndex == 0) _measReadyAtA = now; else _measReadyAtB = now;
+
+            float load2Ready = loadAt > 0f ? now - loadAt : -1f;
+            float time = GetMeasPlayerTime(playerIndex);
+            float frameMs = Time.deltaTime * 1000f;
+            TL($"a=MEAS_READY p={playerIndex} load2ready={load2Ready:F3} t={time:F3} dt={frameMs:F1}");
+        }
+
+        /// <summary>
+        /// OnVideoStart 時点の計測。load2start の分布が GOP 長相当に広がるなら
+        /// キーフレーム境界待ちが支配項、dt(フレーム時間) と相関するならヒッチ起因と切り分けられる。
+        /// </summary>
+        private void LogMeasStart(int playerIndex)
+        {
+            float now = Time.realtimeSinceStartup;
+            float loadAt = playerIndex == 0 ? _measLoadAtA : _measLoadAtB;
+            float readyAt = playerIndex == 0 ? _measReadyAtA : _measReadyAtB;
+
+            float load2Start = loadAt > 0f ? now - loadAt : -1f;
+            float ready2Start = readyAt > 0f ? now - readyAt : -1f;
+            float time = GetMeasPlayerTime(playerIndex);
+            float frameMs = Time.deltaTime * 1000f;
+            TL($"a=MEAS_START p={playerIndex} load2start={load2Start:F3} ready2start={ready2Start:F3} t={time:F3} dt={frameMs:F1}");
+        }
+
+        /// <summary>切替前後の両プレイヤー再生位置を記録する。各接続の経過時間の突き合わせに使う。</summary>
+        private void LogMeasSwitch(string action)
+        {
+            float timeA = GetMeasPlayerTime(0);
+            float timeB = GetMeasPlayerTime(1);
+            int activeIdx = _activeIsA ? 0 : 1;
+            TL($"a={action} active={activeIdx} tA={timeA:F3} tB={timeB:F3}");
+        }
+
+        /// <summary>計測用の再生位置取得。未配線時は -1 を返す。</summary>
+        private float GetMeasPlayerTime(int playerIndex)
+        {
+            AunCastVideoPlayerManager mgr = playerIndex == 0 ? playerManagerA : playerManagerB;
+            return mgr != null ? mgr.GetTime() : -1f;
         }
 
     }

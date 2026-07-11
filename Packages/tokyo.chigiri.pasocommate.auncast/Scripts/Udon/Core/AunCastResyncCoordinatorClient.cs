@@ -104,7 +104,7 @@ namespace PasocomMate.AunCast
             _mySlotIndex = coordinator.FindSlotByPlayerId(local.playerId);
             if (_mySlotIndex >= 0)
             {
-                if (_timelineLogging) TL($"a=SLOT_ASSIGNED slot={_mySlotIndex}");
+                TL($"a=SLOT_ASSIGNED slot={_mySlotIndex}");
                 return true;
             }
 
@@ -143,7 +143,7 @@ namespace PasocomMate.AunCast
             else if (forceRebootSeq != _lastGlobalForceRebootSeq)
             {
                 _lastGlobalForceRebootSeq = forceRebootSeq;
-                if (_timelineLogging) TL($"a=GLOBAL_FORCE_REBOOT seq={forceRebootSeq}");
+                TL($"a=GLOBAL_FORCE_REBOOT seq={forceRebootSeq}");
                 LogWarning($"Global force reboot detected: seq={forceRebootSeq}");
                 return true;
             }
@@ -177,7 +177,7 @@ namespace PasocomMate.AunCast
             _requestStartedAt = now;
             _lastResyncRequestSentAt = now;
             _requestReason = reason;
-            if (_timelineLogging) TL($"a=RESYNC_REQUEST reason={GetRequestReasonText(reason)} slot={_mySlotIndex}");
+            TL($"a=RESYNC_REQUEST reason={GetRequestReasonText(reason)} slot={_mySlotIndex}");
             LogMessage($"Requested Resync (reason={GetRequestReasonText(reason)}, slot={_mySlotIndex})");
             return true;
         }
@@ -215,7 +215,7 @@ namespace PasocomMate.AunCast
                     _resyncRequested = true;
                     _requestStartedAt = now;
                     _requestReason = REQUEST_REASON_MANUAL;
-                    if (_timelineLogging) TL($"a=ADOPTION coordState={coordState} slot={_mySlotIndex}");
+                    TL($"a=ADOPTION coordState={coordState} slot={_mySlotIndex}");
                     LogMessage($"Adopted queued Resync request (coordState={coordState})");
                     return coordState == AunCastResyncCoordinator.STATE_GRANTED
                         ? AunCastDualPlayerController.STATE_RESERVED
@@ -224,7 +224,7 @@ namespace PasocomMate.AunCast
                 case AunCastDualPlayerController.STATE_REQUEST_PENDING:
                     if (coordState == AunCastResyncCoordinator.STATE_GRANTED)
                     {
-                        if (_timelineLogging) TL($"a=RESYNC_GRANTED slot={_mySlotIndex}");
+                        TL($"a=RESYNC_GRANTED slot={_mySlotIndex}");
                         LogMessage($"Resync granted after {(now - _requestStartedAt):F2}s");
                         return AunCastDualPlayerController.STATE_RESERVED;
                     }
@@ -246,7 +246,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void CancelResync()
         {
-            if (_timelineLogging) TL($"a=RESYNC_CANCEL slot={_mySlotIndex}");
+            TL($"a=RESYNC_CANCEL slot={_mySlotIndex}");
             if (_mySlotIndex >= 0 && coordinator != null)
             {
                 int coordState = coordinator.GetResyncState(_mySlotIndex);
@@ -274,7 +274,7 @@ namespace PasocomMate.AunCast
         public void ReportResult(bool success)
         {
             if (coordinator == null || _mySlotIndex < 0) return;
-            if (_timelineLogging) TL($"a=RESYNC_RESULT success={(success ? 1 : 0)} slot={_mySlotIndex}");
+            TL($"a=RESYNC_RESULT success={(success ? 1 : 0)} slot={_mySlotIndex}");
 
             string eventName = success ? "OnReportSuccess" : "OnReportFail";
             coordinator.SendCustomNetworkEvent(
@@ -305,7 +305,7 @@ namespace PasocomMate.AunCast
             _lastResyncRequestSentAt = now;
             coordinator.SendCustomNetworkEvent(
                 NetworkEventTarget.Owner, "OnResyncRequest", _mySlotIndex);
-            if (_timelineLogging) TL($"a=RESYNC_RETRY slot={_mySlotIndex}");
+            TL($"a=RESYNC_RETRY slot={_mySlotIndex}");
         }
 
         // =================================================================
@@ -319,7 +319,7 @@ namespace PasocomMate.AunCast
         public void ReportRunning()
         {
             if (coordinator == null || _mySlotIndex < 0) return;
-            if (_timelineLogging) TL($"a=REPORT_RUNNING slot={_mySlotIndex}");
+            TL($"a=REPORT_RUNNING slot={_mySlotIndex}");
             coordinator.SendCustomNetworkEvent(
                 NetworkEventTarget.Owner, "OnReportRunning", _mySlotIndex);
         }
@@ -368,6 +368,9 @@ namespace PasocomMate.AunCast
         {
             _timelineLogging = value;
         }
+
+        /// <summary>タイムラインログの有効状態を返す（UI 追従用。重要イベントはこの値によらず常時出力）。</summary>
+        public bool GetTimelineLogging() { return _timelineLogging; }
 
         // =================================================================
         //  ログ

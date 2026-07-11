@@ -482,7 +482,7 @@ namespace PasocomMate.AunCast
             CompressTimestamps();
             RequestSerialization();
             NotifyObservers();
-            if (_timelineLogging) TL($"a=GLOBAL_RESYNC total={total}");
+            TL($"a=GLOBAL_RESYNC total={total}");
             LogMessage($"Global Resync triggered: {total} users queued");
         }
 
@@ -493,7 +493,7 @@ namespace PasocomMate.AunCast
             globalForceRebootSeq++;
             RequestSerialization();
             NotifyObservers();
-            if (_timelineLogging) TL($"a=GLOBAL_FORCE_REBOOT_TRIGGER seq={globalForceRebootSeq}");
+            TL($"a=GLOBAL_FORCE_REBOOT_TRIGGER seq={globalForceRebootSeq}");
             LogMessage($"Global force reboot triggered: seq={globalForceRebootSeq}");
         }
 
@@ -679,6 +679,9 @@ namespace PasocomMate.AunCast
         {
             _timelineLogging = value;
         }
+
+        /// <summary>タイムラインログの有効状態を返す（UI 追従用。重要イベントはこの値によらず常時出力）。</summary>
+        public bool GetTimelineLogging() { return _timelineLogging; }
 
         private void TL(string eventAndData)
         {
