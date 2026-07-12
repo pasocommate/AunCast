@@ -7,6 +7,7 @@
   - VRChat World SDK / UdonSharp
   - `VRCAVProVideoPlayer`
   - 低遅延ライブストリーム（主に `rtspt://` 系を想定）
+  - プラットフォーム: PC (Windows) / Android (Quest)。Android では `rtspt://` を再生できないため、Quest で再生するには HLS 等の対応形式の配信 URL が必要（§5.4）
 - 想定用途:
   - VRChat ワールド内でのライブ配信視聴
   - 長時間視聴中の停止・ドリフト・無音化・スタックに対する再同期
@@ -101,6 +102,19 @@
 - 完全シームレス切替は保証しない
 - 目標は「無音ギャップと停止継続の低減」であり、「サンプル精度の継ぎ目ゼロ」ではない
 - 設計の優先順位は「安全性 > 安定性 > 低遅延 > 完全な滑らかさ」とする
+
+## 5.4 プラットフォーム制約（PC / Android）
+
+- 対応プラットフォームは PC (Windows, D3D11) と Android (Quest)
+- Android の AVPro (ExoPlayer) は `rtspt://` を再生できない。Quest で再生するには HLS 等の対応形式の URL が必要
+  - 配信 URL のプラットフォーム分岐は実装しない。PC/Quest 混在時は双方で再生可能な単一 URL を用いる運用とする
+  - HLS はセグメント方式のため `rtspt://` より遅延が増える（低遅延という主目的とのトレードオフはスタッフの運用判断）
+- `useLowLatency` は Windows (Media Foundation) 専用オプションで、Android では無視される（通例、要実機検証）
+  - プラットフォーム別の値をエディタ経由でシーンへ焼き込む分岐は行わない（最後に保存したビルドターゲットに依存する非決定性を生むため）
+  - 実機検証で Android 側の上書きが必要になった場合は、`AunCastBuildCallback.OnProcessScene` で `BuildTarget.Android` 時のみ SerializedObject 上書きする（ビルド出力にのみ反映され、シーンアセットを汚さない）
+- AVPro 出力テクスチャにはプラットフォーム差がある:
+  - PC (D3D11): 上下反転 + 非 sRGB（ガンマ空間）→ シェーダーの手動ガンマ補正（`_Gamma`、既定 2.2）と、`_MainTex_ST` 負スケール検出（`GetVideoFlipY()`）による反転処理で対応（現行実装）
+  - Android: 反転なし・sRGB 変換済みが通例（要実機検証）。反転はランタイム自動検出がそのまま追従し、ガンマは `AunCastScreen` / `AunCastUiScreen` が `#if UNITY_ANDROID` で映像表示中のみ `_Gamma=1.0` を設定して補正を無効化する
 
 ---
 

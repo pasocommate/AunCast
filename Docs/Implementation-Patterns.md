@@ -550,3 +550,51 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   変えても自動リフローしない。アスペクト比を大きく変える場合は内部レイアウトの再調整が要る。
 - 物理的な見かけサイズだけ変えたい場合は `localScale` / `menuScale`（`AunCastPortablePanel`）
   側で行い、`sizeDelta` は触らない。
+
+## 14. プラットフォーム分岐パターン（PC / Android）
+
+Quest(Android) 対応で必要になるプラットフォーム差の吸収は、次の役割分担で行う。
+
+### 判定は C# 側（`#if UNITY_ANDROID`）に置く
+
+- UdonSharp は C# プリプロセッサをサポートし、**エディタの現在のビルドターゲット**の
+  定義でコンパイルされる。Android ターゲットへスイッチした状態で
+  `Tools > UdonSharp > Refresh All UdonSharp Programs` を実行すると
+  `#if UNITY_ANDROID` 側のコードでプログラムアセットが生成される。
+- したがって **アップロード前に対象プラットフォームで Refresh されていること**が前提。
+  VRChat SDK のビルドでは通常自動で再コンパイルされるが、`.asset` を目視確認する場合は
+  ターゲット切替後の Refresh を忘れない。
+- HLSL 側での分岐は避ける。シェーダーで判定する場合は
+  `#if defined(SHADER_API_GLES3) || defined(SHADER_API_VULKAN)` を使う
+  （HLSL に `UNITY_ANDROID` は存在しない。VRChat PC は D3D11 固定なので
+  GLES3/Vulkan コンパイル ≒ Android ビルドとみなせる）。ただしエディタは Android
+  ターゲットでも D3D11 で描画するため、**エディタ上では常に PC 側分岐が走る**
+  （Quest 側の見た目はエディタで確認できない）。
+
+### AVPro 出力テクスチャの差はシェーダープロパティ `_Gamma` で受ける
+
+- PC (D3D11) の AVPro 出力は「上下反転 + 非 sRGB」、Android (ExoPlayer) は
+  「反転なし + sRGB 変換済み」が通例（要実機検証）。
+- 反転: `AunCastVideoPlayerManager.GetVideoFlipY()` が Grab マテリアルの
+  `_MainTex_ST` 負スケールをランタイム検出しているため、**プラットフォーム分岐は不要**
+  （Android では負スケールが書かれず自動的に無効になる）。
+- ガンマ: シェーダーには固定の `pow(color, 2.2)` を書かず、
+  **`_Gamma("Video Gamma", Float) = 2.2` プロパティ**として公開する
+  （`StandardVideoEmissive` / RenderMate UIPanel が該当）。
+  ランタイムでは `AunCastScreen` / `AunCastUiScreen` が `#if UNITY_ANDROID` で
+  映像表示中のみ `_Gamma = 1.0` を設定し、idle 画像（sRGB オフ運用のため全プラット
+  フォームで補正が必要）表示時は初期値へ復元する。
+  - 映像 RT と idle 画像で必要な補正が異なるため、テクスチャ種別を知る U# 側でしか
+    正しく分岐できない。これが「シェーダー内マクロ分岐」ではなく
+    「プロパティ + C# 駆動」を採る理由。
+- 共有マテリアルへの書き込みは、既存の `_restore*` キャッシュ/復元パターン
+  （`AunCastScreen`）に倣い、初期値を `HasProperty` ガード付きでキャッシュして
+  無効化時に書き戻す。エディタ Play 中のアセット汚染は `AunCastMaterialGuard` が防ぐ。
+
+### エディタ焼き込みのプラットフォーム分岐は禁止
+
+- `ApplyVideoPlayerSettingsToScene()` のようなシーンへの焼き込みにビルドターゲット
+  分岐を入れると、**最後に保存したターゲットで値が変わる非決定性**を生むため行わない。
+- プラットフォーム別の上書きが必要になった場合は
+  `AunCastBuildCallback.OnProcessScene`（`IProcessSceneWithReport`）で
+  ビルド時にのみ上書きする（シーンアセットを汚さない）。
