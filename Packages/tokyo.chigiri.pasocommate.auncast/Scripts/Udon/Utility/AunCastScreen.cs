@@ -23,6 +23,10 @@ namespace PasocomMate.AunCast
         /// <summary>Unity の _ST はテクスチャプロパティに付随するため、通常は textureProperty と同じ値を使う。</summary>
         public string textureStProperty = "";
 
+        [Tooltip("手動ガンマ補正値のプロパティ名。Android では映像表示中のみ 1.0 が設定される。プロパティが無いシェーダーでは何もしない。")]
+        /// <summary>Android の AVPro 出力は sRGB 変換済みのため、シェーダー側の pow 補正を映像表示中だけ無効化する。</summary>
+        public string gammaProperty = "_Gamma";
+
         [Tooltip("ビデオテクスチャを設定するレンダラーのインデックス")]
         /// <summary>マルチマテリアルのレンダラーで、どのスロットに適用するかを指定する。</summary>
         public int rendererIndex = 0;
@@ -46,6 +50,10 @@ namespace PasocomMate.AunCast
         private Vector2 _restoreScale;
         private Vector2 _restoreOffset;
         private bool _restoreHasSt;
+#if UNITY_ANDROID
+        private float _restoreGamma;
+        private bool _restoreHasGamma;
+#endif
 
         /// <summary>レンダラーをキャッシュする。</summary>
         private void Start()
@@ -95,6 +103,9 @@ namespace PasocomMate.AunCast
                     if (renderTexture == null)
                     {
                         RestoreMaterialTextureTransforms();
+#if UNITY_ANDROID
+                        RestoreMaterialGamma();
+#endif
                         if (idleTexture != null)
                             ApplyTextureToMaterial(rendererMat, idleTexture);
                         else
@@ -104,6 +115,9 @@ namespace PasocomMate.AunCast
                     {
                         ApplyTextureToMaterial(rendererMat, renderTexture);
                         ApplyVideoTextureTransforms(rendererMat, flipY);
+#if UNITY_ANDROID
+                        ApplyVideoGamma(rendererMat);
+#endif
                     }
                     _hasAppliedRenderTexture = true;
                 }
@@ -159,6 +173,9 @@ namespace PasocomMate.AunCast
             _restoreMaterial = mat;
             CacheTextureState(mat, textureProperty);
             CacheTextureTransformState(mat, GetTextureStProperty());
+#if UNITY_ANDROID
+            CacheGammaState(mat, gammaProperty);
+#endif
         }
 
         private void CacheTextureState(Material mat, string param)
@@ -189,7 +206,35 @@ namespace PasocomMate.AunCast
             if (_restoreHasTexture && _restoreMaterial.HasProperty(_restoreTextureParam))
                 _restoreMaterial.SetTexture(_restoreTextureParam, _restoreTexture);
             RestoreMaterialTextureTransforms();
+#if UNITY_ANDROID
+            RestoreMaterialGamma();
+#endif
         }
+
+#if UNITY_ANDROID
+        private void CacheGammaState(Material mat, string param)
+        {
+            if (mat == null || string.IsNullOrEmpty(param)) return;
+            if (!mat.HasProperty(param)) return;
+
+            _restoreGamma = mat.GetFloat(param);
+            _restoreHasGamma = true;
+        }
+
+        /// <summary>Android の AVPro 出力は sRGB 変換済みのため、映像表示中はシェーダーの手動ガンマ補正を無効化する。</summary>
+        private void ApplyVideoGamma(Material mat)
+        {
+            if (mat == null || !_restoreHasGamma) return;
+            mat.SetFloat(gammaProperty, 1f);
+        }
+
+        private void RestoreMaterialGamma()
+        {
+            if (_restoreMaterial == null || !_restoreHasGamma) return;
+            if (_restoreMaterial.HasProperty(gammaProperty))
+                _restoreMaterial.SetFloat(gammaProperty, _restoreGamma);
+        }
+#endif
 
         private void RestoreMaterialTextureTransforms()
         {

@@ -26,6 +26,11 @@ namespace PasocomMate.AunCast
         /// <summary>起動時に RawImage へ割り当てられていた固定テクスチャ（停止時の復元先）。</summary>
         private Texture _initialTexture;
         private Rect _initialUvRect;
+#if UNITY_ANDROID
+        /// <summary>_Gamma プロパティを持つ共有マテリアル（UIPanel シェーダー想定）。無ければ null。</summary>
+        private Material _gammaMaterial;
+        private float _initialGamma;
+#endif
         /// <summary>アスペクト比計算のために Start 時に測定した親 RectTransform のサイズ。</summary>
         private Vector2 _uiContainerSize;
 
@@ -37,6 +42,9 @@ namespace PasocomMate.AunCast
             {
                 _initialTexture = rawImage.texture;
                 _initialUvRect = rawImage.uvRect;
+#if UNITY_ANDROID
+                CacheGammaState();
+#endif
                 Transform parent = rawImage.transform.parent;
                 if (parent != null)
                 {
@@ -58,6 +66,9 @@ namespace PasocomMate.AunCast
         {
             if (rawImage != null)
                 rawImage.uvRect = _initialUvRect;
+#if UNITY_ANDROID
+            ApplyGamma(false);
+#endif
             _hasAppliedRenderTexture = false;
         }
 
@@ -83,6 +94,9 @@ namespace PasocomMate.AunCast
 
                 rawImage.texture = display;
                 ApplyUvRect(isVideo, flipY);
+#if UNITY_ANDROID
+                ApplyGamma(isVideo);
+#endif
                 if (display != null && _uiContainerSize.x > 0f)
                     FitRawImageToAspect(display);
                 _hasAppliedRenderTexture = true;
@@ -103,6 +117,25 @@ namespace PasocomMate.AunCast
                 uvRect = new Rect(_initialUvRect.x, _initialUvRect.y + _initialUvRect.height, _initialUvRect.width, -_initialUvRect.height);
             rawImage.uvRect = uvRect;
         }
+
+#if UNITY_ANDROID
+        /// <summary>共有マテリアルの _Gamma 初期値をキャッシュする。プロパティが無いシェーダーでは何もしない。</summary>
+        private void CacheGammaState()
+        {
+            Material mat = rawImage.material;
+            if (mat == null || !mat.HasProperty("_Gamma")) return;
+
+            _gammaMaterial = mat;
+            _initialGamma = mat.GetFloat("_Gamma");
+        }
+
+        /// <summary>Android の AVPro 出力は sRGB 変換済みのため、映像表示中はシェーダーの手動ガンマ補正を無効化する。</summary>
+        private void ApplyGamma(bool isVideo)
+        {
+            if (_gammaMaterial == null) return;
+            _gammaMaterial.SetFloat("_Gamma", isVideo ? 1f : _initialGamma);
+        }
+#endif
 
         /// <summary>映像のアスペクト比を保ちつつ、コンテナ内に収まるよう RawImage サイズを調整する。</summary>
         private void FitRawImageToAspect(Texture tex)
