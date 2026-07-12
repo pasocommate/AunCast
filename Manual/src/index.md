@@ -17,7 +17,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 - **Unity 2022.3**（VRChat ワールド開発の推奨バージョン）
 - **VRChat SDK - Worlds**（VCC でワールドプロジェクトを作成すると導入されます）
 - その他の依存パッケージは、VCC がインストール時に自動的に解決します。
-- **対応プラットフォーム**：PC（Windows）のみ。**Quest などの Android 単体機には対応していません。** Quest 環境では配信の音声・映像が正常に再生されないため、PC/Quest 混在イベントで使用する際は注意してください。
+- **対応プラットフォーム**：PC（Windows）および Quest などの Android 単体機。ただし Quest で配信の音声・映像を再生するには、**配信URLが Quest で再生可能な形式（HLSなど）である必要があります**。TopazChat などの `rtspt://` 形式は Quest では再生できません（→ [配信・運用上の注意](operation/streaming.md#quest-url)）。
 
 ---
 

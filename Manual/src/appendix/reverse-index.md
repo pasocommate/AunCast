@@ -77,7 +77,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
     使用できますが、AunCast はライブ配信向けに設計されています。巻き戻しが可能な録画動画では、一般的な動画再生システムのほうが適する場面もあります。
 
 ??? question "Quest（Android 単体機）のユーザーにも視聴できるか？"
-    いいえ。AunCast は **PC（Windows）のみ対応** で、Quest などの Android 単体機には対応していません。Quest 環境では配信の音声・映像が正常に再生されません。PC/Quest 混在のイベントでは、そのことを前提に運用してください。
+    はい。ただし、**配信URLが Quest で再生可能な形式（HLSなど）であることが条件**です。TopazChat などの `rtspt://` 形式は、Quest では音声・映像とも再生できません。AunCast は配信URLをプラットフォームで切り替えないため、PC/Quest 混在のイベントでは **PCとQuestの双方で再生できる１本の配信URL** を使用してください（→ [配信・運用上の注意](../operation/streaming.md#quest-url)）。
 
 ??? question "画面が上下逆さまに映る"
     `AunCastScreen` の `Texture St Property` を正しく設定してください。`Texture Property` に作用する Tiling, Offset を備えたプロパティ名を指定する必要があります。空（自動設定）でも逆さまになる場合は、一般的には `_MainTex` を設定してください（シェーダーによって異なる場合があります）。
@@ -86,6 +86,8 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
     AVPro のビデオストリームは非sRGBテクスチャとしてデコードされるため、ガンマ値 2.2 で補正表示する必要があります。一般的なビデオプレイヤーはこれを考慮したシェーダー・マテリアルを同梱しており、AunCast でも `Standard Video Emission` というシェーダーを用意してあります（USharpVideo 由来）。しかし、ガンマ調整を考慮しないマテリアルをスクリーンに割り当てている場合は、本来の映像よりも明るく表示されてしまいます。付属シェーダーや、lilToonなどのガンマ設定が可能なシェーダーを用いて、スクリーンのマテリアルを調整してください。
     
     停止中のスクリーン画像が白飛びする場合は、テクスチャ設定の sRGB がオフになっているかを確認してください（→ [主要パラメータ一覧](../setup/settings.md#params)）。
+
+    この補正は Quest などの Android 単体機でも PC と同じように必要です（付属シェーダーは両プラットフォームで同じガンマ補正を行います）。
 
 ??? question "ボリュームスライダーで音量が調節できない"
     既存のUdonスクリプトと競合し、AudioSource のボリュームが直接操作されている可能性があります。[スピーカーを増やす (AunCastSpeaker)](../setup/parts-placement.md#speaker) の「AudioSource のボリュームを外部から操作するには」をお読みください。
