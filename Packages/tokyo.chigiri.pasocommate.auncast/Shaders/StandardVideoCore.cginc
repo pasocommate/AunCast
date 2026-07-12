@@ -15,6 +15,9 @@
 
 #include "AutoLight.cginc"
 
+// UnityStandardInput.cginc には無いためここで宣言する
+float _Gamma;
+
 half3 VideoEmission(float2 uv)
 {
 #ifndef _EMISSION
@@ -22,9 +25,10 @@ half3 VideoEmission(float2 uv)
 #else
     float3 texColor = tex2D(_EmissionMap, uv).rgb;
 
-    // スクリーンへ入るテクスチャは非 sRGB 前提のため、線形色空間では常に手動補正する
+    // スクリーンへ入るテクスチャは非 sRGB 前提のため、線形色空間では手動補正する。
+    // Android の AVPro 出力は sRGB 変換済みのため、AunCastScreen が映像表示中のみ _Gamma=1.0 を設定して無効化する
 #ifndef UNITY_COLORSPACE_GAMMA
-    texColor = pow(texColor, 2.2f);
+    texColor = pow(texColor, _Gamma);
 #endif
 
     return texColor * _EmissionColor.rgb;

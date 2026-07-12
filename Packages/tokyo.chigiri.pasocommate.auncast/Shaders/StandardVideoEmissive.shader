@@ -32,6 +32,7 @@ Shader "PasocomMate/AunCast/Standard Video Emission"
 
         _EmissionColor("Color", Color) = (0,0,0)
         _EmissionMap("Emission", 2D) = "white" {}
+        _Gamma("Video Gamma", Float) = 2.2
 
         _DetailMask("Detail Mask", 2D) = "white" {}
 

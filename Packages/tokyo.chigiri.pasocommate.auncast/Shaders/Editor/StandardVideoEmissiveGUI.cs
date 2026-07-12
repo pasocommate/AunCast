@@ -89,6 +89,7 @@ namespace UnityEditor
         MaterialProperty detailNormalMap = null;
         MaterialProperty uvSetSecondary = null;
         MaterialProperty emissiveBoost = null;
+        MaterialProperty videoGamma = null;
 
         MaterialEditor m_MaterialEditor;
         WorkflowMode m_WorkflowMode = WorkflowMode.Specular;
@@ -130,6 +131,7 @@ namespace UnityEditor
             detailNormalMap = FindProperty("_DetailNormalMap", props);
             uvSetSecondary = FindProperty("_UVSec", props);
             emissiveBoost = FindProperty("_MetaPassEmissiveBoost", props);
+            videoGamma = FindProperty("_Gamma", props, false);
         }
 
         public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] props)
@@ -300,6 +302,10 @@ namespace UnityEditor
                 // GIフラグを変更し、必要に応じてエミッシブを黒に設定する
                 m_MaterialEditor.LightmapEmissionFlagsProperty(MaterialEditor.kMiniTextureFieldLabelIndentLevel, true);
                 m_MaterialEditor.FloatProperty(emissiveBoost, "GI Emissive boost");
+
+                // 線形色空間での手動ガンマ補正値。ランタイムでは AunCastScreen がプラットフォームに応じて書き換える
+                if (videoGamma != null)
+                    m_MaterialEditor.FloatProperty(videoGamma, "Video Gamma");
             }
         }
 
