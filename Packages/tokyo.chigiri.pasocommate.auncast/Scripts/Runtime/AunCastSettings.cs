@@ -106,6 +106,10 @@ namespace PasocomMate.AunCast
         [Tooltip("蓄積ドリフトがこの値（秒）を超えたら自動 Resync")]
         public float driftResyncThresholdSec = 0.1f;
 
+        [Tooltip("スタッフが変更できるドリフト Resync 閾値の固定段階インデックス")]
+        // Runtime 設定 assembly から Udon assembly は参照できないため、100 ms の列挙値 (1) を保持する。
+        public int driftResyncThresholdIndex = 1;
+
         [Tooltip("ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する")]
         public float driftSmoothingTimeConstant = 1.5f;
 

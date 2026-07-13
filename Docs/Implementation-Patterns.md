@@ -16,6 +16,12 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 > `SetVolumeLocal` / `SetAutoSilenceResyncEnabled` でローカル値を更新する。
 > UI は AunCastPortablePanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
 >
+> Manual Mode (`_manualModeEnabled`) も各クライアントのローカル設定とし、自動起因の Resync / Retry Reboot だけを抑止する。
+> 手動 Resync / Reboot と、Coordinator から採用するスタッフのグローバル操作は抑止しない。
+>
+> 自動Resyncドリフト閾値は `driftResyncThresholdIndex` を Coordinator の `[UdonSynced]` 値として保持する。
+> OFF は `Infinity` を同期せず、固定段階列挙の終端値として表現する。
+>
 > **注意（ロック機構）**: 旧設計の `SetLockedAsStaff` 系（同期 lock フラグ）は廃止され、
 > AunCastStaffControlPanel のアクセス制御は「許可ユーザー名リスト + AunCastWallControlPanel
 > 経由のローカルパスコード解錠」に置き換えられている（同期なし）。
@@ -383,6 +389,12 @@ Join 時のデフォルト URL 自動再生は提供しない。`defaultUrl` は
 また、インスタンス起動直後の Owner は、シーンや prefab に残った `_syncedURL` /
 `_syncedVideoIdx` / `_ownerPlaying` を必ず初期化してから同期する。これらは実行時状態であり、
 ワールドインスタンスをまたいで永続化してはいけない。
+
+`_syncedURL` の非空と `_ownerPlaying` は別の状態として扱う。URL のロード可否は
+「同期 URL が存在するか」で判定し、Playing 表示や Resync 操作可否は
+「同期 URL が存在し、かつ `_ownerPlaying == true`」で判定する。再生開始時は URL や
+`_syncedVideoIdx` が変わらず `_ownerPlaying` だけが変わるため、Owner の再生開始時と
+非 Owner の同期受信時の双方で Staff UI へ `OnUrlChanged` を通知する。
 
 `SetObjectProperty` / `SetObjectArrayProperty` の差分検知により、配線が既に最新の
 場合は no-op になるので、これらの自動経路がユーザーの手動編集を無闇に上書きする

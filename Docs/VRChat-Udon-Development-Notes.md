@@ -179,6 +179,12 @@
 - ユーザー側の復旧手段は `VRChat SDK → Utilities → Network ID Utility` での再解決。
 - 実例: AunCast のトンネル移行で旧 `AudioOutputTunnel` の GameObject に `AunCastAudioOutputTunnel` を追加した際、記録済み署名（UdonBehaviour 1 個）と実体（2 個）が食い違いビルドが失敗した。移行処理を子 GameObject 配置へ変更して解消。
 
+### 9.16 `VRCUrl.Empty` は編集可能フィールドの初期値に使わない
+- `VRCUrl.Empty` は呼び出しごとに生成される空 URL ではなく、共有される static インスタンスである。
+- `[SerializeField]` の `VRCUrl` を `VRCUrl.Empty` で初期化し、エディタコードが `SerializedProperty` 経由で内部の `url` を書き換えると、共有インスタンス自体を変更する可能性がある。その後の `_syncedURL = VRCUrl.Empty` まで設定済み URL になり、未再生なのに URL だけ存在する状態を作る。
+- Inspector で編集する設定用フィールドは `new VRCUrl("")` のフィールド初期化子で専用インスタンスを持たせる。これはエディタでシリアライズする初期値に限り、Udon ランタイムのイベント内で `new VRCUrl(...)` を呼ばない。
+- 同期変数の空値・リセット値には `VRCUrl.Empty` を使用してよいが、共有インスタンスの内部値は変更しない。また、再生中判定は URL の非空だけでなく、同期された再生フラグを正とする。
+
 ## 10. 推奨デバッグ手順
 1. Console の Udon 露出エラーを最優先で潰す。
 2. UI が押せない場合は `VRCUiShape` / Layer / EventSystem / InputModule を確認。

@@ -67,7 +67,7 @@ namespace PasocomMate.AunCast
 
         [Header("Next URL Prefill")]
         [Tooltip("Next URL 欄の初期値。再生はスタッフ操作でのみ開始する。")]
-        [SerializeField] private VRCUrl defaultUrl = VRCUrl.Empty;
+        [SerializeField] private VRCUrl defaultUrl = new VRCUrl("");
 
         [Header("Timeline")]
         [Tooltip("タイムラインログを出力する")]
@@ -76,6 +76,10 @@ namespace PasocomMate.AunCast
         [Header("Silence Resync")]
         [Tooltip("無音検知による自動 Resync の初期有効状態。各クライアントのローカルトグルの初期値で、実行時に UI から切り替えられる。")]
         [SerializeField] private bool _autoSilenceResyncEnabled = true;
+
+        [Header("Manual Mode")]
+        [Tooltip("自動起因の Resync / Reboot を抑制し、明示操作だけを受け付けるローカルモード")]
+        [SerializeField] private bool _manualModeEnabled;
 
         // =================================================================
         //  同期変数 (Design Section 14)
@@ -256,7 +260,14 @@ namespace PasocomMate.AunCast
             if (hasSlot)
             {
                 // Coordinator から Resync スロットの予約通知を受け取り FSM 状態を更新
-                int pollResult = resyncClient.PollResyncCoordinator(now, _localState);
+                // Manual Mode の手動復旧待ち中でも、スタッフの明示的な Global Resync は採用する。
+                // CoordinatorClient 側では ACTIVE_PLAYING が外部要求の採用状態なので、判定時だけ読み替える。
+                int coordinatorPollState = _manualModeEnabled
+                    && _localState == STATE_RETRY_WAIT
+                    && !_awaitingActiveReboot
+                        ? STATE_ACTIVE_PLAYING
+                        : _localState;
+                int pollResult = resyncClient.PollResyncCoordinator(now, coordinatorPollState);
                 if (pollResult >= 0)
                 {
                     if (pollResult == STATE_RESERVED)
@@ -333,7 +344,9 @@ namespace PasocomMate.AunCast
                     break;
 
                 case STATE_ACTIVE_PLAYING:
-                    if (activeMonitor.DetectActiveFailure(now) && resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+                    if (!_manualModeEnabled
+                        && activeMonitor.DetectActiveFailure(now, resyncClient.IsDriftResyncEnabled(), resyncClient.GetDriftResyncThresholdSec())
+                        && resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
                     {
                         LogWarning($"Active failure -> RequestPending (stall={activeMonitor.GetActiveStallDuration():F2}s, drift={activeMonitor.GetDriftAccumulator():F3}s)");
                         _tlAction = "ACTIVE_FAILURE";
@@ -425,7 +438,7 @@ namespace PasocomMate.AunCast
                     break;
 
                 case STATE_RETRY_WAIT:
-                    if (now >= _retryWaitUntil && !_awaitingActiveReboot)
+                    if (!_manualModeEnabled && now >= _retryWaitUntil && !_awaitingActiveReboot)
                     {
                         AttemptActiveReboot(now);
                     }
@@ -437,7 +450,7 @@ namespace PasocomMate.AunCast
         /// <summary>音声出力のある全プレイヤーが無音状態か判定し、一定時間継続したら自動 Resync を発行する。</summary>
         private void PollSilenceDetection(float now)
         {
-            if (_localState != STATE_ACTIVE_PLAYING || !_autoSilenceResyncEnabled) return;
+            if (_manualModeEnabled || _localState != STATE_ACTIVE_PLAYING || !_autoSilenceResyncEnabled) return;
             if (!activeMonitor.HasSeenPlayerTimeAdvance()) { _combinedSilenceDuration = 0f; return; }
             if (!resyncClient.IsSilenceAutoResyncEligible(now)) { _combinedSilenceDuration = 0f; return; }
 
@@ -639,6 +652,15 @@ namespace PasocomMate.AunCast
                 return;
             }
 
+            if (_manualModeEnabled)
+            {
+                resyncClient.ReportResult(false);
+                ReportError(true);
+                _localState = STATE_RETRY_WAIT;
+                LogMessage("Both systems failed; waiting for manual recovery (Manual Mode)");
+                return;
+            }
+
             // 両系統失敗 → exponential backoff
             int failCount = resyncClient.GetConsecutiveFailCount() + 1;
             resyncClient.SetConsecutiveFailCount(failCount);
@@ -749,6 +771,12 @@ namespace PasocomMate.AunCast
 
         private bool HasPlayableSyncedUrl()
         {
+            return _ownerPlaying && HasSyncedUrl();
+        }
+
+        /// <summary>再生開始待ちを含め、同期対象として有効な URL が存在するかを返す。</summary>
+        private bool HasSyncedUrl()
+        {
             return _syncedURL != null && !string.IsNullOrEmpty(_syncedURL.Get());
         }
 
@@ -839,6 +867,8 @@ namespace PasocomMate.AunCast
                     {
                         _ownerPlaying = true;
                         QueueSerialize();
+                        if (staffNotifyTarget != null)
+                            staffNotifyTarget.SendCustomEvent("OnUrlChanged");
                     }
 
                     switcher.SwitchAudioLinkSource();
@@ -851,6 +881,8 @@ namespace PasocomMate.AunCast
                 {
                     _ownerPlaying = true;
                     QueueSerialize();
+                    if (staffNotifyTarget != null)
+                        staffNotifyTarget.SendCustomEvent("OnUrlChanged");
 
                     if (_localState == STATE_IDLE)
                     {
@@ -923,7 +955,8 @@ namespace PasocomMate.AunCast
                 ReportError(true);
 
                 // Active 再生中のエラー → Resync 要求
-                if (_localState == STATE_ACTIVE_PLAYING
+                if (!_manualModeEnabled
+                    && _localState == STATE_ACTIVE_PLAYING
                     && resyncClient.TryRequestResync(Time.time, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
                 {
                     _localState = STATE_REQUEST_PENDING;
@@ -1091,7 +1124,7 @@ namespace PasocomMate.AunCast
                 switcher.ResetBothPlayersToA();
                 _activeIsA = true;
 
-                if (HasPlayableSyncedUrl())
+                if (HasSyncedUrl())
                 {
                     StartActivePlayback(_syncedURL);
                     LogMessage($"Playing synced URL: {_syncedURL}");
@@ -1104,7 +1137,9 @@ namespace PasocomMate.AunCast
                 }
             }
 
-            if ((stopReceived || urlChanged) && staffNotifyTarget != null)
+            // URL インデックスが同じでも _ownerPlaying のみ更新されることがあるため、
+            // 各同期受信後に Playing 表示を同期状態へ追従させる。
+            if (staffNotifyTarget != null)
                 staffNotifyTarget.SendCustomEvent("OnUrlChanged");
         }
 
@@ -1165,6 +1200,39 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public bool GetAutoSilenceResyncEnabled() { return _autoSilenceResyncEnabled; }
 
+        /// <summary>自動 Resync / Reboot を抑制するローカル Manual Mode を切り替える。</summary>
+        [PublicAPI]
+        public void SetManualModeEnabled(bool enabled)
+        {
+            if (_manualModeEnabled == enabled) return;
+            _manualModeEnabled = enabled;
+
+            if (enabled)
+            {
+                _combinedSilenceDuration = 0f;
+                int reason = resyncClient.GetRequestReason();
+                bool automaticRequest = reason == AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE
+                    || reason == AunCastResyncCoordinatorClient.REQUEST_REASON_SILENCE;
+                if (automaticRequest
+                    && _localState >= STATE_REQUEST_PENDING
+                    && _localState < STATE_SWITCHING)
+                {
+                    CancelResync();
+                    _localState = STATE_ACTIVE_PLAYING;
+                    activeMonitor.BindRoles(_activeIsA);
+                    activeMonitor.InitializeForActive(Time.time);
+                    LogMessage("Automatic Resync canceled by Manual Mode");
+                }
+            }
+            else if (_localState == STATE_RETRY_WAIT && !_awaitingActiveReboot)
+            {
+                _retryWaitUntil = Time.time;
+            }
+        }
+
+        [PublicAPI]
+        public bool GetManualModeEnabled() { return _manualModeEnabled; }
+
         /// <summary>タイムラインログの現在値を返す。ローカル設定 UI 用。</summary>
         [PublicAPI]
         public bool GetTimelineLogging() { return _timelineLogging; }
@@ -1215,7 +1283,7 @@ namespace PasocomMate.AunCast
         {
             return activeMonitor.GetActivePlayerTime();
         }
-        [PublicAPI] public VRCUrl GetCurrentURL() { return _syncedURL; }
+        [PublicAPI] public VRCUrl GetCurrentURL() { return HasPlayableSyncedUrl() ? _syncedURL : null; }
 
         /// <summary>Next URL 欄の初期値に使うデフォルト URL を返す（未設定なら空 URL）。</summary>
         [PublicAPI] public VRCUrl GetDefaultUrl() { return defaultUrl; }
@@ -1273,7 +1341,13 @@ namespace PasocomMate.AunCast
         /// <summary>ドリフト累積がこの閾値を超えると Resync を発行する。</summary>
         [PublicAPI] public float GetDriftResyncThresholdSec()
         {
-            return activeMonitor != null ? activeMonitor.GetDriftResyncThresholdSec() : 0.1f;
+            return resyncClient != null ? resyncClient.GetDriftResyncThresholdSec() : 0.1f;
+        }
+
+        [PublicAPI]
+        public bool IsDriftResyncEnabled()
+        {
+            return resyncClient == null || resyncClient.IsDriftResyncEnabled();
         }
 
         [PublicAPI] public string GetLastErrorMessage() { return _lastErrorMessage; }
@@ -1335,7 +1409,7 @@ namespace PasocomMate.AunCast
                 case STATE_STANDBY_VERIFYING: return "Verifying...";
                 case STATE_SWITCHING: return "Switching";
                 case STATE_COOLDOWN: return "Cooldown";
-                case STATE_RETRY_WAIT: return "Retry Wait";
+                case STATE_RETRY_WAIT: return _manualModeEnabled ? "Manual Recovery Required" : "Retry Wait";
                 default: return "Unknown";
             }
         }

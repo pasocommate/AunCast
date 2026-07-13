@@ -135,6 +135,7 @@ namespace PasocomMate.AunCast.Internal
             "runningTimeoutSec",
             "maxConcurrentResyncUsers",
             "maxConnectionLimit",
+            "driftResyncThresholdIndex",
         };
 
         private static readonly string[] WIRING_PROPERTY_NAMES =
@@ -190,6 +191,10 @@ namespace PasocomMate.AunCast.Internal
             "connectionDisplayGroup",
             "connectionEditGroup",
             "connectionLimitInput",
+            "driftThresholdDisplayText",
+            "driftThresholdDisplayGroup",
+            "driftThresholdEditGroup",
+            "driftThresholdEditValueText",
         };
 
         protected override string[] SettingsManagedPropertyNames => MANAGED_PROPERTY_NAMES;
@@ -224,6 +229,7 @@ namespace PasocomMate.AunCast.Internal
             "silencePeakMarker",
             "volumeSlider",
             "autoSilenceResyncToggle",
+            "manualModeToggle",
             "timelineLoggingToggle",
             "staffLockButton",
             "staffLockButtonLabel",

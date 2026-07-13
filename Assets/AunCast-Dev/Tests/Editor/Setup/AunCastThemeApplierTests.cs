@@ -442,6 +442,7 @@ namespace PasocomMate.AunCast.Tests
             var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
             var cdg = staff + "/ConcurrentDisplayGroup";
             var cndg = staff + "/ConnectionDisplayGroup";
+            var dtdg = staff + "/DriftThresholdDisplayGroup";
             string[] paths =
             {
                 staff + "/NowPlayingText",
@@ -450,6 +451,7 @@ namespace PasocomMate.AunCast.Tests
                 staff + "/IndicatorText",
                 cdg + "/ConcurrentLimitDisplayText",
                 cndg + "/ConnectionLimitDisplayText",
+                dtdg + "/DriftThresholdDisplayText",
                 viewer + "/StateText",
                 viewer + "/ErrorText",
             };
@@ -463,11 +465,13 @@ namespace PasocomMate.AunCast.Tests
             var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
             var ceg = staff + "/ConcurrentEditGroup";
             var cneg = staff + "/ConnectionEditGroup";
+            var dteg = staff + "/DriftThresholdEditGroup";
             string[] paths =
             {
                 staff + "/NextURLInputField/Viewport/Text",
                 ceg + "/ConcurrentLimitInput/Viewport/Text",
                 cneg + "/ConnectionLimitInput/Viewport/Text",
+                dteg + "/DriftThresholdEditValueText",
             };
             foreach (var path in paths)
                 AssertTextColor(path, _theme.inputTextColor, path + " inputTextColor");

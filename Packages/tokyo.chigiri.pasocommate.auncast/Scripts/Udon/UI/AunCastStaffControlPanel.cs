@@ -60,6 +60,16 @@ namespace PasocomMate.AunCast
         private bool _connectionEditMode;
         private int _connectionEditOriginal;
 
+        [Header("Drift Resync Threshold")]
+        [SerializeField] private TMP_Text driftThresholdDisplayText;
+        [SerializeField] private GameObject driftThresholdDisplayGroup;
+        [SerializeField] private GameObject driftThresholdEditGroup;
+        [SerializeField] private TMP_Text driftThresholdEditValueText;
+
+        private bool _driftThresholdEditMode;
+        private int _driftThresholdEditOriginal;
+        private int _driftThresholdEditValue;
+
         private float _globalEtaBase;
         private float _globalEtaCapturedAt;
         private string _nowPlayingUrl;
@@ -77,11 +87,11 @@ namespace PasocomMate.AunCast
         private int[] _indicatorSortKeys;
 
         // インジケーター色インデックス。値がソートキーを兼ね、小さいほど上位（異常度高）に表示される。
-        // 赤(エラー) → 青(待機) → 黄(Resync中) → 橙(接続中) → 白(正常) の順。
+        // 赤(エラー) → 橙(接続中) → 黄(Resync中) → 青(待機) → 白(正常) の順。
         private const int INDICATOR_COLOR_FAILED = 0;
-        private const int INDICATOR_COLOR_QUEUED = 1;
+        private const int INDICATOR_COLOR_CONNECTING = 1;
         private const int INDICATOR_COLOR_RUNNING = 2;
-        private const int INDICATOR_COLOR_CONNECTING = 3;
+        private const int INDICATOR_COLOR_QUEUED = 3;
         private const int INDICATOR_COLOR_NORMAL = 4;
 
         // ヘルプテキストのキー定数。各 UI 要素ごとにホバー時に表示する説明文を
@@ -108,6 +118,8 @@ namespace PasocomMate.AunCast
         private const int HELP_CLOSE_BUTTON = 18;
         private const int HELP_SWITCH_VIEW = 19;
         private const int HELP_TIMELINE_LOGGING = 20;
+        private const int HELP_MANUAL_MODE = 21;
+        private const int HELP_DRIFT_THRESHOLD = 22;
 
         private int _activeHelpKey = HELP_NONE;
         private bool _isJapanese;
@@ -129,9 +141,9 @@ namespace PasocomMate.AunCast
             _indicatorHexColors = new[]
             {
                 "#FF4444", // INDICATOR_COLOR_FAILED
-                "#5599FF", // INDICATOR_COLOR_QUEUED
-                "#FFCC33", // INDICATOR_COLOR_RUNNING
                 "#FF8833", // INDICATOR_COLOR_CONNECTING
+                "#FFCC33", // INDICATOR_COLOR_RUNNING
+                "#5599FF", // INDICATOR_COLOR_QUEUED
                 "#DDDDDD", // INDICATOR_COLOR_NORMAL
             };
             _helpTextsEn = new[]
@@ -157,6 +169,8 @@ namespace PasocomMate.AunCast
                 "Close this panel",
                 "Switch between local controls and staff controls",
                 "Output structured timeline logs for playback and resync diagnosis (heavy load; keep off unless diagnosing)",
+                "Manual Mode: stop automatic Resync and Reboot while keeping local and staff manual actions available",
+                "Automatic Drift Resync threshold. OFF disables only drift-triggered automatic Resync",
             };
             _helpTextsJa = new[]
             {
@@ -181,6 +195,8 @@ namespace PasocomMate.AunCast
                 "パネルを閉じます",
                 "ローカル操作パネルとスタッフ操作パネルを切り替えます",
                 "再生・Resync診断用の構造化タイムラインログを出力します（負荷が高いため、診断時以外はオフのままにしてください）",
+                "Manual Mode: 自動Resyncと自動Rebootを停止し、観客・スタッフの明示操作だけを有効にします",
+                "ドリフトによる自動Resyncの閾値です。OFFではドリフト起因の自動Resyncのみ停止します",
             };
 
             string lang = VRCPlayerApi.GetCurrentLanguage();
@@ -188,6 +204,8 @@ namespace PasocomMate.AunCast
 
             _concurrentEditMode = false;
             UpdateConcurrentEditVisibility();
+            _driftThresholdEditMode = false;
+            UpdateDriftThresholdEditVisibility();
             SyncUIFromState();
             UpdateNowPlayingDisplay();
             PrefillNextUrlIfEmpty();
@@ -255,6 +273,8 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void OnCoordinatorChanged()
         {
+            if (!_driftThresholdEditMode)
+                SyncUIFromState();
             _redrawDirty = true;
         }
 
@@ -621,6 +641,94 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
+        //  Drift Resync 閾値編集
+        // =================================================================
+
+        public void OnDriftThresholdChangeButton()
+        {
+            if (!_isStaff || coordinator == null) return;
+
+            _driftThresholdEditOriginal = coordinator.GetDriftResyncThresholdIndex();
+            _driftThresholdEditValue = _driftThresholdEditOriginal;
+            _driftThresholdEditMode = true;
+            UpdateDriftThresholdEditValueText();
+            UpdateDriftThresholdEditVisibility();
+        }
+
+        public void OnDriftThresholdApply()
+        {
+            if (!_isStaff || coordinator == null) return;
+
+            coordinator.SetDriftResyncThresholdIndexRuntime(_driftThresholdEditValue);
+            _driftThresholdEditMode = false;
+            SyncUIFromState();
+            UpdateDriftThresholdEditVisibility();
+        }
+
+        public void OnDriftThresholdCancel()
+        {
+            _driftThresholdEditValue = _driftThresholdEditOriginal;
+            _driftThresholdEditMode = false;
+            SyncUIFromState();
+            UpdateDriftThresholdEditVisibility();
+        }
+
+        public void OnDriftThresholdPrevious()
+        {
+            AdjustDriftThreshold(-1);
+        }
+
+        public void OnDriftThresholdNext()
+        {
+            AdjustDriftThreshold(1);
+        }
+
+        private void AdjustDriftThreshold(int delta)
+        {
+            if (!_isStaff || coordinator == null || !_driftThresholdEditMode) return;
+            _driftThresholdEditValue = Mathf.Clamp(
+                _driftThresholdEditValue + delta,
+                AunCastResyncCoordinator.DRIFT_THRESHOLD_50_MS,
+                AunCastResyncCoordinator.DRIFT_THRESHOLD_OFF);
+            UpdateDriftThresholdEditValueText();
+        }
+
+        private void UpdateDriftThresholdEditValueText()
+        {
+            if (driftThresholdEditValueText != null)
+                driftThresholdEditValueText.text = GetDriftThresholdDisplayText(_driftThresholdEditValue);
+        }
+
+        private string GetDriftThresholdDisplayText(int index)
+        {
+            switch (index)
+            {
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_50_MS: return "50 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_100_MS: return "100 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_150_MS: return "150 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_200_MS: return "200 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_250_MS: return "250 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_300_MS: return "300 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_400_MS: return "400 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_500_MS: return "500 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_700_MS: return "700 ms";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_1_SEC: return "1 s";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_2_SEC: return "2 s";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_3_SEC: return "3 s";
+                case AunCastResyncCoordinator.DRIFT_THRESHOLD_5_SEC: return "5 s";
+                default: return "OFF";
+            }
+        }
+
+        private void UpdateDriftThresholdEditVisibility()
+        {
+            if (driftThresholdDisplayGroup != null)
+                driftThresholdDisplayGroup.SetActive(!_driftThresholdEditMode);
+            if (driftThresholdEditGroup != null)
+                driftThresholdEditGroup.SetActive(_driftThresholdEditMode);
+        }
+
+        // =================================================================
 
         /// <summary>
         /// coordinator が保持する現在値を UI テキストフィールドに一括反映する。
@@ -641,6 +749,15 @@ namespace PasocomMate.AunCast
                 connectionLimitDisplayText.text = connectionVal;
             if (connectionLimitInput != null)
                 connectionLimitInput.text = connLimit.ToString();
+
+            string driftThreshold = coordinator.GetDriftResyncThresholdDisplayText();
+            if (driftThresholdDisplayText != null)
+                driftThresholdDisplayText.text = driftThreshold;
+            if (!_driftThresholdEditMode)
+            {
+                _driftThresholdEditValue = coordinator.GetDriftResyncThresholdIndex();
+                UpdateDriftThresholdEditValueText();
+            }
         }
 
         private void UpdateNowPlayingDisplay()
@@ -785,7 +902,7 @@ namespace PasocomMate.AunCast
         /// <summary>
         /// 接続状態インジケーターのリッチテキストを構築する。
         /// 表示色は Resync 状態、接続中、エラー、正常の順で決定する。
-        /// そのうえで再生中/停止 × 最終色（赤/青/黄/橙/白）でソートし、スタッフが問題を即座に視認できるようにする。
+        /// そのうえで再生中/停止 × 最終色（赤/橙/黄/青/白）でソートし、スタッフが問題を即座に視認できるようにする。
         /// </summary>
         private void UpdateIndicatorDisplay()
         {
@@ -794,7 +911,7 @@ namespace PasocomMate.AunCast
             int coordSlots = coordinator.GetMaxPlayers();
             AunCastPlaybackMonitor pbm = coordinator.GetPlaybackMonitor();
 
-            // ソートキー: スタイル（Playing=0, 停止=1）× 色（赤=0, 青=1, 黄=2, 橙=3, 白=4）
+            // ソートキー: スタイル（Playing=0, 停止=1）× 色（赤=0, 橙=1, 黄=2, 青=3, 白=4）
             int assigned = 0;
             if (_indicatorSortKeys == null || _indicatorSortKeys.Length != coordSlots)
                 _indicatorSortKeys = new int[coordSlots];
@@ -965,6 +1082,8 @@ namespace PasocomMate.AunCast
         public void OnHoverCloseButton() { SetHelpText(HELP_CLOSE_BUTTON); }
         public void OnHoverSwitchView() { SetHelpText(HELP_SWITCH_VIEW); }
         public void OnHoverTimelineLogging() { SetHelpText(HELP_TIMELINE_LOGGING); }
+        public void OnHoverManualMode() { SetHelpText(HELP_MANUAL_MODE); }
+        public void OnHoverDriftThreshold() { SetHelpText(HELP_DRIFT_THRESHOLD); }
         public void OnHoverClear()
         {
             _nowPlayingHovered = false;

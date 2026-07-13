@@ -33,7 +33,7 @@ namespace PasocomMate.AunCast.Tests
             TestHelper.Set(_monitor, "_driftAccumulator", 0f);
             TestHelper.Set(_monitor, "_driftWarmupUntil", 0f);
 
-            bool failure = _monitor.DetectActiveFailure(now);
+            bool failure = _monitor.DetectActiveFailure(now, true, 0.1f);
             Assert.IsTrue(failure, "停滞タイムアウト超過で障害検出されるべき");
         }
 
@@ -51,7 +51,7 @@ namespace PasocomMate.AunCast.Tests
 
             float now = 60f; // > _driftWarmupUntil
 
-            bool failure = _monitor.DetectActiveFailure(now);
+            bool failure = _monitor.DetectActiveFailure(now, true, threshold);
             Assert.IsTrue(failure, "ドリフト閾値超過で障害検出されるべき");
         }
 
@@ -69,7 +69,7 @@ namespace PasocomMate.AunCast.Tests
 
             float now = 60f;
 
-            bool failure = _monitor.DetectActiveFailure(now);
+            bool failure = _monitor.DetectActiveFailure(now, true, threshold);
             Assert.IsFalse(failure, "正常時は障害検出されないべき");
         }
 
@@ -87,7 +87,7 @@ namespace PasocomMate.AunCast.Tests
 
             float now = 50f; // < _driftWarmupUntil
 
-            bool failure = _monitor.DetectActiveFailure(now);
+            bool failure = _monitor.DetectActiveFailure(now, true, threshold);
             Assert.IsFalse(failure, "ウォームアップ中はドリフトで障害検出しない");
         }
 
@@ -102,8 +102,20 @@ namespace PasocomMate.AunCast.Tests
             TestHelper.Set(_monitor, "_driftWarmupUntil", 0f);
             TestHelper.Set(_monitor, "_driftAccumulator", threshold + 1f);
 
-            bool failure = _monitor.DetectActiveFailure(100f);
+            bool failure = _monitor.DetectActiveFailure(100f, true, threshold);
             Assert.IsFalse(failure, "安定再生前はドリフトで障害検出しない");
+        }
+
+        [Test]
+        public void DetectActiveFailure_DriftDisabled_IgnoresDrift()
+        {
+            TestHelper.Set(_monitor, "_stallStartedAt", 0f);
+            TestHelper.Set(_monitor, "_stablePlaybackStartedAt", 10f);
+            TestHelper.Set(_monitor, "_driftWarmupUntil", 50f);
+            TestHelper.Set(_monitor, "_driftAccumulator", 10f);
+
+            bool failure = _monitor.DetectActiveFailure(60f, false, 0.05f);
+            Assert.IsFalse(failure, "ドリフト Resync OFF 時は閾値超過を障害扱いしない");
         }
 
         [Test]

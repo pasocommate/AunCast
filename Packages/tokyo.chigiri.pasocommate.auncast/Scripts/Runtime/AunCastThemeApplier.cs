@@ -87,6 +87,15 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, cneg + "/ConnectionAdd10Button", theme.primaryColor);
             SetThemeImageColor(root, cneg + "/ConnectionApplyButton", theme.dangerColor);
             SetThemeImageColor(root, cneg + "/ConnectionCancelButton", theme.secondaryColor);
+            string dtdg = staff + "/DriftThresholdDisplayGroup";
+            SetThemeImageColor(root, dtdg + "/DriftThresholdChangeButton", theme.warningColor);
+            string dteg = staff + "/DriftThresholdEditGroup";
+            SetThemeImageColor(root, dteg + "/DriftThresholdPreviousButton", theme.primaryColor);
+            SetThemeImageColor(root, dteg + "/DriftThresholdPreviousButton/DriftThresholdSub1Button_Inner", theme.primaryColor);
+            SetThemeImageColor(root, dteg + "/DriftThresholdNextButton", theme.primaryColor);
+            SetThemeImageColor(root, dteg + "/DriftThresholdNextButton/DriftThresholdAdd1Button_Inner", theme.primaryColor);
+            SetThemeImageColor(root, dteg + "/DriftThresholdApplyButton", theme.dangerColor);
+            SetThemeImageColor(root, dteg + "/DriftThresholdCancelButton", theme.secondaryColor);
             SetThemeImageColor(root, staff + "/NextURLInputField", theme.inputBackgroundColor);
             SetThemeImageColor(root, ceg + "/ConcurrentLimitInput", theme.inputBackgroundColor);
             SetThemeImageColor(root, cneg + "/ConnectionLimitInput", theme.inputBackgroundColor);
@@ -95,6 +104,8 @@ namespace PasocomMate.AunCast
 
             SetThemeImageColor(root, viewer + "/SilenceResyncToggle/Background", theme.toggleBackgroundColor);
             SetThemeTextColor(root, viewer + "/SilenceResyncToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+            SetThemeImageColor(root, viewer + "/ManualModeToggle/Background", theme.toggleBackgroundColor);
+            SetThemeTextColor(root, viewer + "/ManualModeToggle/Background/Checkmark", theme.toggleCheckmarkColor);
             ApplyToggleTheme(root, staff + "/TimelineLoggingToggle");
 
             SetThemeImageColor(root, shared + "/VolumeSlider/Background", theme.sliderBackgroundColor);
@@ -770,6 +781,8 @@ namespace PasocomMate.AunCast
             string cneg = staff + "/ConnectionEditGroup";
             string cdg = staff + "/ConcurrentDisplayGroup";
             string cndg = staff + "/ConnectionDisplayGroup";
+            string dtdg = staff + "/DriftThresholdDisplayGroup";
+            string dteg = staff + "/DriftThresholdEditGroup";
 
             string[] headingPaths =
             {
@@ -777,9 +790,11 @@ namespace PasocomMate.AunCast
                 staff + "/NextURLLabel",
                 staff + "/ConcurrentMaxLabel",
                 staff + "/ConnectionMaxLabel",
+                staff + "/DriftThresholdLabel",
                 viewer + "/HeadroomGaugeLabel",
                 viewer + "/SilenceGaugeLabel",
                 viewer + "/SilenceResyncToggle/Label",
+                viewer + "/ManualModeToggle/Label",
                 staff + "/TimelineLoggingToggle/Label",
                 shared + "/VolumeLabel",
             };
@@ -804,6 +819,11 @@ namespace PasocomMate.AunCast
                 cneg + "/ConnectionAdd10Button/ConnectionAdd10Button_Inner/Label",
                 cneg + "/ConnectionApplyButton/ConnectionApplyButton_Inner/Label",
                 cneg + "/ConnectionCancelButton/ConnectionCancelButton_Inner/Label",
+                dtdg + "/DriftThresholdChangeButton/DriftThresholdChangeButton_Inner/Label",
+                dteg + "/DriftThresholdPreviousButton/DriftThresholdSub1Button_Inner/Label",
+                dteg + "/DriftThresholdNextButton/DriftThresholdAdd1Button_Inner/Label",
+                dteg + "/DriftThresholdApplyButton/DriftThresholdApplyButton_Inner/Label",
+                dteg + "/DriftThresholdCancelButton/DriftThresholdCancelButton_Inner/Label",
                 shared + "/RebootButton/RebootButton_Inner/Label",
                 shared + "/ResyncButton/ResyncButton_Inner/Label",
                 shared + "/ResyncButton/ResyncButton_Inner/CooldownLabel",
@@ -819,6 +839,7 @@ namespace PasocomMate.AunCast
                 staff + "/IndicatorText",
                 cdg + "/ConcurrentLimitDisplayText",
                 cndg + "/ConnectionLimitDisplayText",
+                dtdg + "/DriftThresholdDisplayText",
                 shared + "/HelpArea/HelpArea_Inner/HelpText",
                 viewer + "/StateText",
                 viewer + "/ErrorText",
@@ -829,6 +850,7 @@ namespace PasocomMate.AunCast
                 staff + "/NextURLInputField/NextURLInputField_Inner/Viewport/Text",
                 ceg + "/ConcurrentLimitInput/ConcurrentLimitInput_Inner/Viewport/Text",
                 cneg + "/ConnectionLimitInput/ConnectionLimitInput_Inner/Viewport/Text",
+                dteg + "/DriftThresholdEditValueText",
             };
 
             string[] placeholderPaths =

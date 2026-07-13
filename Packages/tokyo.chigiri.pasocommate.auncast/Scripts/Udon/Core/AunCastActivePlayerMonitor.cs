@@ -314,14 +314,15 @@ namespace PasocomMate.AunCast
         /// 停滞タイムアウト超過、またはドリフト閾値超過のいずれかで true を返す。
         /// 呼び出し元（AunCastDualPlayerController）はこの結果を受けて Resync フローを起動する。
         /// </summary>
-        public bool DetectActiveFailure(float now)
+        public bool DetectActiveFailure(float now, bool driftResyncEnabled, float effectiveDriftThresholdSec)
         {
             if (_stallStartedAt > 0f && (now - _stallStartedAt) >= stalledTimeoutSec)
                 return true;
 
-            if (_stablePlaybackStartedAt > 0f
+            if (driftResyncEnabled
+                && _stablePlaybackStartedAt > 0f
                 && now >= _driftWarmupUntil
-                && Mathf.Abs(_driftAccumulator) > driftResyncThresholdSec)
+                && Mathf.Abs(_driftAccumulator) > effectiveDriftThresholdSec)
             {
                 // Resync 要求が通らない間は毎ポーリング true が続くため、初回のみ記録する
                 if (!_driftThresholdLogged)

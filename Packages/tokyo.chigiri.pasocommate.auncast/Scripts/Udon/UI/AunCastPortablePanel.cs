@@ -47,6 +47,10 @@ namespace PasocomMate.AunCast
         [Header("Silence Resync")]
         [SerializeField] private Toggle autoSilenceResyncToggle;
 
+        [Header("Manual Mode")]
+        [Tooltip("自動起因の Resync / Reboot を抑制するローカルトグル")]
+        [SerializeField] private Toggle manualModeToggle;
+
         [Header("Staff Controls")]
         [Tooltip("スタッフビューに表示するタイムラインログ有効/無効トグル")]
         [FormerlySerializedAs("verboseLoggingToggle")]
@@ -190,6 +194,8 @@ namespace PasocomMate.AunCast
         private float _lastVolumeSliderValue;
         private bool _autoSilenceToggleInitialized;
         private bool _lastAutoSilenceToggleState;
+        private bool _manualModeToggleInitialized;
+        private bool _lastManualModeToggleState;
         private bool _timelineLoggingToggleInitialized;
         private bool _lastTimelineLoggingToggleState;
         private bool _settingsResyncPending;
@@ -258,6 +264,9 @@ namespace PasocomMate.AunCast
         private bool _debugAutoOpenDone;
 
         private Image _silenceGaugeFillImage;
+        private Image _headroomGaugeFillImage;
+        private Color _headroomGaugeNormalColor;
+        private Color _headroomGaugeWarningColor;
         private Color _silenceGaugeActiveColor;
         private Color _silenceGaugeSuppressedColor;
         private float _silencePeakDbfs = SILENCE_METER_MIN_DBFS;
@@ -288,12 +297,19 @@ namespace PasocomMate.AunCast
             _autoDismissSqrDist = autoDismissDistance * autoDismissDistance;
             _silenceGaugeActiveColor = new Color(0.85f, 0.35f, 0.35f, 1f);
             _silenceGaugeSuppressedColor = new Color(0.35f, 0.35f, 0.38f, 0.5f);
+            _headroomGaugeWarningColor = new Color(1f, 0.85f, 0.2f, 1f);
             if (silenceThresholdMarker != null)
                 silenceThresholdMarker.color = new Color(1f, 0.85f, 0.2f, 1f);
             if (silencePeakMarker != null)
                 silencePeakMarker.color = new Color(0.95f, 0.95f, 0.95f, 1f);
             if (silenceGauge != null && silenceGauge.fillRect != null)
                 _silenceGaugeFillImage = silenceGauge.fillRect.GetComponent<Image>();
+            if (headroomGauge != null && headroomGauge.fillRect != null)
+            {
+                _headroomGaugeFillImage = headroomGauge.fillRect.GetComponent<Image>();
+                if (_headroomGaugeFillImage != null)
+                    _headroomGaugeNormalColor = _headroomGaugeFillImage.color;
+            }
             SetMenuVisible(false);
             InitResyncButtonStyle();
             CacheStaffButtonLabels();
@@ -459,6 +475,7 @@ namespace PasocomMate.AunCast
             {
                 PollVolumeSlider();
                 PollAutoSilenceToggle();
+                PollManualModeToggle();
 
                 float nowMeter = Time.time;
                 if (nowMeter - _lastSilenceMeterUpdateTime >= SILENCE_METER_UPDATE_INTERVAL)
@@ -1266,6 +1283,13 @@ namespace PasocomMate.AunCast
                 float driftMs = Mathf.Abs(controller.GetDriftAccumulator()) * 1000f;
                 headroomGauge.maxValue = thresholdMs;
                 headroomGauge.value = Mathf.Min(driftMs, thresholdMs);
+                if (_headroomGaugeFillImage != null)
+                {
+                    bool overThreshold = controller.IsDriftResyncEnabled() && driftMs > thresholdMs;
+                    _headroomGaugeFillImage.color = overThreshold
+                        ? _headroomGaugeWarningColor
+                        : _headroomGaugeNormalColor;
+                }
             }
         }
 
@@ -1338,6 +1362,15 @@ namespace PasocomMate.AunCast
                 _autoSilenceToggleInitialized = true;
             }
 
+            if (manualModeToggle != null && controller != null)
+            {
+                bool enabled = controller.GetManualModeEnabled();
+                manualModeToggle.isOn = enabled;
+                _lastManualModeToggleState = enabled;
+                _manualModeToggleInitialized = true;
+                UpdateAutoSilenceToggleInteractable(enabled);
+            }
+
             if (timelineLoggingToggle != null && controller != null)
             {
                 bool enabled = controller.GetTimelineLogging();
@@ -1389,6 +1422,37 @@ namespace PasocomMate.AunCast
 
             if (autoSilenceResyncToggle.isOn != _lastAutoSilenceToggleState)
                 OnAutoSilenceResyncToggleChanged();
+        }
+
+        public void OnManualModeToggleChanged()
+        {
+            if (controller == null || manualModeToggle == null) return;
+            controller.SetManualModeEnabled(manualModeToggle.isOn);
+            _lastManualModeToggleState = manualModeToggle.isOn;
+            _manualModeToggleInitialized = true;
+            UpdateAutoSilenceToggleInteractable(manualModeToggle.isOn);
+            UpdateDisplay();
+        }
+
+        private void PollManualModeToggle()
+        {
+            if (manualModeToggle == null) return;
+            if (!_manualModeToggleInitialized)
+            {
+                _lastManualModeToggleState = manualModeToggle.isOn;
+                _manualModeToggleInitialized = true;
+                UpdateAutoSilenceToggleInteractable(manualModeToggle.isOn);
+                return;
+            }
+
+            if (manualModeToggle.isOn != _lastManualModeToggleState)
+                OnManualModeToggleChanged();
+        }
+
+        private void UpdateAutoSilenceToggleInteractable(bool manualModeEnabled)
+        {
+            if (autoSilenceResyncToggle != null)
+                autoSilenceResyncToggle.interactable = !manualModeEnabled;
         }
 
         public void OnTimelineLoggingToggleChanged()

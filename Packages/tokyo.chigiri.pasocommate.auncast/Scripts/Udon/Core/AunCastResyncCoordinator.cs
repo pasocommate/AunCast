@@ -21,6 +21,23 @@ namespace PasocomMate.AunCast
         public const int STATE_GRANTED = 2;
         public const int STATE_RUNNING = 3;
 
+        // --- ドリフト Resync 閾値インデックス ---
+        // float の Infinity は同期せず、OFF を含む固定段階のインデックスを同期する。
+        public const int DRIFT_THRESHOLD_50_MS = 0;
+        public const int DRIFT_THRESHOLD_100_MS = 1;
+        public const int DRIFT_THRESHOLD_150_MS = 2;
+        public const int DRIFT_THRESHOLD_200_MS = 3;
+        public const int DRIFT_THRESHOLD_250_MS = 4;
+        public const int DRIFT_THRESHOLD_300_MS = 5;
+        public const int DRIFT_THRESHOLD_400_MS = 6;
+        public const int DRIFT_THRESHOLD_500_MS = 7;
+        public const int DRIFT_THRESHOLD_700_MS = 8;
+        public const int DRIFT_THRESHOLD_1_SEC = 9;
+        public const int DRIFT_THRESHOLD_2_SEC = 10;
+        public const int DRIFT_THRESHOLD_3_SEC = 11;
+        public const int DRIFT_THRESHOLD_5_SEC = 12;
+        public const int DRIFT_THRESHOLD_OFF = 13;
+
         // --- Inspector パラメータ (Design Section 20) ---
         [Header("Coordinator Settings")]
         [Tooltip("Grant 後の接続開始タイムアウト（秒）。ネットワーク同期遅延を考慮して長めに設定")]
@@ -64,6 +81,10 @@ namespace PasocomMate.AunCast
         [Tooltip("配信サーバへの同時接続上限（スタッフが変更可能）")]
         [SerializeField] private byte maxConnectionLimit = DEFAULT_CONNECTION_LIMIT;
 
+        [UdonSynced]
+        [Tooltip("ドリフトによる自動 Resync の閾値インデックス（スタッフが変更可能）")]
+        [SerializeField] private byte driftResyncThresholdIndex = DRIFT_THRESHOLD_100_MS;
+
         // --- Owner ローカル ---
         /// <summary>Owner だけが保持する高精度タイムスタンプ。同期用に圧縮して送る。</summary>
         private float[] _ownerTimestamp;
@@ -95,6 +116,8 @@ namespace PasocomMate.AunCast
 
             if (maxConnectionLimit < MIN_CONNECTION_LIMIT)
                 maxConnectionLimit = DEFAULT_CONNECTION_LIMIT;
+            if (driftResyncThresholdIndex > DRIFT_THRESHOLD_OFF)
+                driftResyncThresholdIndex = DRIFT_THRESHOLD_100_MS;
         }
 
         private void Update()
@@ -528,6 +551,50 @@ namespace PasocomMate.AunCast
         public int GetMaxConnectionLimit() { return maxConnectionLimit; }
         public int GetMinConnectionLimit() { return MIN_CONNECTION_LIMIT; }
         public int GetMaxConnectionLimitCap() { return MAX_CONNECTION_LIMIT; }
+        public int GetDriftResyncThresholdIndex() { return driftResyncThresholdIndex; }
+        public bool IsDriftResyncEnabled() { return driftResyncThresholdIndex != DRIFT_THRESHOLD_OFF; }
+        /// <summary>現在のドリフト Resync 閾値を秒で返す。OFF の場合はメーター表示用に 5 秒を返す。</summary>
+        public float GetDriftResyncThresholdSec()
+        {
+            switch (driftResyncThresholdIndex)
+            {
+                case DRIFT_THRESHOLD_50_MS: return 0.05f;
+                case DRIFT_THRESHOLD_100_MS: return 0.1f;
+                case DRIFT_THRESHOLD_150_MS: return 0.15f;
+                case DRIFT_THRESHOLD_200_MS: return 0.2f;
+                case DRIFT_THRESHOLD_250_MS: return 0.25f;
+                case DRIFT_THRESHOLD_300_MS: return 0.3f;
+                case DRIFT_THRESHOLD_400_MS: return 0.4f;
+                case DRIFT_THRESHOLD_500_MS: return 0.5f;
+                case DRIFT_THRESHOLD_700_MS: return 0.7f;
+                case DRIFT_THRESHOLD_1_SEC: return 1f;
+                case DRIFT_THRESHOLD_2_SEC: return 2f;
+                case DRIFT_THRESHOLD_3_SEC: return 3f;
+                case DRIFT_THRESHOLD_5_SEC: return 5f;
+                default: return 5f;
+            }
+        }
+
+        public string GetDriftResyncThresholdDisplayText()
+        {
+            switch (driftResyncThresholdIndex)
+            {
+                case DRIFT_THRESHOLD_50_MS: return "50 ms";
+                case DRIFT_THRESHOLD_100_MS: return "100 ms";
+                case DRIFT_THRESHOLD_150_MS: return "150 ms";
+                case DRIFT_THRESHOLD_200_MS: return "200 ms";
+                case DRIFT_THRESHOLD_250_MS: return "250 ms";
+                case DRIFT_THRESHOLD_300_MS: return "300 ms";
+                case DRIFT_THRESHOLD_400_MS: return "400 ms";
+                case DRIFT_THRESHOLD_500_MS: return "500 ms";
+                case DRIFT_THRESHOLD_700_MS: return "700 ms";
+                case DRIFT_THRESHOLD_1_SEC: return "1 s";
+                case DRIFT_THRESHOLD_2_SEC: return "2 s";
+                case DRIFT_THRESHOLD_3_SEC: return "3 s";
+                case DRIFT_THRESHOLD_5_SEC: return "5 s";
+                default: return "OFF";
+            }
+        }
         public int GetGlobalForceRebootSeq() { return globalForceRebootSeq; }
 
         public int GetQueuedCount()
@@ -614,6 +681,15 @@ namespace PasocomMate.AunCast
         {
             if (!TryTakeOwnership()) return;
             maxConnectionLimit = (byte)Mathf.Clamp(value, MIN_CONNECTION_LIMIT, MAX_CONNECTION_LIMIT);
+            RequestSerialization();
+            NotifyObservers();
+        }
+
+        /// <summary>スタッフがドリフト Resync 閾値の固定段階を変更する。</summary>
+        public void SetDriftResyncThresholdIndexRuntime(int value)
+        {
+            if (!TryTakeOwnership()) return;
+            driftResyncThresholdIndex = (byte)Mathf.Clamp(value, DRIFT_THRESHOLD_50_MS, DRIFT_THRESHOLD_OFF);
             RequestSerialization();
             NotifyObservers();
         }

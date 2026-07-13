@@ -351,6 +351,16 @@ namespace PasocomMate.AunCast
         public float GetRetryCooldownMultiplier() { return Mathf.Clamp(retryCooldownMultiplier, 1.0f, 2.0f); }
         /// <summary>指数バックオフの上限秒数。</summary>
         public float GetMaxRetryCooldownSec() { return maxRetryCooldownSec; }
+        /// <summary>Coordinator で同期されているドリフト Resync 閾値。</summary>
+        public float GetDriftResyncThresholdSec()
+        {
+            return coordinator != null ? coordinator.GetDriftResyncThresholdSec() : 0.1f;
+        }
+        /// <summary>ドリフトによる自動 Resync がグローバル設定で有効か。</summary>
+        public bool IsDriftResyncEnabled()
+        {
+            return coordinator == null || coordinator.IsDriftResyncEnabled();
+        }
         /// <summary>Resync 完了時刻を記録する。無音検知の抑制判定に使う。</summary>
         public void OnResyncCompleted(float now) { _lastResyncCompletedAt = now; }
 

@@ -205,13 +205,13 @@ Resync の発動方法は以下の 3 種類を含む。
 
 - **手動トリガー（グローバル）**: スタッフ（Master または許可されたユーザー）が UI 操作で全ユーザーの一斉 Resync を発行する
 - **手動トリガー（個別）**: 各ユーザーが AunCastPortablePanel の Viewer ビューの Resync ボタンで自身の Resync を要求する
-- **自動トリガー（個別）**: 各クライアントが Audio RMS 無音検知やストール検知に基づき、自動的に自身の Resync を Coordinator キューに投入する。連続発火を防ぐため `silenceSuppressSec` によるクールダウンを設ける
+- **自動トリガー（個別）**: 各クライアントが Audio RMS 無音検知、ストール検知、ドリフト検知に基づき、自動的に自身の Resync を Coordinator キューに投入する。連続発火を防ぐため `silenceSuppressSec` によるクールダウンを設ける。観客が Manual Mode を有効にしている間は、これらの自動トリガーと自動 Retry Reboot をローカルで抑止する
 
 ### FR-14: Resync モニタリング
 スタッフは、インスタンス全体の再生・Resync 状況をリアルタイムで確認できなければならない。以下の情報を含む。
 
 - **数値サマリ**: 再生中ユーザー数 / 接続中ユーザー数 / インスタンス内ユーザー数 / インスタンス収容上限
-- **スロットインジケーター**: 各ユーザーの状態（正常再生 / 接続中 / Resync 待機 / Resync 実行中 / エラー）を色分けアイコンで一覧表示し、異常度の高い順にソートする
+- **スロットインジケーター**: 各ユーザーの状態（正常再生 / 接続中 / Resync 待機 / Resync 実行中 / エラー）を色分けアイコンで一覧表示し、エラー（FAILED）→接続中（CONNECTING）→Resync 実行中（RUNNING）→Resync 待機（QUEUED）→正常（NORMAL）の順にソートする
 - **推定残り時間（ユーザー向け）**: Resync 待機が発生したとき、待機列が解消して自身の Resync が完了するまでの推定残り時間を AunCastPortablePanel の Viewer ビューに表示する
 - **推定残り時間（スタッフ向け）**: 待機列がある場合、全体の Resync が完了するまでの推定残り時間を AunCastStaffControlPanel に表示する
 
@@ -224,6 +224,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - **強制リブート（Force Reboot）**: 全ユーザーの Active・Standby 両方のストリームを一旦切断し、Active で再接続する緊急機能。二重化による切替ではなく単純な全断→再接続のため、映像・音声の途切れが発生する。通常運用では使用しない
 - **同時Resync上限**: スタッフがワールド内で変更できる（`maxConcurrentResyncUsers`、同期）
 - **CDN 同時接続上限**: スタッフがワールド内で変更できる（`maxConnectionLimit`、同期。配信サーバ側の同時接続キャパシティとして扱う）
+- **自動Resyncドリフト閾値**: スタッフが固定段階（50 / 100 / 150 / 200 / 250 / 300 / 400 / 500 / 700 ms、1 / 2 / 3 / 5 s、OFF）から選択できる（同期）。OFF はドリフト計測表示を残したまま、ドリフト起因の自動 Resync と閾値超過警告を無効化する
 - **モニタリング表示**: グローバル Resync の進捗状況（FR-14 参照）
 
 > **注記**: 「Silence Resync」は当初スタッフ操作パネルに配置する想定だったが、各クライアントごとの個別フラグであることから AunCastPortablePanel（観客向けパネル）側に移行している（FR-17 参照）。
@@ -252,6 +253,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - 現在のローカル状態テキスト（再生中 / Resync 待機中 / Resync 実行中 / Cooldown 中 + Stall/Fail カウント + エラーメッセージ）
 - ローカル音量スライダー（`SetVolumeLocal` でクライアントローカルに適用、同期不要）
 - Silence Resync トグル（`SetAutoSilenceResyncEnabled`、クライアントローカル）
+- Manual Mode トグル（クライアントローカル）。有効時は自動 Resync / Retry Reboot のみを抑止し、観客の手動 Resync / Reboot とスタッフのグローバル Resync / Force Reboot は有効なままとする
 - 閉じるボタン
 - Staff ビューへの切替（パスコード解錠時のみ）
 - VR ジェスチャー長押し中の視界プログレス HUD 表示
@@ -319,7 +321,7 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 - 異常検知（`DetectActiveFailure`）と停止継続時間 (`stallDuration`) の計算
 - Standby Player の Verify (`IsVerifySatisfied` / `IsStandbyTimedOut`)
 - ドリフト計測（絶対ドリフト方式 EMA、`_baseWallTime` / `_basePlayerTime` / `_driftAccumulator`）
-- ドリフトしきい値 (`driftResyncThresholdSec`) を超えた際の Resync 候補通知
+- Coordinator から受け取った同期ドリフトしきい値を超えた際の Resync 候補通知（OFF 時は候補通知しない）
 - `BindRoles(activeIsA)` で `AunCastPlaybackSwitcher` のロール変更に追従
 
 ### D. AunCastPlaybackSwitcher
@@ -380,6 +382,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - グローバル Resync トリガーボタン (`OnGlobalResyncButtonPress`)
 - 強制リブート (`OnForceRebootButtonPress`)
 - 同時Resync上限 (`maxConcurrentResyncUsers`) と CDN 同時接続上限 (`maxConnectionLimit`) のランタイム編集 UI（Display/Edit モード切替、±1/±10 ボタン）
+- 自動Resyncドリフト閾値 (`driftResyncThresholdIndex`) のランタイム編集 UI（Display/Edit モード切替、左右ボタン、Apply/Cancel。端ではクランプして循環しない）
 - モニタリング表示: インジケーター（色付き ■/□ でスロット状態を表示）、ユーザー数表示（Playing / In Instance / Queued）
 - アクセス制御: 許可ユーザー名リスト (`allowedUserNames`) + AunCastWallControlPanel 経由のローカルパスコード解錠 (`SetLocalPasscodeUnlocked`)。同名ユーザー衝突時は最小 playerId を優先
 - 多言語ヘルプテキスト: ホバーに応じてボタン説明を表示 (`OnHoverXxx` → `helpTextField`)。日本語/英語をシステム言語 or 手動トグルで切替 (`OnLanguageChanged` / `ToggleLanguage`)
@@ -407,10 +410,11 @@ AunCastSettings の再配線は同一シーン全体の `AunCastWallControlPanel
 責務:
 - 個人 Resync リクエストボタン / 緊急リブートボタン
 - 状態テキスト表示（ローカル状態 + エラーメッセージ + Stall/Fail カウント）
-- ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示
+- ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示し、閾値以上では黄色にする。Manual Mode 中も検知・表示は継続する
 - サイレンスゲージ（`silenceGauge`）: 無音検出の連続時間を表示。抑制中はグレーアウト
 - ローカル音量スライダー (`volumeSlider` → `SetVolumeLocal`)
 - Silence Resync トグル (`autoSilenceResyncToggle` → `SetAutoSilenceResyncEnabled`)
+- Manual Mode トグル (`manualModeToggle` → `SetManualModeEnabled`)。有効時は Silence Resync トグルを操作不可にし、自動 Resync / Retry Reboot を抑止する
 - Resync ボタンのクールダウン / ETA 表示（`_resyncCooldownLabel`）
 - **VR ジェスチャー呼び出し**: 複数方式を同時有効可能（ビットフラグ制御）
   - 右スティック上方向倒し続け (`GESTURE_RIGHT_STICK_UP_HOLD`、デフォルト有効)
@@ -706,12 +710,13 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 |---|---|
 | `driftResyncThresholdSec` 未満 | 何もしない（正常範囲） |
 | `driftResyncThresholdSec` 以上 | Resync Request を発行する |
+| `driftResyncThresholdIndex` が OFF | ドリフト値の計測・表示のみ継続し、Resync Request は発行しない |
 
 > **設計変更履歴**: 当初は `absorptionThresholdSec` / `bufferAbsorptionLimitSec` / `recoveryRateSecPerSec` を用いた **AudioDelayFilter のリングバッファによる吸収段** を計画していたが、Udon VM のオーディオスレッド制約（Section 9.1 K 参照）によりリングバッファ遅延機構そのものが未実装となったため、現実装ではドリフトしきい値超過 → 直接 Resync 発行のシンプルな 2 段階に統合している。バッファ吸収は Section 24 の今後の拡張案として残す。
 
 ### 表示
 
-蓄積量と方向（遅れ / 進み）を AunCastPortablePanel に表示する（FR-17 参照）。ドリフトが `driftResyncThresholdSec` に近づいた段階で視覚的警告を出す。
+蓄積量と方向（遅れ / 進み）を AunCastPortablePanel に表示する（FR-17 参照）。絶対ドリフトが有効な閾値以上になった場合はゲージを黄色にする。Manual Mode 中も表示は継続し、OFF 時は黄色にしない。
 
 ### 推奨パラメータ
 
@@ -1513,6 +1518,7 @@ AunCastPortablePanel 内の Staff ビューとして動作する。パスコー�
 - **強制リブートボタン**: 全ユーザーの Active/Standby を全断→再接続する（`OnForceRebootButtonPress`、`globalForceRebootSeq` 同期）
 - **同時Resync上限の編集**: `maxConcurrentResyncUsers` をワールド内で変更できる。Display/Edit モード切替式（Change → ±1 / ±10 → Apply/Cancel）
 - **CDN 同時接続上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
+- **自動Resyncドリフト閾値の編集**: `driftResyncThresholdIndex` を固定段階で変更できる。Change → 左右ボタン → Apply/Cancel の順で操作し、数値の直接入力は行わない
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
 > **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく AunCastPortablePanel の Viewer ビューに配置している。
@@ -1548,10 +1554,11 @@ VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポ
 - **Resync ボタン**: 押すと自身の Resync を Coordinator に Request する。非再生時は無効化。Cooldown / 待機中は ETA またはカウントダウンを表示
 - **緊急リブートボタン**: Coordinator を介さず自身のストリームを全断→再接続する。常時操作可能
 - **状態テキスト**: ローカル状態 + エラーメッセージ + Stall/Fail カウント
-- **ドリフトゲージ** (`headroomGauge`): 蓄積ドリフトのしきい値に対する割合をスライダーで表示
+- **ドリフトゲージ** (`headroomGauge`): 蓄積ドリフトのしきい値に対する割合をスライダーで表示し、閾値以上では黄色にする。Manual Mode 中も表示を継続し、閾値 OFF 時は警告色にしない
 - **サイレンスゲージ** (`silenceGauge`): 無音検出の連続時間をスライダーで表示。`silenceSuppressSec` 中はグレーアウト
 - **ローカル音量スライダー**: `volumeSlider` → `controller.SetVolumeLocal()` を呼ぶ。同期不要のローカル設定
 - **Silence Resync トグル**: `autoSilenceResyncToggle` → `controller.SetAutoSilenceResyncEnabled()` を呼ぶ。コンテンツに意図的な無音が多い場合に各観客がオフにできる
+- **Manual Mode トグル**: `manualModeToggle` → `controller.SetManualModeEnabled()` を呼ぶ。有効時は無音・ストール・ドリフト起因の自動 Resync と RetryWait からの自動 Reboot を抑止する。観客の手動操作およびスタッフの明示操作は抑止しない
 - **閉じるボタン**: パネルを非表示にする
 
 #### VR ジェスチャー呼び出し
