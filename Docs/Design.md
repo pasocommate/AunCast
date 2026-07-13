@@ -301,7 +301,7 @@ owner 変更が起きても、Coordinator の状態が破綻しにくいこと�
 - `RequestManualResync()`: 観客からの手動 Resync リクエスト
 - `AunCastPlaybackMonitor` への再生状態レポート（スロットル付き、10 秒ごと + 変化時）
 - `OnDeserialization`: 非 Owner の URL 変更検知と再生停止同期
-- 非 Owner の同期待ち（`_waitForSync`）: `_ownerPlaying` が false の間は Pause で待機
+- 非 Owner の通常初回ロード時の同期待ち（`_waitForSync`）: `_ownerPlaying` が false の間は Pause で待機。失敗後の Active 直接再接続が成功した場合はローカル再生への収束を優先する
 
 ### B. AunCastVideoPlayerManager（既存流用 × 2 台）
 各 `VRCAVProVideoPlayer` に対応する AVPro ラッパー。既存の `AunCastVideoPlayerManager` を 2 台配置して Active / Standby に対応する。
@@ -550,6 +550,8 @@ flowchart TB
 stateDiagram-v2
     [*] --> Idle
     Idle --> ActivePlaying: 初期再生開始
+    Idle --> RetryWait: 初回Active接続失敗（再試行可能）
+    Idle --> Idle: InvalidURL / AccessDenied
     ActivePlaying --> RequestPending: 異常検知 / 無音検知 / 手動
     RequestPending --> Reserved: CoordinatorがGrant
     RequestPending --> ActivePlaying: Active回復によるキャンセル
@@ -572,6 +574,8 @@ stateDiagram-v2
 ※ **緊急リブート**（FR-16b / グローバル強制リブート）: 任意の状態 → `RetryWait`。視聴者が手動で発動、またはスタッフの `TriggerGlobalForceReboot` により全員が Active・Standby を全断して Active で再接続する。通常の遷移フローを中断するため、上図とは別経路として扱う。
 
 ※ **REQUEST_PENDING 中の Active 回復**: 障害検知理由 (`REQUEST_REASON_FAILURE`) で待機中に Active の前進が再開した場合、キャンセルして `ActivePlaying` に復帰する（`REQUEST_REASON_MANUAL` / `REQUEST_REASON_SILENCE` では復帰しない）。
+
+※ **初回 Active 接続失敗**: `Idle` 中の `OnVideoError` では即座に `RetryWait` へ遷移せず、遅延コールバックが新しいロードを乗っ取らないよう Ready + Play タイムアウト相当の猶予を置く。猶予中に `OnVideoStart` が届けば再生成功を優先してエラーを破棄する。`InvalidURL` / `AccessDenied` は自動再試行せず、その他のエラーだけを、同期 URL が残っているクライアントの Active 直接再接続へ送る。
 
 ## 10.2 Coordinator 側状態
 
@@ -1305,6 +1309,8 @@ RetryWait →（バックオフ経過後）Active 直接再接続 → ActivePlay
   - これは Coordinator の Grant を必要としない緊急再接続であり、旧系が完全に死んでいるためリスクは低い
 - 直接再接続が成功した場合、`_consecutiveFailCount` をリセットし、通常の `ActivePlaying` に復帰する
 - 直接再接続も失敗した場合、再び `RetryWait` に入る
+- 初回 Active ロードや直接再接続で `InvalidURL` / `AccessDenied` を受けた場合は、自動再試行を停止する
+- Active 再生直後の Cooldown 中に `OnVideoError` を受けた場合は障害要求を保留し、Cooldown 終了後に Resync Request を再試行する
 
 #### ユーザー通知
 

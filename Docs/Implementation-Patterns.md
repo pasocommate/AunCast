@@ -400,6 +400,11 @@ Join 時のデフォルト URL 自動再生は提供しない。`defaultUrl` は
 「同期 URL が存在し、かつ `_ownerPlaying == true`」で判定する。再生開始時は URL や
 `_syncedVideoIdx` が変わらず `_ownerPlaying` だけが変わるため、Owner の再生開始時と
 非 Owner の同期受信時の双方で Staff UI へ `OnUrlChanged` を通知する。
+非 Owner にとって「同期 URL が非空かつ `_ownerPlaying == false`」は通常、初回ロード中の
+同期待ちを表し、Stop ではない。Stop 判定は `_ownerPlaying == false` と同期 URL の空を
+組み合わせる。初回ロード失敗後も同期 URL が残っていればローカル再試行を許可し、
+そのクライアントで `OnVideoStart` に到達した時点で復旧成功を優先するため、この復旧後だけは
+Owner の再生開始同期より先にローカル状態が `Cooldown` へ進んでよい。
 
 `SetObjectProperty` / `SetObjectArrayProperty` の差分検知により、配線が既に最新の
 場合は no-op になるので、これらの自動経路がユーザーの手動編集を無闇に上書きする

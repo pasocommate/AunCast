@@ -167,14 +167,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public bool TryRequestResync(float now, int reason)
         {
-            if (_resyncRequested) return false;
-            if (now < _localCooldownUntil) return false;
-            if (coordinator == null) return false;
-            if (_mySlotIndex < 0) return false;
-
-            // Coordinator 側で既にキューイング中なら二重要求しない
-            int coordState = coordinator.GetResyncState(_mySlotIndex);
-            if (coordState != AunCastResyncCoordinator.STATE_NONE) return false;
+            if (!CanRequestResync(now)) return false;
 
             coordinator.SendCustomNetworkEvent(
                 NetworkEventTarget.Owner, "OnResyncRequest", _mySlotIndex);
@@ -186,6 +179,16 @@ namespace PasocomMate.AunCast
             TL($"a=RESYNC_REQUEST reason={GetRequestReasonText(reason)} slot={_mySlotIndex}");
             LogMessage($"Requested Resync (reason={GetRequestReasonText(reason)}, slot={_mySlotIndex})");
             return true;
+        }
+
+        /// <summary>UI と実行側で共通利用する Resync 要求可否判定。</summary>
+        public bool CanRequestResync(float now)
+        {
+            if (_resyncRequested) return false;
+            if (now < _localCooldownUntil) return false;
+            if (coordinator == null) return false;
+            if (_mySlotIndex < 0) return false;
+            return coordinator.GetResyncState(_mySlotIndex) == AunCastResyncCoordinator.STATE_NONE;
         }
 
         // =================================================================
