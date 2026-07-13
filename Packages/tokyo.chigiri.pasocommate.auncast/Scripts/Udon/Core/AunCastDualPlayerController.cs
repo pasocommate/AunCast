@@ -992,6 +992,8 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public void PlayVideoAsStaff(VRCUrl url)
         {
+            if (!Networking.IsNetworkSettled) return;
+
             string urlStr = url.Get();
             if (!IsValidStreamUrl(urlStr)) return;
 
@@ -1023,6 +1025,8 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public void StopVideoAsStaff()
         {
+            if (!Networking.IsNetworkSettled) return;
+
             if (!Networking.IsOwner(gameObject))
                 Networking.SetOwner(Networking.LocalPlayer, gameObject);
             StopVideoInternal();

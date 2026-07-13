@@ -179,7 +179,17 @@
 - ユーザー側の復旧手段は `VRChat SDK → Utilities → Network ID Utility` での再解決。
 - 実例: AunCast のトンネル移行で旧 `AudioOutputTunnel` の GameObject に `AunCastAudioOutputTunnel` を追加した際、記録済み署名（UdonBehaviour 1 個）と実体（2 個）が食い違いビルドが失敗した。移行処理を子 GameObject 配置へ変更して解消。
 
-### 9.16 `VRCUrl.Empty` は編集可能フィールドの初期値に使わない
+### 9.16 late-joiner の同期変数は Update ポーリング開始より後に bunch 復元される
+- late-joiner では、あるオブジェクトの `Update()`（ポーリング）が回り始めた**後**に、そのオブジェクトの `[UdonSynced]` 値が bunch 復元（`OnDeserialization`）で適用されることがある。復元順はオブジェクト間でも保証されない。
+- 症状: 「初回ポーリングで現在値を基準として記録し、以降 `値 != 前回値` で変化検知する」設計だと、初回ポーリングが**復元前の既定値**を基準に記録し、直後に同期値が届いた瞬間を「新規の変化」と誤検知する。Join 直後に一度だけ誤発火する。
+- 実例: AunCast の `globalForceRebootSeq`（既定 0）が、復元で同期値 1 に変わった瞬間を「新規の全員一斉リブート」と誤検知し、**全 late-joiner が Join 直後に不要な reboot（ストリーム二重接続・RateLimited churn）**を起こしていた。
+- 対策: 読み取りと書き込みの開始は **`Networking.IsNetworkSettled` が真になった後**に限定する。
+  - 変化検知の初回値は、同期完了後に履歴ではなく基準値として記録する。Join 中に発行されたイベントが初回値へ含まれていても、目的の状態（AunCast ではローカル再生）へ既に収束中なら再実行せず、敢えて見逃す。
+  - スタッフ UI は同期完了前の Change / Apply を拒否する。同期オブジェクト側も ownership 取得前に同じ条件を確認し、復元前の既定値やゼロ配列を配信しない。
+  - `OnDeserialization` の受信済みフラグは通知の即時性向上には使えるが、Owner を含む共通の準備完了条件は `IsNetworkSettled` とする。
+- 参考実装: `AunCastResyncCoordinator.IsInitialStateReady` / `AunCastResyncCoordinatorClient.PollGlobalForceReboot` / `AunCastStaffControlPanel.CanUseStaffControls`。
+
+### 9.17 `VRCUrl.Empty` は編集可能フィールドの初期値に使わない
 - `VRCUrl.Empty` は呼び出しごとに生成される空 URL ではなく、共有される static インスタンスである。
 - `[SerializeField]` の `VRCUrl` を `VRCUrl.Empty` で初期化し、エディタコードが `SerializedProperty` 経由で内部の `url` を書き換えると、共有インスタンス自体を変更する可能性がある。その後の `_syncedURL = VRCUrl.Empty` まで設定済み URL になり、未再生なのに URL だけ存在する状態を作る。
 - Inspector で編集する設定用フィールドは `new VRCUrl("")` のフィールド初期化子で専用インスタンスを持たせる。これはエディタでシリアライズする初期値に限り、Udon ランタイムのイベント内で `new VRCUrl(...)` を呼ばない。

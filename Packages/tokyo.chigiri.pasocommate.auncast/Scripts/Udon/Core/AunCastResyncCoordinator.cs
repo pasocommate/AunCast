@@ -122,7 +122,7 @@ namespace PasocomMate.AunCast
 
         private void Update()
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
 
             // 遅延シリアライズ: 同一フレーム内の複数変更を 1 回のネットワーク送信にまとめる
             if (_serializationPending)
@@ -142,6 +142,7 @@ namespace PasocomMate.AunCast
 
         public override void OnDeserialization()
         {
+            RestoreOwnerTimestamps();
             NotifyObservers();
         }
 
@@ -303,7 +304,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnResyncRequest(int slotIndex)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlotIndex(slotIndex)) return;
             if (resyncState[slotIndex] != STATE_NONE) return;
 
@@ -320,7 +321,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnReportRunning(int slotIndex)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlotIndex(slotIndex)) return;
             if (resyncState[slotIndex] != STATE_GRANTED) return;
 
@@ -334,7 +335,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnReportSuccess(int slotIndex)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlotIndex(slotIndex)) return;
 
             int state = resyncState[slotIndex];
@@ -350,7 +351,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnReportFail(int slotIndex)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlotIndex(slotIndex)) return;
 
             int state = resyncState[slotIndex];
@@ -366,7 +367,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnCancelSlot(int slotIndex)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlotIndex(slotIndex)) return;
             if (resyncState[slotIndex] == STATE_NONE) return;
 
@@ -380,7 +381,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnRequestSlot(int playerId)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (userPlayerId == null) return;
             if (VRCPlayerApi.GetPlayerById(playerId) == null) return;
 
@@ -411,7 +412,7 @@ namespace PasocomMate.AunCast
 
         public override void OnPlayerJoined(VRCPlayerApi player)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (userPlayerId == null) return;
 
             short playerId = (short)player.playerId;
@@ -453,7 +454,7 @@ namespace PasocomMate.AunCast
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (userPlayerId == null) return;
 
             short playerId = (short)player.playerId;
@@ -596,6 +597,8 @@ namespace PasocomMate.AunCast
             }
         }
         public int GetGlobalForceRebootSeq() { return globalForceRebootSeq; }
+        /// <summary>Join 時の同期データが適用済みで、同期状態の読み書きを開始できるか。</summary>
+        public bool IsInitialStateReady() { return Networking.IsNetworkSettled; }
 
         public int GetQueuedCount()
         {
@@ -728,16 +731,43 @@ namespace PasocomMate.AunCast
             return (float)Networking.GetServerTimeInSeconds();
         }
 
+        /// <summary>Owner かつ Join 時同期が完了している場合だけ同期状態の変更を許可する。</summary>
+        private bool CanMutateState()
+        {
+            return Networking.IsOwner(gameObject) && IsInitialStateReady();
+        }
+
+        /// <summary>同期された圧縮時刻から、Owner が Scheduler で使うローカル配列を復元する。</summary>
+        private void RestoreOwnerTimestamps()
+        {
+            if (_ownerTimestamp == null || _ownerTimestamp.Length != MAX_PLAYERS)
+                _ownerTimestamp = new float[MAX_PLAYERS];
+
+            for (int i = 0; i < MAX_PLAYERS; i++)
+            {
+                _ownerTimestamp[i] = resyncState != null
+                    && i < resyncState.Length
+                    && resyncState[i] != STATE_NONE
+                    ? GetUserTimestamp(i)
+                    : 0f;
+            }
+        }
+
         /// <summary>スタッフ操作用: Ownership を取得する。失敗時は操作を中断させる。</summary>
         private bool TryTakeOwnership()
         {
+            // late-joiner が同期前の既定値を Owner として配信しないよう、操作自体を拒否する。
+            if (!IsInitialStateReady()) return false;
             if (Networking.IsOwner(gameObject)) return true;
 
             VRCPlayerApi local = Networking.LocalPlayer;
             if (local == null) return false;
 
             Networking.SetOwner(local, gameObject);
-            return Networking.IsOwner(gameObject);
+            if (!Networking.IsOwner(gameObject)) return false;
+
+            RestoreOwnerTimestamps();
+            return true;
         }
 
         private void LogMessage(string message)

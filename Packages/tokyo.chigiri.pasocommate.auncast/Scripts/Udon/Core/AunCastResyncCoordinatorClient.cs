@@ -134,13 +134,19 @@ namespace PasocomMate.AunCast
         {
             if (coordinator == null) return false;
 
-            int forceRebootSeq = coordinator.GetGlobalForceRebootSeq();
             if (_lastGlobalForceRebootSeq < 0)
             {
-                // 初回は現在値を記録するだけ（Join 直後のトリガ防止）
-                _lastGlobalForceRebootSeq = forceRebootSeq;
+                // Coordinator の初期同期が完了するまで基準値を記録しない。
+                if (!coordinator.IsInitialStateReady()) return false;
+
+                // 初回は現在値を記録するだけ。Join 中に発行された指令も意図的に見逃し、
+                // 既に進行中の初回再生をもう一度リブートしない。
+                _lastGlobalForceRebootSeq = coordinator.GetGlobalForceRebootSeq();
+                return false;
             }
-            else if (forceRebootSeq != _lastGlobalForceRebootSeq)
+
+            int forceRebootSeq = coordinator.GetGlobalForceRebootSeq();
+            if (forceRebootSeq != _lastGlobalForceRebootSeq)
             {
                 _lastGlobalForceRebootSeq = forceRebootSeq;
                 TL($"a=GLOBAL_FORCE_REBOOT seq={forceRebootSeq}");

@@ -275,6 +275,11 @@ if (coordinator.GetResyncState(_mySlotIndex) == AunCastResyncCoordinator.STATE_N
 | クライアント→Coordinator の状態変更 | `SendCustomNetworkEvent` + `[NetworkCallable]` | 競合排除、パケット削減 |
 | スタッフ操作（Global Resync 等） | `TryTakeOwnership` → 直接書換 | 全スロットの原子的更新が必要 |
 
+ownership を取得するスタッフ操作は、`Networking.IsNetworkSettled` が真になってからだけ
+受け付ける。late-joiner が復元前の既定値を保持したまま Owner になり、他の同期フィールドや
+配列まで既定値で再配信することを防ぐため、UI と `TryTakeOwnership` の両方で拒否する。
+設定編集の Change も同期完了前は受け付けず、入力欄へ現在値を反映する処理も同期完了後に限る。
+
 ## 7. ownership 分離オブジェクトの退室クリーンアップ
 
 複数の `[UdonSynced]` オブジェクトを意図的に分離してある場合（例: `AunCastResyncCoordinator` と

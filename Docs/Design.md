@@ -357,7 +357,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - Grant 判定（同時Resync上限による制御、`maxConcurrentResyncUsers` / `maxConnectionLimit`）
 - タイムアウト監視（`grantTimeoutSec` / `runningTimeoutSec`）
 - グローバル Resync (`TriggerGlobalResync`) と強制リブート (`TriggerGlobalForceReboot`) の発行
-- owner 変更後の状態継続
+- Join 時同期完了前の状態変更拒否と、owner 変更後の状態継続
 
 ### G. AunCastResyncCoordinatorClient
 クライアント側に配置し、Coordinator の同期変数をローカル状態に翻訳する薄いクライアント。
@@ -371,7 +371,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - リクエスト理由 (`REQUEST_REASON_FAILURE` / `REQUEST_REASON_MANUAL` / `REQUEST_REASON_SILENCE`) の保持
 - Cooldown / RetryWait のローカル管理
 - Silence Resync の適格判定 (`IsSilenceAutoResyncEligible`: 最後の Resync 完了から `silenceSuppressSec` 経過後に有効)
-- グローバル強制リブートの検知 (`PollGlobalForceReboot`: `globalForceRebootSeq` の変化を監視)
+- グローバル強制リブートの検知 (`PollGlobalForceReboot`: 初回同期値を基準として、それ以降の `globalForceRebootSeq` の変化を監視)
 
 ### H. AunCastStaffControlPanel（ポータブルパネルの Staff ビューとして統合）
 スタッフ向けの操作・モニタリング UI。AunCastPortablePanel 内の Staff ビュー（クロスフェード切替）として動作する。
@@ -383,6 +383,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 - 強制リブート (`OnForceRebootButtonPress`)
 - 同時Resync上限 (`maxConcurrentResyncUsers`) と CDN 同時接続上限 (`maxConnectionLimit`) のランタイム編集 UI（Display/Edit モード切替、±1/±10 ボタン）
 - 自動Resyncドリフト閾値 (`driftResyncThresholdIndex`) のランタイム編集 UI（Display/Edit モード切替、左右ボタン、Apply/Cancel。端ではクランプして循環しない）
+- Join 時同期が完了するまで全スタッフ操作と設定編集を無効化し、復元前の既定値を書き戻さない
 - モニタリング表示: インジケーター（色付き ■/□ でスロット状態を表示）、ユーザー数表示（Playing / In Instance / Queued）
 - アクセス制御: 許可ユーザー名リスト (`allowedUserNames`) + AunCastWallControlPanel 経由のローカルパスコード解錠 (`SetLocalPasscodeUnlocked`)。同名ユーザー衝突時は最小 playerId を優先
 - 多言語ヘルプテキスト: ホバーに応じてボタン説明を表示 (`OnHoverXxx` → `helpTextField`)。日本語/英語をシステム言語 or 手動トグルで切替 (`OnLanguageChanged` / `ToggleLanguage`)
@@ -1321,6 +1322,7 @@ RetryWait →（バックオフ経過後）Active 直接再接続 → ActivePlay
 - Coordinator の同期変数は Owner のみが書き換える（Owner-Centric モデル）
 - クライアントは `SendCustomNetworkEvent(NetworkEventTarget.Owner, ...)` で状態変更を要求する（fire-and-forget + ポーリング確認）
 - スタッフ操作（TriggerGlobalResync 等）のみ例外的に ownership を取得して直接書き換える
+- `Networking.IsNetworkSettled` が真になるまでは、Owner の Scheduler・RPC・スタッフ操作を含め Coordinator の同期状態を変更しない
 - owner 変更時も同期変数から再構築する
 
 ## 19.2 Late Joiner
@@ -1329,6 +1331,13 @@ Late Joiner は以下を `OnDeserialization` で再構築する。
 
 - 各ユーザーの queue/grant/running 状態
 - 実行中（Granted + Running）ユーザー数
+- Coordinator の上限・ドリフト閾値・強制リブートシーケンス
+
+スタッフ UI は `Networking.IsNetworkSettled` が真になるまで操作を無効化し、設定値の
+Change / Apply を受け付けない。同期完了後に初めて現在値を入力欄へ反映する。
+
+グローバル強制リブートの初回同期値は履歴ではなく基準値として扱う。Join 中に発行された
+指令が初回同期値へ含まれていても、そのクライアントは既に初回再生へ収束中なので再実行しない。
 
 ## 19.3 owner 変更
 
@@ -1520,6 +1529,9 @@ AunCastPortablePanel 内の Staff ビューとして動作する。パスコー�
 - **CDN 同時接続上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **自動Resyncドリフト閾値の編集**: `driftResyncThresholdIndex` を固定段階で変更できる。Change → 左右ボタン → Apply/Cancel の順で操作し、数値の直接入力は行わない
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
+
+スタッフ操作は Join 時同期完了後にのみ有効化する。同期前は Promote / Stop / Global Resync /
+Force Reboot と各設定の Change / Apply を拒否し、プレハブ既定値を運用中の同期値へ書き戻さない。
 
 > **Silence Resync について**: 各クライアントごとに有効/無効を切り替える設計に変更されたため、本パネルではなく AunCastPortablePanel の Viewer ビューに配置している。
 
