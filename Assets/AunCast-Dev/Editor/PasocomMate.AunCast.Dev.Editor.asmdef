@@ -1,0 +1,22 @@
+{
+    "name": "PasocomMate.AunCast.Dev.Editor",
+    "rootNamespace": "PasocomMate.AunCast.Dev.Editor",
+    "references": [
+        "PasocomMate.AunCast.Runtime",
+        "VRC.SDK3",
+        "VRC.SDKBase",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
