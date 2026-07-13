@@ -38,7 +38,7 @@
 | 現用系統 / 予備系統 | いま流している側 / 予備の側 |
 | スタッフビュー / 観客ビュー | スタッフ画面 / 観客画面 |
 
-- **UI ラベル・インスペクタ表示名は実物どおり**に書く：Resync / Reboot / Stop All / Resync All / Connection≤ / Concurrent≤ / Drift / Audio Level / Silence Resync / Volume、および AunCastSettings の各表示名（同時接続上限・同時Resync上限 等）。
+- **UI ラベル・インスペクタ表示名は実物どおり**に書く：Resync / Reboot / Stop All / Resync All / Connection≤ / Concurrent≤ / Drift Threshold / Drift / Audio Level / Silence Resync / Manual Mode / Volume、および AunCastSettings の各表示名（同時接続上限・同時Resync上限 等）。
 - **「スタッフ」の範囲**：ワールド制作担当とイベント運営担当（当日の配信操作を含む）をまとめて **スタッフ** と呼ぶ。作業範囲を区別したい場合は「初期設定を行うスタッフ」「配信を管理するスタッフ」のように補足する。
 - **「プレイヤー」単独では書かない**：VRChat のユーザーを指す場合は **観客** または **VRChat ユーザー**、映像・音声の再生機構を指す場合は **再生系統** または **ビデオプレイヤー** と書く。`Player A/B` のような実オブジェクト名を書く場合も、必要に応じて「A/B再生系統」を添える。
 - **Resync と Reboot の呼び分け**：本システム独自の 2 系統方式の再同期を **Resync**、全断→再接続を **Reboot** と呼ぶ（一般的なライブ配信再生システムが「Resync」と呼ぶ操作は、本システムの Reboot に相当する）。
@@ -68,6 +68,7 @@
 ## 6. スクリーンショット
 
 - 実 UI のスクリーンショットを使い、`Manual/src/assets/` に意味のある名前で配置する。
+- 手元パネルを撮影するときは、`AunCast.prefab` と撮影用Cameraを配置したシーンで **Tools → PasocomMate → AunCast Dev → スクリーンショット** の観客ビュー／スタッフビュー撮影メニューを実行する。表示値と操作状態が統一され、Cameraの表示内容が1440×1080の透過PNGとして `Manual/src/assets/` へ出力される。Cameraが複数ある場合は、撮影用CameraをHierarchyで選択してから実行する。
 - **番号バッジ（①②…）付きの図は手描きしない**。素の画像（`*-annotated` でない方）を配置し、[`Tools/annotate-manual-screenshots.py`](../Tools/annotate-manual-screenshots.py) の `JOBS` にバッジ座標を追記して再実行する。フォント・色は同スクリプトの定数（紫 #5a4aa8・Arial Bold）で統一され、番号を追加・変更してもスタイルが揺れない。
 
 ## 7. プレースホルダ（未確定事項）

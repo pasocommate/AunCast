@@ -1,5 +1,5 @@
 ---
-description: 配信を管理するスタッフ向けの操作。スタッフビューの解錠、配信URLの変更、全員一斉の再同期・停止・再起動、同時接続上限の調整を説明します。
+description: 配信を管理するスタッフ向けの操作。スタッフビューの解錠、配信URLの変更、全員一斉の再同期・停止・再起動、同時接続上限や Drift Threshold の調整を説明します。
 image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 ---
 
@@ -43,13 +43,14 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | ⑦ **状態インジケーター** | 全員の状態を色で表示する（→ [モニタリング](monitoring.md)） |
 | ⑧ **人数表示** | Playing / Instance / Queued の人数（→ [モニタリング](monitoring.md)） |
 | ⑨ **Connection≤**（<span class="material-symbol" aria-hidden="true">&#xEFE6;</span>）<br>　 **Concurrent≤**（<span class="material-symbol" aria-hidden="true">&#xF16A;</span>） | 同時接続 / Resync上限の現在値と **Edit** ボタン（<span class="material-symbol" aria-hidden="true">&#xF097;</span>） |
-| ⑩ **ヘルプ表示** | ポイントしたUI部品の説明欄<br>インタラクトで日本語 / 英語を切替 |
-| ⑪ **Resync ボタン**（<span class="material-symbol" aria-hidden="true">&#xE627;</span>） | 自分の端末を再同期する。[観客ビューの Resync](panel-viewer.md#resync-button)と同じ |
-| ⑫ **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>） | 自分の端末を切断→再接続する。[観客ビューの Reboot](panel-viewer.md#reboot-button)と同じ |
-| ⑬ **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">&#xE899;</span>） | スタッフ操作を一時的に施錠し、誤操作を防ぐ（→ [操作ロック](#staff-lock)） |
-| ⑭ **Timeline Log**（<span class="material-symbol" aria-hidden="true">&#xE868;</span>） | 診断用タイムラインログのオン / オフ（→ [タイムラインログ](#timeline-logging)） |
+| ⑩ **Drift Threshold**（<span class="material-symbol" aria-hidden="true">&#xE6DF;</span>） | ドリフト検知による自動Resyncのしきい値（→ [Drift Threshold](#drift-threshold)） |
+| ⑪ **ヘルプ表示** | ポイントしたUI部品の説明欄<br>インタラクトで日本語 / 英語を切替 |
+| ⑫ **Resync ボタン**（<span class="material-symbol" aria-hidden="true">&#xE627;</span>） | 自分の端末を再同期する。[観客ビューの Resync](panel-viewer.md#resync-button)と同じ |
+| ⑬ **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>） | 自分の端末を切断→再接続する。[観客ビューの Reboot](panel-viewer.md#reboot-button)と同じ |
+| ⑭ **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">&#xE899;</span>） | スタッフ操作を一時的に施錠し、誤操作を防ぐ（→ [操作ロック](#staff-lock)） |
+| ⑮ **Timeline Log**（<span class="material-symbol" aria-hidden="true">&#xE868;</span>） | 診断用タイムラインログのオン / オフ（→ [タイムラインログ](#timeline-logging)） |
 
-⑪⑫ の Resync / Reboot と Volume は、スタッフビューでも **自分の端末に対する操作** です。挙動は観客ビューと同じなので、[手元パネル：観客ビュー](panel-viewer.md)を参照してください。
+⑫⑬ の Resync / Reboot と Volume は、スタッフビューでも **自分の端末に対する操作** です。挙動は観客ビューと同じなので、[手元パネル：観客ビュー](panel-viewer.md)を参照してください。
 
 ---
 
@@ -106,6 +107,19 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 スタッフビューの **Connection≤ / Concurrent≤** は、それぞれ右の **Edit** ボタンで編集できます。数値の意味と調整の目安は次のページを参照してください。
 
 [→ モニタリングと上限調整へ](monitoring.md)
+
+---
+
+## Drift Threshold（ドリフト検知のしきい値） {#drift-threshold}
+
+**Drift Threshold**は、観客のドリフトがどこまで蓄積したら自動Resyncするかを、インスタンス全体に対して設定します。右の **Edit** ボタンを押し、左右のボタンで値を選んでから確定します。数値を直接入力することはできません。
+
+- 値を大きくすると自動Resyncの頻度は下がりますが、許容されるズレの長さが増えます。
+- `OFF` はドリフト検知自体を停止します。他のイベントを契機とする自動Resyncは停止しません。
+- 観客が個別に [Manual Mode](panel-viewer.md#manual-mode) をオンにしている場合、その観客ではこのしきい値を超えても自動Resyncしません。
+
+!!! warning "イベント中の緊急回避として変更する場合"
+    自動Resyncがイベント続行を妨げている原因を確認し、まずは必要な範囲でしきい値を引き上げてください。`OFF` にするとドリフトの自動補正が行われなくなるため、観客へ Resync の手動操作を案内してください。この場合、ごく一般的なビデオプレイヤーと同様の運用になります。
 
 ---
 

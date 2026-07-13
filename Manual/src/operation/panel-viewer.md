@@ -1,5 +1,5 @@
 ---
-description: 手元パネル(観客ビュー)の使い方と各表示の見方。再同期や音量調整など、観客とスタッフの双方が使う基本操作を解説します。
+description: 手元パネル(観客ビュー)の使い方と各表示の見方。再同期、Manual Mode、音量調整など、観客とスタッフの双方が使う基本操作を解説します。
 image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 ---
 
@@ -21,13 +21,14 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 |---|---|
 | ① **Resync ボタン**（<span class="material-symbol" aria-hidden="true">&#xE627;</span>） | 配信への接続を再同期する |
 | ② **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>） | いったん切断してから接続し直す |
-| ③ **Drift** | 接続確立時からの「音声・映像のズレ量」のメーター |
+| ③ **Drift** | 接続確立時からの「音声・映像のズレ量」 |
 | ④ **Audio Level** | 現在 音声が出ているかを示すメーター |
-| ⑤ **Silence Resync**（<span class="material-symbol" aria-hidden="true">&#xEBF3;</span>） | 無音時に自動的に再同期するかの切り替え |
-| ⑥ **Volume**（<span class="material-symbol" aria-hidden="true">&#xE050;</span>） | 音量 |
-| ⑦ **再生ステータス表示**（スクリーン下部） | 現在のプレイヤーの状態（例: Idle＝待機中） |
-| ⑧ **閉じるボタン**（<span class="material-symbol" aria-hidden="true">&#xE5CD;</span>） | パネルを閉じる |
-| ⑨ **ビュー切替ボタン**（<span class="material-symbol" aria-hidden="true">&#xE8D4;</span>） | [スタッフビュー](panel-staff.md)へ切り替える<br>解錠時のみ表示されます（→ [スタッフビューを解錠する](panel-staff.md#unlock)） |
+| ⑤ **Silence Resync**（<span class="material-symbol" aria-hidden="true">&#xEBF3;</span>） | ONのとき、無音時に自動Resync |
+| ⑥ **Manual Mode**（<span class="material-symbol" aria-hidden="true">&#xE769;</span>） | ONのとき、すべての自動Resyncを停止 |
+| ⑦ **Volume**（<span class="material-symbol" aria-hidden="true">&#xE050;</span>） | 音量 |
+| ⑧ **再生ステータス表示**（スクリーン下部） | 現在のプレイヤーの状態（例: Idle＝待機中） |
+| ⑨ **閉じるボタン**（<span class="material-symbol" aria-hidden="true">&#xE5CD;</span>） | パネルを閉じる |
+| ⑩ **ビュー切替ボタン**（<span class="material-symbol" aria-hidden="true">&#xE8D4;</span>） | [スタッフビュー](panel-staff.md)へ切り替える<br>解錠時のみ表示されます（→ [スタッフビューを解錠する](panel-staff.md#unlock)） |
 
 ここでは特に重要な２つのボタンを説明します。
 
@@ -59,6 +60,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 音声・映像が停止した／カクつく | **Resync ボタン** または **Reboot ボタン** |
 | Resync しても復旧しない／順番がこない | **Reboot ボタン** |
 | 静かな場面で勝手に再同期される | [Silence Resync をオフ](#auto-silence) |
+| 自動Resyncが原因でイベントの続行が難しい | [Manual Mode をオン](#manual-mode) |
 
 ---
 
@@ -77,6 +79,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | **Switching** | 現用系統から予備系統へ切り替えている |
 | **Cooldown** | 切り替え完了直後の短い待機中 |
 | **Retry Wait** | 復旧できず、少し待ってから再試行しようとしている |
+| **Manual Recovery Required** | Manual Mode中に自動復旧を停止している<br>Resync または Reboot を手動で行う必要があります |
 | **Error: ...** | 最後に発生したエラー。短時間だけ表示される場合があります |
 
 !!! note "停止・失敗の回数について"
@@ -90,7 +93,9 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 - メーターが **短い**：ズレはほとんどなく、正常です。
 - メーターが **伸びてきた**：ズレが蓄積しつつあります。
-- メーターが **上限に達する** と、**自動的に再同期** してズレをリセットします。
+- メーターがスタッフの設定したしきい値を超えると **黄色** になり、通常は **自動的に再同期** してズレをリセットします。
+
+Manual Modeがオンのときは、しきい値を超えても自動Resyncを行いません。また、スタッフが Drift Threshold を **OFF** にしている間は、ドリフト検知による自動Resyncが無効になります。
 
 !!! tip "ズレが気になったら Resync"
     視聴していてズレが気になるときは、自動検知を待たずに **Resync ボタン** を押しても構いません。再同期に成功すると、メーターは再び初期状態から測り直しになります。ただし、ネットワーク環境等によっては実際のズレが解消しない場合もあります。
@@ -122,6 +127,22 @@ AunCast は、音声が一定時間（約２秒）出ない状態が続くと自
 
 !!! warning "オフにしても、ドリフト検知時の自動再同期は停止しません"
     オフにするのは「**無音を契機とする自動再同期のみ**」です。ドリフト検知時の自動再同期や、手動の Resync ボタンは、オフにしても従来どおり有効です。
+
+---
+
+## Manual Mode（自動Resyncの停止） {#manual-mode}
+
+自動Resyncが発生しすぎるなどで視聴が妨げられる場合に、**一般的なビデオプレイヤーに近い手動操作へと切り替える**スイッチです。
+
+| 設定 | 動作 |
+|---|---|
+| **オン** | 停止・ドリフト・無音・再生エラー等を契機とする、すべての自動Resyncを停止する |
+| **オフ** | 自動検知と自動復旧を通常どおり行う |
+
+オンの間も、観客自身の **Resync / Reboot ボタン**と、スタッフの **Resync All / Reboot All**などの明示操作は有効です。Silence Resyncは操作できなくなりますが、Manual Modeをオフにすると再び操作できます。
+
+!!! warning "通常運用ではオフのままにします"
+    Manual Modeでは、再生が停止しても自動復旧しません。不調時は観客自身が Resync または Reboot を行う必要があります。スタッフから案内があった場合や、自動Resyncを止めなければ視聴を続行できない場合に限って使用してください。
 
 ---
 
