@@ -114,6 +114,49 @@ jobs:
           tag_name: ${{ env.tag }}
           body_path: release_notes.txt
 
+      # package-list-action が Release と配布アセットを取得できる状態になるまで待つ
+      # （Release 作成直後は GitHub API の反映が遅れる場合がある）
+      - name: Wait for release to propagate to vpm-listing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          required_assets=("${{ env.zipFile }}" "${{ env.unityPackage }}" "package.json")
+
+          for attempt in {0..12}; do
+            release_json="$(curl --fail --silent --show-error \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases/tags/${{ env.tag }}")" || true
+
+            if [ -n "${release_json}" ] && [ "$(jq -r '.draft' <<< "${release_json}")" = "false" ]; then
+              missing_assets=()
+              for asset in "${required_assets[@]}"; do
+                if ! jq -e --arg asset "${asset}" '.assets[] | select(.name == $asset)' \
+                  <<< "${release_json}" > /dev/null; then
+                  missing_assets+=("${asset}")
+                fi
+              done
+
+              if [ "${#missing_assets[@]}" -eq 0 ]; then
+                echo "Release ${{ env.tag }} and all distribution assets are available."
+                # 別ワーカーで起動する vpm-listing からも取得できるよう、反映を待つ。
+                sleep 30
+                exit 0
+              fi
+
+              echo "Release is present, but missing assets: ${missing_assets[*]}"
+            else
+              echo "Release ${{ env.tag }} is not available yet."
+            fi
+
+            if [ "${attempt}" -lt 12 ]; then
+              sleep 10
+            fi
+          done
+
+          echo "::error::Release ${{ env.tag }} and its distribution assets did not become available within 120 seconds."
+          exit 1
+
       - name: Evaluate vpm-listing dispatch condition
         id: listing_dispatch
         env:
