@@ -275,6 +275,11 @@ if (coordinator.GetResyncState(_mySlotIndex) == AunCastResyncCoordinator.STATE_N
 | クライアント→Coordinator の状態変更 | `SendCustomNetworkEvent` + `[NetworkCallable]` | 競合排除、パケット削減 |
 | スタッフ操作（Global Resync 等） | `TryTakeOwnership` → 直接書換 | 全スロットの原子的更新が必要 |
 
+ownership を取得するスタッフ操作は、`Networking.IsNetworkSettled` が真になってからだけ
+受け付ける。late-joiner が復元前の既定値を保持したまま Owner になり、他の同期フィールドや
+配列まで既定値で再配信することを防ぐため、UI と `TryTakeOwnership` の両方で拒否する。
+設定編集の Change も同期完了前は受け付けず、入力欄へ現在値を反映する処理も同期完了後に限る。
+
 ## 7. ownership 分離オブジェクトの退室クリーンアップ
 
 複数の `[UdonSynced]` オブジェクトを意図的に分離してある場合（例: `AunCastResyncCoordinator` と
@@ -395,6 +400,11 @@ Join 時のデフォルト URL 自動再生は提供しない。`defaultUrl` は
 「同期 URL が存在し、かつ `_ownerPlaying == true`」で判定する。再生開始時は URL や
 `_syncedVideoIdx` が変わらず `_ownerPlaying` だけが変わるため、Owner の再生開始時と
 非 Owner の同期受信時の双方で Staff UI へ `OnUrlChanged` を通知する。
+非 Owner にとって「同期 URL が非空かつ `_ownerPlaying == false`」は通常、初回ロード中の
+同期待ちを表し、Stop ではない。Stop 判定は `_ownerPlaying == false` と同期 URL の空を
+組み合わせる。初回ロード失敗後も同期 URL が残っていればローカル再試行を許可し、
+そのクライアントで `OnVideoStart` に到達した時点で復旧成功を優先するため、この復旧後だけは
+Owner の再生開始同期より先にローカル状態が `Cooldown` へ進んでよい。
 
 `SetObjectProperty` / `SetObjectArrayProperty` の差分検知により、配線が既に最新の
 場合は no-op になるので、これらの自動経路がユーザーの手動編集を無闇に上書きする

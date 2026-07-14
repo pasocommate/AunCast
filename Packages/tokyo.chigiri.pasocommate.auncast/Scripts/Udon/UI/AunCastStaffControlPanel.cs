@@ -273,8 +273,8 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void OnCoordinatorChanged()
         {
-            if (!_driftThresholdEditMode)
-                SyncUIFromState();
+            SyncUIFromState();
+            UpdateActionButtonsInteractable();
             _redrawDirty = true;
         }
 
@@ -362,6 +362,8 @@ namespace PasocomMate.AunCast
             {
                 _redrawDirty = false;
                 _lastRepaintTime = now;
+                SyncUIFromState();
+                UpdateActionButtonsInteractable();
                 UpdateMonitoringDisplay();
             }
 
@@ -384,10 +386,7 @@ namespace PasocomMate.AunCast
         /// <summary>Next URL を再生し、再生前に表示されていた Playing URL を Next URL 欄へ戻す。</summary>
         public void OnPromoteNextUrl()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
+            if (!CanUseStaffControls()) return;
             if (controller == null || nextUrlField == null) return;
 
             VRCUrl parsedUrl = nextUrlField.GetUrl();
@@ -412,10 +411,7 @@ namespace PasocomMate.AunCast
         /// <summary>全ユーザーの再生を即座に停止する。</summary>
         public void OnStopButtonPress()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
+            if (!CanUseStaffControls()) return;
             if (controller == null) return;
             if (!HasCurrentStream()) return;
 
@@ -425,11 +421,7 @@ namespace PasocomMate.AunCast
         /// <summary>全ユーザーの一斉 Resync をキューに投入する（手動トリガー）。</summary>
         public void OnGlobalResyncButtonPress()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
-            if (coordinator == null) return;
+            if (!CanUseStaffControls()) return;
             if (!HasCurrentStream()) return;
 
             coordinator.TriggerGlobalResync();
@@ -438,11 +430,7 @@ namespace PasocomMate.AunCast
         /// <summary>全ユーザーの Active・Standby 両方を切断し Active で再接続する（緊急リブート）。</summary>
         public void OnForceRebootButtonPress()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
-            if (coordinator == null) return;
+            if (!CanUseStaffControls()) return;
             if (!HasCurrentStream()) return;
 
             coordinator.TriggerGlobalForceReboot();
@@ -451,11 +439,7 @@ namespace PasocomMate.AunCast
         /// <summary>Concurrent Max の Change ボタン — 編集モードに入る。</summary>
         public void OnConcurrentLimitChangeButton()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
-            if (coordinator == null) return;
+            if (!CanUseStaffControls()) return;
 
             _concurrentEditOriginal = coordinator.GetMaxConcurrentResyncUsers();
             _concurrentEditMode = true;
@@ -467,11 +451,7 @@ namespace PasocomMate.AunCast
         /// <summary>Concurrent Max の Apply ボタン — 編集中の値を確定する。</summary>
         public void OnConcurrentLimitApply()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
-            if (coordinator == null) return;
+            if (!CanUseStaffControls()) return;
 
             if (concurrentLimitInput != null)
             {
@@ -498,10 +478,7 @@ namespace PasocomMate.AunCast
         /// <summary>CDN 同時接続数上限を入力欄から変更する（編集モード中）。</summary>
         public void OnConcurrentLimitChanged()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
+            if (!CanUseStaffControls()) return;
             if (coordinator == null || concurrentLimitInput == null) return;
 
             int value;
@@ -520,10 +497,7 @@ namespace PasocomMate.AunCast
         /// <summary>編集モード中の同時 Resync 数上限を delta だけ増減する (+/- ボタン用)。</summary>
         private void AdjustConcurrentLimit(int delta)
         {
-            if (!_isStaff)
-            {
-                return;
-            }
+            if (!CanUseStaffControls()) return;
             if (coordinator == null || concurrentLimitInput == null) return;
 
             int current;
@@ -547,11 +521,7 @@ namespace PasocomMate.AunCast
 
         public void OnConnectionLimitChangeButton()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
-            if (coordinator == null) return;
+            if (!CanUseStaffControls()) return;
 
             _connectionEditOriginal = coordinator.GetMaxConnectionLimit();
             _connectionEditMode = true;
@@ -562,11 +532,7 @@ namespace PasocomMate.AunCast
 
         public void OnConnectionLimitApply()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
-            if (coordinator == null) return;
+            if (!CanUseStaffControls()) return;
 
             if (connectionLimitInput != null)
             {
@@ -593,10 +559,7 @@ namespace PasocomMate.AunCast
 
         public void OnConnectionLimitChanged()
         {
-            if (!_isStaff)
-            {
-                return;
-            }
+            if (!CanUseStaffControls()) return;
             if (coordinator == null || connectionLimitInput == null) return;
 
             int value;
@@ -617,10 +580,7 @@ namespace PasocomMate.AunCast
         /// <summary>編集モード中の同時接続数上限を delta だけ増減する (+/- ボタン用)。</summary>
         private void AdjustConnectionLimit(int delta)
         {
-            if (!_isStaff)
-            {
-                return;
-            }
+            if (!CanUseStaffControls()) return;
             if (coordinator == null || connectionLimitInput == null) return;
 
             int current;
@@ -646,7 +606,7 @@ namespace PasocomMate.AunCast
 
         public void OnDriftThresholdChangeButton()
         {
-            if (!_isStaff || coordinator == null) return;
+            if (!CanUseStaffControls()) return;
 
             _driftThresholdEditOriginal = coordinator.GetDriftResyncThresholdIndex();
             _driftThresholdEditValue = _driftThresholdEditOriginal;
@@ -657,7 +617,7 @@ namespace PasocomMate.AunCast
 
         public void OnDriftThresholdApply()
         {
-            if (!_isStaff || coordinator == null) return;
+            if (!CanUseStaffControls()) return;
 
             coordinator.SetDriftResyncThresholdIndexRuntime(_driftThresholdEditValue);
             _driftThresholdEditMode = false;
@@ -685,7 +645,7 @@ namespace PasocomMate.AunCast
 
         private void AdjustDriftThreshold(int delta)
         {
-            if (!_isStaff || coordinator == null || !_driftThresholdEditMode) return;
+            if (!CanUseStaffControls() || !_driftThresholdEditMode) return;
             _driftThresholdEditValue = Mathf.Clamp(
                 _driftThresholdEditValue + delta,
                 AunCastResyncCoordinator.DRIFT_THRESHOLD_50_MS,
@@ -736,18 +696,18 @@ namespace PasocomMate.AunCast
         /// </summary>
         private void SyncUIFromState()
         {
-            if (coordinator == null) return;
+            if (!HasSynchronizedCoordinatorState()) return;
             string concurrentVal = coordinator.GetMaxConcurrentResyncUsers().ToString();
             if (concurrentLimitDisplayText != null)
                 concurrentLimitDisplayText.text = concurrentVal;
-            if (concurrentLimitInput != null)
+            if (concurrentLimitInput != null && !_concurrentEditMode)
                 concurrentLimitInput.text = concurrentVal;
 
             int connLimit = coordinator.GetMaxConnectionLimit();
             string connectionVal = connLimit.ToString();
             if (connectionLimitDisplayText != null)
                 connectionLimitDisplayText.text = connectionVal;
-            if (connectionLimitInput != null)
+            if (connectionLimitInput != null && !_connectionEditMode)
                 connectionLimitInput.text = connLimit.ToString();
 
             string driftThreshold = coordinator.GetDriftResyncThresholdDisplayText();
@@ -807,7 +767,7 @@ namespace PasocomMate.AunCast
         public void UpdateActionButtonsInteractable()
         {
             bool staffInteractable = viewerStatusPanel == null || viewerStatusPanel.IsStaffInteractable();
-            bool baseEnabled = _isStaff && staffInteractable;
+            bool baseEnabled = CanUseStaffControls() && staffInteractable;
             bool hasStream = HasCurrentStream();
             SetButtonInteractable(stopButton, baseEnabled && hasStream);
             SetButtonInteractable(globalResyncButton, baseEnabled && hasStream);
@@ -820,6 +780,16 @@ namespace PasocomMate.AunCast
                 hasNextUrl = next != null && !string.IsNullOrEmpty(next.Get());
             }
             SetButtonInteractable(promoteNextButton, baseEnabled && hasNextUrl);
+        }
+
+        private bool HasSynchronizedCoordinatorState()
+        {
+            return coordinator != null && coordinator.IsInitialStateReady();
+        }
+
+        private bool CanUseStaffControls()
+        {
+            return _isStaff && HasSynchronizedCoordinatorState();
         }
 
         private bool HasCurrentStream()

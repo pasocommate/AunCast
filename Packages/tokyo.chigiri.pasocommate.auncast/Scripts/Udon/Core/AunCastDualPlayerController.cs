@@ -306,6 +306,7 @@ namespace PasocomMate.AunCast
 
             switcher.GetActiveManager().Play();
             _waitForSync = false;
+            _retryWaitUntil = 0f;
             _localState = STATE_ACTIVE_PLAYING;
             activeMonitor.BindRoles(_activeIsA);
             activeMonitor.InitializeForActive(now);
@@ -341,16 +342,66 @@ namespace PasocomMate.AunCast
             switch (_localState)
             {
                 case STATE_IDLE:
+                    // 初回ロード失敗後も同期 URL が残っていればローカル再接続する。
+                    // Stop は同期 URL の空で判定するため、Owner の再生開始同期を待つ必要はない。
+                    if (!_manualModeEnabled
+                        && _retryWaitUntil > 0f
+                        && now >= _retryWaitUntil
+                        && HasSyncedUrl())
+                    {
+                        _retryWaitUntil = 0f;
+                        _localState = STATE_RETRY_WAIT;
+                        AttemptActiveReboot(now);
+                    }
                     break;
 
                 case STATE_ACTIVE_PLAYING:
-                    if (!_manualModeEnabled
-                        && activeMonitor.DetectActiveFailure(now, resyncClient.IsDriftResyncEnabled(), resyncClient.GetDriftResyncThresholdSec())
-                        && resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+                    if (_manualModeEnabled) break;
+
+                    // OnVideoError または異常検知時に Cooldown 等で要求できなかった場合、
+                    // 条件が整うまで要求を保留する。初回時刻前進前のエラーも握り潰さない。
+                    if (_retryWaitUntil > 0f)
                     {
-                        LogWarning($"Active failure -> RequestPending (stall={activeMonitor.GetActiveStallDuration():F2}s, drift={activeMonitor.GetDriftAccumulator():F3}s)");
-                        _tlAction = "ACTIVE_FAILURE";
-                        _localState = STATE_REQUEST_PENDING;
+                        // 遅延エラー後も現在の Active が再生まで到達した場合は、
+                        // 新しいロードの成功を優先して保留要求を破棄する。
+                        if (IsActiveAlive())
+                        {
+                            _retryWaitUntil = 0f;
+                            ClearErrorMessage();
+                            ReportError(false);
+                            LogMessage("Deferred active failure canceled: active recovered");
+                            break;
+                        }
+
+                        if (now >= _retryWaitUntil)
+                        {
+                            if (resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+                            {
+                                _retryWaitUntil = 0f;
+                                _localState = STATE_REQUEST_PENDING;
+                                LogMessage("Deferred active failure Resync requested");
+                            }
+                            else
+                            {
+                                // スロット未割当や Coordinator 反映待ちの場合は短い間隔で再確認する。
+                                _retryWaitUntil = now + 0.25f;
+                            }
+                        }
+                        break;
+                    }
+
+                    if (activeMonitor.DetectActiveFailure(now, resyncClient.IsDriftResyncEnabled(), resyncClient.GetDriftResyncThresholdSec()))
+                    {
+                        if (resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+                        {
+                            LogWarning($"Active failure -> RequestPending (stall={activeMonitor.GetActiveStallDuration():F2}s, drift={activeMonitor.GetDriftAccumulator():F3}s)");
+                            _tlAction = "ACTIVE_FAILURE";
+                            _localState = STATE_REQUEST_PENDING;
+                        }
+                        else
+                        {
+                            DeferActiveFailureResync(now);
+                        }
                     }
                     break;
 
@@ -613,6 +664,7 @@ namespace PasocomMate.AunCast
             resyncClient.SetResyncRequested(false);
             resyncClient.SetRequestReason(AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE);
             resyncClient.OnResyncCompleted(now);
+            _retryWaitUntil = 0f;
 
             resyncClient.ReportResult(true);
             ReportError(false);
@@ -656,24 +708,42 @@ namespace PasocomMate.AunCast
             {
                 resyncClient.ReportResult(false);
                 ReportError(true);
+                _retryWaitUntil = 0f;
                 _localState = STATE_RETRY_WAIT;
                 LogMessage("Both systems failed; waiting for manual recovery (Manual Mode)");
                 return;
             }
 
-            // 両系統失敗 → exponential backoff
+            // 両系統失敗 → exponential backoff。直前の LoadURL によるローカル
+            // Cooldown が残っている場合は、その終了前に再ロードしない。
+            float retryDelay = EnterRetryWait(now);
+
+            resyncClient.ReportResult(false);
+            ReportError(true);
+
+            LogMessage($"Both systems failed, retry in {retryDelay:F1}s (attempt {resyncClient.GetConsecutiveFailCount()})");
+        }
+
+        /// <summary>連続失敗数とローカル Cooldown を考慮して Active 直接再接続を予約する。</summary>
+        private float EnterRetryWait(float now)
+        {
             int failCount = resyncClient.GetConsecutiveFailCount() + 1;
             resyncClient.SetConsecutiveFailCount(failCount);
             float backoff = Mathf.Min(
                 resyncClient.GetBaseCooldownSec() * Mathf.Pow(resyncClient.GetRetryCooldownMultiplier(), failCount - 1),
                 resyncClient.GetMaxRetryCooldownSec());
-            _retryWaitUntil = now + backoff;
-
-            resyncClient.ReportResult(false);
-            ReportError(true);
-
+            float retryAt = Mathf.Max(now + backoff, resyncClient.GetLocalCooldownUntil());
+            _retryWaitUntil = retryAt;
             _localState = STATE_RETRY_WAIT;
-            LogMessage($"Both systems failed, retry in {backoff:F1}s (attempt {failCount})");
+            return retryAt - now;
+        }
+
+        /// <summary>Active 障害の Resync 要求をローカル Cooldown 終了後まで保留する。</summary>
+        private void DeferActiveFailureResync(float now)
+        {
+            float retryAt = resyncClient.GetLocalCooldownUntil();
+            _retryWaitUntil = retryAt > now ? retryAt : now + 0.25f;
+            LogMessage($"Active failure Resync deferred until {_retryWaitUntil:F2}");
         }
 
         /// <summary>Active プレイヤーがまだフレームを生成しているか確認する（再生中かつ時刻が進んでいるか）。</summary>
@@ -694,6 +764,7 @@ namespace PasocomMate.AunCast
         /// <summary>直接リブートの共通セットアップ。Reboot() と AttemptActiveReboot() で使う。</summary>
         private void BeginDirectReboot(float now)
         {
+            _retryWaitUntil = 0f;
             _awaitingActiveReboot = true;
             _activeRebootStartedAt = now;
             _activeIsA = true;
@@ -739,6 +810,7 @@ namespace PasocomMate.AunCast
             {
                 if (!resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
 
+                _retryWaitUntil = 0f;
                 _tlAction = "MANUAL_RESYNC";
                 _localState = STATE_REQUEST_PENDING;
                 LogMessage("Manual resync requested");
@@ -758,7 +830,8 @@ namespace PasocomMate.AunCast
         public bool CanRequestManualResync()
         {
             if (!HasPlayableSyncedUrl()) return false;
-            if (_localState == STATE_ACTIVE_PLAYING) return true;
+            if (_localState == STATE_ACTIVE_PLAYING && !IsBothPlayersUnavailable())
+                return resyncClient.CanRequestResync(Time.time);
             return ShouldEscalateManualResyncToReboot();
         }
 
@@ -851,6 +924,7 @@ namespace PasocomMate.AunCast
 
             if (isActiveEvent)
             {
+                _retryWaitUntil = 0f;
                 ClearErrorMessage();
                 ReportError(false);
 
@@ -861,6 +935,7 @@ namespace PasocomMate.AunCast
                     resyncClient.SetConsecutiveFailCount(0);
                     resyncClient.SetResyncRequested(false);
                     resyncClient.SetLocalCooldownUntil(Time.time + resyncClient.GetLocalCooldownSec());
+
                     _localState = STATE_COOLDOWN;
 
                     if (Networking.IsOwner(gameObject))
@@ -884,7 +959,7 @@ namespace PasocomMate.AunCast
                     if (staffNotifyTarget != null)
                         staffNotifyTarget.SendCustomEvent("OnUrlChanged");
 
-                    if (_localState == STATE_IDLE)
+                    if (_localState == STATE_IDLE || _localState == STATE_RETRY_WAIT)
                     {
                         _localState = STATE_ACTIVE_PLAYING;
                         activeMonitor.BindRoles(_activeIsA);
@@ -895,10 +970,11 @@ namespace PasocomMate.AunCast
                 {
                     switcher.GetActiveManager().Pause();
                     _waitForSync = true;
+                    _localState = STATE_IDLE;
                 }
                 else
                 {
-                    if (_localState == STATE_IDLE)
+                    if (_localState == STATE_IDLE || _localState == STATE_RETRY_WAIT)
                     {
                         _localState = STATE_ACTIVE_PLAYING;
                         activeMonitor.BindRoles(_activeIsA);
@@ -931,16 +1007,43 @@ namespace PasocomMate.AunCast
 
             if (isActiveEvent)
             {
+                // URL が既に停止済みなら、中断した古いロードから遅れて届いたエラーとして無視する。
+                if (!_awaitingActiveReboot && !HasSyncedUrl())
+                {
+                    LogMessage($"Ignored stale active error after stop ({error})");
+                    return;
+                }
+
+                // URL 差し替え前の遅延エラーが、新しい Active の健全な再生を乗っ取らないようにする。
+                if (!_awaitingActiveReboot && _localState == STATE_ACTIVE_PLAYING && IsActiveAlive())
+                {
+                    LogMessage($"Ignored stale active error while current Active is alive ({error})");
+                    return;
+                }
+
                 SetErrorMessage(MapVideoErrorToMessage(error));
                 if (_awaitingActiveReboot)
                 {
                     // Active 直接リブートの失敗
                     _awaitingActiveReboot = false;
+                    if (!IsRetryableVideoError(error))
+                    {
+                        ReportConnecting(false);
+                        ReportError(true);
+                        resyncClient.SetResyncRequested(false);
+                        _retryWaitUntil = 0f;
+                        _localState = STATE_IDLE;
+                        LogWarning($"Active reboot stopped after non-retryable error ({error})");
+                        return;
+                    }
+
                     if (error == VideoError.RateLimited)
                     {
                         // レート制限 → 少し待ってリトライ（connecting は維持）
                         float retryDelay = Mathf.Max(5.0f, resyncClient.GetBaseCooldownSec());
-                        _retryWaitUntil = Time.time + retryDelay;
+                        _retryWaitUntil = Mathf.Max(
+                            Time.time + retryDelay,
+                            resyncClient.GetLocalCooldownUntil());
                         LogMessage($"Active reboot rate limited, waiting {retryDelay:F1}s");
                     }
                     else
@@ -959,7 +1062,55 @@ namespace PasocomMate.AunCast
                     && _localState == STATE_ACTIVE_PLAYING
                     && resyncClient.TryRequestResync(Time.time, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
                 {
+                    _retryWaitUntil = 0f;
                     _localState = STATE_REQUEST_PENDING;
+                }
+                else if (!_manualModeEnabled && _localState == STATE_ACTIVE_PLAYING)
+                {
+                    DeferActiveFailureResync(Time.time);
+                }
+                // Active 直接再接続の成功直後にエラーが出た場合は、Cooldown の終了を
+                // 待ってから再試行する。エラーを COOLDOWN 状態に取り残さない。
+                else if (_localState == STATE_COOLDOWN)
+                {
+                    if (_manualModeEnabled)
+                    {
+                        _retryWaitUntil = 0f;
+                        _localState = STATE_RETRY_WAIT;
+                        LogMessage("Active failed during cooldown; waiting for manual recovery");
+                    }
+                    else
+                    {
+                        float retryDelay = EnterRetryWait(Time.time);
+                        LogMessage($"Active failed during cooldown, retry in {retryDelay:F1}s");
+                    }
+                }
+                // 初回ロード（IDLE）中のエラー → 待機後にリブート再試行。
+                // 従来は Join 直後の誤検知グローバルリブートが偶発的に復旧させていたが、その誤検知を
+                // 止めたため、再試行可能な初回ロード失敗だけを明示的にリトライ経路へ載せる。
+                else if (_localState == STATE_IDLE)
+                {
+                    if (!IsRetryableVideoError(error))
+                    {
+                        _retryWaitUntil = 0f;
+                        LogWarning($"Initial active load stopped after non-retryable error ({error})");
+                    }
+                    else if (_manualModeEnabled)
+                    {
+                        _retryWaitUntil = 0f;
+                        _localState = STATE_RETRY_WAIT;
+                        LogMessage("Initial active load failed; waiting for manual recovery");
+                    }
+                    else
+                    {
+                        // 古いロードの遅延エラーが新ロードを即座に中断しないよう、通常の
+                        // Ready+Play タイムアウトまでは IDLE のまま成功コールバックを待つ。
+                        float retryDelay = Mathf.Max(
+                            resyncClient.GetBaseCooldownSec(),
+                            readyTimeoutSec + playTimeoutSec);
+                        _retryWaitUntil = Time.time + retryDelay;
+                        LogMessage($"Initial active load failed ({error}), retry eligible in {retryDelay:F1}s");
+                    }
                 }
             }
             else
@@ -992,6 +1143,8 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public void PlayVideoAsStaff(VRCUrl url)
         {
+            if (!Networking.IsNetworkSettled) return;
+
             string urlStr = url.Get();
             if (!IsValidStreamUrl(urlStr)) return;
 
@@ -1023,6 +1176,8 @@ namespace PasocomMate.AunCast
         [PublicAPI]
         public void StopVideoAsStaff()
         {
+            if (!Networking.IsNetworkSettled) return;
+
             if (!Networking.IsOwner(gameObject))
                 Networking.SetOwner(Networking.LocalPlayer, gameObject);
             StopVideoInternal();
@@ -1060,6 +1215,7 @@ namespace PasocomMate.AunCast
             _localState = STATE_IDLE;
             _waitForSync = false;
             _awaitingActiveReboot = false;
+            _retryWaitUntil = 0f;
             _pendingConnectingReport = false;
             // 停止/リセット時はバックオフをクリアし、次回再生の初回リトライを base 間隔から始める
             resyncClient.SetConsecutiveFailCount(0);
@@ -1083,6 +1239,7 @@ namespace PasocomMate.AunCast
         private void StartActivePlayback(VRCUrl url)
         {
             _localState = STATE_IDLE;
+            _retryWaitUntil = 0f;
             activeMonitor.ResetTimeAdvanceForPlayer(_activeIsA);
             ReportError(false);
             ReportConnecting(true);
@@ -1091,6 +1248,10 @@ namespace PasocomMate.AunCast
             if (_activeIsA) _tlLoadingA = true; else _tlLoadingB = true;
             switcher.GetActiveManager().LoadURL(url);
             MarkMeasLoad(_activeIsA ? 0 : 1);
+            // 新規ロード直後は VRChat の URL レート制限窓（約5秒）内に Standby 再接続が走らないよう
+            // ローカルクールダウンを張る。着地直後の stall 由来 Resync が窓内で LoadURL して
+            // RateLimited になる（=不要な二重接続）のを防ぐ。直接リブートはクールダウン非依存で動く。
+            resyncClient.SetLocalCooldownUntil(Time.time + resyncClient.GetLocalCooldownSec());
             LogMessage($"Started playback: {url}");
         }
 
@@ -1099,8 +1260,9 @@ namespace PasocomMate.AunCast
         {
             if (Networking.IsOwner(gameObject)) return;
 
-            // 再生停止（非オーナーがオーナーの Stop を受信）
-            bool stopReceived = !_ownerPlaying && _localState != STATE_IDLE;
+            // 再生停止（非オーナーがオーナーの Stop を受信）。
+            // _ownerPlaying=false だけでは初回ロード中も該当するため、同期 URL の空も必須とする。
+            bool stopReceived = !_ownerPlaying && !HasSyncedUrl();
             if (stopReceived)
             {
                 switcher.ResetBothPlayersToA();
@@ -1386,6 +1548,12 @@ namespace PasocomMate.AunCast
                 default:
                     return "Failed to load video";
             }
+        }
+
+        /// <summary>自動再試行で改善し得る VideoError かを判定する。</summary>
+        private bool IsRetryableVideoError(VideoError error)
+        {
+            return error != VideoError.InvalidURL && error != VideoError.AccessDenied;
         }
 
         /// <summary>Active プレイヤーの現在スタル継続時間（UI インジケータ用）。</summary>
