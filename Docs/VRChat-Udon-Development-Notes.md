@@ -112,6 +112,7 @@
 - 症状: `IsPlaying && (serverTime - anchorServerTime)` で再生経過時間を計算すると、接続フェーズ分が誤って積算され、Gap 検知や進捗表示がズレる。
 - 対策: 実再生のアンカーは **`IsPlaying` ではなく `GetTime() > 0`（または 9.2 の前進 delta 観測）を基準に取る**。「再生開始」と「接続開始」は別イベントとして区別する。
 - 参考実装: `AunCastDualPlayerController.IsActiveAlive`（`IsPlaying() && GetTime() > 0f` で実再生を判定）。
+- 逆方向の罠: ライブストリームがストールしても `IsPlaying` は true のまま、`GetTime()` は正の値で凍結する。つまり `IsPlaying && GetTime() > 0` は「一度は実再生に到達した」ことしか保証せず、**現在も前進している証拠にはならない**。前進の確認が必要な判定（ストールからの回復判定など）は、毎ポーリングの前進 delta 観測（`AunCastActivePlayerMonitor`）を併用する。レベルトリガの障害検知と `IsActiveAlive` 単独の回復判定を毎フレーム突き合わせると、両方が同時に true になって判定が往復する。
 
 ### 9.8 グループロール API は Udon 未露出
 - VRChat のグループロール（`GroupRole`）を Udon から取得する公式 API は存在しない（2026-04 時点で Canny に要望あり、未実装）。

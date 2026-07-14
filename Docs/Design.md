@@ -1311,6 +1311,7 @@ RetryWait →（バックオフ経過後）Active 直接再接続 → ActivePlay
 - 直接再接続も失敗した場合、再び `RetryWait` に入る
 - 初回 Active ロードや直接再接続で `InvalidURL` / `AccessDenied` を受けた場合は、自動再試行を停止する
 - Active 再生直後の Cooldown 中に `OnVideoError` を受けた場合は障害要求を保留し、Cooldown 終了後に Resync Request を再試行する
+- 保留の破棄（Active 回復判定）は「実再生に到達している（`IsActiveAlive`）かつ監視モニタの障害条件が解消している」場合に限る。`IsActiveAlive` はストール中も true になり得るため、生存チェック単独で破棄すると、レベルトリガの障害検知との間で保留と破棄が毎フレーム往復する
 
 #### ユーザー通知
 

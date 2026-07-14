@@ -364,7 +364,12 @@ namespace PasocomMate.AunCast
                     {
                         // 遅延エラー後も現在の Active が再生まで到達した場合は、
                         // 新しいロードの成功を優先して保留要求を破棄する。
-                        if (IsActiveAlive())
+                        // IsActiveAlive はストール中（IsPlaying のまま時刻凍結）でも true を
+                        // 返すため、障害検知（レベルトリガ）が解消していることも要求する。
+                        // これを欠くと保留と破棄が毎フレーム往復し、ReportError の
+                        // NetworkEvent とログを連打してしまう。
+                        if (IsActiveAlive()
+                            && !activeMonitor.DetectActiveFailure(now, resyncClient.IsDriftResyncEnabled(), resyncClient.GetDriftResyncThresholdSec()))
                         {
                             _retryWaitUntil = 0f;
                             ClearErrorMessage();
@@ -746,7 +751,11 @@ namespace PasocomMate.AunCast
             LogMessage($"Active failure Resync deferred until {_retryWaitUntil:F2}");
         }
 
-        /// <summary>Active プレイヤーがまだフレームを生成しているか確認する（再生中かつ時刻が進んでいるか）。</summary>
+        /// <summary>
+        /// Active プレイヤーが再生状態で、再生時刻が 0 を超えているかを返す。
+        /// 時刻の前進までは確認しないため、ストール中でも true になり得る。
+        /// 前進の確認が必要な判定では AunCastActivePlayerMonitor を併用する。
+        /// </summary>
         private bool IsActiveAlive()
         {
             AunCastVideoPlayerManager active = switcher.GetActiveManager();
