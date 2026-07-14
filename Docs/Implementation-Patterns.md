@@ -211,26 +211,6 @@ private void PollXxxSlider()
 「スタッフが動かした直後の 1 フレームで同期値がまだ古く、UI を戻してしまう」
 フラッシュバック現象が起きる。
 
-### 自クライアントの状態は同期往復を待たず直接読む
-
-`AunCastPlaybackMonitor` の再生/接続中/エラービットは「自端末 → owner へ RPC →
-owner が serialize → 自端末が受信」の往復で反映される。**自分自身の状態表示に
-この往復を使うと、RPC ロスや owner 交代・Join 直後の遅延で自端末の表示が実際と
-食い違って固着する**（例: 自端末で再生が始まっているのにインジケーターが接続中の
-ままになる）。
-
-対策: 自スロットの表示だけはローカルの権威値を直接参照する。スタッフパネルの
-インジケーターは `i == controller.GetMySlotIndex()` のスロットに限り、同期ビットの
-代わりに `controller.IsLocallyPlaying()` / `GetReportedConnecting()` /
-`GetReportedError()` を使う。他スロットは従来どおり同期ビットを読む（他端末分は
-定期再送で 10 秒以内に収束する）。
-
-同様に、URL の「再生中」表示は同期再生フラグ (`_ownerPlaying`) の到達を待たず、
-同期 URL の有無 (`GetCurrentURL` = 非空の `_syncedURL`) で判定する。スタッフが再生
-開始した瞬間に URL を表示したいのに、実再生の開始（`_ownerPlaying`）まで待つと
-表示が遅れるため。イベント通知 (`OnUrlChanged`) の取りこぼしに備え、Now Playing 表示は
-定期 Update でも再描画する。
-
 ### エディタ時の表示プレビュー同期
 
 `AunCastSettings` の値を変更したら、ランタイムフィールドへの転写

@@ -1565,15 +1565,6 @@ namespace PasocomMate.AunCast
         [PublicAPI] public int GetConsecutiveFailCount() { return resyncClient.GetConsecutiveFailCount(); }
         [PublicAPI] public int GetConsecutiveStallCount() { return activeMonitor.GetConsecutiveStallCount(); }
 
-        // --- ローカル再生状態（スタッフ UI が自スロットのインジケーターを
-        //     PlaybackMonitor 往復を待たずに即時反映するために使う）---
-        /// <summary>ローカルでいずれかのプレイヤーが実再生中か（PlaybackMonitor へ報告する playing と同義）。</summary>
-        [PublicAPI] public bool IsLocallyPlaying() { return activeMonitor != null && activeMonitor.IsAnyPlayerPlaying(); }
-        /// <summary>直近にローカルが報告した接続中ビット（-1=未報告, 0=false, 1=true）。</summary>
-        [PublicAPI] public int GetReportedConnecting() { return _lastReportedConnecting; }
-        /// <summary>直近にローカルが報告したエラービット（-1=未報告, 0=false, 1=true）。</summary>
-        [PublicAPI] public int GetReportedError() { return _lastReportedError; }
-
         /// <summary>全 audible プレイヤーの累積無音時間（秒）。</summary>
         [PublicAPI] public float GetSilenceDuration()
         {
