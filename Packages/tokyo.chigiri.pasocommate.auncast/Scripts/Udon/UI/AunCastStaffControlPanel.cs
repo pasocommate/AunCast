@@ -363,6 +363,7 @@ namespace PasocomMate.AunCast
                 _redrawDirty = false;
                 _lastRepaintTime = now;
                 SyncUIFromState();
+                UpdateNowPlayingDisplay();
                 UpdateActionButtonsInteractable();
                 UpdateMonitoringDisplay();
             }
@@ -885,6 +886,10 @@ namespace PasocomMate.AunCast
             int assigned = 0;
             if (_indicatorSortKeys == null || _indicatorSortKeys.Length != coordSlots)
                 _indicatorSortKeys = new int[coordSlots];
+            // 自スロットは PlaybackMonitor の往復（自端末→owner→同期→自端末）を待つと
+            // 反映が遅れる/固着するため、ローカルの実状態で上書きする。
+            int localSlot = controller != null ? controller.GetMySlotIndex() : -1;
+
             int[] sortKeys = _indicatorSortKeys;
             for (int i = 0; i < coordSlots; i++)
             {
@@ -899,6 +904,14 @@ namespace PasocomMate.AunCast
                 bool playing = pbm != null && pbm.GetPlaybackActive(i) != 0;
                 bool connecting = pbm != null && pbm.GetConnectingActive(i) != 0;
                 bool error = pbm != null && pbm.GetErrorActive(i) != 0;
+                if (i == localSlot)
+                {
+                    playing = controller.IsLocallyPlaying();
+                    int c = controller.GetReportedConnecting();
+                    int e = controller.GetReportedError();
+                    if (c >= 0) connecting = c == 1;
+                    if (e >= 0) error = e == 1;
+                }
                 int state = coordinator.GetResyncState(i);
 
                 int colorOrder;
