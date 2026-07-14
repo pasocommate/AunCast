@@ -547,8 +547,9 @@ VRChat の `PlayerData` API を使い、ローカル設定をワールド再参�
   プロジェクト固有の状態は **必ず導入先プロジェクトの `ProjectSettings/`** に書く。
 - 実装例: [`AunCastProjectSettingsStore`](../Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Editor/AunCastProjectSettingsStore.cs)。
   JSON ルート直下に用途別の階層（例: `terms`）を置き、今後のプロジェクトスコープ値を
-  同じファイルへ追加できるようにする。利用規約同意ではメジャーバージョンを記録し、
-  メジャー更新時のみ再同意を促す。
+  同じファイルへ追加できるようにする。利用規約同意では、日本語・英語の規約PDFを
+  SHA-256でハッシュ化した値を記録し、規約ファイルの内容が変わった場合のみ再同意を促す。
+  パッケージバージョンは同意時点の監査情報として保持するが、判定には使用しない。
 
 > **落とし穴（重要）**: エディタ状態の永続化に Unity のシリアライズドファイル API
 > （`InternalEditorUtility.SaveToSerializedFileAndForget` や `ScriptableSingleton<T>`）を

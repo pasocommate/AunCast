@@ -31,9 +31,13 @@ namespace PasocomMate.AunCast.Internal
         [Serializable]
         private sealed class TermsData
         {
+            // 旧設定形式との読み取り互換性のため残す。判定には使用しない。
             public int agreedMajorVersion = -1;
+
+            // 同意時のパッケージ版を監査用に保持する。判定には使用しない。
             public string agreedVersion = string.Empty;
             public string agreedAtUtc = string.Empty;
+            public string agreedTermsHash = string.Empty;
         }
 
         // ドメインリロードで null になり、次回 Load() でファイルから再構築される。
@@ -80,23 +84,50 @@ namespace PasocomMate.AunCast.Internal
         }
 
         /// <summary>
-        /// 指定メジャーバージョンに対して同意済みかを返す。
-        /// バージョン不明（負値）のときは誤ブロックを避けるため同意済み扱いとする。
+        /// 指定した規約ファイルのハッシュに対して同意済みかを返す。
+        /// 旧形式の同意記録は、初回確認時に現在の規約ハッシュへ移行する。
         /// </summary>
-        internal static bool HasConsented(int currentMajorVersion)
+        internal static bool HasConsented(string currentTermsHash)
         {
-            if (currentMajorVersion < 0) return true;
-            return Load().terms.agreedMajorVersion >= currentMajorVersion;
+            if (string.IsNullOrEmpty(currentTermsHash)) return false;
+
+            ProjectSettingsData data = Load();
+            TermsData terms = data.terms;
+            if (string.Equals(terms.agreedTermsHash, currentTermsHash, StringComparison.Ordinal))
+                return true;
+
+            // 既存プロジェクトでは、従来の同意記録を現在の規約に対する同意として移行する。
+            // これにより、規約ファイルを変更していない今回の方式移行だけで再同意を求めない。
+            if (string.IsNullOrEmpty(terms.agreedTermsHash) &&
+                !string.IsNullOrEmpty(terms.agreedVersion))
+            {
+                terms.agreedTermsHash = currentTermsHash;
+                Save(data);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>同意を記録して ProjectSettings へ永続化する。</summary>
-        internal static void SetConsented(int currentMajorVersion, string fullVersion)
+        internal static void SetConsented(string currentTermsHash, string fullVersion)
         {
+            if (string.IsNullOrEmpty(currentTermsHash))
+            {
+                Debug.LogError("[AunCast] 規約ハッシュが空のため、同意状態を保存できません。");
+                return;
+            }
+
             ProjectSettingsData data = Load();
-            data.terms.agreedMajorVersion = currentMajorVersion;
             data.terms.agreedVersion = fullVersion ?? string.Empty;
             data.terms.agreedAtUtc = DateTime.UtcNow.ToString("o");
+            data.terms.agreedTermsHash = currentTermsHash;
 
+            Save(data);
+        }
+
+        private static void Save(ProjectSettingsData data)
+        {
             try
             {
                 string path = GetFilePath();

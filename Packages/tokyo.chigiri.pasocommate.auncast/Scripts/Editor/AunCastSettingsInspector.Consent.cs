@@ -1,5 +1,7 @@
 #if UNITY_EDITOR
-using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Collections.Generic;
 using TMPro;
 using UdonSharpEditor;
@@ -15,26 +17,116 @@ namespace PasocomMate.AunCast.Internal
     {
         // ── 利用規約 同意ゲート ──
 
+        private static string _cachedTermsHash;
+        private static string _cachedTermsSourceSignature;
+
         /// <summary>
         /// 利用規約に同意済みなら true（設定 UI を続行）。未同意なら同意ゲートを描画して false。
         /// </summary>
         private bool DrawConsentGateIfNeeded()
         {
             string version = GetCurrentPackageVersion();
-            int major = GetMajorVersion(version);
-            if (AunCastProjectSettingsStore.HasConsented(major))
+            if (!TryGetTermsHash(out string termsHash, out string errorMessage))
+            {
+                EditorGUILayout.HelpBox(
+                    AunCastEditorLocalization.Localize(
+                        $"利用規約ファイルを読み取れないため、同意状態を確認できません。\n{errorMessage}",
+                        $"The Terms of Use files could not be read, so the agreement status cannot be verified.\n{errorMessage}"),
+                    MessageType.Error);
+                return false;
+            }
+
+            if (AunCastProjectSettingsStore.HasConsented(termsHash))
                 return true;
 
-            DrawConsentGate(version);
+            DrawConsentGate(version, termsHash);
             return false;
         }
 
-        private static int GetMajorVersion(string version)
+        /// <summary>日本語・英語の規約PDFを固定順で結合し、SHA-256を返す。</summary>
+        private static bool TryGetTermsHash(out string termsHash, out string errorMessage)
         {
-            return TryParseVersion(version, out var parsed) ? parsed.Major : -1;
+            termsHash = string.Empty;
+            errorMessage = string.Empty;
+
+            try
+            {
+                string japanesePath = AssetDatabase.GUIDToAssetPath(VN3_LICENSE_JA_GUID);
+                string englishPath = AssetDatabase.GUIDToAssetPath(VN3_LICENSE_EN_GUID);
+                if (string.IsNullOrEmpty(japanesePath) || string.IsNullOrEmpty(englishPath))
+                {
+                    errorMessage = AunCastEditorLocalization.Localize(
+                        "利用規約ファイルが見つかりません。",
+                        "A Terms of Use file was not found.");
+                    return false;
+                }
+
+                string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+                string japaneseFullPath = Path.Combine(projectRoot, japanesePath);
+                string englishFullPath = Path.Combine(projectRoot, englishPath);
+                if (!File.Exists(japaneseFullPath) || !File.Exists(englishFullPath))
+                {
+                    errorMessage = AunCastEditorLocalization.Localize(
+                        "利用規約ファイルが見つかりません。",
+                        "A Terms of Use file was not found.");
+                    return false;
+                }
+
+                string sourceSignature = GetTermsSourceSignature(japaneseFullPath, englishFullPath);
+                if (!string.IsNullOrEmpty(_cachedTermsHash) &&
+                    _cachedTermsSourceSignature == sourceSignature)
+                {
+                    termsHash = _cachedTermsHash;
+                    return true;
+                }
+
+                using (var hashInput = new MemoryStream())
+                {
+                    AppendHashInput(hashInput, VN3_LICENSE_JA_GUID, japaneseFullPath);
+                    AppendHashInput(hashInput, VN3_LICENSE_EN_GUID, englishFullPath);
+
+                    using (SHA256 sha256 = SHA256.Create())
+                    {
+                        termsHash = BitConverter.ToString(sha256.ComputeHash(hashInput.ToArray()))
+                            .Replace("-", string.Empty);
+                    }
+                }
+
+                _cachedTermsHash = termsHash;
+                _cachedTermsSourceSignature = sourceSignature;
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                errorMessage = e.Message;
+                return false;
+            }
         }
 
-        private void DrawConsentGate(string version)
+        private static string GetTermsSourceSignature(string japaneseFullPath, string englishFullPath)
+        {
+            var japaneseInfo = new FileInfo(japaneseFullPath);
+            var englishInfo = new FileInfo(englishFullPath);
+            return $"{japaneseInfo.Length}:{japaneseInfo.LastWriteTimeUtc.Ticks}:" +
+                $"{englishInfo.Length}:{englishInfo.LastWriteTimeUtc.Ticks}";
+        }
+
+        private static void AppendHashInput(Stream hashInput, string fileGuid, string fullPath)
+        {
+            byte[] guidBytes = Encoding.UTF8.GetBytes(fileGuid);
+            byte[] contentBytes = File.ReadAllBytes(fullPath);
+            WriteHashPart(hashInput, guidBytes);
+            WriteHashPart(hashInput, contentBytes);
+        }
+
+        private static void WriteHashPart(Stream hashInput, byte[] bytes)
+        {
+            byte[] lengthBytes = System.BitConverter.GetBytes(bytes.Length);
+            hashInput.Write(lengthBytes, 0, lengthBytes.Length);
+            hashInput.Write(bytes, 0, bytes.Length);
+        }
+
+        private void DrawConsentGate(string version, string termsHash)
         {
             EditorGUILayout.Space(8);
 
@@ -84,7 +176,7 @@ namespace PasocomMate.AunCast.Internal
                     AunCastEditorLocalization.Localize("同意して続行", "Agree and Continue"),
                     GUILayout.Height(28)))
                 {
-                    AunCastProjectSettingsStore.SetConsented(GetMajorVersion(version), version);
+                    AunCastProjectSettingsStore.SetConsented(termsHash, version);
                     _consentCheckbox = false;
                     // 描画する UI の構成が変わるため、現フレームの GUI を一旦やり直す。
                     GUIUtility.ExitGUI();
