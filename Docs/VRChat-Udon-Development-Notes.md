@@ -188,7 +188,8 @@
   - 変化検知の初回値は、同期完了後に履歴ではなく基準値として記録する。Join 中に発行されたイベントが初回値へ含まれていても、目的の状態（AunCast ではローカル再生）へ既に収束中なら再実行せず、敢えて見逃す。
   - スタッフ UI は同期完了前の Change / Apply を拒否する。同期オブジェクト側も ownership 取得前に同じ条件を確認し、復元前の既定値やゼロ配列を配信しない。
   - `OnDeserialization` の受信済みフラグは通知の即時性向上には使えるが、Owner を含む共通の準備完了条件は `IsNetworkSettled` とする。
-- 対策の一般形は「settle 一括初期化」: Join 中の `OnDeserialization` には反応せず、`IsNetworkSettled` が真になった時点で同期スナップショットを一括読み取りして初期化し、以降の `OnDeserialization` を差分反応に使う（`Implementation-Patterns.md` §2 参照）。
+- **注意（実測）**: `IsNetworkSettled` が真になっても、そのオブジェクトの bunch 適用（`OnDeserialization`）が **まだ完了していない**ことがある（Quest で確認: settle 直後の読み取りが復元前の既定値を返し、実データは約 0.5〜1 秒後の `OnDeserialization` で届いた）。settle は「読み書き解禁」の必要条件であって、「適用済み」の十分条件ではない。
+- 対策の一般形は「settle 一括初期化」: 非 Owner の初期化点は **「settle かつ初回 bunch 適用の両方が完了した時点」**とする。bunch → settle（通常順序）と settle → bunch（Quest 実測順序）の両方を扱うため、settle 前の受信はフラグで記録して settle 時に反映し、settle 後の受信はその場で初期化点にする。以降の `OnDeserialization` は差分反応に使う（`Implementation-Patterns.md` §2 参照）。
 - 参考実装: `AunCastDualPlayerController.InitializeFromSyncedState` / `AunCastResyncCoordinator.IsInitialStateReady` / `AunCastResyncCoordinatorClient.PollGlobalForceReboot` / `AunCastPlaybackMonitor.CanMutateState` / `AunCastStaffControlPanel.CanUseStaffControls`。
 
 ### 9.17 `VRCUrl.Empty` は編集可能フィールドの初期値に使わない

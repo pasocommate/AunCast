@@ -96,30 +96,55 @@ public override void OnDeserialization()
 Late Joiner の初期化は `OnDeserialization` への逐次反応ではなく、**settle 一括初期化**を
 原則とする（`VRChat-Udon-Development-Notes.md` 9.16 参照）。
 
+`IsNetworkSettled` は「読み書き解禁」の必要条件だが、bunch 適用完了の十分条件ではない
+（settle 後に初回 `OnDeserialization` が届く順序が実測されている。
+`VRChat-Udon-Development-Notes.md` 9.16 参照）。初期化点は
+**「settle かつ初回 bunch 適用の両方が完了した時点」**とし、両方の到着順序を扱う。
+
 ```csharp
-private bool _syncInitialized;
+private bool _syncInitialized;            // 初期化済みか
+private bool _syncReceivedBeforeSettle;   // bunch → settle の通常順序の橋渡し
 
 private void Update()
 {
     if (!_syncInitialized)
     {
         if (!Networking.IsNetworkSettled) return;
-        _syncInitialized = true;
-        InitializeFromSyncedState();   // 完全なスナップショットから一括反映
+        if (Networking.IsOwner(gameObject))
+        {
+            _syncInitialized = true;
+            NormalizeAndSerializeAsFirstOwner();   // 初代 Owner: 正規化して必ず一度配信する
+        }
+        else if (_syncReceivedBeforeSettle)
+        {
+            _syncInitialized = true;
+            ApplySyncedState();                    // 適用済みスナップショットから一括反映
+        }
+        else return;                               // settle が先行。初回受信を待つ
     }
     // ... 通常処理 ...
 }
 
 public override void OnDeserialization()
 {
-    if (!_syncInitialized) return;     // settle 前の中間状態には反応しない
     if (Networking.IsOwner(gameObject)) return;
-    ApplySyncedState();                // 以降は差分反応
+    if (!_syncInitialized)
+    {
+        if (!Networking.IsNetworkSettled)
+        {
+            _syncReceivedBeforeSettle = true;      // settle 時に Update 側で反映
+            return;
+        }
+        _syncInitialized = true;                   // settle 後の初回受信を初期化点にする
+    }
+    ApplySyncedState();                            // 以降は差分反応
 }
 ```
 
 - Owner 側の `QueueSerialize()` にも `Networking.IsNetworkSettled` ガードを入れ、
   復元前の既定値を配信しない。
+- 初代 Owner は初期化時に必ず一度 serialize する。これにより非 Owner の
+  「初回 bunch 待ち」が必ず成立する。
 - `OnPlayerJoined(VRCPlayerApi player)` 内で新規参加者が来たら Owner 側から
   `QueueSerialize()` を呼び、最新の同期変数が届くようにする。既存実装あり。
 

@@ -100,6 +100,8 @@ namespace PasocomMate.AunCast
         private const float AVG_RESYNC_DURATION_SEC = 8f;
         /// <summary>同一フレーム内の複数変更をバッチして 1 回の serialize にまとめるためのフラグ。</summary>
         private bool _serializationPending;
+        /// <summary>非 Owner が bunch を一度でも適用済みか。IsNetworkSettled だけでは適用完了を保証しない（Quest 実測）。</summary>
+        private bool _syncApplied;
 
         // =====================================================================
         //  Unity ライフサイクル
@@ -142,6 +144,7 @@ namespace PasocomMate.AunCast
 
         public override void OnDeserialization()
         {
+            _syncApplied = true;
             RestoreOwnerTimestamps();
             NotifyObservers();
         }
@@ -575,8 +578,16 @@ namespace PasocomMate.AunCast
             }
         }
         public int GetGlobalForceRebootSeq() { return globalForceRebootSeq; }
-        /// <summary>Join 時の同期データが適用済みで、同期状態の読み書きを開始できるか。</summary>
-        public bool IsInitialStateReady() { return Networking.IsNetworkSettled; }
+        /// <summary>
+        /// Join 時の同期データが適用済みで、同期状態の読み書きを開始できるか。
+        /// IsNetworkSettled が真でも bunch 適用が遅れる実測があるため（Quest）、
+        /// 非 Owner は初回 OnDeserialization の適用も要求する（Owner = 配信元は不要）。
+        /// </summary>
+        public bool IsInitialStateReady()
+        {
+            return Networking.IsNetworkSettled
+                && (_syncApplied || Networking.IsOwner(gameObject));
+        }
 
         public int GetQueuedCount()
         {

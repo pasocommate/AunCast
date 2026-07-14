@@ -145,14 +145,16 @@ namespace PasocomMate.AunCast
         private int _lastReportedLocalState = -1;
 
         private bool _startupSyncResetFinished;
-        /// <summary>settle 完了時に同期スナップショットから初期化済みか。false の間は同期に反応しない。</summary>
+        /// <summary>settle 完了後に同期スナップショットから初期化済みか。false の間は同期に反応しない。</summary>
         private bool _syncInitialized;
+        /// <summary>settle 前に bunch を受信済みか（bunch → settle の通常順序を settle 時に反映するための橋渡し）。</summary>
+        private bool _syncReceivedBeforeSettle;
 
         // =================================================================
         //  Unity ライフサイクル
         // =================================================================
 
-        /// <summary>ローカル初期化のみを行う。同期への書き込みは settle 後の InitializeFromSyncedState で行う。</summary>
+        /// <summary>ローカル初期化のみを行う。同期への書き込みは settle 後の初期化（Update 先頭）で行う。</summary>
         private void Start()
         {
             if (_ranInit) return;
@@ -214,13 +216,33 @@ namespace PasocomMate.AunCast
         /// <summary>メインループ: グローバルリブート確認→スロット確保→Coordinator ポーリング→FSM→無音検知の順で毎フレーム駆動。</summary>
         private void Update()
         {
-            // Join 時同期の適用完了までは一切動かさない。復元順序が保証されない
-            // 中間状態への反応を避け、settle 時に完全なスナップショットから初期化する。
+            // Join 時同期の完了までは一切動かさない。IsNetworkSettled が真になっても
+            // bunch 適用（OnDeserialization）が遅れる実測があるため（Quest で確認）、
+            // 非 Owner の初期化点は「settle と初回 bunch 適用の両方が済んだ時点」とする。
             if (!_syncInitialized)
             {
                 if (!Networking.IsNetworkSettled) return;
-                _syncInitialized = true;
-                InitializeFromSyncedState();
+
+                if (Networking.IsOwner(gameObject))
+                {
+                    _syncInitialized = true;
+                    // 初代 Owner: エディタ編集で残留し得る同期値を正規化して現在値を配信する。
+                    // これにより非 Owner へ必ず初回 bunch が届き、下記の初期化点が成立する。
+                    ResetPlaybackSyncStateForNewInstance();
+                    QueueSerialize();
+                }
+                else if (_syncReceivedBeforeSettle)
+                {
+                    // 通常順序（bunch → settle）。適用済みの同期値から一括初期化する。
+                    _syncInitialized = true;
+                    _startupSyncResetFinished = true;
+                    ApplySyncedState();
+                }
+                else
+                {
+                    // settle が bunch 適用より先行した場合。最初の受信（OnDeserialization）を待つ。
+                    return;
+                }
             }
 
             float now = Time.time;
@@ -586,6 +608,17 @@ namespace PasocomMate.AunCast
             // （OnVideoStart では同フレーム完了で同期前に消えるため、ここで遅延解除する）
             if (isPlaying && !_lastReportedPlaybackActive)
                 ReportConnecting(false);
+
+            // 定期送信のタイミングでは connecting / error も現在値を再送する。
+            // これらはイベント駆動で再送機会がないため、RPC ロストや Monitor の
+            // owner 交代でビットが食い違うと表示が固着する。10 秒周期で自己修復する。
+            if (!valueChanged)
+            {
+                if (_lastReportedConnecting >= 0)
+                    playbackMonitor.ReportConnectingForSlot(slotIndex, _lastReportedConnecting == 1);
+                if (_lastReportedError >= 0)
+                    playbackMonitor.ReportErrorForSlot(slotIndex, _lastReportedError == 1);
+            }
 
             _lastReportedPlaybackActive = isPlaying;
             _hasReportedPlaybackActive = true;
@@ -1314,29 +1347,24 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
-        /// settle 完了時に一度だけ呼ばれ、同期スナップショットからローカル状態を初期化する。
-        /// Join 中の OnDeserialization は復元順序が保証されないため反応せず、ここで一括反映する。
+        /// 非オーナーが同期変数の変更を受信する。settle 前の中間 bunch には反応せず、
+        /// settle 後の最初の受信を初期化点として一括反映する（settle 一括初期化）。
         /// </summary>
-        private void InitializeFromSyncedState()
-        {
-            if (Networking.IsOwner(gameObject))
-            {
-                // 新規インスタンスの初代 Owner。残留同期値を正規化して現在値を配信する。
-                ResetPlaybackSyncStateForNewInstance();
-                QueueSerialize();
-                return;
-            }
-
-            // 既存インスタンスへの参加。起動時正規化は不要と確定する。
-            _startupSyncResetFinished = true;
-            ApplySyncedState();
-        }
-
-        /// <summary>非オーナーが同期変数の変更を受信する。settle 前の中間状態には反応しない。</summary>
         public override void OnDeserialization()
         {
-            if (!_syncInitialized) return;
             if (Networking.IsOwner(gameObject)) return;
+            if (!_syncInitialized)
+            {
+                if (!Networking.IsNetworkSettled)
+                {
+                    // 通常順序（bunch → settle）。値は適用済みなので settle 時に Update 側で反映する。
+                    _syncReceivedBeforeSettle = true;
+                    return;
+                }
+                _syncInitialized = true;
+                // 既存インスタンスへの参加。起動時正規化は不要と確定する。
+                _startupSyncResetFinished = true;
+            }
             ApplySyncedState();
         }
 
@@ -1523,7 +1551,13 @@ namespace PasocomMate.AunCast
         {
             return activeMonitor.GetActivePlayerTime();
         }
-        [PublicAPI] public VRCUrl GetCurrentURL() { return HasPlayableSyncedUrl() ? _syncedURL : null; }
+        /// <summary>
+        /// 現在の同期 URL を返す（ロード中を含む。未設定なら null）。
+        /// スタッフが再生開始した時点で Playing 表示へ即時反映するため、
+        /// _ownerPlaying（実再生開始）は要求しない。再生中判定には
+        /// HasPlayableSyncedUrl 系（GetOwnerPlaying / CanRebootLocal）を使う。
+        /// </summary>
+        [PublicAPI] public VRCUrl GetCurrentURL() { return HasSyncedUrl() ? _syncedURL : null; }
 
         /// <summary>Next URL 欄の初期値に使うデフォルト URL を返す（未設定なら空 URL）。</summary>
         [PublicAPI] public VRCUrl GetDefaultUrl() { return defaultUrl; }

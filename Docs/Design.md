@@ -1349,14 +1349,17 @@ RetryWait →（バックオフ経過後）Active 直接再接続 → ActivePlay
 ## 19.2 Late Joiner
 
 Late Joiner の初期化は「settle 一括初期化」を原則とする。Join 中の `OnDeserialization` は
-オブジェクト間の復元順序が保証されないため反応せず、`Networking.IsNetworkSettled` が真に
-なった時点で同期スナップショットを一括読み取りして初期化する。それ以降の `OnDeserialization`
-は差分反応に使う。
+オブジェクト間の復元順序が保証されないため反応せず、**settle と初回 bunch 適用の両方が
+完了した時点**で同期スナップショットを一括反映して初期化する（`IsNetworkSettled` だけでは
+bunch 適用完了を保証しない実測があるため。Dev-Notes 9.16 参照）。それ以降の
+`OnDeserialization` は差分反応に使う。
 
-- `AunCastDualPlayerController`: `Update` の先頭で settle を待ち、初回に `InitializeFromSyncedState`
-  を実行する。非 Owner は同期 URL / `_ownerPlaying` の現在値から再生開始・停止を判断し、
-  Owner（新規インスタンスの初代 Owner）は残留同期値を正規化して配信する。settle 前は
-  `OnDeserialization` / `QueueSerialize` とも早期リターンする
+- `AunCastDualPlayerController`: 非 Owner は「settle + 初回 bunch 適用」で `ApplySyncedState` を
+  実行し、同期 URL / `_ownerPlaying` の現在値から再生開始・停止を判断する。
+  Owner（新規インスタンスの初代 Owner）は settle 時に残留同期値を正規化して必ず一度配信する。
+  初期化前は `Update` / `OnDeserialization` / `QueueSerialize` とも早期リターンする
+- `AunCastResyncCoordinator.IsInitialStateReady` も同条件（settle かつ「bunch 適用済み or Owner」）で、
+  スタッフ UI の解禁・グローバル強制リブートの基準値記録・ownership 取得可否を制御する
 - Coordinator クライアント: 各ユーザーの queue/grant/running 状態、実行中（Granted + Running）
   ユーザー数、Coordinator の上限・ドリフト閾値・強制リブートシーケンスを同期値から再構築する
 - スロット割当は settle 後にクライアントが `OnRequestSlot` を送る Pull 型で行う
