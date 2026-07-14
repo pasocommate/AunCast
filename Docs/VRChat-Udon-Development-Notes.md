@@ -112,6 +112,7 @@
 - 症状: `IsPlaying && (serverTime - anchorServerTime)` で再生経過時間を計算すると、接続フェーズ分が誤って積算され、Gap 検知や進捗表示がズレる。
 - 対策: 実再生のアンカーは **`IsPlaying` ではなく `GetTime() > 0`（または 9.2 の前進 delta 観測）を基準に取る**。「再生開始」と「接続開始」は別イベントとして区別する。
 - 参考実装: `AunCastDualPlayerController.IsActiveAlive`（`IsPlaying() && GetTime() > 0f` で実再生を判定）。
+- 逆方向の罠: ライブストリームがストールしても `IsPlaying` は true のまま、`GetTime()` は正の値で凍結する。つまり `IsPlaying && GetTime() > 0` は「一度は実再生に到達した」ことしか保証せず、**現在も前進している証拠にはならない**。前進の確認が必要な判定（ストールからの回復判定など）は、毎ポーリングの前進 delta 観測（`AunCastActivePlayerMonitor`）を併用する。レベルトリガの障害検知と `IsActiveAlive` 単独の回復判定を毎フレーム突き合わせると、両方が同時に true になって判定が往復する。
 
 ### 9.8 グループロール API は Udon 未露出
 - VRChat のグループロール（`GroupRole`）を Udon から取得する公式 API は存在しない（2026-04 時点で Canny に要望あり、未実装）。
@@ -187,7 +188,9 @@
   - 変化検知の初回値は、同期完了後に履歴ではなく基準値として記録する。Join 中に発行されたイベントが初回値へ含まれていても、目的の状態（AunCast ではローカル再生）へ既に収束中なら再実行せず、敢えて見逃す。
   - スタッフ UI は同期完了前の Change / Apply を拒否する。同期オブジェクト側も ownership 取得前に同じ条件を確認し、復元前の既定値やゼロ配列を配信しない。
   - `OnDeserialization` の受信済みフラグは通知の即時性向上には使えるが、Owner を含む共通の準備完了条件は `IsNetworkSettled` とする。
-- 参考実装: `AunCastResyncCoordinator.IsInitialStateReady` / `AunCastResyncCoordinatorClient.PollGlobalForceReboot` / `AunCastStaffControlPanel.CanUseStaffControls`。
+- **注意（実測）**: `IsNetworkSettled` が真になっても、そのオブジェクトの bunch 適用（`OnDeserialization`）が **まだ完了していない**ことがある（Quest で確認: settle 直後の読み取りが復元前の既定値を返し、実データは約 0.5〜1 秒後の `OnDeserialization` で届いた）。settle は「読み書き解禁」の必要条件であって、「適用済み」の十分条件ではない。
+- 対策の一般形は「settle 一括初期化」: 非 Owner の初期化点は **「settle かつ初回 bunch 適用の両方が完了した時点」**とする。bunch → settle（通常順序）と settle → bunch（Quest 実測順序）の両方を扱うため、settle 前の受信はフラグで記録して settle 時に反映し、settle 後の受信はその場で初期化点にする。以降の `OnDeserialization` は差分反応に使う（`Implementation-Patterns.md` §2 参照）。
+- 参考実装: `AunCastDualPlayerController.InitializeFromSyncedState` / `AunCastResyncCoordinator.IsInitialStateReady` / `AunCastResyncCoordinatorClient.PollGlobalForceReboot` / `AunCastPlaybackMonitor.CanMutateState` / `AunCastStaffControlPanel.CanUseStaffControls`。
 
 ### 9.17 `VRCUrl.Empty` は編集可能フィールドの初期値に使わない
 - `VRCUrl.Empty` は呼び出しごとに生成される空 URL ではなく、共有される static インスタンスである。

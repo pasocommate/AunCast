@@ -66,10 +66,12 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DriftThreshold_IsConfigured()
         {
-            float value = TestHelper.Get<AunCastActivePlayerMonitor, float>(
-                _monitor, "driftResyncThresholdSec");
-            Assert.Greater(value, 0f,
-                "driftResyncThresholdSec は 0 より大きくなければならない");
+            // 閾値は Coordinator の同期変数 driftResyncThresholdIndex で一元管理される。
+            // 既定値が OFF でない有効な段階であることを確認する。
+            Assert.IsTrue(_coordinator.IsDriftResyncEnabled(),
+                "driftResyncThresholdIndex の既定値は OFF 以外であるべき");
+            Assert.Greater(_coordinator.GetDriftResyncThresholdSec(), 0f,
+                "既定のドリフト Resync 閾値は 0 より大きくなければならない");
         }
     }
 }

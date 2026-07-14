@@ -100,6 +100,8 @@ namespace PasocomMate.AunCast
         private const float AVG_RESYNC_DURATION_SEC = 8f;
         /// <summary>同一フレーム内の複数変更をバッチして 1 回の serialize にまとめるためのフラグ。</summary>
         private bool _serializationPending;
+        /// <summary>非 Owner が bunch を一度でも適用済みか。IsNetworkSettled だけでは適用完了を保証しない（Quest 実測）。</summary>
+        private bool _syncApplied;
 
         // =====================================================================
         //  Unity ライフサイクル
@@ -142,6 +144,7 @@ namespace PasocomMate.AunCast
 
         public override void OnDeserialization()
         {
+            _syncApplied = true;
             RestoreOwnerTimestamps();
             NotifyObservers();
         }
@@ -377,7 +380,14 @@ namespace PasocomMate.AunCast
             LogMessage($"Cancel cleared slot {slotIndex}");
         }
 
-        /// <summary>スロット未割当のクライアントが空きスロットを要求する（Late-Joiner 向けフォールバック）。</summary>
+        // =====================================================================
+        //  スロット管理 (Design Section 13.1)
+        //  割当はクライアント起点の Pull 型に一本化する。クライアントは settle 後に
+        //  OnRequestSlot を送り、未達なら 5 秒間隔で再送するため、Owner 側の
+        //  OnPlayerJoined での Push 割当（settle 順序に依存する）は持たない。
+        // =====================================================================
+
+        /// <summary>スロット未割当のクライアントが空きスロットを要求する（唯一の割当経路）。</summary>
         [NetworkCallable]
         public void OnRequestSlot(int playerId)
         {
@@ -391,39 +401,9 @@ namespace PasocomMate.AunCast
             for (int i = 0; i < MAX_PLAYERS; i++)
                 if (userPlayerId[i] == pid) return;
 
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (userPlayerId[i] == 0)
-                {
-                    InitializeSlot(i, pid);
-                    MarkDirty();
-                    if (debugLoggingEnabled)
-                        LogMessage($"Fallback slot assigned: player {playerId} → slot {i}");
-                    return;
-                }
-            }
-
-            LogWarning($"OnRequestSlot: No empty slot for player {playerId}");
-        }
-
-        // =====================================================================
-        //  スロット管理 (Design Section 13.1)
-        // =====================================================================
-
-        public override void OnPlayerJoined(VRCPlayerApi player)
-        {
-            if (!CanMutateState()) return;
-            if (userPlayerId == null) return;
-
-            short playerId = (short)player.playerId;
-
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (userPlayerId[i] == playerId) return;
-            }
-
             // 既にインスタンスにいないプレイヤーの残留スロットをクリーンアップ
             // （OnPlayerLeft のシリアライズがロストした場合のフォールバック）
+            bool cleaned = false;
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == 0) continue;
@@ -433,6 +413,7 @@ namespace PasocomMate.AunCast
                     if (debugLoggingEnabled)
                         LogMessage($"Stale slot {i} (player {userPlayerId[i]}) cleaned up");
                     ResetSlot(i);
+                    cleaned = true;
                 }
             }
 
@@ -440,16 +421,16 @@ namespace PasocomMate.AunCast
             {
                 if (userPlayerId[i] == 0)
                 {
-                    InitializeSlot(i, playerId);
+                    InitializeSlot(i, pid);
                     MarkDirty();
-
                     if (debugLoggingEnabled)
-                        LogMessage($"Player {playerId} → slot {i}");
+                        LogMessage($"Slot assigned: player {playerId} → slot {i}");
                     return;
                 }
             }
 
-            LogWarning($"No empty slot for player {playerId}");
+            if (cleaned) MarkDirty();
+            LogWarning($"OnRequestSlot: No empty slot for player {playerId}");
         }
 
         public override void OnPlayerLeft(VRCPlayerApi player)
@@ -597,8 +578,16 @@ namespace PasocomMate.AunCast
             }
         }
         public int GetGlobalForceRebootSeq() { return globalForceRebootSeq; }
-        /// <summary>Join 時の同期データが適用済みで、同期状態の読み書きを開始できるか。</summary>
-        public bool IsInitialStateReady() { return Networking.IsNetworkSettled; }
+        /// <summary>
+        /// Join 時の同期データが適用済みで、同期状態の読み書きを開始できるか。
+        /// IsNetworkSettled が真でも bunch 適用が遅れる実測があるため（Quest）、
+        /// 非 Owner は初回 OnDeserialization の適用も要求する（Owner = 配信元は不要）。
+        /// </summary>
+        public bool IsInitialStateReady()
+        {
+            return Networking.IsNetworkSettled
+                && (_syncApplied || Networking.IsOwner(gameObject));
+        }
 
         public int GetQueuedCount()
         {

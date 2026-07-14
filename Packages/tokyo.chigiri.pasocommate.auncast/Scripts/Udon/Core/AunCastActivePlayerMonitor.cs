@@ -38,9 +38,6 @@ namespace PasocomMate.AunCast
         [SerializeField] private float verifyMinDurationSec = 0.5f;
 
         [Header("Drift")]
-        [Tooltip("蓄積ドリフトがこの値（秒）を超えたら自動 Resync")]
-        [SerializeField] private float driftResyncThresholdSec = 0.1f;
-
         [Tooltip("ドリフト EMA の時定数（秒）。大きいほど緩やかに追従する")]
         [SerializeField] private float driftSmoothingTimeConstant = 1.5f;
 
@@ -403,8 +400,6 @@ namespace PasocomMate.AunCast
         public int GetConsecutiveAdvanceCount() { return _consecutiveAdvanceCount; }
         /// <summary>連続停滞カウントを返す（デバッグ/HUD 用）。</summary>
         public int GetConsecutiveStallCount() { return _consecutiveStallCount; }
-        /// <summary>ドリフト Resync 閾値（秒）を返す（HUD 表示用）。</summary>
-        public float GetDriftResyncThresholdSec() { return driftResyncThresholdSec; }
         /// <summary>検証に必要な最低連続前進回数を返す（HUD 表示用）。</summary>
         public int GetMinConsecutiveAdvances() { return minConsecutiveAdvances; }
 

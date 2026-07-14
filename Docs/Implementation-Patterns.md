@@ -36,6 +36,10 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 [PublicAPI]
 public void SetXxxAsStaff(Tx value)
 {
+    // 0. Join 時同期の完了前は受け付けない
+    //    （復元前の既定値を Owner として配信する事故を防ぐ）
+    if (!Networking.IsNetworkSettled) return;
+
     // 1. 入力の正規化
     value = Normalize(value);
 
@@ -56,10 +60,11 @@ public void SetXxxAsStaff(Tx value)
 
 ### 呼び出し側 (UI) のルール
 
-- `AunCastStaffControlPanel` 側のイベントハンドラは **冒頭で `_isStaff` チェック**を入れる。
+- `AunCastStaffControlPanel` 側のイベントハンドラは **冒頭で `CanUseStaffControls()`
+  チェック**（`_isStaff` かつ `Networking.IsNetworkSettled`）を入れる。
   非スタッフが UI を操作した場合はアクセス拒否表示で UI を同期値へ戻す。
-- 操作可能な UI は `interactable = _isStaff` に設定し、
-  非スタッフが物理的に触れないようにもする（アクセス権チェックとの二重防御）。
+- 操作可能な UI は `interactable = CanUseStaffControls()` を基準に設定し、
+  非スタッフや同期完了前に物理的に触れないようにもする（アクセス権チェックとの二重防御）。
 
 ## 2. `OnDeserialization` での同期反映
 
@@ -86,10 +91,62 @@ public override void OnDeserialization()
 }
 ```
 
-### Late Joiner 対応
+### Late Joiner 対応（settle 一括初期化）
 
-`OnPlayerJoined(VRCPlayerApi player)` 内で新規参加者が来たら Owner 側から
-`QueueSerialize()` を呼び、最新の同期変数が届くようにする。既存実装あり。
+Late Joiner の初期化は `OnDeserialization` への逐次反応ではなく、**settle 一括初期化**を
+原則とする（`VRChat-Udon-Development-Notes.md` 9.16 参照）。
+
+`IsNetworkSettled` は「読み書き解禁」の必要条件だが、bunch 適用完了の十分条件ではない
+（settle 後に初回 `OnDeserialization` が届く順序が実測されている。
+`VRChat-Udon-Development-Notes.md` 9.16 参照）。初期化点は
+**「settle かつ初回 bunch 適用の両方が完了した時点」**とし、両方の到着順序を扱う。
+
+```csharp
+private bool _syncInitialized;            // 初期化済みか
+private bool _syncReceivedBeforeSettle;   // bunch → settle の通常順序の橋渡し
+
+private void Update()
+{
+    if (!_syncInitialized)
+    {
+        if (!Networking.IsNetworkSettled) return;
+        if (Networking.IsOwner(gameObject))
+        {
+            _syncInitialized = true;
+            NormalizeAndSerializeAsFirstOwner();   // 初代 Owner: 正規化して必ず一度配信する
+        }
+        else if (_syncReceivedBeforeSettle)
+        {
+            _syncInitialized = true;
+            ApplySyncedState();                    // 適用済みスナップショットから一括反映
+        }
+        else return;                               // settle が先行。初回受信を待つ
+    }
+    // ... 通常処理 ...
+}
+
+public override void OnDeserialization()
+{
+    if (Networking.IsOwner(gameObject)) return;
+    if (!_syncInitialized)
+    {
+        if (!Networking.IsNetworkSettled)
+        {
+            _syncReceivedBeforeSettle = true;      // settle 時に Update 側で反映
+            return;
+        }
+        _syncInitialized = true;                   // settle 後の初回受信を初期化点にする
+    }
+    ApplySyncedState();                            // 以降は差分反応
+}
+```
+
+- Owner 側の `QueueSerialize()` にも `Networking.IsNetworkSettled` ガードを入れ、
+  復元前の既定値を配信しない。
+- 初代 Owner は初期化時に必ず一度 serialize する。これにより非 Owner の
+  「初回 bunch 待ち」が必ず成立する。
+- `OnPlayerJoined(VRCPlayerApi player)` 内で新規参加者が来たら Owner 側から
+  `QueueSerialize()` を呼び、最新の同期変数が届くようにする。既存実装あり。
 
 ## 3. `[UdonSynced]` 初期値の扱い
 

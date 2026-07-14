@@ -63,12 +63,22 @@ namespace PasocomMate.AunCast
         /// <summary>フレーム末にダーティフラグを確認し、まとめて 1 回だけシリアライズを発行する。</summary>
         private void Update()
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!_serializationPending) return;
 
             RequestSerialization();
             NotifyObservers();
             _serializationPending = false;
+        }
+
+        /// <summary>
+        /// Owner かつ Join 時同期が完了している場合だけ同期状態の変更を許可する。
+        /// AunCastResyncCoordinator と同じ方針で、未 settle の owner が復元前の
+        /// ゼロ配列を配信して他クライアントの報告ビットを消さないようにする。
+        /// </summary>
+        private bool CanMutateState()
+        {
+            return Networking.IsOwner(gameObject) && Networking.IsNetworkSettled;
         }
 
         /// <summary>遅延シリアライズを即時送信する。OnPlayerLeft 等ワールド破棄直前に呼ぶ。</summary>
@@ -113,7 +123,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         private bool CleanupStaleSlots()
         {
-            if (!Networking.IsOwner(gameObject)) return false;
+            if (!CanMutateState()) return false;
             if (coordinator == null) return false;
             if (playbackActive == null || playbackActive.Length != _packedLength) return false;
 
@@ -224,7 +234,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnReportPlayback(int slotIndex, int active)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlot(slotIndex)) return;
 
             if (SetSlotActive(slotIndex, active != 0))
@@ -240,7 +250,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnReportError(int slotIndex, int error)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlot(slotIndex)) return;
 
             if (SetSlotError(slotIndex, error != 0))
@@ -256,7 +266,7 @@ namespace PasocomMate.AunCast
         [NetworkCallable]
         public void OnReportConnecting(int slotIndex, int connecting)
         {
-            if (!Networking.IsOwner(gameObject)) return;
+            if (!CanMutateState()) return;
             if (!ValidateSlot(slotIndex)) return;
 
             if (SetSlotConnecting(slotIndex, connecting != 0))
@@ -279,6 +289,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void ClearSlot(int slotIndex)
         {
+            if (!CanMutateState()) return;
             if (!ValidateSlot(slotIndex)) return;
 
             bool changed = SetSlotActive(slotIndex, false);

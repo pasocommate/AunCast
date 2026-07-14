@@ -40,8 +40,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_DriftOverThreshold_ReturnsTrue()
         {
-            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
-                _monitor, "driftResyncThresholdSec");
+            // 閾値は Coordinator の同期設定（driftResyncThresholdIndex）から渡される。
+            // ここでは既定段階 100 ms 相当を使う。
+            const float threshold = 0.1f;
 
             // ウォームアップ済み、ドリフト閾値超過
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
@@ -58,8 +59,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_Normal_ReturnsFalse()
         {
-            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
-                _monitor, "driftResyncThresholdSec");
+            // 閾値は Coordinator の同期設定（driftResyncThresholdIndex）から渡される。
+            // ここでは既定段階 100 ms 相当を使う。
+            const float threshold = 0.1f;
 
             // 停滞なし、ドリフト正常
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
@@ -76,8 +78,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_DuringWarmup_IgnoresDrift()
         {
-            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
-                _monitor, "driftResyncThresholdSec");
+            // 閾値は Coordinator の同期設定（driftResyncThresholdIndex）から渡される。
+            // ここでは既定段階 100 ms 相当を使う。
+            const float threshold = 0.1f;
 
             // ウォームアップ中は大きなドリフトでも無視
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
@@ -94,8 +97,9 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void DetectActiveFailure_BeforeStablePlayback_IgnoresDrift()
         {
-            float threshold = TestHelper.Get<AunCastActivePlayerMonitor, float>(
-                _monitor, "driftResyncThresholdSec");
+            // 閾値は Coordinator の同期設定（driftResyncThresholdIndex）から渡される。
+            // ここでは既定段階 100 ms 相当を使う。
+            const float threshold = 0.1f;
 
             TestHelper.Set(_monitor, "_stallStartedAt", 0f);
             TestHelper.Set(_monitor, "_stablePlaybackStartedAt", 0f);

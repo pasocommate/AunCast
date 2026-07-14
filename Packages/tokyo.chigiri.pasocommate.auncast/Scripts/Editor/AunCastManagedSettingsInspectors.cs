@@ -89,7 +89,6 @@ namespace PasocomMate.AunCast.Internal
             "minAdvanceThresholdSec",
             "minConsecutiveAdvances",
             "stalledTimeoutSec",
-            "driftResyncThresholdSec",
             "driftSmoothingTimeConstant",
             "driftWarmupSec",
         };
