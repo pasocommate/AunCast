@@ -17,7 +17,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 音声が出ない・ズレを直したい | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Volume](../operation/panel-viewer.md#volume) |
 | 映像が止まった・カクつく | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Reboot ボタン](../operation/panel-viewer.md#reboot-button) |
 | 無音時の自動Resyncを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
-| すべての自動Resync/Rebootを止めたい | [Manual Mode](../operation/panel-viewer.md#manual-mode) |
+| 自動Resyncが暴発して視聴の継続が困難<br>すべての自動Resync/Rebootを止めたい | [Manual Mode](../operation/panel-viewer.md#manual-mode) |
 | 音量を変えたい | [Volume](../operation/panel-viewer.md#volume) |
 | 表示の意味を知りたい（Drift, Audio Level 等） | [手元パネルの各部](../operation/panel-viewer.md#controls) |
 | 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#playback-status) |
@@ -55,6 +55,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 既存ワールドのビデオプレイヤーから移行したい | [既存ワールドからの移行](../setup/parts-placement.md#migration) |
 | TopazChat「+ Reverb Filter」構成を移行したい | [AudioOutputTunnel 構成を移行する場合](../setup/parts-placement.md#tunnel) |
 | AudioLink と連携したい<br>AudioLinkInput が無効化された | [AudioLink をお使いの場合](../setup/parts-placement.md#audiolink) |
+| AunCast と別のビデオプレイヤーを併用したい | [他のビデオプレイヤーと併用する際の注意点](../operation/streaming.md#other-video-player) |
 | 何名まで耐えられるか知りたい | [同時接続上限の管理](../concepts/connection-limit.md) |
 | 配信サーバーの選び方を知りたい | [配信サーバーの選定](../operation/streaming.md#server-selection) |
 | 配信のビットレートや遅延の目安を知りたい | [配信・運用上の注意](../operation/streaming.md) |
