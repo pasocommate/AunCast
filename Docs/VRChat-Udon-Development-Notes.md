@@ -80,6 +80,7 @@
 - `OnVideoStart` 直後は `GetTime()` が **1〜2 秒ほど `0` を返し続ける**ことがある（特にライブストリーム）。そのまま stall タイマーで計測すると誤 Resync が発火する。
 - さらに、前のロードで進んでいた**残留値**を一瞬返してから `0` に巻き戻る、あるいは非常に小さい値を返したまま滞留する、というケースも観測される。
 - 対策: 「`GetTime() > 0` を 1 度でも観測したか」を起動判定に使わない。**前進 delta（`current - last > minAdvanceThresholdSec`）を観測した瞬間**を起動判定トリガーにする。これなら残留値・巻き戻り・微小値滞留のいずれにも左右されない。
+- 初回前進前の停滞判定を無期限に抑制すると、`OnVideoStart` 後に `IsPlaying` が false に戻る静かな起動失敗を永久に見逃す。通常の起動猶予（AunCast では 5 秒）を超えても前進 delta がない場合は、初回前進タイムアウトとして Resync 経路へ渡す。
 - 参考実装: `AunCastDualPlayerController.MonitorActivePlayer` の `_hasSeenPlayerTimeAdvance` フラグ。
 
 ### 9.3 バグ調査用ログ

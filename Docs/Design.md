@@ -651,6 +651,7 @@ stateDiagram-v2
 - `delta < 0`（巻き戻り）の場合は前進カウントをリセットし、次回から再カウント
 - 一定回数連続で前進したら「生存」とみなす
 - 一定時間前進がなければ「停止」とみなす
+- 初回前進前は起動直後の `GetTime() == 0` を停滞扱いにしない。ただし Active 監視開始から 5 秒以内に一度も前進しなければ、静かな起動失敗として Resync 対象にする
 
 ### 推奨パラメータ
 
@@ -1110,7 +1111,7 @@ sequenceDiagram
 Idle → ActivePlaying の遷移条件:
 - `_syncedURL` が空でない
 - Active Player が `OnVideoStart` を受信した（非 Owner は `_ownerPlaying == true` の同期到達も必要。false の間は Pause で待機）
-- `GetTime()` の初回前進は遷移条件ではなく、監視（ストール判定）の開始条件として扱う
+- `GetTime()` の初回前進は遷移条件ではなく、監視（ストール判定）の開始条件として扱う。ただし 5 秒以内に初回前進がない場合は起動失敗として Resync する
 
 ## 15.2 Resync 要求から切替まで
 
