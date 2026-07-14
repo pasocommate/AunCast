@@ -11,6 +11,11 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class AunCastActivePlayerMonitor : UdonSharpBehaviour
     {
+        // OnVideoStart 直後の GetTime() は 1〜2 秒ほど進まないことがあるため、
+        // 通常の stallTimeoutSec より長く初回前進を待つ。
+        // ただし無期限に待つと、IsPlaying が false に戻る静かな失敗を見逃す。
+        private const float INITIAL_ADVANCE_TIMEOUT_SEC = 5.0f;
+
         // =================================================================
         //  Inspector 参照
         // =================================================================
@@ -62,10 +67,14 @@ namespace PasocomMate.AunCast
         private float _lastMonitorTime;
         /// <summary>停滞が始まった時刻。タイムアウト判定の起点として使用する。</summary>
         private float _stallStartedAt;
+        /// <summary>Active 監視を開始した時刻。初回前進タイムアウトの起点として使用する。</summary>
+        private float _activeMonitoringStartedAt = -1f;
         /// <summary>プレイヤー A が最初のフレームデコードを完了したか。未完了時は停滞誤検出を防ぐ。</summary>
         private bool _hasSeenTimeAdvanceA;
         /// <summary>プレイヤー B が最初のフレームデコードを完了したか。未完了時は停滞誤検出を防ぐ。</summary>
         private bool _hasSeenTimeAdvanceB;
+        /// <summary>初回前進タイムアウトのログを監視セッションごとに一度だけ出すためのガード。</summary>
+        private bool _initialAdvanceTimeoutLogged;
 
         // Standby Player 検証
         private float _verifyStartedAt;
@@ -121,6 +130,8 @@ namespace PasocomMate.AunCast
             _consecutiveAdvanceCount = 0;
             _consecutiveStallCount = 0;
             _stallStartedAt = 0f;
+            _activeMonitoringStartedAt = now;
+            _initialAdvanceTimeoutLogged = false;
             _driftAccumulator = 0f;
             _stablePlaybackStartedAt = 0f;
             _driftWarmupUntil = 0f;
@@ -308,11 +319,27 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// Active プレイヤーに障害が発生しているかを判定する。
-        /// 停滞タイムアウト超過、またはドリフト閾値超過のいずれかで true を返す。
+        /// 初回前進タイムアウト、停滞タイムアウト超過、またはドリフト閾値超過のいずれかで true を返す。
         /// 呼び出し元（AunCastDualPlayerController）はこの結果を受けて Resync フローを起動する。
         /// </summary>
         public bool DetectActiveFailure(float now, bool driftResyncEnabled, float effectiveDriftThresholdSec)
         {
+            // 初回前進前は残留時刻や起動直後の 0 秒を停滞扱いにしない。
+            // ただし OnVideoStart 後に IsPlaying=false へ戻ると永久にここへ到達しないため、
+            // 別枠の上限時間で静かな起動失敗を検出する。
+            bool hasSeenAdvance = _activeIsA ? _hasSeenTimeAdvanceA : _hasSeenTimeAdvanceB;
+            if (!hasSeenAdvance
+                && _activeMonitoringStartedAt >= 0f
+                && now - _activeMonitoringStartedAt >= INITIAL_ADVANCE_TIMEOUT_SEC)
+            {
+                if (!_initialAdvanceTimeoutLogged)
+                {
+                    _initialAdvanceTimeoutLogged = true;
+                    TL($"a=INITIAL_ADVANCE_TIMEOUT elapsed={now - _activeMonitoringStartedAt:F2}");
+                }
+                return true;
+            }
+
             if (_stallStartedAt > 0f && (now - _stallStartedAt) >= stalledTimeoutSec)
                 return true;
 
