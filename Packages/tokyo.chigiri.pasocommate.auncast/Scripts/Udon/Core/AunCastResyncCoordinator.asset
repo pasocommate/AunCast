@@ -1135,13 +1135,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: _syncReceived
+      Data: _syncApplied
     - Name: $v
       Entry: 7
       Data: 75|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: _syncReceived
+      Data: _syncApplied
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 13
