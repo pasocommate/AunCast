@@ -21,7 +21,7 @@ Unity Editor で `Window > General > Test Runner > EditMode` から実行する�
 | `StalledTimeout_InRange` | stalledTimeoutSec ∈ [1.5, 3.0] |
 | `MaxConcurrent_SafeForCDN` | maxConcurrentResyncUsers ≤ 15 |
 | `CycleTimeout_LessThanRunningTimeout` | resyncCycleTimeoutSec < runningTimeoutSec |
-| `DriftThreshold_IsConfigured` | driftResyncThresholdSec > 0 |
+| `DriftThreshold_IsConfigured` | driftResyncThresholdIndex の既定値が OFF 以外で、導出閾値 > 0 |
 
 ### Logic 系
 

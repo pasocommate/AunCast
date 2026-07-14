@@ -188,7 +188,8 @@
   - 変化検知の初回値は、同期完了後に履歴ではなく基準値として記録する。Join 中に発行されたイベントが初回値へ含まれていても、目的の状態（AunCast ではローカル再生）へ既に収束中なら再実行せず、敢えて見逃す。
   - スタッフ UI は同期完了前の Change / Apply を拒否する。同期オブジェクト側も ownership 取得前に同じ条件を確認し、復元前の既定値やゼロ配列を配信しない。
   - `OnDeserialization` の受信済みフラグは通知の即時性向上には使えるが、Owner を含む共通の準備完了条件は `IsNetworkSettled` とする。
-- 参考実装: `AunCastResyncCoordinator.IsInitialStateReady` / `AunCastResyncCoordinatorClient.PollGlobalForceReboot` / `AunCastStaffControlPanel.CanUseStaffControls`。
+- 対策の一般形は「settle 一括初期化」: Join 中の `OnDeserialization` には反応せず、`IsNetworkSettled` が真になった時点で同期スナップショットを一括読み取りして初期化し、以降の `OnDeserialization` を差分反応に使う（`Implementation-Patterns.md` §2 参照）。
+- 参考実装: `AunCastDualPlayerController.InitializeFromSyncedState` / `AunCastResyncCoordinator.IsInitialStateReady` / `AunCastResyncCoordinatorClient.PollGlobalForceReboot` / `AunCastPlaybackMonitor.CanMutateState` / `AunCastStaffControlPanel.CanUseStaffControls`。
 
 ### 9.17 `VRCUrl.Empty` は編集可能フィールドの初期値に使わない
 - `VRCUrl.Empty` は呼び出しごとに生成される空 URL ではなく、共有される static インスタンスである。

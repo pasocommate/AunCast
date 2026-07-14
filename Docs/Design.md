@@ -352,7 +352,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 ワールド全体の予約制御を行う同期オブジェクト。
 
 責務:
-- スロット管理（Join / Leave 対応、`OnRequestSlot` フォールバック）
+- スロット管理（クライアント起点の `OnRequestSlot` による Pull 型割当と、Leave 時の解放）
 - Request キュー管理 (`OnResyncRequest` / `OnReportRunning` / `OnReportSuccess` / `OnReportFail` / `OnCancelSlot`)
 - Grant 判定（同時Resync上限による制御、`maxConcurrentResyncUsers` / `maxConnectionLimit`）
 - タイムアウト監視（`grantTimeoutSec` / `runningTimeoutSec`）
@@ -363,7 +363,7 @@ Active / Standby の物理的な切替（映像・音声・AudioLink）を担う
 クライアント側に配置し、Coordinator の同期変数をローカル状態に翻訳する薄いクライアント。
 
 責務:
-- 自スロット番号のキャッシュ (`_mySlotIndex`) と再取得（`OnRequestSlot` リトライ、5 秒間隔）
+- 自スロット番号のキャッシュ (`_mySlotIndex`) と割当要求（settle 後に `OnRequestSlot` を即時送信、未達なら 5 秒間隔で再送）
 - Coordinator 状態のポーリング (`PollResyncCoordinator`) と FSM 遷移先の決定
 - グローバル Resync の採用検出（`CheckAdoption`: QUEUED/GRANTED 状態を検知 → `REQUEST_REASON_MANUAL` で採用）
 - キャンセル送信後の Adoption 抑制（`_adoptionSuppressedUntil` で 2 秒間抑制）
@@ -713,8 +713,8 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 | ドリフト量 | 処理 |
 |---|---|
-| `driftResyncThresholdSec` 未満 | 何もしない（正常範囲） |
-| `driftResyncThresholdSec` 以上 | Resync Request を発行する |
+| 有効閾値（`driftResyncThresholdIndex` から導出）未満 | 何もしない（正常範囲） |
+| 有効閾値以上 | Resync Request を発行する |
 | `driftResyncThresholdIndex` が OFF | ドリフト値の計測・表示のみ継続し、Resync Request は発行しない |
 
 > **設計変更履歴**: 当初は `absorptionThresholdSec` / `bufferAbsorptionLimitSec` / `recoveryRateSecPerSec` を用いた **AudioDelayFilter のリングバッファによる吸収段** を計画していたが、Udon VM のオーディオスレッド制約（Section 9.1 K 参照）によりリングバッファ遅延機構そのものが未実装となったため、現実装ではドリフトしきい値超過 → 直接 Resync 発行のシンプルな 2 段階に統合している。バッファ吸収は Section 24 の今後の拡張案として残す。
@@ -727,7 +727,7 @@ if (!canMeasureDrift) { _baseWallTime = 0; _basePlayerTime = 0; _driftAccumulato
 
 | パラメータ | 推奨値 | 根拠 |
 |---|---|---|
-| `driftResyncThresholdSec` | 0.1 秒 | 配信側の通常ジッタを上回り、知覚的にも違和感が出始める閾値 |
+| `driftResyncThresholdIndex` | 100 ms 段階 | 配信側の通常ジッタを上回り、知覚的にも違和感が出始める閾値 |
 | `driftSmoothingTimeConstant` | 1.5 秒 | EMA の時定数。瞬間的な揺らぎを吸収し、持続的なドリフトに反応する |
 | `driftWarmupSec` | 5.0 秒 | 再生開始直後の不安定区間ではドリフト判定を行わない |
 
@@ -829,8 +829,8 @@ Coordinator はユーザーごとの状態を固定長配列で管理する。
 配列のインデックスには **スロット番号**（0〜`MAX_PLAYERS - 1`）を使用する。`VRCPlayerApi.playerId` は非連続で上限が大きいため、直接インデックスには使わない。
 
 - `MAX_PLAYERS`: 同期スロット配列の固定長上限（82。VRChat Group+ の現行上限）
-- スロット割当: プレイヤーが Join した際、`userPlayerId[i] == 0` の空きスロットを先頭から探して割り当てる
-- スロット解放: `OnPlayerLeft` で該当スロットを初期化し、`userPlayerId[i] = 0` に戻す
+- スロット割当: クライアントが settle 後に `OnRequestSlot` を Owner へ送り、Owner が `userPlayerId[i] == 0` の空きスロットを先頭から探して割り当てる（Pull 型に一本化。Owner の `OnPlayerJoined` での Push 割当は settle 順序に依存するため行わない）
+- スロット解放: `OnPlayerLeft` で該当スロットを初期化し、`userPlayerId[i] = 0` に戻す。解放のロスト（未 settle の owner がイベントを取りこぼした場合等）は、次の `OnRequestSlot` 処理時の残留スロット掃除で回収する
 - スロット検索: ローカルクライアントは自身の `playerId` に対応するスロットをキャッシュする
 
 ### 帯域コストの考慮
@@ -863,6 +863,7 @@ Owner-Centric モデル: クライアントは同期変数を読み取り専用�
 [UdonSynced] private short globalForceRebootSeq;    // 全断→リブートの発行回数（変更検知用）
 [UdonSynced] private byte maxConcurrentResyncUsers; // 同時Resync上限（ランタイム変更可能）
 [UdonSynced] private byte maxConnectionLimit;       // CDN 同時接続上限（ランタイム変更可能、配信サーバ側キャパシティ）
+[UdonSynced] private byte driftResyncThresholdIndex; // 自動Resyncドリフト閾値の固定段階インデックス（ランタイム変更可能。終端値 = OFF）
 ```
 
 > **命名注記**: 当初設計では `userState` を予定していたが、実装ではより限定的な意味を示す `resyncState` に改名されている（`AunCastPlaybackMonitor` 側に再生状態が分離されたため）。同様に getter は `GetResyncState(slotIndex)`。
@@ -916,7 +917,7 @@ Coordinator と AunCastPlaybackMonitor は別 GameObject で ownership が独立
 ```
 AunCastResyncCoordinator.OnPlayerLeft(VRCPlayerApi player):
   // Coordinator 所有者: スロット割当・Resync 状態を解放
-  if !Networking.IsOwner(gameObject): return
+  if !CanMutateState(): return   // Owner かつ IsNetworkSettled
   slotIndex = FindSlotByPlayerId(player.playerId)
   if slotIndex < 0: return
   resyncState[slotIndex] = None
@@ -926,7 +927,7 @@ AunCastResyncCoordinator.OnPlayerLeft(VRCPlayerApi player):
 
 AunCastPlaybackMonitor.OnPlayerLeft(VRCPlayerApi player):
   // AunCastPlaybackMonitor 所有者: 自オブジェクトのビット 3 配列を掃除
-  if !Networking.IsOwner(gameObject): return
+  if !CanMutateState(): return   // Owner かつ IsNetworkSettled
   foreach slot i in 0..MAX_PLAYERS:
     if no bit set in playback/connecting/error[i]: continue
     pid = coordinator.GetUserPlayerId(i)
@@ -937,6 +938,9 @@ AunCastPlaybackMonitor.OnPlayerLeft(VRCPlayerApi player):
 ```
 
 `OnPlayerJoined` でも AunCastPlaybackMonitor 側は同じ走査を行い、`OnPlayerLeft` のシリアライズがロストした残留ビットをフォールバックで回収する。
+Coordinator 側の残留スロットは `OnRequestSlot` 処理時の掃除で回収する。
+どちらの同期オブジェクトも、未 settle の owner が復元前のゼロ配列を配信しないよう
+`CanMutateState()`（Owner かつ `Networking.IsNetworkSettled`）を全変更経路の入口に置く。
 
 ## 13.3 状態コード
 
@@ -971,7 +975,16 @@ private bool _activeIsA = true;                // AunCastPlaybackSwitcher と同
 
 // --- ローカル設定（同期しない） ---
 private bool _autoSilenceResyncEnabled = true; // Silence Resync 切替
+private bool _manualModeEnabled;               // 自動 Resync / Reboot を抑止するローカルモード
 private float _combinedSilenceDuration;        // 全 audible プレイヤーの無音連続時間
+
+// --- settle 初期化 ---
+private bool _syncInitialized;                 // settle 後に同期スナップショットから初期化済みか
+private bool _startupSyncResetFinished;        // 新規インスタンス Owner の同期値正規化を実施済みか
+
+// --- エラー表示 ---
+private string _lastErrorMessage;              // UI 表示用の直近エラーメッセージ（空 = なし）
+private float _lastErrorMessageAt;             // 表示開始時刻（フェードアウト制御用）
 
 // --- Standby Player 検証 ---
 private float _standbyConnectStartedAt;
@@ -1076,27 +1089,28 @@ private float _crossfadeStartedAt;
 
 ```mermaid
 sequenceDiagram
-    participant U as User/Master
+    participant U as User/Staff
     participant C as Client (Local)
     participant A as Active Player
     participant K as Coordinator
 
+    Note over C: IsNetworkSettled 後に初期化<br>（同期スナップショット反映）
+    C->>K: OnRequestSlot → スロット割当
     U->>C: URL入力（UI）
     C->>C: _syncedURL = url
     C->>C: RequestSerialization()
     Note over C: 全クライアントに同期
-    C->>K: OnPlayerJoined → スロット割当
-    C->>A: PlayURL(_syncedURL)
+    C->>A: LoadURL(_syncedURL)
     A-->>C: OnVideoReady
-    A-->>C: OnVideoPlay
+    A-->>C: OnVideoStart
     C->>C: localState = ActivePlaying
     C->>C: GetTime監視開始、ドリフト計測開始
 ```
 
 Idle → ActivePlaying の遷移条件:
 - `_syncedURL` が空でない
-- Active Player が `OnVideoPlay` または `OnVideoStart` を受信した
-- `GetTime()` が初回の前進を確認した（false start 防止）
+- Active Player が `OnVideoStart` を受信した（非 Owner は `_ownerPlaying == true` の同期到達も必要。false の間は Pause で待機）
+- `GetTime()` の初回前進は遷移条件ではなく、監視（ストール判定）の開始条件として扱う
 
 ## 15.2 Resync 要求から切替まで
 
@@ -1334,11 +1348,18 @@ RetryWait →（バックオフ経過後）Active 直接再接続 → ActivePlay
 
 ## 19.2 Late Joiner
 
-Late Joiner は以下を `OnDeserialization` で再構築する。
+Late Joiner の初期化は「settle 一括初期化」を原則とする。Join 中の `OnDeserialization` は
+オブジェクト間の復元順序が保証されないため反応せず、`Networking.IsNetworkSettled` が真に
+なった時点で同期スナップショットを一括読み取りして初期化する。それ以降の `OnDeserialization`
+は差分反応に使う。
 
-- 各ユーザーの queue/grant/running 状態
-- 実行中（Granted + Running）ユーザー数
-- Coordinator の上限・ドリフト閾値・強制リブートシーケンス
+- `AunCastDualPlayerController`: `Update` の先頭で settle を待ち、初回に `InitializeFromSyncedState`
+  を実行する。非 Owner は同期 URL / `_ownerPlaying` の現在値から再生開始・停止を判断し、
+  Owner（新規インスタンスの初代 Owner）は残留同期値を正規化して配信する。settle 前は
+  `OnDeserialization` / `QueueSerialize` とも早期リターンする
+- Coordinator クライアント: 各ユーザーの queue/grant/running 状態、実行中（Granted + Running）
+  ユーザー数、Coordinator の上限・ドリフト閾値・強制リブートシーケンスを同期値から再構築する
+- スロット割当は settle 後にクライアントが `OnRequestSlot` を送る Pull 型で行う
 
 スタッフ UI は `Networking.IsNetworkSettled` が真になるまで操作を無効化し、設定値の
 Change / Apply を受け付けない。同期完了後に初めて現在値を入力欄へ反映する。
@@ -1364,7 +1385,10 @@ Change / Apply を受け付けない。同期完了後に初めて現在値を�
 - `playTimeoutSec`
 - `verifyTimeoutSec`
 - `defaultVolume`
-- `verboseLogging` / `_timelineLogging`
+- `defaultUrl`（Next URL 欄の初期値。自動再生はしない）
+- `_timelineLogging`
+- `_autoSilenceResyncEnabled`（無音 Resync のローカル初期値）
+- `_manualModeEnabled`（Manual Mode のローカル初期値）
 
 ### AunCastActivePlayerMonitor 側
 
@@ -1373,9 +1397,11 @@ Change / Apply を受け付けない。同期完了後に初めて現在値を�
 - `minConsecutiveAdvances`
 - `stalledTimeoutSec`
 - `verifyMinDurationSec`
-- `driftResyncThresholdSec`
 - `driftSmoothingTimeConstant`
 - `driftWarmupSec`
+
+> ドリフト Resync 閾値は Monitor のローカルパラメータではなく、Coordinator の同期変数
+> `driftResyncThresholdIndex`（ランタイム変更可能）として一元管理する。
 
 ### AunCastPlaybackSwitcher 側
 
@@ -1429,18 +1455,53 @@ Change / Apply を受け付けない。同期完了後に初めて現在値を�
 ```csharp
 void Update()
 {
-    if (!isLocal) return;
+    // settle 一括初期化（19.2 参照）
+    if (!syncInitialized)
+    {
+        if (!Networking.IsNetworkSettled) return;
+        syncInitialized = true;
+        InitializeFromSyncedState();
+    }
 
+    if (PollGlobalForceReboot()) { Reboot(); return; }
+    TryEnsureSlotAssigned();     // Pull 型スロット割当
+    PollResyncCoordinator();     // Grant 検出・グローバル Resync の採用
+    PollSyncWait();              // 非 Owner の再生開始同期待ち
     SampleActiveTime();
 
     switch (localState)
     {
-        case STATE_ACTIVE_PLAYING:
-            if (DetectActiveFailure() && CanRequestResync())
+        case STATE_IDLE:
+            // 初回ロード失敗のリトライ予約（retryWaitUntil）が満了し、
+            // 同期 URL が残っていれば Active 直接再接続へ
+            if (!manualMode && RetryDue() && HasSyncedUrl())
             {
-                RequestResync();
-                localState = STATE_REQUEST_PENDING;
+                localState = STATE_RETRY_WAIT;
+                AttemptActiveReboot();
             }
+            break;
+
+        case STATE_ACTIVE_PLAYING:
+            if (manualMode) break;
+
+            // 保留中の障害 Resync（Cooldown 中に要求できなかった分）
+            if (HasDeferredFailure())
+            {
+                if (ActiveRecovered()) CancelDeferred();       // 障害条件の解消 + 実再生を両方確認
+                else if (RetryDue() && TryRequestResync()) localState = STATE_REQUEST_PENDING;
+                break;
+            }
+
+            if (DetectActiveFailure())
+            {
+                if (TryRequestResync()) localState = STATE_REQUEST_PENDING;
+                else DeferFailureResync();                     // Cooldown 中は保留
+            }
+            break;
+
+        case STATE_REQUEST_PENDING:
+            if (ActiveRecovered()) { CancelResync(); localState = STATE_ACTIVE_PLAYING; }
+            else if (RequestMaybeLost()) ResendRequest();
             break;
 
         case STATE_RESERVED:
@@ -1486,6 +1547,12 @@ void Update()
                 localState = STATE_ACTIVE_PLAYING;
             }
             break;
+
+        case STATE_RETRY_WAIT:
+            // 指数バックオフ満了で Active 直接再接続（Manual Mode 中は手動復旧待ち）
+            if (!manualMode && RetryDue() && !awaitingActiveReboot)
+                AttemptActiveReboot();
+            break;
     }
 }
 ```
@@ -1496,7 +1563,7 @@ void Update()
 void TickScheduler()
 {
     bool changed = CleanupExpiredStates(serverTime);
-    int available = maxConcurrentResyncUsers - CountActiveOrPending();
+    int available = maxConcurrentResyncUsers - CountGrantedOrRunning();
 
     while (available > 0)
     {

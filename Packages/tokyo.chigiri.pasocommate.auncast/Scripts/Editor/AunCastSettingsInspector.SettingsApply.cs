@@ -19,12 +19,6 @@ namespace PasocomMate.AunCast.Internal
             "500 ms", "700 ms", "1 s", "2 s", "3 s", "5 s", "OFF"
         };
 
-        private static readonly float[] DRIFT_THRESHOLD_SECONDS =
-        {
-            0.05f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f, 0.4f,
-            0.5f, 0.7f, 1f, 2f, 3f, 5f, 5f
-        };
-
         private void DrawVideoPlayerSettings(
             Transform root,
             PasocomMate.AunCast.AunCastSettings settings)
@@ -283,7 +277,6 @@ namespace PasocomMate.AunCast.Internal
                         "Automatically Resyncs when accumulated drift exceeds this value. OFF disables drift-triggered automatic Resync.")),
                 Mathf.Clamp(settings.driftResyncThresholdIndex, 0, DRIFT_THRESHOLD_LABELS.Length - 1),
                 DRIFT_THRESHOLD_LABELS);
-            float newDriftThreshold = DRIFT_THRESHOLD_SECONDS[newDriftThresholdIndex];
             float newSmoothing = SliderField("平滑化時定数 [秒]", "Smoothing Time Constant [s]", "driftSmoothingTimeConstant",
                 "ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する。",
                 "Time constant (seconds) for the drift EMA. Larger values track more gradually.",
@@ -306,7 +299,6 @@ namespace PasocomMate.AunCast.Internal
             settings.monitorIntervalSec = newInterval;
             settings.minAdvanceThresholdSec = newAdvance;
             settings.minConsecutiveAdvances = newMinConsec;
-            settings.driftResyncThresholdSec = newDriftThreshold;
             settings.driftResyncThresholdIndex = newDriftThresholdIndex;
             settings.driftSmoothingTimeConstant = newSmoothing;
             settings.driftWarmupSec = newWarmup;
@@ -508,7 +500,6 @@ namespace PasocomMate.AunCast.Internal
                 SetFloatProperty(so, "monitorIntervalSec", settings.monitorIntervalSec);
                 SetFloatProperty(so, "minAdvanceThresholdSec", settings.minAdvanceThresholdSec);
                 SetIntProperty(so, "minConsecutiveAdvances", settings.minConsecutiveAdvances);
-                SetFloatProperty(so, "driftResyncThresholdSec", settings.driftResyncThresholdSec);
                 SetFloatProperty(so, "driftSmoothingTimeConstant", settings.driftSmoothingTimeConstant);
                 SetFloatProperty(so, "driftWarmupSec", settings.driftWarmupSec);
             });

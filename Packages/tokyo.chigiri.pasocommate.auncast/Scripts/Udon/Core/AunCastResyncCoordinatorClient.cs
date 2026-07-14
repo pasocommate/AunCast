@@ -108,9 +108,10 @@ namespace PasocomMate.AunCast
                 return true;
             }
 
-            // 見つからない場合は定期的に Owner へ割当を依頼
+            // 見つからない場合は Owner へ割当を依頼する（初回は即時、以降は定期再送）。
+            // 割当はこの Pull 経路のみ。Owner 側の OnPlayerJoined での Push 割当は行わない。
             float now = Time.time;
-            if (now - _lastSlotRequestAt >= SLOT_REQUEST_INTERVAL)
+            if (_lastSlotRequestAt <= 0f || now - _lastSlotRequestAt >= SLOT_REQUEST_INTERVAL)
             {
                 _lastSlotRequestAt = now;
                 coordinator.SendCustomNetworkEvent(

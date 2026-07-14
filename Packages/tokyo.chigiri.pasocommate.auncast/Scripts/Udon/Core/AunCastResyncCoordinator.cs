@@ -377,7 +377,14 @@ namespace PasocomMate.AunCast
             LogMessage($"Cancel cleared slot {slotIndex}");
         }
 
-        /// <summary>スロット未割当のクライアントが空きスロットを要求する（Late-Joiner 向けフォールバック）。</summary>
+        // =====================================================================
+        //  スロット管理 (Design Section 13.1)
+        //  割当はクライアント起点の Pull 型に一本化する。クライアントは settle 後に
+        //  OnRequestSlot を送り、未達なら 5 秒間隔で再送するため、Owner 側の
+        //  OnPlayerJoined での Push 割当（settle 順序に依存する）は持たない。
+        // =====================================================================
+
+        /// <summary>スロット未割当のクライアントが空きスロットを要求する（唯一の割当経路）。</summary>
         [NetworkCallable]
         public void OnRequestSlot(int playerId)
         {
@@ -391,39 +398,9 @@ namespace PasocomMate.AunCast
             for (int i = 0; i < MAX_PLAYERS; i++)
                 if (userPlayerId[i] == pid) return;
 
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (userPlayerId[i] == 0)
-                {
-                    InitializeSlot(i, pid);
-                    MarkDirty();
-                    if (debugLoggingEnabled)
-                        LogMessage($"Fallback slot assigned: player {playerId} → slot {i}");
-                    return;
-                }
-            }
-
-            LogWarning($"OnRequestSlot: No empty slot for player {playerId}");
-        }
-
-        // =====================================================================
-        //  スロット管理 (Design Section 13.1)
-        // =====================================================================
-
-        public override void OnPlayerJoined(VRCPlayerApi player)
-        {
-            if (!CanMutateState()) return;
-            if (userPlayerId == null) return;
-
-            short playerId = (short)player.playerId;
-
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (userPlayerId[i] == playerId) return;
-            }
-
             // 既にインスタンスにいないプレイヤーの残留スロットをクリーンアップ
             // （OnPlayerLeft のシリアライズがロストした場合のフォールバック）
+            bool cleaned = false;
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (userPlayerId[i] == 0) continue;
@@ -433,6 +410,7 @@ namespace PasocomMate.AunCast
                     if (debugLoggingEnabled)
                         LogMessage($"Stale slot {i} (player {userPlayerId[i]}) cleaned up");
                     ResetSlot(i);
+                    cleaned = true;
                 }
             }
 
@@ -440,16 +418,16 @@ namespace PasocomMate.AunCast
             {
                 if (userPlayerId[i] == 0)
                 {
-                    InitializeSlot(i, playerId);
+                    InitializeSlot(i, pid);
                     MarkDirty();
-
                     if (debugLoggingEnabled)
-                        LogMessage($"Player {playerId} → slot {i}");
+                        LogMessage($"Slot assigned: player {playerId} → slot {i}");
                     return;
                 }
             }
 
-            LogWarning($"No empty slot for player {playerId}");
+            if (cleaned) MarkDirty();
+            LogWarning($"OnRequestSlot: No empty slot for player {playerId}");
         }
 
         public override void OnPlayerLeft(VRCPlayerApi player)

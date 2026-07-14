@@ -36,6 +36,10 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 [PublicAPI]
 public void SetXxxAsStaff(Tx value)
 {
+    // 0. Join 時同期の完了前は受け付けない
+    //    （復元前の既定値を Owner として配信する事故を防ぐ）
+    if (!Networking.IsNetworkSettled) return;
+
     // 1. 入力の正規化
     value = Normalize(value);
 
@@ -56,10 +60,11 @@ public void SetXxxAsStaff(Tx value)
 
 ### 呼び出し側 (UI) のルール
 
-- `AunCastStaffControlPanel` 側のイベントハンドラは **冒頭で `_isStaff` チェック**を入れる。
+- `AunCastStaffControlPanel` 側のイベントハンドラは **冒頭で `CanUseStaffControls()`
+  チェック**（`_isStaff` かつ `Networking.IsNetworkSettled`）を入れる。
   非スタッフが UI を操作した場合はアクセス拒否表示で UI を同期値へ戻す。
-- 操作可能な UI は `interactable = _isStaff` に設定し、
-  非スタッフが物理的に触れないようにもする（アクセス権チェックとの二重防御）。
+- 操作可能な UI は `interactable = CanUseStaffControls()` を基準に設定し、
+  非スタッフや同期完了前に物理的に触れないようにもする（アクセス権チェックとの二重防御）。
 
 ## 2. `OnDeserialization` での同期反映
 
@@ -86,10 +91,37 @@ public override void OnDeserialization()
 }
 ```
 
-### Late Joiner 対応
+### Late Joiner 対応（settle 一括初期化）
 
-`OnPlayerJoined(VRCPlayerApi player)` 内で新規参加者が来たら Owner 側から
-`QueueSerialize()` を呼び、最新の同期変数が届くようにする。既存実装あり。
+Late Joiner の初期化は `OnDeserialization` への逐次反応ではなく、**settle 一括初期化**を
+原則とする（`VRChat-Udon-Development-Notes.md` 9.16 参照）。
+
+```csharp
+private bool _syncInitialized;
+
+private void Update()
+{
+    if (!_syncInitialized)
+    {
+        if (!Networking.IsNetworkSettled) return;
+        _syncInitialized = true;
+        InitializeFromSyncedState();   // 完全なスナップショットから一括反映
+    }
+    // ... 通常処理 ...
+}
+
+public override void OnDeserialization()
+{
+    if (!_syncInitialized) return;     // settle 前の中間状態には反応しない
+    if (Networking.IsOwner(gameObject)) return;
+    ApplySyncedState();                // 以降は差分反応
+}
+```
+
+- Owner 側の `QueueSerialize()` にも `Networking.IsNetworkSettled` ガードを入れ、
+  復元前の既定値を配信しない。
+- `OnPlayerJoined(VRCPlayerApi player)` 内で新規参加者が来たら Owner 側から
+  `QueueSerialize()` を呼び、最新の同期変数が届くようにする。既存実装あり。
 
 ## 3. `[UdonSynced]` 初期値の扱い
 

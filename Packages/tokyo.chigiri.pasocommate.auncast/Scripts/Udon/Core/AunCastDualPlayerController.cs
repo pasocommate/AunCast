@@ -136,23 +136,27 @@ namespace PasocomMate.AunCast
         private bool _lastReportedPlaybackActive;
         private int _initializedPlaybackMonitorSlot = -1;
 
+        // Connecting / Error レポートの重複送信抑止（-1=未送信, 0=false, 1=true）。
+        // これらはイベント駆動で定期再送がないため、同値の連続送信は純粋な無駄になる。
+        private int _lastReportedConnecting = -1;
+        private int _lastReportedError = -1;
+
         // FSM 状態変化通知用 (-1 = 未通知)
         private int _lastReportedLocalState = -1;
 
         private bool _startupSyncResetFinished;
-        private float _startupSyncResetStartedAt;
-        private const float STARTUP_SYNC_RESET_WINDOW_SEC = 10.0f;
+        /// <summary>settle 完了時に同期スナップショットから初期化済みか。false の間は同期に反応しない。</summary>
+        private bool _syncInitialized;
 
         // =================================================================
         //  Unity ライフサイクル
         // =================================================================
 
-        /// <summary>初期音量設定と A/B ロールの確定。オーナーなら初期状態を同期配信する。</summary>
+        /// <summary>ローカル初期化のみを行う。同期への書き込みは settle 後の InitializeFromSyncedState で行う。</summary>
         private void Start()
         {
             if (_ranInit) return;
             _ranInit = true;
-            _startupSyncResetStartedAt = Time.time;
 
             SetVolume(defaultVolume);
 
@@ -165,32 +169,29 @@ namespace PasocomMate.AunCast
                 switcher.SwitchAudioLinkSource();
             }
 
-            ResetPlaybackSyncStateForNewInstance();
-            QueueSerialize();
             LogMessage("AunCastDualPlayerController initialized");
         }
 
+        /// <summary>
+        /// 新規インスタンスの初代 Owner が、エディタ編集で残留し得る同期値を既定値へ正規化する。
+        /// settle 前は同期値が復元前の既定値である可能性があるため実行しない
+        /// （時間窓ではなく settle を基準にすることで、Join 中に ownership が
+        /// 転がり込んだクライアントが再生中の同期値を消して配信する事故を防ぐ）。
+        /// </summary>
         private bool ResetPlaybackSyncStateForNewInstance()
         {
             if (_startupSyncResetFinished) return false;
-            if (Time.time - _startupSyncResetStartedAt > STARTUP_SYNC_RESET_WINDOW_SEC)
-            {
-                _startupSyncResetFinished = true;
-                return false;
-            }
+            if (!Networking.IsNetworkSettled) return false;
             if (!Networking.IsOwner(gameObject)) return false;
-            if (_localState != STATE_IDLE || _ownerPlaying)
-            {
-                _startupSyncResetFinished = true;
-                return false;
-            }
+
+            _startupSyncResetFinished = true;
+            if (_localState != STATE_IDLE || _ownerPlaying) return false;
 
             _syncedURL = VRCUrl.Empty;
             _syncedUrlSubmitterName = "";
             _syncedVideoIdx = 0;
             _currentVideoIdx = 0;
             _ownerPlaying = false;
-            _startupSyncResetFinished = true;
             return true;
         }
 
@@ -213,6 +214,15 @@ namespace PasocomMate.AunCast
         /// <summary>メインループ: グローバルリブート確認→スロット確保→Coordinator ポーリング→FSM→無音検知の順で毎フレーム駆動。</summary>
         private void Update()
         {
+            // Join 時同期の適用完了までは一切動かさない。復元順序が保証されない
+            // 中間状態への反応を避け、settle 時に完全なスナップショットから初期化する。
+            if (!_syncInitialized)
+            {
+                if (!Networking.IsNetworkSettled) return;
+                _syncInitialized = true;
+                InitializeFromSyncedState();
+            }
+
             float now = Time.time;
 
             // グローバル強制リブート指令の確認
@@ -306,6 +316,15 @@ namespace PasocomMate.AunCast
 
             switcher.GetActiveManager().Play();
             _waitForSync = false;
+            EnterActivePlaying(now);
+        }
+
+        /// <summary>
+        /// ACTIVE_PLAYING へ遷移し、保留中のリトライ予約を破棄して監視を初期化する。
+        /// BindRoles → InitializeForActive の順序制約（F-5）をここに集約する。
+        /// </summary>
+        private void EnterActivePlaying(float now)
+        {
             _retryWaitUntil = 0f;
             _localState = STATE_ACTIVE_PLAYING;
             activeMonitor.BindRoles(_activeIsA);
@@ -417,9 +436,7 @@ namespace PasocomMate.AunCast
                     {
                         CancelResync();
                         LogMessage("Resync canceled: active recovered");
-                        _localState = STATE_ACTIVE_PLAYING;
-                        activeMonitor.BindRoles(_activeIsA);
-                        activeMonitor.InitializeForActive(now);
+                        EnterActivePlaying(now);
                     }
                     else if (resyncClient.ShouldRetryResyncRequest(now))
                     {
@@ -486,10 +503,10 @@ namespace PasocomMate.AunCast
                 case STATE_COOLDOWN:
                     if (now >= resyncClient.GetLocalCooldownUntil())
                     {
-                        _localState = STATE_ACTIVE_PLAYING;
                         resyncClient.SetConsecutiveFailCount(0);
-                        activeMonitor.BindRoles(switcher.GetActiveIsA());
-                        activeMonitor.InitializeForActive(now);
+                        // 切替直後は switcher 側のロールが正なので取り込んでから遷移する
+                        _activeIsA = switcher.GetActiveIsA();
+                        EnterActivePlaying(now);
                     }
                     break;
 
@@ -589,18 +606,26 @@ namespace PasocomMate.AunCast
             _initializedPlaybackMonitorSlot = slotIndex;
             _lastReportedPlaybackActive = false;
             _hasReportedPlaybackActive = true;
+            _lastReportedConnecting = 0;
+            _lastReportedError = 0;
             _lastPlaybackReportAt = Time.time;
         }
 
         private void ReportConnecting(bool isConnecting)
         {
             if (playbackMonitor == null || resyncClient.GetMySlotIndex() < 0) return;
+            int encoded = isConnecting ? 1 : 0;
+            if (encoded == _lastReportedConnecting) return;
+            _lastReportedConnecting = encoded;
             playbackMonitor.ReportConnectingForSlot(resyncClient.GetMySlotIndex(), isConnecting);
         }
 
         private void ReportError(bool isError)
         {
             if (playbackMonitor == null || resyncClient.GetMySlotIndex() < 0) return;
+            int encoded = isError ? 1 : 0;
+            if (encoded == _lastReportedError) return;
+            _lastReportedError = encoded;
             playbackMonitor.ReportErrorForSlot(resyncClient.GetMySlotIndex(), isError);
         }
 
@@ -729,6 +754,16 @@ namespace PasocomMate.AunCast
             LogMessage($"Both systems failed, retry in {retryDelay:F1}s (attempt {resyncClient.GetConsecutiveFailCount()})");
         }
 
+        /// <summary>
+        /// リトライ予約時刻を設定する共通ヘルパー。直前の LoadURL によるローカル Cooldown が
+        /// 残っている場合は、その終了前に再ロードしないようクランプする。
+        /// </summary>
+        private float ScheduleRetryAt(float earliestAt)
+        {
+            _retryWaitUntil = Mathf.Max(earliestAt, resyncClient.GetLocalCooldownUntil());
+            return _retryWaitUntil;
+        }
+
         /// <summary>連続失敗数とローカル Cooldown を考慮して Active 直接再接続を予約する。</summary>
         private float EnterRetryWait(float now)
         {
@@ -737,17 +772,15 @@ namespace PasocomMate.AunCast
             float backoff = Mathf.Min(
                 resyncClient.GetBaseCooldownSec() * Mathf.Pow(resyncClient.GetRetryCooldownMultiplier(), failCount - 1),
                 resyncClient.GetMaxRetryCooldownSec());
-            float retryAt = Mathf.Max(now + backoff, resyncClient.GetLocalCooldownUntil());
-            _retryWaitUntil = retryAt;
+            float retryAt = ScheduleRetryAt(now + backoff);
             _localState = STATE_RETRY_WAIT;
             return retryAt - now;
         }
 
-        /// <summary>Active 障害の Resync 要求をローカル Cooldown 終了後まで保留する。</summary>
+        /// <summary>Active 障害の Resync 要求をローカル Cooldown 終了後（最短 0.25 秒後）まで保留する。</summary>
         private void DeferActiveFailureResync(float now)
         {
-            float retryAt = resyncClient.GetLocalCooldownUntil();
-            _retryWaitUntil = retryAt > now ? retryAt : now + 0.25f;
+            ScheduleRetryAt(now + 0.25f);
             LogMessage($"Active failure Resync deferred until {_retryWaitUntil:F2}");
         }
 
@@ -960,35 +993,26 @@ namespace PasocomMate.AunCast
                     return;
                 }
 
-                // 通常の Active 開始
-                if (Networking.IsOwner(gameObject))
+                // 通常の Active 開始。オーナーは再生開始を配信してから共通遷移へ進む。
+                bool isOwner = Networking.IsOwner(gameObject);
+                if (isOwner)
                 {
                     _ownerPlaying = true;
                     QueueSerialize();
                     if (staffNotifyTarget != null)
                         staffNotifyTarget.SendCustomEvent("OnUrlChanged");
-
-                    if (_localState == STATE_IDLE || _localState == STATE_RETRY_WAIT)
-                    {
-                        _localState = STATE_ACTIVE_PLAYING;
-                        activeMonitor.BindRoles(_activeIsA);
-                        activeMonitor.InitializeForActive(Time.time);
-                    }
                 }
-                else if (!_ownerPlaying)
+
+                if (!isOwner && !_ownerPlaying)
                 {
+                    // 非オーナーの初回ロード完了。オーナーの再生開始同期まで Pause で待つ。
                     switcher.GetActiveManager().Pause();
                     _waitForSync = true;
                     _localState = STATE_IDLE;
                 }
-                else
+                else if (_localState == STATE_IDLE || _localState == STATE_RETRY_WAIT)
                 {
-                    if (_localState == STATE_IDLE || _localState == STATE_RETRY_WAIT)
-                    {
-                        _localState = STATE_ACTIVE_PLAYING;
-                        activeMonitor.BindRoles(_activeIsA);
-                        activeMonitor.InitializeForActive(Time.time);
-                    }
+                    EnterActivePlaying(Time.time);
                 }
 
                 switcher.SwitchAudioLinkSource();
@@ -1014,121 +1038,139 @@ namespace PasocomMate.AunCast
             LogWarning($"OnVideoError received (activeEvent={isActiveEvent}, error={error})");
             _tlAction = "VIDEO_ERROR";
 
-            if (isActiveEvent)
-            {
-                // URL が既に停止済みなら、中断した古いロードから遅れて届いたエラーとして無視する。
-                if (!_awaitingActiveReboot && !HasSyncedUrl())
-                {
-                    LogMessage($"Ignored stale active error after stop ({error})");
-                    return;
-                }
-
-                // URL 差し替え前の遅延エラーが、新しい Active の健全な再生を乗っ取らないようにする。
-                if (!_awaitingActiveReboot && _localState == STATE_ACTIVE_PLAYING && IsActiveAlive())
-                {
-                    LogMessage($"Ignored stale active error while current Active is alive ({error})");
-                    return;
-                }
-
-                SetErrorMessage(MapVideoErrorToMessage(error));
-                if (_awaitingActiveReboot)
-                {
-                    // Active 直接リブートの失敗
-                    _awaitingActiveReboot = false;
-                    if (!IsRetryableVideoError(error))
-                    {
-                        ReportConnecting(false);
-                        ReportError(true);
-                        resyncClient.SetResyncRequested(false);
-                        _retryWaitUntil = 0f;
-                        _localState = STATE_IDLE;
-                        LogWarning($"Active reboot stopped after non-retryable error ({error})");
-                        return;
-                    }
-
-                    if (error == VideoError.RateLimited)
-                    {
-                        // レート制限 → 少し待ってリトライ（connecting は維持）
-                        float retryDelay = Mathf.Max(5.0f, resyncClient.GetBaseCooldownSec());
-                        _retryWaitUntil = Mathf.Max(
-                            Time.time + retryDelay,
-                            resyncClient.GetLocalCooldownUntil());
-                        LogMessage($"Active reboot rate limited, waiting {retryDelay:F1}s");
-                    }
-                    else
-                    {
-                        ReportConnecting(false);
-                        HandleFailed(Time.time);
-                    }
-                    return;
-                }
-
-                ReportConnecting(false);
-                ReportError(true);
-
-                // Active 再生中のエラー → Resync 要求
-                if (!_manualModeEnabled
-                    && _localState == STATE_ACTIVE_PLAYING
-                    && resyncClient.TryRequestResync(Time.time, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
-                {
-                    _retryWaitUntil = 0f;
-                    _localState = STATE_REQUEST_PENDING;
-                }
-                else if (!_manualModeEnabled && _localState == STATE_ACTIVE_PLAYING)
-                {
-                    DeferActiveFailureResync(Time.time);
-                }
-                // Active 直接再接続の成功直後にエラーが出た場合は、Cooldown の終了を
-                // 待ってから再試行する。エラーを COOLDOWN 状態に取り残さない。
-                else if (_localState == STATE_COOLDOWN)
-                {
-                    if (_manualModeEnabled)
-                    {
-                        _retryWaitUntil = 0f;
-                        _localState = STATE_RETRY_WAIT;
-                        LogMessage("Active failed during cooldown; waiting for manual recovery");
-                    }
-                    else
-                    {
-                        float retryDelay = EnterRetryWait(Time.time);
-                        LogMessage($"Active failed during cooldown, retry in {retryDelay:F1}s");
-                    }
-                }
-                // 初回ロード（IDLE）中のエラー → 待機後にリブート再試行。
-                // 従来は Join 直後の誤検知グローバルリブートが偶発的に復旧させていたが、その誤検知を
-                // 止めたため、再試行可能な初回ロード失敗だけを明示的にリトライ経路へ載せる。
-                else if (_localState == STATE_IDLE)
-                {
-                    if (!IsRetryableVideoError(error))
-                    {
-                        _retryWaitUntil = 0f;
-                        LogWarning($"Initial active load stopped after non-retryable error ({error})");
-                    }
-                    else if (_manualModeEnabled)
-                    {
-                        _retryWaitUntil = 0f;
-                        _localState = STATE_RETRY_WAIT;
-                        LogMessage("Initial active load failed; waiting for manual recovery");
-                    }
-                    else
-                    {
-                        // 古いロードの遅延エラーが新ロードを即座に中断しないよう、通常の
-                        // Ready+Play タイムアウトまでは IDLE のまま成功コールバックを待つ。
-                        float retryDelay = Mathf.Max(
-                            resyncClient.GetBaseCooldownSec(),
-                            readyTimeoutSec + playTimeoutSec);
-                        _retryWaitUntil = Time.time + retryDelay;
-                        LogMessage($"Initial active load failed ({error}), retry eligible in {retryDelay:F1}s");
-                    }
-                }
-            }
-            else
+            if (!isActiveEvent)
             {
                 // Standby のエラー
                 if (_localState == STATE_STANDBY_CONNECTING || _localState == STATE_STANDBY_VERIFYING)
-                {
                     HandleStandbyFailure(Time.time);
-                }
+                return;
+            }
+
+            // URL が既に停止済みなら、中断した古いロードから遅れて届いたエラーとして無視する。
+            if (!_awaitingActiveReboot && !HasSyncedUrl())
+            {
+                LogMessage($"Ignored stale active error after stop ({error})");
+                return;
+            }
+
+            // URL 差し替え前の遅延エラーが、新しい Active の健全な再生を乗っ取らないようにする。
+            if (!_awaitingActiveReboot && _localState == STATE_ACTIVE_PLAYING && IsActiveAlive())
+            {
+                LogMessage($"Ignored stale active error while current Active is alive ({error})");
+                return;
+            }
+
+            SetErrorMessage(MapVideoErrorToMessage(error));
+            if (_awaitingActiveReboot)
+            {
+                HandleActiveRebootError(error);
+                return;
+            }
+
+            ReportConnecting(false);
+            ReportError(true);
+
+            if (_localState == STATE_ACTIVE_PLAYING)
+                HandleActivePlayingError();
+            else if (_localState == STATE_COOLDOWN)
+                HandleCooldownError();
+            else if (_localState == STATE_IDLE)
+                HandleInitialLoadError(error);
+        }
+
+        /// <summary>Active 直接リブート待機中のエラー。エラー種別に応じて中止/待機/失敗処理へ振り分ける。</summary>
+        private void HandleActiveRebootError(VideoError error)
+        {
+            _awaitingActiveReboot = false;
+
+            if (!IsRetryableVideoError(error))
+            {
+                ReportConnecting(false);
+                ReportError(true);
+                resyncClient.SetResyncRequested(false);
+                _retryWaitUntil = 0f;
+                _localState = STATE_IDLE;
+                LogWarning($"Active reboot stopped after non-retryable error ({error})");
+                return;
+            }
+
+            if (error == VideoError.RateLimited)
+            {
+                // レート制限 → 少し待ってリトライ（connecting は維持）
+                float retryDelay = Mathf.Max(5.0f, resyncClient.GetBaseCooldownSec());
+                ScheduleRetryAt(Time.time + retryDelay);
+                LogMessage($"Active reboot rate limited, waiting {retryDelay:F1}s");
+            }
+            else
+            {
+                ReportConnecting(false);
+                HandleFailed(Time.time);
+            }
+        }
+
+        /// <summary>Active 再生中のエラー。Resync を要求し、Cooldown 等で要求できなければ保留する。</summary>
+        private void HandleActivePlayingError()
+        {
+            if (_manualModeEnabled) return;
+
+            float now = Time.time;
+            if (resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
+            {
+                _retryWaitUntil = 0f;
+                _localState = STATE_REQUEST_PENDING;
+            }
+            else
+            {
+                DeferActiveFailureResync(now);
+            }
+        }
+
+        /// <summary>
+        /// Active 直接再接続の成功直後（Cooldown 中）のエラー。Cooldown の終了を待ってから
+        /// 再試行する。エラーを COOLDOWN 状態に取り残さない。
+        /// </summary>
+        private void HandleCooldownError()
+        {
+            if (_manualModeEnabled)
+            {
+                _retryWaitUntil = 0f;
+                _localState = STATE_RETRY_WAIT;
+                LogMessage("Active failed during cooldown; waiting for manual recovery");
+            }
+            else
+            {
+                float retryDelay = EnterRetryWait(Time.time);
+                LogMessage($"Active failed during cooldown, retry in {retryDelay:F1}s");
+            }
+        }
+
+        /// <summary>
+        /// 初回ロード（IDLE）中のエラー → 待機後にリブート再試行。
+        /// 従来は Join 直後の誤検知グローバルリブートが偶発的に復旧させていたが、その誤検知を
+        /// 止めたため、再試行可能な初回ロード失敗だけを明示的にリトライ経路へ載せる。
+        /// </summary>
+        private void HandleInitialLoadError(VideoError error)
+        {
+            if (!IsRetryableVideoError(error))
+            {
+                _retryWaitUntil = 0f;
+                LogWarning($"Initial active load stopped after non-retryable error ({error})");
+            }
+            else if (_manualModeEnabled)
+            {
+                _retryWaitUntil = 0f;
+                _localState = STATE_RETRY_WAIT;
+                LogMessage("Initial active load failed; waiting for manual recovery");
+            }
+            else
+            {
+                // 古いロードの遅延エラーが新ロードを即座に中断しないよう、通常の
+                // Ready+Play タイムアウトまでは IDLE のまま成功コールバックを待つ。
+                float retryDelay = Mathf.Max(
+                    resyncClient.GetBaseCooldownSec(),
+                    readyTimeoutSec + playTimeoutSec);
+                ScheduleRetryAt(Time.time + retryDelay);
+                LogMessage($"Initial active load failed ({error}), retry eligible in {retryDelay:F1}s");
             }
         }
 
@@ -1201,17 +1243,22 @@ namespace PasocomMate.AunCast
             _syncedURL = VRCUrl.Empty;
             _syncedUrlSubmitterName = "";
 
+            CleanupPlaybackToIdle();
+
+            QueueSerialize();
+            if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnUrlChanged");
+            LogMessage("StopVideo completed: texture cleared");
+        }
+
+        /// <summary>両プレイヤー停止・テクスチャ解放・FSM リセットの共通停止クリーンアップ。</summary>
+        private void CleanupPlaybackToIdle()
+        {
             activeMonitor.ResetTimeAdvanceForPlayer(true);
             activeMonitor.ResetTimeAdvanceForPlayer(false);
             switcher.ResetBothPlayersToA();
             switcher.ClearVideoTexture();
             _activeIsA = true;
-
             ResetFsmToIdle();
-
-            QueueSerialize();
-            if (staffNotifyTarget != null) staffNotifyTarget.SendCustomEvent("OnUrlChanged");
-            LogMessage("StopVideo completed: texture cleared");
         }
 
         /// <summary>FSM 状態・フラグをアイドルに一括リセットし、Coordinator への報告も行う。</summary>
@@ -1237,6 +1284,8 @@ namespace PasocomMate.AunCast
         private void ReportPlaybackInactive()
         {
             if (playbackMonitor == null || resyncClient.GetMySlotIndex() < 0) return;
+            // 既に非再生を報告済みなら再送しない（停止中の反復クリーンアップで RPC を連打しない）
+            if (_hasReportedPlaybackActive && !_lastReportedPlaybackActive) return;
 
             playbackMonitor.ReportForSlot(resyncClient.GetMySlotIndex(), false);
             _lastReportedPlaybackActive = false;
@@ -1264,20 +1313,42 @@ namespace PasocomMate.AunCast
             LogMessage($"Started playback: {url}");
         }
 
-        /// <summary>非オーナーが同期変数の変更を受信する。URL 変更時は再ロード、停止時は全クリーンアップを行う。</summary>
+        /// <summary>
+        /// settle 完了時に一度だけ呼ばれ、同期スナップショットからローカル状態を初期化する。
+        /// Join 中の OnDeserialization は復元順序が保証されないため反応せず、ここで一括反映する。
+        /// </summary>
+        private void InitializeFromSyncedState()
+        {
+            if (Networking.IsOwner(gameObject))
+            {
+                // 新規インスタンスの初代 Owner。残留同期値を正規化して現在値を配信する。
+                ResetPlaybackSyncStateForNewInstance();
+                QueueSerialize();
+                return;
+            }
+
+            // 既存インスタンスへの参加。起動時正規化は不要と確定する。
+            _startupSyncResetFinished = true;
+            ApplySyncedState();
+        }
+
+        /// <summary>非オーナーが同期変数の変更を受信する。settle 前の中間状態には反応しない。</summary>
         public override void OnDeserialization()
         {
+            if (!_syncInitialized) return;
             if (Networking.IsOwner(gameObject)) return;
+            ApplySyncedState();
+        }
 
-            // 再生停止（非オーナーがオーナーの Stop を受信）。
+        /// <summary>同期変数の現在値をローカル状態へ反映する。URL 変更時は再ロード、停止時は全クリーンアップを行う。</summary>
+        private void ApplySyncedState()
+        {
+            // 再生停止（オーナーの Stop を受信）。
             // _ownerPlaying=false だけでは初回ロード中も該当するため、同期 URL の空も必須とする。
             bool stopReceived = !_ownerPlaying && !HasSyncedUrl();
             if (stopReceived)
             {
-                switcher.ResetBothPlayersToA();
-                switcher.ClearVideoTexture();
-                _activeIsA = true;
-                ResetFsmToIdle();
+                CleanupPlaybackToIdle();
                 LogMessage("Stop sync received: texture cleared");
             }
 
@@ -1285,25 +1356,23 @@ namespace PasocomMate.AunCast
             bool urlChanged = _currentVideoIdx != _syncedVideoIdx;
             if (urlChanged)
             {
-                LogMessage($"OnDeserialization URL update detected: {_currentVideoIdx} -> {_syncedVideoIdx}");
+                LogMessage($"Synced URL update detected: {_currentVideoIdx} -> {_syncedVideoIdx}");
                 _currentVideoIdx = _syncedVideoIdx;
 
                 // 実行中の Resync をキャンセル
                 if (_localState >= STATE_REQUEST_PENDING && _localState <= STATE_SWITCHING)
                     CancelResync();
 
-                switcher.ResetBothPlayersToA();
-                _activeIsA = true;
-
                 if (HasSyncedUrl())
                 {
+                    switcher.ResetBothPlayersToA();
+                    _activeIsA = true;
                     StartActivePlayback(_syncedURL);
                     LogMessage($"Playing synced URL: {_syncedURL}");
                 }
                 else
                 {
-                    switcher.ClearVideoTexture();
-                    ResetFsmToIdle();
+                    CleanupPlaybackToIdle();
                     LogMessage("Empty URL sync received: playback remains stopped");
                 }
             }
@@ -1324,6 +1393,8 @@ namespace PasocomMate.AunCast
         public void QueueSerialize()
         {
             if (!Networking.IsOwner(gameObject)) return;
+            // settle 前の既定値を配信して運用中の同期状態を潰さない
+            if (!Networking.IsNetworkSettled) return;
             RequestSerialization();
         }
 
@@ -1389,9 +1460,7 @@ namespace PasocomMate.AunCast
                     && _localState < STATE_SWITCHING)
                 {
                     CancelResync();
-                    _localState = STATE_ACTIVE_PLAYING;
-                    activeMonitor.BindRoles(_activeIsA);
-                    activeMonitor.InitializeForActive(Time.time);
+                    EnterActivePlaying(Time.time);
                     LogMessage("Automatic Resync canceled by Manual Mode");
                 }
             }
@@ -1461,8 +1530,6 @@ namespace PasocomMate.AunCast
         [PublicAPI] public bool GetOwnerPlaying() { return _ownerPlaying; }
         [PublicAPI] public int GetConsecutiveFailCount() { return resyncClient.GetConsecutiveFailCount(); }
         [PublicAPI] public int GetConsecutiveStallCount() { return activeMonitor.GetConsecutiveStallCount(); }
-        [PublicAPI] public bool GetStandbyReady() { return _standbyReady; }
-        [PublicAPI] public bool GetStandbyPlayStarted() { return _standbyPlayStarted; }
 
         /// <summary>全 audible プレイヤーの累積無音時間（秒）。</summary>
         [PublicAPI] public float GetSilenceDuration()
@@ -1475,12 +1542,6 @@ namespace PasocomMate.AunCast
         {
             AunCastSpeaker d = switcher != null ? switcher.GetActiveSilenceDetector() : null;
             return d != null ? d.GetSilenceConsecutiveSec() : 2f;
-        }
-
-        /// <summary>クールダウン等により無音 Resync が一時抑制されているか。</summary>
-        [PublicAPI] public bool IsSilenceSuppressed()
-        {
-            return !resyncClient.IsSilenceAutoResyncEligible(Time.time);
         }
 
         /// <summary>メーター表示用の現在 RMS（dBFS）。無音Resyncの有効/無効に関係なく取得する。</summary>
