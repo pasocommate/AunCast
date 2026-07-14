@@ -79,9 +79,8 @@ namespace PasocomMate.AunCast
         private const string SWITCH_ICON_UNLOCKED = "\ue898";   // LockOpen
         private const string INFO_ICON  = "\uf59b";           // InfoI（i のみ）
         private const string CLOSE_ICON = "\ue5cd";           // Close（閉じる）
-        public const string PACKAGE_VERSION = "5.1.2";
         private const string COPYRIGHT_TEXT =
-            "AunCast v" + PACKAGE_VERSION
+            "AunCast v" + AunCastDualPlayerController.PACKAGE_VERSION
             + "\nX: @chigiri_vrc"
             + "\nhttps://chigiri.tokyo/"
             + "\n"

@@ -11,6 +11,9 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class AunCastDualPlayerController : UdonSharpBehaviour
     {
+        // package.json の version と必ず一致させる。
+        public const string PACKAGE_VERSION = "5.1.2";
+
         // =================================================================
         //  ローカル状態コード (Design Section 10.1)
         //  FSM 遷移: IDLE → ACTIVE_PLAYING → (異常検知) → REQUEST_PENDING →
@@ -171,7 +174,7 @@ namespace PasocomMate.AunCast
                 switcher.SwitchAudioLinkSource();
             }
 
-            LogMessage("AunCastDualPlayerController initialized");
+            LogMessage($"AunCast version={PACKAGE_VERSION} initialized");
         }
 
         /// <summary>

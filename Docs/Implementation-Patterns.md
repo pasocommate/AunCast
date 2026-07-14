@@ -684,3 +684,17 @@ Quest(Android) 対応で必要になるプラットフォーム差の吸収は�
 - プラットフォーム別の上書きが必要になった場合は
   `AunCastBuildCallback.OnProcessScene`（`IProcessSceneWithReport`）で
   ビルド時にのみ上書きする（シーンアセットを汚さない）。
+
+## 15. リリースバージョンと起動ログ
+
+実機検証・配布の単位となる変更セットをまとめてリリースする際に、パッケージの
+バージョンを更新する。コミットごとにパッチバージョンを上げる必要はない。
+
+- `Packages/tokyo.chigiri.pasocommate.auncast/package.json` の `version`
+- `AunCastDualPlayerController.PACKAGE_VERSION`
+- `Manual/src/assets/stylesheets/extra.css` のヘッダー表示
+- `Packages/tokyo.chigiri.pasocommate.auncast/CHANGELOG.md` の新しい項目
+
+上記を同じ版へ更新する。`AunCastDualPlayerController` は起動時に
+`AunCast version=x.y.z initialized` を出力するため、VRChat の `output_log` で
+アップロード済みワールドの版を確認できる。

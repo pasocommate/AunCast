@@ -255,7 +255,7 @@
 - `Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/Core/AunCastResyncCoordinator.cs`
 - `Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/Core/AunCastPlaybackMonitor.cs`
 
-現在の状態:
+実装済み:
 
 - `MAX_PLAYERS = 82` が複数箇所にあり、コメントで同期維持を求めている。
 
@@ -291,22 +291,24 @@
 - Silence Resync、Timeline Logging、Staff UI の一時表示状態を新たに永続化しない。
 - 既存 PlayerData キー名を変更しない。
 
-### 11. `PACKAGE_VERSION` の重複を運用で抑える
+### 11. `PACKAGE_VERSION` を Runtime の単一の参照元にする
 
 対象:
 
-- `Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/UI/AunCastWallControlPanel.cs`
+- `Packages/tokyo.chigiri.pasocommate.auncast/Scripts/Udon/Core/AunCastDualPlayerController.cs`
 - `Packages/tokyo.chigiri.pasocommate.auncast/package.json`
 - 必要に応じてリリース手順ドキュメント
 
 現在の状態:
 
-- `AunCastWallControlPanel.PACKAGE_VERSION` と `package.json` のバージョンが重複している。
+- `AunCastDualPlayerController.PACKAGE_VERSION` を Runtime 側の単一の参照元とし、
+  `AunCastWallControlPanel` はこれを参照する。
 - Udon Runtime から `package.json` を読む設計にはしない方がよい。
+- `.claude/commands/release.md` に、`package.json` と
+  `AunCastDualPlayerController.PACKAGE_VERSION` を同時更新する手順を記載する。
 
-改善案:
+今後の改善候補:
 
-- リリース手順に「`package.json` と `PACKAGE_VERSION` を同時更新する」を明記する。
 - 可能なら Editor 側の検証ボタンやチェック処理で不一致を警告する。
 
 実装しないこと:
