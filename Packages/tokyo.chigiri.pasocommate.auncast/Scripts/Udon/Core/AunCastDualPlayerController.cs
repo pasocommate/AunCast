@@ -156,8 +156,12 @@ namespace PasocomMate.AunCast
         private bool _startupSyncResetFinished;
         /// <summary>settle 完了後に同期スナップショットから初期化済みか。false の間は同期に反応しない。</summary>
         private bool _syncInitialized;
-        /// <summary>settle 前に bunch を受信済みか（bunch → settle の通常順序を settle 時に反映するための橋渡し）。</summary>
-        private bool _syncReceivedBeforeSettle;
+        /// <summary>bunch を一度でも適用済みか。IsNetworkSettled だけでは適用完了を保証しない（Quest 実測）。</summary>
+        private bool _syncApplied;
+        /// <summary>settle の成立を観測済みか。_wasOwnerAtSettle を確定させたかの判定に使う。</summary>
+        private bool _settleObserved;
+        /// <summary>settle 成立時点で Owner だったか。新規インスタンスの初代 Owner だけが true になる。</summary>
+        private bool _wasOwnerAtSettle;
         /// <summary>直前にローカル適用した強制 Mode。同期受信時の実効 Mode 遷移検知に使う。</summary>
         private int _appliedForceMode = FORCE_MODE_NONE;
 
@@ -186,16 +190,33 @@ namespace PasocomMate.AunCast
         }
 
         /// <summary>
+        /// settle の成立を観測し、その時点で Owner だったかを記録する。
+        /// late-joiner は settle 時点では master が Owner なので false になり、
+        /// あとから ownership が転がり込んでも初代 Owner と区別できる。
+        /// </summary>
+        private void ObserveSettle()
+        {
+            if (_settleObserved) return;
+            if (!Networking.IsNetworkSettled) return;
+
+            _settleObserved = true;
+            _wasOwnerAtSettle = Networking.IsOwner(gameObject);
+        }
+
+        /// <summary>
         /// 新規インスタンスの初代 Owner が、エディタ編集で残留し得る同期値を既定値へ正規化する。
         /// settle 前は同期値が復元前の既定値である可能性があるため実行しない
         /// （時間窓ではなく settle を基準にすることで、Join 中に ownership が
         /// 転がり込んだクライアントが再生中の同期値を消して配信する事故を防ぐ）。
+        /// settle 時点で Owner だったクライアントに限るのも同じ理由で、bunch 未受信のまま
+        /// ownership が転がり込んだ late-joiner は、同期の既定値を現在値と誤認してしまう。
         /// </summary>
         private bool ResetPlaybackSyncStateForNewInstance()
         {
             if (_startupSyncResetFinished) return false;
             if (!Networking.IsNetworkSettled) return false;
             if (!Networking.IsOwner(gameObject)) return false;
+            if (!_wasOwnerAtSettle) return false;
 
             _startupSyncResetFinished = true;
             if (_localState != STATE_IDLE || _ownerPlaying) return false;
@@ -233,9 +254,10 @@ namespace PasocomMate.AunCast
             // 非 Owner の初期化点は「settle と初回 bunch 適用の両方が済んだ時点」とする。
             if (!_syncInitialized)
             {
-                if (!Networking.IsNetworkSettled) return;
+                ObserveSettle();
+                if (!_settleObserved) return;
 
-                if (Networking.IsOwner(gameObject))
+                if (_wasOwnerAtSettle && Networking.IsOwner(gameObject))
                 {
                     _syncInitialized = true;
                     // 初代 Owner: エディタ編集で残留し得る同期値を正規化して現在値を配信する。
@@ -243,16 +265,17 @@ namespace PasocomMate.AunCast
                     ResetPlaybackSyncStateForNewInstance();
                     QueueSerialize();
                 }
-                else if (_syncReceivedBeforeSettle)
+                else if (_syncApplied)
                 {
-                    // 通常順序（bunch → settle）。適用済みの同期値から一括初期化する。
+                    // 既存インスタンスへの参加。適用済みの同期値から一括初期化する。
                     _syncInitialized = true;
                     _startupSyncResetFinished = true;
                     ApplySyncedState();
                 }
                 else
                 {
-                    // settle が bunch 適用より先行した場合。最初の受信（OnDeserialization）を待つ。
+                    // settle 済みだが bunch 未着。この間に ownership が転がり込んでも、
+                    // 同期の既定値を現在値と誤認して配信しないよう、受信を待つ。
                     return;
                 }
             }
@@ -1365,14 +1388,11 @@ namespace PasocomMate.AunCast
         public override void OnDeserialization()
         {
             if (Networking.IsOwner(gameObject)) return;
+            _syncApplied = true;
             if (!_syncInitialized)
             {
-                if (!Networking.IsNetworkSettled)
-                {
-                    // 通常順序（bunch → settle）。値は適用済みなので settle 時に Update 側で反映する。
-                    _syncReceivedBeforeSettle = true;
-                    return;
-                }
+                // 通常順序（bunch → settle）。値は適用済みなので settle 時に Update 側で反映する。
+                if (!Networking.IsNetworkSettled) return;
                 _syncInitialized = true;
                 // 既存インスタンスへの参加。起動時正規化は不要と確定する。
                 _startupSyncResetFinished = true;
