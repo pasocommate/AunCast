@@ -94,3 +94,4 @@ CHANGELOG.md が新規作成の場合は `.meta` ファイルも含める。
 - 作成したコミットとタグの内容
 - push は行っていないこと
 - 精査後に `git push && git push --tags` で反映できること
+- **⚠️ 要手動対応：VPMPackageAutoInstallerCreator で v{バージョン} 用のインストーラーパッケージを生成し、BOOTH の該当商品の「ファイルの追加・管理」からアップロードすること。**
