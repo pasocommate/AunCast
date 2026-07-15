@@ -30,6 +30,11 @@ namespace PasocomMate.AunCast
         public const int STATE_COOLDOWN = 7;
         public const int STATE_RETRY_WAIT = 8;
 
+        // 観客のローカル Mode に対するスタッフ強制値。None のときだけ各観客の選択を使う。
+        public const int FORCE_MODE_NONE = 0;
+        public const int FORCE_MODE_AUTO = 1;
+        public const int FORCE_MODE_MANUAL = 2;
+
         // =================================================================
         //  Inspector 参照
         // =================================================================
@@ -91,6 +96,7 @@ namespace PasocomMate.AunCast
         [UdonSynced] private string _syncedUrlSubmitterName = "";
         [UdonSynced] private int _syncedVideoIdx;
         [UdonSynced] private bool _ownerPlaying;
+        [UdonSynced] private int _syncedForceMode = FORCE_MODE_NONE;
 
         // =================================================================
         //  PlayerData 永続化キー
@@ -152,6 +158,8 @@ namespace PasocomMate.AunCast
         private bool _syncInitialized;
         /// <summary>settle 前に bunch を受信済みか（bunch → settle の通常順序を settle 時に反映するための橋渡し）。</summary>
         private bool _syncReceivedBeforeSettle;
+        /// <summary>直前にローカル適用した強制 Mode。同期受信時の実効 Mode 遷移検知に使う。</summary>
+        private int _appliedForceMode = FORCE_MODE_NONE;
 
         // =================================================================
         //  Unity ライフサイクル
@@ -197,6 +205,7 @@ namespace PasocomMate.AunCast
             _syncedVideoIdx = 0;
             _currentVideoIdx = 0;
             _ownerPlaying = false;
+            _syncedForceMode = FORCE_MODE_NONE;
             return true;
         }
 
@@ -297,7 +306,7 @@ namespace PasocomMate.AunCast
                 // Coordinator から Resync スロットの予約通知を受け取り FSM 状態を更新
                 // Manual Mode の手動復旧待ち中でも、スタッフの明示的な Global Resync は採用する。
                 // CoordinatorClient 側では ACTIVE_PLAYING が外部要求の採用状態なので、判定時だけ読み替える。
-                int coordinatorPollState = _manualModeEnabled
+                int coordinatorPollState = GetManualModeEnabled()
                     && _localState == STATE_RETRY_WAIT
                     && !_awaitingActiveReboot
                         ? STATE_ACTIVE_PLAYING
@@ -388,7 +397,7 @@ namespace PasocomMate.AunCast
                 case STATE_IDLE:
                     // 初回ロード失敗後も同期 URL が残っていればローカル再接続する。
                     // Stop は同期 URL の空で判定するため、Owner の再生開始同期を待つ必要はない。
-                    if (!_manualModeEnabled
+                    if (!GetManualModeEnabled()
                         && _retryWaitUntil > 0f
                         && now >= _retryWaitUntil
                         && HasSyncedUrl())
@@ -400,7 +409,7 @@ namespace PasocomMate.AunCast
                     break;
 
                 case STATE_ACTIVE_PLAYING:
-                    if (_manualModeEnabled) break;
+                    if (GetManualModeEnabled()) break;
 
                     // OnVideoError または異常検知時に Cooldown 等で要求できなかった場合、
                     // 条件が整うまで要求を保留する。初回時刻前進前のエラーも握り潰さない。
@@ -536,7 +545,7 @@ namespace PasocomMate.AunCast
                     break;
 
                 case STATE_RETRY_WAIT:
-                    if (!_manualModeEnabled && now >= _retryWaitUntil && !_awaitingActiveReboot)
+                    if (!GetManualModeEnabled() && now >= _retryWaitUntil && !_awaitingActiveReboot)
                     {
                         AttemptActiveReboot(now);
                     }
@@ -548,7 +557,7 @@ namespace PasocomMate.AunCast
         /// <summary>音声出力のある全プレイヤーが無音状態か判定し、一定時間継続したら自動 Resync を発行する。</summary>
         private void PollSilenceDetection(float now)
         {
-            if (_manualModeEnabled || _localState != STATE_ACTIVE_PLAYING || !_autoSilenceResyncEnabled) return;
+            if (GetManualModeEnabled() || _localState != STATE_ACTIVE_PLAYING || !_autoSilenceResyncEnabled) return;
             if (!activeMonitor.HasSeenPlayerTimeAdvance()) { _combinedSilenceDuration = 0f; return; }
             if (!resyncClient.IsSilenceAutoResyncEligible(now)) { _combinedSilenceDuration = 0f; return; }
 
@@ -770,7 +779,7 @@ namespace PasocomMate.AunCast
                 return;
             }
 
-            if (_manualModeEnabled)
+            if (GetManualModeEnabled())
             {
                 resyncClient.ReportResult(false);
                 ReportError(true);
@@ -1147,7 +1156,7 @@ namespace PasocomMate.AunCast
         /// <summary>Active 再生中のエラー。Resync を要求し、Cooldown 等で要求できなければ保留する。</summary>
         private void HandleActivePlayingError()
         {
-            if (_manualModeEnabled) return;
+            if (GetManualModeEnabled()) return;
 
             float now = Time.time;
             if (resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_FAILURE))
@@ -1167,7 +1176,7 @@ namespace PasocomMate.AunCast
         /// </summary>
         private void HandleCooldownError()
         {
-            if (_manualModeEnabled)
+            if (GetManualModeEnabled())
             {
                 _retryWaitUntil = 0f;
                 _localState = STATE_RETRY_WAIT;
@@ -1192,7 +1201,7 @@ namespace PasocomMate.AunCast
                 _retryWaitUntil = 0f;
                 LogWarning($"Initial active load stopped after non-retryable error ({error})");
             }
-            else if (_manualModeEnabled)
+            else if (GetManualModeEnabled())
             {
                 _retryWaitUntil = 0f;
                 _localState = STATE_RETRY_WAIT;
@@ -1374,6 +1383,8 @@ namespace PasocomMate.AunCast
         /// <summary>同期変数の現在値をローカル状態へ反映する。URL 変更時は再ロード、停止時は全クリーンアップを行う。</summary>
         private void ApplySyncedState()
         {
+            ApplySyncedForceMode();
+
             // 再生停止（オーナーの Stop を受信）。
             // _ownerPlaying=false だけでは初回ロード中も該当するため、同期 URL の空も必須とする。
             bool stopReceived = !_ownerPlaying && !HasSyncedUrl();
@@ -1478,9 +1489,17 @@ namespace PasocomMate.AunCast
         public void SetManualModeEnabled(bool enabled)
         {
             if (_manualModeEnabled == enabled) return;
+            bool wasManualMode = GetManualModeEnabled();
             _manualModeEnabled = enabled;
+            ApplyEffectiveManualModeChanged(wasManualMode, GetManualModeEnabled());
+        }
 
-            if (enabled)
+        /// <summary>ローカル Mode とスタッフ強制値から実効 Manual Mode が変わったときの副作用を適用する。</summary>
+        private void ApplyEffectiveManualModeChanged(bool wasManualMode, bool isManualMode)
+        {
+            if (wasManualMode == isManualMode) return;
+
+            if (isManualMode)
             {
                 _combinedSilenceDuration = 0f;
                 int reason = resyncClient.GetRequestReason();
@@ -1502,7 +1521,62 @@ namespace PasocomMate.AunCast
         }
 
         [PublicAPI]
-        public bool GetManualModeEnabled() { return _manualModeEnabled; }
+        public bool GetManualModeEnabled()
+        {
+            int forceMode = GetForceMode();
+            if (forceMode == FORCE_MODE_AUTO) return false;
+            if (forceMode == FORCE_MODE_MANUAL) return true;
+            return _manualModeEnabled;
+        }
+
+        /// <summary>スタッフの強制なしで使われる、観客ローカルの Mode 値を返す。</summary>
+        [PublicAPI]
+        public bool GetLocalManualModeEnabled() { return _manualModeEnabled; }
+
+        /// <summary>現在のスタッフ強制 Mode を返す（None / Auto / Manual）。</summary>
+        [PublicAPI]
+        public int GetForceMode() { return NormalizeForceMode(_syncedForceMode); }
+
+        /// <summary>スタッフが全観客の Mode を強制する。None に戻すと各観客のローカル値へ復帰する。</summary>
+        [PublicAPI]
+        public void SetForceModeAsStaff(int forceMode)
+        {
+            if (!Networking.IsNetworkSettled) return;
+
+            forceMode = NormalizeForceMode(forceMode);
+            if (!Networking.IsOwner(gameObject))
+                Networking.SetOwner(Networking.LocalPlayer, gameObject);
+
+            if (!Networking.IsOwner(gameObject)) return;
+            if (_syncedForceMode == forceMode) return;
+
+            _syncedForceMode = forceMode;
+            ApplySyncedForceMode();
+            QueueSerialize();
+        }
+
+        private int NormalizeForceMode(int forceMode)
+        {
+            if (forceMode == FORCE_MODE_AUTO || forceMode == FORCE_MODE_MANUAL)
+                return forceMode;
+            return FORCE_MODE_NONE;
+        }
+
+        /// <summary>同期された Force Mode を反映し、実効 Mode が変わった場合だけ UI へ通知する。</summary>
+        private void ApplySyncedForceMode()
+        {
+            int forceMode = NormalizeForceMode(_syncedForceMode);
+            if (_appliedForceMode == forceMode) return;
+
+            bool wasManualMode = _appliedForceMode == FORCE_MODE_MANUAL
+                || (_appliedForceMode == FORCE_MODE_NONE && _manualModeEnabled);
+            _appliedForceMode = forceMode;
+            bool isManualMode = GetManualModeEnabled();
+            ApplyEffectiveManualModeChanged(wasManualMode, isManualMode);
+
+            if (staffNotifyTarget != null)
+                staffNotifyTarget.SendCustomEvent("OnForceModeChanged");
+        }
 
         /// <summary>タイムラインログの現在値を返す。ローカル設定 UI 用。</summary>
         [PublicAPI]
@@ -1684,7 +1758,7 @@ namespace PasocomMate.AunCast
                 case STATE_STANDBY_VERIFYING: return "Verifying...";
                 case STATE_SWITCHING: return "Switching";
                 case STATE_COOLDOWN: return "Cooldown";
-                case STATE_RETRY_WAIT: return _manualModeEnabled ? "Manual Recovery Required" : "Retry Wait";
+                case STATE_RETRY_WAIT: return GetManualModeEnabled() ? "Manual Recovery Required" : "Retry Wait";
                 default: return "Unknown";
             }
         }

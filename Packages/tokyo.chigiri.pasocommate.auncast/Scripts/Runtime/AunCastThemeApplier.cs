@@ -96,6 +96,15 @@ namespace PasocomMate.AunCast
             SetThemeImageColor(root, dteg + "/DriftThresholdNextButton/DriftThresholdAdd1Button_Inner", theme.primaryColor);
             SetThemeImageColor(root, dteg + "/DriftThresholdApplyButton", theme.dangerColor);
             SetThemeImageColor(root, dteg + "/DriftThresholdCancelButton", theme.secondaryColor);
+            string fmdg = staff + "/ForceModeDisplayGroup";
+            SetThemeImageColor(root, fmdg + "/ForceModeChangeButton", theme.warningColor);
+            string fmeg = staff + "/ForceModeEditGroup";
+            SetThemeImageColor(root, fmeg + "/ForceModePreviousButton", theme.primaryColor);
+            SetThemeImageColor(root, fmeg + "/ForceModePreviousButton/ForceModePreviousButton_Inner", theme.primaryColor);
+            SetThemeImageColor(root, fmeg + "/ForceModeNextButton", theme.primaryColor);
+            SetThemeImageColor(root, fmeg + "/ForceModeNextButton/ForceModeNextButton_Inner", theme.primaryColor);
+            SetThemeImageColor(root, fmeg + "/ForceModeApplyButton", theme.dangerColor);
+            SetThemeImageColor(root, fmeg + "/ForceModeCancelButton", theme.secondaryColor);
             SetThemeImageColor(root, staff + "/NextURLInputField", theme.inputBackgroundColor);
             SetThemeImageColor(root, ceg + "/ConcurrentLimitInput", theme.inputBackgroundColor);
             SetThemeImageColor(root, cneg + "/ConnectionLimitInput", theme.inputBackgroundColor);
@@ -104,13 +113,18 @@ namespace PasocomMate.AunCast
 
             SetThemeImageColor(root, viewer + "/SilenceResyncToggle/Background", theme.toggleBackgroundColor);
             SetThemeTextColor(root, viewer + "/SilenceResyncToggle/Background/Checkmark", theme.toggleCheckmarkColor);
-            SetThemeImageColor(root, viewer + "/ManualModeToggle/Background", theme.toggleBackgroundColor);
-            SetThemeTextColor(root, viewer + "/ManualModeToggle/Background/Checkmark", theme.toggleCheckmarkColor);
+            string mdg = viewer + "/ModeDisplayGroup";
+            SetThemeImageColor(root, mdg + "/ModeEditButton", theme.warningColor);
+            string meg = viewer + "/ModeEditGroup";
+            SetThemeImageColor(root, meg + "/ModePreviousButton", theme.primaryColor);
+            SetThemeImageColor(root, meg + "/ModeNextButton", theme.primaryColor);
+            SetThemeImageColor(root, meg + "/ModeApplyButton", theme.dangerColor);
+            SetThemeImageColor(root, meg + "/ModeCancelButton", theme.secondaryColor);
             ApplyToggleTheme(root, staff + "/TimelineLoggingToggle");
 
-            SetThemeImageColor(root, shared + "/VolumeSlider/Background", theme.sliderBackgroundColor);
-            SetThemeImageColor(root, shared + "/VolumeSlider/Fill Area/Fill", theme.sliderFillColor);
-            SetThemeImageColor(root, shared + "/VolumeSlider/Handle Slide Area/Handle", theme.sliderHandleColor);
+            SetThemeImageColor(root, viewer + "/VolumeSlider/Background", theme.sliderBackgroundColor);
+            SetThemeImageColor(root, viewer + "/VolumeSlider/Fill Area/Fill", theme.sliderFillColor);
+            SetThemeImageColor(root, viewer + "/VolumeSlider/Handle Slide Area/Handle", theme.sliderHandleColor);
 
             SetThemeImageColor(root, viewer + "/HeadroomGauge/Background", theme.sliderBackgroundColor);
             SetThemeImageColor(root, viewer + "/HeadroomGauge/Fill Area/Fill", theme.sliderFillColor);
@@ -783,6 +797,10 @@ namespace PasocomMate.AunCast
             string cndg = staff + "/ConnectionDisplayGroup";
             string dtdg = staff + "/DriftThresholdDisplayGroup";
             string dteg = staff + "/DriftThresholdEditGroup";
+            string fmdg = staff + "/ForceModeDisplayGroup";
+            string fmeg = staff + "/ForceModeEditGroup";
+            string mdg = viewer + "/ModeDisplayGroup";
+            string meg = viewer + "/ModeEditGroup";
 
             string[] headingPaths =
             {
@@ -791,12 +809,13 @@ namespace PasocomMate.AunCast
                 staff + "/ConcurrentMaxLabel",
                 staff + "/ConnectionMaxLabel",
                 staff + "/DriftThresholdLabel",
+                staff + "/ForceModeLabel",
                 viewer + "/HeadroomGaugeLabel",
                 viewer + "/SilenceGaugeLabel",
                 viewer + "/SilenceResyncToggle/Label",
-                viewer + "/ManualModeToggle/Label",
+                viewer + "/ModeLabel",
                 staff + "/TimelineLoggingToggle/Label",
-                shared + "/VolumeLabel",
+                viewer + "/VolumeLabel",
             };
 
             string[] buttonLabelPaths =
@@ -824,6 +843,16 @@ namespace PasocomMate.AunCast
                 dteg + "/DriftThresholdNextButton/DriftThresholdAdd1Button_Inner/Label",
                 dteg + "/DriftThresholdApplyButton/DriftThresholdApplyButton_Inner/Label",
                 dteg + "/DriftThresholdCancelButton/DriftThresholdCancelButton_Inner/Label",
+                fmdg + "/ForceModeChangeButton/ForceModeChangeButton_Inner/Label",
+                fmeg + "/ForceModePreviousButton/ForceModePreviousButton_Inner/Label",
+                fmeg + "/ForceModeNextButton/ForceModeNextButton_Inner/Label",
+                fmeg + "/ForceModeApplyButton/ForceModeApplyButton_Inner/Label",
+                fmeg + "/ForceModeCancelButton/ForceModeCancelButton_Inner/Label",
+                mdg + "/ModeEditButton/ModeEditButton_Inner/Label",
+                meg + "/ModePreviousButton/ModePreviousButton_Inner/Label",
+                meg + "/ModeNextButton/ModeNextButton_Inner/Label",
+                meg + "/ModeApplyButton/ModeApplyButton_Inner/Label",
+                meg + "/ModeCancelButton/ModeCancelButton_Inner/Label",
                 shared + "/RebootButton/RebootButton_Inner/Label",
                 shared + "/ResyncButton/ResyncButton_Inner/Label",
                 shared + "/ResyncButton/ResyncButton_Inner/CooldownLabel",
@@ -840,6 +869,8 @@ namespace PasocomMate.AunCast
                 cdg + "/ConcurrentLimitDisplayText",
                 cndg + "/ConnectionLimitDisplayText",
                 dtdg + "/DriftThresholdDisplayText",
+                fmdg + "/ForceModeDisplayText",
+                mdg + "/ModeDisplayText",
                 shared + "/HelpArea/HelpArea_Inner/HelpText",
                 viewer + "/StateText",
                 viewer + "/ErrorText",
@@ -851,6 +882,8 @@ namespace PasocomMate.AunCast
                 ceg + "/ConcurrentLimitInput/ConcurrentLimitInput_Inner/Viewport/Text",
                 cneg + "/ConnectionLimitInput/ConnectionLimitInput_Inner/Viewport/Text",
                 dteg + "/DriftThresholdEditValueText",
+                fmeg + "/ForceModeEditValueText",
+                meg + "/ModeEditValueText",
             };
 
             string[] placeholderPaths =

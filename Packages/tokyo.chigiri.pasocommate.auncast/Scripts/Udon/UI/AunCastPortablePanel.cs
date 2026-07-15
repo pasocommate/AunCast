@@ -47,9 +47,18 @@ namespace PasocomMate.AunCast
         [Header("Silence Resync")]
         [SerializeField] private Toggle autoSilenceResyncToggle;
 
-        [Header("Manual Mode")]
-        [Tooltip("自動起因の Resync / Reboot を抑制するローカルトグル")]
-        [SerializeField] private Toggle manualModeToggle;
+        [Header("Mode")]
+        [Tooltip("現在の実効 Mode と Edit ボタンを表示するグループ")]
+        [SerializeField] private GameObject modeDisplayGroup;
+        [SerializeField] private TMP_Text modeDisplayText;
+        [SerializeField] private Button modeEditButton;
+        [Tooltip("左右選択と Apply / Cancel を表示する編集用グループ")]
+        [SerializeField] private GameObject modeEditGroup;
+        [SerializeField] private TMP_Text modeEditValueText;
+        [SerializeField] private Button modePreviousButton;
+        [SerializeField] private Button modeNextButton;
+        [SerializeField] private Button modeApplyButton;
+        [SerializeField] private Button modeCancelButton;
 
         [Header("Staff Controls")]
         [Tooltip("スタッフビューに表示するタイムラインログ有効/無効トグル")]
@@ -194,8 +203,12 @@ namespace PasocomMate.AunCast
         private float _lastVolumeSliderValue;
         private bool _autoSilenceToggleInitialized;
         private bool _lastAutoSilenceToggleState;
-        private bool _manualModeToggleInitialized;
-        private bool _lastManualModeToggleState;
+        private bool _modeInitialized;
+        private bool _lastModeManual;
+        private int _lastForceMode = -1;
+        private bool _modeEditMode;
+        private bool _modeEditOriginal;
+        private bool _modeEditValue;
         private bool _timelineLoggingToggleInitialized;
         private bool _lastTimelineLoggingToggleState;
         private bool _settingsResyncPending;
@@ -314,6 +327,8 @@ namespace PasocomMate.AunCast
             InitResyncButtonStyle();
             CacheStaffButtonLabels();
             SyncLocalSettingsUI();
+            _modeEditMode = false;
+            UpdateModeEditVisibility();
             // 起動時は Viewer ビューで開始。Staff 解錠状態に応じた切替ボタンの見せ方も確定させる。
             _crossfadeCurrent = 0f;
             _crossfadeTarget = 0f;
@@ -475,7 +490,7 @@ namespace PasocomMate.AunCast
             {
                 PollVolumeSlider();
                 PollAutoSilenceToggle();
-                PollManualModeToggle();
+                PollModeUI();
 
                 float nowMeter = Time.time;
                 if (nowMeter - _lastSilenceMeterUpdateTime >= SILENCE_METER_UPDATE_INTERVAL)
@@ -1341,7 +1356,7 @@ namespace PasocomMate.AunCast
         }
 
         // =================================================================
-        //  ローカル設定 UI (Volume / Silence Resync / Timeline Logging)
+        //  ローカル設定 UI (Volume / Silence Resync / Mode / Timeline Logging)
         // =================================================================
 
         private void SyncLocalSettingsUI()
@@ -1362,14 +1377,7 @@ namespace PasocomMate.AunCast
                 _autoSilenceToggleInitialized = true;
             }
 
-            if (manualModeToggle != null && controller != null)
-            {
-                bool enabled = controller.GetManualModeEnabled();
-                manualModeToggle.isOn = enabled;
-                _lastManualModeToggleState = enabled;
-                _manualModeToggleInitialized = true;
-                UpdateAutoSilenceToggleInteractable(enabled);
-            }
+            SyncModeUI();
 
             if (timelineLoggingToggle != null && controller != null)
             {
@@ -1424,29 +1432,118 @@ namespace PasocomMate.AunCast
                 OnAutoSilenceResyncToggleChanged();
         }
 
-        public void OnManualModeToggleChanged()
+        /// <summary>観客の Mode 編集を開始する。スタッフ強制中は編集できない。</summary>
+        public void OnModeEditButtonPress()
         {
-            if (controller == null || manualModeToggle == null) return;
-            controller.SetManualModeEnabled(manualModeToggle.isOn);
-            _lastManualModeToggleState = manualModeToggle.isOn;
-            _manualModeToggleInitialized = true;
-            UpdateAutoSilenceToggleInteractable(manualModeToggle.isOn);
-            UpdateDisplay();
+            if (controller == null) return;
+            if (controller.GetForceMode() != AunCastDualPlayerController.FORCE_MODE_NONE) return;
+
+            _modeEditOriginal = controller.GetLocalManualModeEnabled();
+            _modeEditValue = _modeEditOriginal;
+            _modeEditMode = true;
+            UpdateModeEditValueText();
+            UpdateModeEditVisibility();
         }
 
-        private void PollManualModeToggle()
+        /// <summary>Mode 編集中の選択を Auto / Manual の間で切り替える。</summary>
+        public void OnModePreviousButtonPress() { SetModeEditValue(false); }
+        public void OnModeNextButtonPress() { SetModeEditValue(true); }
+
+        public void OnModeApplyButtonPress()
         {
-            if (manualModeToggle == null) return;
-            if (!_manualModeToggleInitialized)
+            if (controller == null) return;
+            if (controller.GetForceMode() != AunCastDualPlayerController.FORCE_MODE_NONE)
             {
-                _lastManualModeToggleState = manualModeToggle.isOn;
-                _manualModeToggleInitialized = true;
-                UpdateAutoSilenceToggleInteractable(manualModeToggle.isOn);
+                CancelModeEdit();
                 return;
             }
 
-            if (manualModeToggle.isOn != _lastManualModeToggleState)
-                OnManualModeToggleChanged();
+            controller.SetManualModeEnabled(_modeEditValue);
+            _modeEditMode = false;
+            SyncModeUI();
+            UpdateModeEditVisibility();
+            UpdateDisplay();
+        }
+
+        public void OnModeCancelButtonPress()
+        {
+            CancelModeEdit();
+        }
+
+        private void PollModeUI()
+        {
+            if (controller == null) return;
+            bool manualModeEnabled = controller.GetManualModeEnabled();
+            int forceMode = controller.GetForceMode();
+            if (forceMode != AunCastDualPlayerController.FORCE_MODE_NONE && _modeEditMode)
+                CancelModeEdit();
+
+            if (!_modeInitialized
+                || manualModeEnabled != _lastModeManual
+                || forceMode != _lastForceMode)
+            {
+                SyncModeUI();
+            }
+        }
+
+        /// <summary>Controller の実効 Mode と Force Mode を表示・編集可否へ反映する。</summary>
+        private void SyncModeUI()
+        {
+            if (controller == null) return;
+
+            bool manualModeEnabled = controller.GetManualModeEnabled();
+            int forceMode = controller.GetForceMode();
+            if (modeDisplayText != null)
+                modeDisplayText.text = GetModeLabel(manualModeEnabled);
+            if (modeEditButton != null)
+                SetButtonInteractable(modeEditButton, forceMode == AunCastDualPlayerController.FORCE_MODE_NONE);
+
+            _lastModeManual = manualModeEnabled;
+            _lastForceMode = forceMode;
+            _modeInitialized = true;
+            UpdateAutoSilenceToggleInteractable(manualModeEnabled);
+        }
+
+        private void SetModeEditValue(bool manualMode)
+        {
+            if (!_modeEditMode) return;
+            _modeEditValue = manualMode;
+            UpdateModeEditValueText();
+        }
+
+        private void UpdateModeEditValueText()
+        {
+            if (modeEditValueText != null)
+                modeEditValueText.text = GetModeLabel(_modeEditValue);
+        }
+
+        private void CancelModeEdit()
+        {
+            _modeEditValue = _modeEditOriginal;
+            _modeEditMode = false;
+            SyncModeUI();
+            UpdateModeEditVisibility();
+        }
+
+        private void UpdateModeEditVisibility()
+        {
+            if (modeDisplayGroup != null)
+                modeDisplayGroup.SetActive(!_modeEditMode);
+            if (modeEditGroup != null)
+                modeEditGroup.SetActive(_modeEditMode);
+        }
+
+        private string GetModeLabel(bool manualMode) { return manualMode ? "Manual" : "Auto"; }
+
+        /// <summary>スタッフ側で同期された Force Mode が変わったときに Controller から通知される。</summary>
+        public void OnForceModeChanged()
+        {
+            if (controller != null
+                && controller.GetForceMode() != AunCastDualPlayerController.FORCE_MODE_NONE
+                && _modeEditMode)
+                CancelModeEdit();
+            SyncModeUI();
+            UpdateDisplay();
         }
 
         private void UpdateAutoSilenceToggleInteractable(bool manualModeEnabled)

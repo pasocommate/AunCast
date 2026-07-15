@@ -142,7 +142,7 @@ namespace PasocomMate.AunCast.Tests
         public void HandleImage_HasHandleMaterial()
         {
             var handle = _instance.transform.Find(
-                "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded/VolumeSlider/Handle Slide Area/Handle");
+                "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded/VolumeSlider/Handle Slide Area/Handle");
             if (handle == null) return;
             var img = handle.GetComponent<Image>();
             Assert.IsNotNull(img);
@@ -252,11 +252,10 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void SliderColors_Applied()
         {
-            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
             var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
-            AssertImageColor(shared + "/VolumeSlider/Background", _theme.sliderBackgroundColor, "VolumeSlider Background");
-            AssertImageColor(shared + "/VolumeSlider/Fill Area/Fill", _theme.sliderFillColor, "VolumeSlider Fill");
-            AssertImageColor(shared + "/VolumeSlider/Handle Slide Area/Handle", _theme.sliderHandleColor, "VolumeSlider Handle");
+            AssertImageColor(viewer + "/VolumeSlider/Background", _theme.sliderBackgroundColor, "VolumeSlider Background");
+            AssertImageColor(viewer + "/VolumeSlider/Fill Area/Fill", _theme.sliderFillColor, "VolumeSlider Fill");
+            AssertImageColor(viewer + "/VolumeSlider/Handle Slide Area/Handle", _theme.sliderHandleColor, "VolumeSlider Handle");
             AssertImageColor(viewer + "/HeadroomGauge/Background", _theme.sliderBackgroundColor, "HeadroomGauge Background");
             AssertImageColor(viewer + "/HeadroomGauge/Fill Area/Fill", _theme.sliderFillColor, "HeadroomGauge Fill");
             AssertImageColor(viewer + "/SilenceGauge/Background", _theme.sliderBackgroundColor, "SilenceGauge Background");
@@ -267,11 +266,10 @@ namespace PasocomMate.AunCast.Tests
         [Test]
         public void SliderFillMaterial_Applied()
         {
-            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
             var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
             string[] fillPaths =
             {
-                shared + "/VolumeSlider/Fill Area/Fill",
+                viewer + "/VolumeSlider/Fill Area/Fill",
                 viewer + "/HeadroomGauge/Fill Area/Fill",
                 viewer + "/SilenceGauge/Fill Area/Fill",
             };
@@ -290,11 +288,10 @@ namespace PasocomMate.AunCast.Tests
         public void SliderBackgroundMaterial_Applied()
         {
             if (_theme.inputMaterial == null) return;
-            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
             var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
             string[] bgPaths =
             {
-                shared + "/VolumeSlider/Background",
+                viewer + "/VolumeSlider/Background",
                 viewer + "/HeadroomGauge/Background",
                 viewer + "/SilenceGauge/Background",
             };
@@ -383,7 +380,6 @@ namespace PasocomMate.AunCast.Tests
         {
             var staff = "PortablePanel/ContentScaler/PortableContentArea/StaffContent/StaffPadded";
             var viewer = "PortablePanel/ContentScaler/PortableContentArea/UserContent/UserPadded";
-            var shared = "PortablePanel/ContentScaler/PortableContentArea/SharedContent/SharedPadded";
             string[] paths =
             {
                 staff + "/PlayingLabel",
@@ -393,7 +389,7 @@ namespace PasocomMate.AunCast.Tests
                 viewer + "/HeadroomGaugeLabel",
                 viewer + "/SilenceGaugeLabel",
                 viewer + "/AutoResyncToggle/Label",
-                shared + "/VolumeLabel",
+                viewer + "/VolumeLabel",
             };
             foreach (var path in paths)
                 AssertTextColor(path, _theme.headingTextColor, path + " headingTextColor");

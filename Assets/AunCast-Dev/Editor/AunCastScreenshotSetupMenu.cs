@@ -343,7 +343,7 @@ namespace PasocomMate.AunCast.Dev.Editor
             Color backgroundColor = GetBackgroundColor(root, showStaff);
             SetImageColor(RequireComponent<Image>(root, PANEL + "/ContentScaler/Background"), backgroundColor);
 
-            SetSlider(RequireComponent<Slider>(root, SHARED_PADDED + "/VolumeSlider"), 0f, 1f, 0.7f);
+            SetSlider(RequireComponent<Slider>(root, USER_PADDED + "/VolumeSlider"), 0f, 1f, 0.7f);
             SetButtonsInteractable(panel, true);
             SetTextAlpha(RequireTransform(root, SHARED_PADDED), 1f);
         }
@@ -352,8 +352,11 @@ namespace PasocomMate.AunCast.Dev.Editor
         {
             SetText(RequireComponent<TMP_Text>(root, USER_PADDED + "/StateText"), "Playing");
 
-            Toggle manualMode = RequireComponent<Toggle>(root, USER_PADDED + "/ManualModeToggle");
-            SetToggle(manualMode, true, true);
+            SetActive(RequireTransform(root, USER_PADDED + "/ModeDisplayGroup").gameObject, true);
+            SetActive(RequireTransform(root, USER_PADDED + "/ModeEditGroup").gameObject, false);
+            SetText(
+                RequireComponent<TMP_Text>(root, USER_PADDED + "/ModeDisplayGroup/ModeDisplayText"),
+                "Manual");
 
             Toggle silenceResync = RequireComponent<Toggle>(root, USER_PADDED + "/SilenceResyncToggle");
             SetToggle(silenceResync, true, false);
@@ -381,6 +384,8 @@ namespace PasocomMate.AunCast.Dev.Editor
             SetActive(RequireTransform(root, STAFF_PADDED + "/ConcurrentEditGroup").gameObject, false);
             SetActive(RequireTransform(root, STAFF_PADDED + "/DriftThresholdDisplayGroup").gameObject, true);
             SetActive(RequireTransform(root, STAFF_PADDED + "/DriftThresholdEditGroup").gameObject, false);
+            SetActive(RequireTransform(root, STAFF_PADDED + "/ForceModeDisplayGroup").gameObject, true);
+            SetActive(RequireTransform(root, STAFF_PADDED + "/ForceModeEditGroup").gameObject, false);
 
             SetText(
                 RequireComponent<TMP_Text>(root, STAFF_PADDED + "/NowPlayingArea/NowPlayingArea_Inner/NowPlayingText"),
@@ -405,6 +410,9 @@ namespace PasocomMate.AunCast.Dev.Editor
                     root,
                     STAFF_PADDED + "/DriftThresholdDisplayGroup/DriftThresholdDisplayText"),
                 "100 ms");
+            SetText(
+                RequireComponent<TMP_Text>(root, STAFF_PADDED + "/ForceModeDisplayGroup/ForceModeDisplayText"),
+                "No Override");
             SetText(RequireComponent<TMP_Text>(root, STAFF_PADDED + "/IndicatorText"), SAMPLE_INDICATORS);
             SetText(RequireComponent<TMP_Text>(root, STAFF_PADDED + "/UserCountText"), SAMPLE_USER_COUNTS);
             SetText(

@@ -16,7 +16,9 @@ VRChat/Udon API レベルの一般的な注意点は `VRChat-Udon-Development-No
 > `SetVolumeLocal` / `SetAutoSilenceResyncEnabled` でローカル値を更新する。
 > UI は AunCastPortablePanel 側に配置し、スタッフ権限チェックなしで全ユーザーが操作可能。
 >
-> Manual Mode (`_manualModeEnabled`) も各クライアントのローカル設定とし、自動起因の Resync / Retry Reboot だけを抑止する。
+> Mode (`_manualModeEnabled`) は各クライアントのローカル設定とし、Manual 時は自動起因の Resync / Retry Reboot だけを抑止する。
+> `SetForceModeAsStaff` の同期値が Auto / Manual の間は、全クライアントでその実効 Mode を優先する。
+> Force Mode を No Override に戻すと、各クライアントが保持していたローカル Mode に復帰する。
 > 手動 Resync / Reboot と、Coordinator から採用するスタッフのグローバル操作は抑止しない。
 >
 > 自動Resyncドリフト閾値は `driftResyncThresholdIndex` を Coordinator の `[UdonSynced]` 値として保持する。

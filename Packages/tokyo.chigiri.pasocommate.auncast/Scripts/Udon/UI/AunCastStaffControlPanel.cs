@@ -70,6 +70,21 @@ namespace PasocomMate.AunCast
         private int _driftThresholdEditOriginal;
         private int _driftThresholdEditValue;
 
+        [Header("Force Mode")]
+        [SerializeField] private TMP_Text forceModeDisplayText;
+        [SerializeField] private GameObject forceModeDisplayGroup;
+        [SerializeField] private GameObject forceModeEditGroup;
+        [SerializeField] private TMP_Text forceModeEditValueText;
+        [SerializeField] private Button forceModeChangeButton;
+        [SerializeField] private Button forceModePreviousButton;
+        [SerializeField] private Button forceModeNextButton;
+        [SerializeField] private Button forceModeApplyButton;
+        [SerializeField] private Button forceModeCancelButton;
+
+        private bool _forceModeEditMode;
+        private int _forceModeEditOriginal;
+        private int _forceModeEditValue;
+
         private float _globalEtaBase;
         private float _globalEtaCapturedAt;
         private string _nowPlayingUrl;
@@ -119,8 +134,9 @@ namespace PasocomMate.AunCast
         private const int HELP_CLOSE_BUTTON = 18;
         private const int HELP_SWITCH_VIEW = 19;
         private const int HELP_TIMELINE_LOGGING = 20;
-        private const int HELP_MANUAL_MODE = 21;
+        private const int HELP_MODE = 21;
         private const int HELP_DRIFT_THRESHOLD = 22;
+        private const int HELP_FORCE_MODE = 23;
 
         private int _activeHelpKey = HELP_NONE;
         private bool _isJapanese;
@@ -170,8 +186,9 @@ namespace PasocomMate.AunCast
                 "Close this panel",
                 "Switch between local controls and staff controls",
                 "Output structured timeline logs for playback and resync diagnosis (heavy load; keep off unless diagnosing)",
-                "Manual Mode: stop automatic Resync and Reboot while keeping local and staff manual actions available",
+                "Auto: enables automatic resync / Manual: no automatic resync; resyncs only when a button is pressed",
                 "Automatic Drift Resync threshold. OFF disables only drift-triggered automatic Resync",
+                "Force every viewer to Auto or Manual. No Override restores each viewer's own Mode setting",
             };
             _helpTextsJa = new[]
             {
@@ -196,8 +213,9 @@ namespace PasocomMate.AunCast
                 "パネルを閉じます",
                 "ローカル操作パネルとスタッフ操作パネルを切り替えます",
                 "再生・Resync診断用の構造化タイムラインログを出力します（負荷が高いため、診断時以外はオフにしてください）",
-                "Manual Mode: 自動Resyncと自動Rebootを停止し、観客・スタッフの明示操作だけを有効にします",
+                "Auto: 自動Resyncを有効にします / Manual: 自動Resyncを行わず、ボタンが押されたときだけResyncします",
                 "ドリフトによる自動Resyncの閾値です。OFFではドリフト起因の自動Resyncのみ停止します",
+                "全観客をAutoまたはManualへ強制します。No Overrideに戻すと観客ごとのMode設定へ復帰します",
             };
 
             string lang = VRCPlayerApi.GetCurrentLanguage();
@@ -207,6 +225,9 @@ namespace PasocomMate.AunCast
             UpdateConcurrentEditVisibility();
             _driftThresholdEditMode = false;
             UpdateDriftThresholdEditVisibility();
+            _forceModeEditMode = false;
+            UpdateForceModeEditVisibility();
+            SyncForceModeUI();
             SyncUIFromState();
             UpdateNowPlayingDisplay();
             PrefillNextUrlIfEmpty();
@@ -285,6 +306,18 @@ namespace PasocomMate.AunCast
             UpdateNowPlayingDisplay();
             ConsumeNextUrlIfPlaying();
             UpdateActionButtonsInteractable();
+        }
+
+        /// <summary>AunCastDualPlayerController の同期 Force Mode が変わったときに呼ばれる。</summary>
+        public void OnForceModeChanged()
+        {
+            if (_forceModeEditMode)
+                _forceModeEditMode = false;
+            SyncForceModeUI();
+            UpdateForceModeEditVisibility();
+            UpdateActionButtonsInteractable();
+            if (viewerStatusPanel != null)
+                viewerStatusPanel.OnForceModeChanged();
         }
 
         /// <summary>nextUrlField の onValueChanged から呼ばれる。Next URL の有無で Promote ボタンを切替。</summary>
@@ -435,6 +468,97 @@ namespace PasocomMate.AunCast
             if (!HasCurrentStream()) return;
 
             coordinator.TriggerGlobalForceReboot();
+        }
+
+        // =================================================================
+        //  Force Mode 編集
+        // =================================================================
+
+        /// <summary>Force Mode の編集を開始する。No Override / Auto / Manual から選択できる。</summary>
+        public void OnForceModeChangeButton()
+        {
+            if (!CanUseStaffControls() || controller == null) return;
+
+            _forceModeEditOriginal = controller.GetForceMode();
+            _forceModeEditValue = _forceModeEditOriginal;
+            _forceModeEditMode = true;
+            UpdateForceModeEditValueText();
+            UpdateForceModeEditVisibility();
+            UpdateActionButtonsInteractable();
+        }
+
+        public void OnForceModePrevious()
+        {
+            if (!CanUseStaffControls() || !_forceModeEditMode) return;
+            _forceModeEditValue = Mathf.Clamp(
+                _forceModeEditValue - 1,
+                AunCastDualPlayerController.FORCE_MODE_NONE,
+                AunCastDualPlayerController.FORCE_MODE_MANUAL);
+            UpdateForceModeEditValueText();
+        }
+
+        public void OnForceModeNext()
+        {
+            if (!CanUseStaffControls() || !_forceModeEditMode) return;
+            _forceModeEditValue = Mathf.Clamp(
+                _forceModeEditValue + 1,
+                AunCastDualPlayerController.FORCE_MODE_NONE,
+                AunCastDualPlayerController.FORCE_MODE_MANUAL);
+            UpdateForceModeEditValueText();
+        }
+
+        public void OnForceModeApply()
+        {
+            if (!CanUseStaffControls() || controller == null || !_forceModeEditMode) return;
+
+            controller.SetForceModeAsStaff(_forceModeEditValue);
+            _forceModeEditMode = false;
+            SyncForceModeUI();
+            UpdateForceModeEditVisibility();
+            UpdateActionButtonsInteractable();
+        }
+
+        public void OnForceModeCancel()
+        {
+            _forceModeEditValue = _forceModeEditOriginal;
+            _forceModeEditMode = false;
+            SyncForceModeUI();
+            UpdateForceModeEditVisibility();
+            UpdateActionButtonsInteractable();
+        }
+
+        private void SyncForceModeUI()
+        {
+            if (controller == null) return;
+            int forceMode = controller.GetForceMode();
+            if (forceModeDisplayText != null)
+                forceModeDisplayText.text = GetForceModeDisplayText(forceMode);
+            if (!_forceModeEditMode)
+            {
+                _forceModeEditValue = forceMode;
+                UpdateForceModeEditValueText();
+            }
+        }
+
+        private void UpdateForceModeEditValueText()
+        {
+            if (forceModeEditValueText != null)
+                forceModeEditValueText.text = GetForceModeDisplayText(_forceModeEditValue);
+        }
+
+        private string GetForceModeDisplayText(int forceMode)
+        {
+            if (forceMode == AunCastDualPlayerController.FORCE_MODE_AUTO) return "Auto";
+            if (forceMode == AunCastDualPlayerController.FORCE_MODE_MANUAL) return "Manual";
+            return "No Override";
+        }
+
+        private void UpdateForceModeEditVisibility()
+        {
+            if (forceModeDisplayGroup != null)
+                forceModeDisplayGroup.SetActive(!_forceModeEditMode);
+            if (forceModeEditGroup != null)
+                forceModeEditGroup.SetActive(_forceModeEditMode);
         }
 
         /// <summary>Concurrent Max の Change ボタン — 編集モードに入る。</summary>
@@ -773,6 +897,11 @@ namespace PasocomMate.AunCast
             SetButtonInteractable(stopButton, baseEnabled && hasStream);
             SetButtonInteractable(globalResyncButton, baseEnabled && hasStream);
             SetButtonInteractable(forceRebootButton, baseEnabled && hasStream);
+            SetButtonInteractable(forceModeChangeButton, baseEnabled);
+            SetButtonInteractable(forceModePreviousButton, baseEnabled && _forceModeEditMode);
+            SetButtonInteractable(forceModeNextButton, baseEnabled && _forceModeEditMode);
+            SetButtonInteractable(forceModeApplyButton, baseEnabled && _forceModeEditMode);
+            SetButtonInteractable(forceModeCancelButton, baseEnabled && _forceModeEditMode);
 
             bool hasNextUrl = false;
             if (nextUrlField != null)
@@ -1125,8 +1254,9 @@ namespace PasocomMate.AunCast
         public void OnHoverCloseButton() { SetHelpText(HELP_CLOSE_BUTTON); }
         public void OnHoverSwitchView() { SetHelpText(HELP_SWITCH_VIEW); }
         public void OnHoverTimelineLogging() { SetHelpText(HELP_TIMELINE_LOGGING); }
-        public void OnHoverManualMode() { SetHelpText(HELP_MANUAL_MODE); }
+        public void OnHoverMode() { SetHelpText(HELP_MODE); }
         public void OnHoverDriftThreshold() { SetHelpText(HELP_DRIFT_THRESHOLD); }
+        public void OnHoverForceMode() { SetHelpText(HELP_FORCE_MODE); }
         public void OnHoverClear()
         {
             _nowPlayingHovered = false;

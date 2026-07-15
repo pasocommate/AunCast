@@ -205,7 +205,7 @@ Resync の発動方法は以下の 3 種類を含む。
 
 - **手動トリガー（グローバル）**: スタッフ（Master または許可されたユーザー）が UI 操作で全ユーザーの一斉 Resync を発行する
 - **手動トリガー（個別）**: 各ユーザーが AunCastPortablePanel の Viewer ビューの Resync ボタンで自身の Resync を要求する
-- **自動トリガー（個別）**: 各クライアントが Audio RMS 無音検知、ストール検知、ドリフト検知に基づき、自動的に自身の Resync を Coordinator キューに投入する。連続発火を防ぐため `silenceSuppressSec` によるクールダウンを設ける。観客が Manual Mode を有効にしている間は、これらの自動トリガーと自動 Retry Reboot をローカルで抑止する
+- **自動トリガー（個別）**: 各クライアントが Audio RMS 無音検知、ストール検知、ドリフト検知に基づき、自動的に自身の Resync を Coordinator キューに投入する。連続発火を防ぐため `silenceSuppressSec` によるクールダウンを設ける。実効 Mode が Manual の間は、これらの自動トリガーと自動 Retry Reboot を抑止する
 
 ### FR-14: Resync モニタリング
 スタッフは、インスタンス全体の再生・Resync 状況をリアルタイムで確認できなければならない。以下の情報を含む。
@@ -253,7 +253,7 @@ Resync の発動方法は以下の 3 種類を含む。
 - 現在のローカル状態テキスト（再生中 / Resync 待機中 / Resync 実行中 / Cooldown 中 + Stall/Fail カウント + エラーメッセージ）
 - ローカル音量スライダー（`SetVolumeLocal` でクライアントローカルに適用、同期不要）
 - Silence Resync トグル（`SetAutoSilenceResyncEnabled`、クライアントローカル）
-- Manual Mode トグル（クライアントローカル）。有効時は自動 Resync / Retry Reboot のみを抑止し、観客の手動 Resync / Reboot とスタッフのグローバル Resync / Force Reboot は有効なままとする
+- Mode（Auto / Manual、クライアントローカル）。Edit → 左右選択 → 確定で変更する。Manual 時は自動 Resync / Retry Reboot のみを抑止し、観客の手動 Resync / Reboot とスタッフのグローバル Resync / Force Reboot は有効なままとする。スタッフが Force Mode を Auto / Manual にしている間は操作不可とし、強制値を表示する
 - 閉じるボタン
 - Staff ビューへの切替（パスコード解錠時のみ）
 - VR ジェスチャー長押し中の視界プログレス HUD 表示
@@ -411,11 +411,11 @@ AunCastSettings の再配線は同一シーン全体の `AunCastWallControlPanel
 責務:
 - 個人 Resync リクエストボタン / 緊急リブートボタン
 - 状態テキスト表示（ローカル状態 + エラーメッセージ + Stall/Fail カウント）
-- ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示し、閾値以上では黄色にする。Manual Mode 中も検知・表示は継続する
+- ドリフトゲージ（`headroomGauge`）: 蓄積ドリフト量をしきい値に対する割合で表示し、閾値以上では黄色にする。実効 Mode が Manual 中も検知・表示は継続する
 - サイレンスゲージ（`silenceGauge`）: 無音検出の連続時間を表示。抑制中はグレーアウト
 - ローカル音量スライダー (`volumeSlider` → `SetVolumeLocal`)
 - Silence Resync トグル (`autoSilenceResyncToggle` → `SetAutoSilenceResyncEnabled`)
-- Manual Mode トグル (`manualModeToggle` → `SetManualModeEnabled`)。有効時は Silence Resync トグルを操作不可にし、自動 Resync / Retry Reboot を抑止する
+- Mode 編集 UI（`ModeDisplayGroup` / `ModeEditGroup` → `SetManualModeEnabled`）。Manual 時は Silence Resync トグルを操作不可にし、自動 Resync / Retry Reboot を抑止する。Force Mode 中は Edit を無効化し、強制された Auto / Manual を表示する
 - Resync ボタンのクールダウン / ETA 表示（`_resyncCooldownLabel`）
 - **VR ジェスチャー呼び出し**: 複数方式を同時有効可能（ビットフラグ制御）
   - 右スティック上方向倒し続け (`GESTURE_RIGHT_STICK_UP_HOLD`、デフォルト有効)
@@ -1392,7 +1392,7 @@ Change / Apply を受け付けない。同期完了後に初めて現在値を�
 - `defaultUrl`（Next URL 欄の初期値。自動再生はしない）
 - `_timelineLogging`
 - `_autoSilenceResyncEnabled`（無音 Resync のローカル初期値）
-- `_manualModeEnabled`（Manual Mode のローカル初期値）
+- `_manualModeEnabled`（Mode のローカル初期値。Force Mode 解除後に復帰する値）
 
 ### AunCastActivePlayerMonitor 側
 
@@ -1606,6 +1606,7 @@ AunCastPortablePanel 内の Staff ビューとして動作する。パスコー�
 - **同時Resync上限の編集**: `maxConcurrentResyncUsers` をワールド内で変更できる。Display/Edit モード切替式（Change → ±1 / ±10 → Apply/Cancel）
 - **CDN 同時接続上限の編集**: `maxConnectionLimit` をワールド内で変更できる（同様の UI。配信サーバ側の同時接続キャパシティを設定する）
 - **自動Resyncドリフト閾値の編集**: `driftResyncThresholdIndex` を固定段階で変更できる。Change → 左右ボタン → Apply/Cancel の順で操作し、数値の直接入力は行わない
+- **Force Mode の編集**: No Override / Auto / Manual を Edit → 左右ボタン → Apply/Cancel で選択する。Auto / Manual の間は全観客の実効 Mode を強制し、観客ローカルの Mode 値は保持する。No Override に戻すと各観客の保持値へ復帰する
 - **多言語ヘルプテキスト**: 各 UI 要素へのホバーで日本語/英語のヘルプを `helpTextField` に表示。ヘルプ欄クリックで言語トグル可能 (`ToggleLanguage`)
 
 スタッフ操作は Join 時同期完了後にのみ有効化する。同期前は Promote / Stop / Global Resync /
@@ -1644,11 +1645,11 @@ VR ジェスチャーまたはデスクトップの Tab キーで呼び出すポ
 - **Resync ボタン**: 押すと自身の Resync を Coordinator に Request する。非再生時は無効化。Cooldown / 待機中は ETA またはカウントダウンを表示
 - **緊急リブートボタン**: Coordinator を介さず自身のストリームを全断→再接続する。常時操作可能
 - **状態テキスト**: ローカル状態 + エラーメッセージ + Stall/Fail カウント
-- **ドリフトゲージ** (`headroomGauge`): 蓄積ドリフトのしきい値に対する割合をスライダーで表示し、閾値以上では黄色にする。Manual Mode 中も表示を継続し、閾値 OFF 時は警告色にしない
+- **ドリフトゲージ** (`headroomGauge`): 蓄積ドリフトのしきい値に対する割合をスライダーで表示し、閾値以上では黄色にする。実効 Mode が Manual 中も表示を継続し、閾値 OFF 時は警告色にしない
 - **サイレンスゲージ** (`silenceGauge`): 無音検出の連続時間をスライダーで表示。`silenceSuppressSec` 中はグレーアウト
 - **ローカル音量スライダー**: `volumeSlider` → `controller.SetVolumeLocal()` を呼ぶ。同期不要のローカル設定
 - **Silence Resync トグル**: `autoSilenceResyncToggle` → `controller.SetAutoSilenceResyncEnabled()` を呼ぶ。コンテンツに意図的な無音が多い場合に各観客がオフにできる
-- **Manual Mode トグル**: `manualModeToggle` → `controller.SetManualModeEnabled()` を呼ぶ。有効時は無音・ストール・ドリフト起因の自動 Resync と RetryWait からの自動 Reboot を抑止する。観客の手動操作およびスタッフの明示操作は抑止しない
+- **Mode**: Edit → 左右選択 → 確定で Auto / Manual を切り替える。`controller.SetManualModeEnabled()` にローカル値を保持し、Manual 時は無音・ストール・ドリフト起因の自動 Resync と RetryWait からの自動 Reboot を抑止する。Force Mode が Auto / Manual の間は Edit を無効化して強制値を表示し、No Override へ戻るとローカル値に復帰する
 - **閉じるボタン**: パネルを非表示にする
 
 #### VR ジェスチャー呼び出し
