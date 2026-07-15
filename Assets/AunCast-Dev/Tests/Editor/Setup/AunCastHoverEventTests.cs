@@ -16,7 +16,7 @@ namespace PasocomMate.AunCast.Tests
         public void OneTimeSetUp()
         {
             var prefabPath = AssetDatabase.GUIDToAssetPath(PREFAB_GUID);
-            Assert.IsNotNull(prefabPath, "プレハブ GUID が見つかりません");
+            Assert.IsNotEmpty(prefabPath, "プレハブ GUID が見つかりません");
             _prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             Assert.IsNotNull(_prefab, $"プレハブをロードできません: {prefabPath}");
         }
