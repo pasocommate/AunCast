@@ -63,9 +63,8 @@ namespace PasocomMate.AunCast.Internal
                     return false;
                 }
 
-                string projectRoot = Directory.GetParent(Application.dataPath).FullName;
-                string japaneseFullPath = Path.Combine(projectRoot, japanesePath);
-                string englishFullPath = Path.Combine(projectRoot, englishPath);
+                string japaneseFullPath = ResolveAssetFullPath(japanesePath);
+                string englishFullPath = ResolveAssetFullPath(englishPath);
                 if (!File.Exists(japaneseFullPath) || !File.Exists(englishFullPath))
                 {
                     errorMessage = AunCastEditorLocalization.Localize(
@@ -103,6 +102,25 @@ namespace PasocomMate.AunCast.Internal
                 errorMessage = e.Message;
                 return false;
             }
+        }
+
+        /// <summary>
+        /// アセットパス（Assets/ または Packages/ 相対）を実ファイルパスへ解決する。
+        /// Packages/ 配下はプロジェクト直下に実体があるとは限らない（UPM のキャッシュ解決）ため、
+        /// パッケージに属するパスは resolvedPath 経由で解決する。
+        /// </summary>
+        private static string ResolveAssetFullPath(string assetPath)
+        {
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(assetPath);
+            if (packageInfo != null)
+            {
+                string relativePath = assetPath.Substring(packageInfo.assetPath.Length)
+                    .TrimStart('/', '\\');
+                return Path.Combine(packageInfo.resolvedPath, relativePath);
+            }
+
+            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            return Path.Combine(projectRoot, assetPath);
         }
 
         private static string GetTermsSourceSignature(string japaneseFullPath, string englishFullPath)
