@@ -23,7 +23,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 詳細な操作が可能な表示になります。
 
-- **Resync ボタン** … 再同期をリクエストする
+- **Resync ボタン**（<span class="material-symbol" aria-hidden="true">&#xE627;</span>）… 再同期をリクエストする
 - **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>）… 切断後に再接続する（音声・映像に途切れが発生します）
 - **Spawn Gesture** … 手元パネルの呼び出し方法を選択する
 - <span class="material-symbol" aria-hidden="true">&#xE5D2;</span> **Spawn Panel ボタン** … 手元パネルを目の前に呼び出す

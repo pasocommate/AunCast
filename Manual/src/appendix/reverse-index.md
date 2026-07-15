@@ -17,7 +17,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 音声が出ない・ズレを直したい | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Volume](../operation/panel-viewer.md#volume) |
 | 映像が止まった・カクつく | [Resync ボタン](../operation/panel-viewer.md#resync-button)、[Reboot ボタン](../operation/panel-viewer.md#reboot-button) |
 | 無音時の自動Resyncを止めたい | [Silence Resync](../operation/panel-viewer.md#auto-silence) |
-| 自動Resyncが暴発して視聴の継続が困難<br>すべての自動Resync/Rebootを止めたい | [Manual Mode](../operation/panel-viewer.md#manual-mode) |
+| 自動Resyncが暴発して視聴の継続が困難<br>すべての自動Resync/Rebootを止めたい | [Mode](../operation/panel-viewer.md#manual-mode) |
 | 音量を変えたい | [Volume](../operation/panel-viewer.md#volume) |
 | 表示の意味を知りたい（Drift, Audio Level 等） | [手元パネルの各部](../operation/panel-viewer.md#controls) |
 | 「Retry Wait」「Error」が表示されている | [再生ステータス表示](../operation/panel-viewer.md#playback-status) |
@@ -36,6 +36,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 全員の再生を止めたい | [Stop All](../operation/panel-staff.md#stop-all) |
 | 同時接続上限・同時Resync上限を調整したい | [上限の調整](../operation/monitoring.md#limits) |
 | ドリフト検知の感度を変更したい | [Drift Threshold](../operation/panel-staff.md#drift-threshold) |
+| 全観客の自動Resyncを禁止・強制したい | [Force Mode](../operation/panel-staff.md#force-mode) |
 | エラー（赤）が増えている | [異常な状況への対処](../operation/monitoring.md#troubleshooting) |
 | Resync Allの完了が遅い | [増減の目安](../operation/monitoring.md#scaling-guide) |
 | 全員の再生がまとめて止まった | [Reboot All](../operation/panel-staff.md#force-reboot) |

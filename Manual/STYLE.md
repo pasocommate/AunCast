@@ -68,7 +68,8 @@
 ## 6. スクリーンショット
 
 - 実 UI のスクリーンショットを使い、`Manual/src/assets/` に意味のある名前で配置する。
-- 手元パネルを撮影するときは、`AunCast.prefab` と撮影用Cameraを配置したシーンで **Tools → PasocomMate → AunCast Dev → スクリーンショット** の観客ビュー／スタッフビュー撮影メニューを実行する。表示値と操作状態が統一され、Cameraの表示内容が1440×1080の透過PNGとして `Manual/src/assets/` へ出力される。Cameraが複数ある場合は、撮影用CameraをHierarchyで選択してから実行する。
+- 手元パネルを撮影するときは、専用シーン `Assets/AunCast-Dev/AunCast-SS.unity` を開き、**Tools → PasocomMate → AunCast Dev → スクリーンショット** の観客ビュー／スタッフビュー撮影メニューを実行する。表示値と操作状態が統一され、Cameraの表示内容が1440×1080の透過PNGとして `Manual/src/assets/` へ出力される。
+- 壁パネルを撮影するときも同じ専用シーンで、**スクリーンショット → 壁パネル → すべてを撮影（透過PNG）** を実行する。離れているとき（Resync）・近く（デスクトップ／VR）・暗証番号入力を、それぞれ1080×1080の透過PNGとして `Manual/src/assets/` へ出力する。壁パネル撮影は専用の一時Cameraを使用するため、HierarchyでCameraを選択する必要はない。
 - **番号バッジ（①②…）付きの図は手描きしない**。素の画像（`*-annotated` でない方）を配置し、[`Tools/annotate-manual-screenshots.py`](../Tools/annotate-manual-screenshots.py) の `JOBS` にバッジ座標を追記して再実行する。フォント・色は同スクリプトの定数（紫 #5a4aa8・Arial Bold）で統一され、番号を追加・変更してもスタイルが揺れない。
 
 ## 7. プレースホルダ（未確定事項）

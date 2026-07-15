@@ -1,5 +1,5 @@
 ---
-description: 手元パネル(観客ビュー)の使い方と各表示の見方。再同期、Manual Mode、音量調整など、観客とスタッフの双方が使う基本操作を解説します。
+description: 手元パネル(観客ビュー)の使い方と各表示の見方。再同期、Mode、音量調整など、観客とスタッフの双方が使う基本操作を解説します。
 image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 ---
 
@@ -24,7 +24,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | ③ **Drift** | 接続確立時からの「音声・映像のズレ量」 |
 | ④ **Audio Level** | 現在 音声が出ているかを示すメーター |
 | ⑤ **Silence Resync**（<span class="material-symbol" aria-hidden="true">&#xEBF3;</span>） | ONのとき、無音時に自動Resync |
-| ⑥ **Manual Mode**（<span class="material-symbol" aria-hidden="true">&#xE769;</span>） | ONのとき、すべての自動Resyncを停止 |
+| ⑥ **Mode**（<span class="material-symbol" aria-hidden="true">&#xF53F;</span>） | 自動Resyncの有効／無効を切り替える（→ [Mode](#manual-mode)） |
 | ⑦ **Volume**（<span class="material-symbol" aria-hidden="true">&#xE050;</span>） | 音量 |
 | ⑧ **再生ステータス表示**（スクリーン下部） | 現在のプレイヤーの状態（例: Idle＝待機中） |
 | ⑨ **閉じるボタン**（<span class="material-symbol" aria-hidden="true">&#xE5CD;</span>） | パネルを閉じる |
@@ -60,7 +60,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | 音声・映像が停止した／カクつく | **Resync ボタン** または **Reboot ボタン** |
 | Resync しても復旧しない／順番がこない | **Reboot ボタン** |
 | 静かな場面で勝手に再同期される | [Silence Resync をオフ](#auto-silence) |
-| 自動Resyncが原因でイベントの続行が難しい | [Manual Mode をオン](#manual-mode) |
+| 自動Resyncが原因でイベントの続行が難しい | [ModeをManualに変更](#manual-mode) |
 
 ---
 
@@ -79,7 +79,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | **Switching** | 現用系統から予備系統へ切り替えている |
 | **Cooldown** | 切り替え完了直後の短い待機中 |
 | **Retry Wait** | 復旧できず、少し待ってから再試行しようとしている |
-| **Manual Recovery Required** | Manual Mode中に自動復旧を停止している<br>Resync または Reboot を手動で行う必要があります |
+| **Manual Recovery Required** | 実効モードがManualのため自動復旧を停止している<br>Resync または Reboot を手動で行う必要があります |
 | **Error: ...** | 最後に発生したエラー。短時間だけ表示される場合があります |
 
 !!! note "停止・失敗の回数について"
@@ -95,7 +95,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 - メーターが **伸びてきた**：ズレが蓄積しつつあります。
 - メーターがスタッフの設定したしきい値を超えると **黄色** になり、通常は **自動的に再同期** してズレをリセットします。
 
-Manual Modeがオンのときは、しきい値を超えても自動Resyncを行いません。また、スタッフが Drift Threshold を **OFF** にしている間は、ドリフト検知による自動Resyncが無効になります。
+実効モードがManualのときは、しきい値を超えても自動Resyncを行いません。また、スタッフが Drift Threshold を **OFF** にしている間は、ドリフト検知による自動Resyncが無効になります。
 
 !!! tip "ズレが気になったら Resync"
     視聴していてズレが気になるときは、自動検知を待たずに **Resync ボタン** を押しても構いません。再同期に成功すると、メーターは再び初期状態から測り直しになります。ただし、ネットワーク環境等によっては実際のズレが解消しない場合もあります。
@@ -130,19 +130,21 @@ AunCast は、音声が一定時間（約２秒）出ない状態が続くと自
 
 ---
 
-## Manual Mode（自動Resyncの停止） {#manual-mode}
+## Mode（自動Resyncの切替） {#manual-mode}
 
-自動Resyncが発生しすぎるなどで視聴が妨げられる場合に、**一般的なビデオプレイヤーに近い手動操作へと切り替える**スイッチです。
+**Mode** は、自分の端末で自動Resyncを行うかを切り替える設定です。現在の値の右にある **Edit** ボタンを押し、左右のボタンで **Auto** または **Manual** を選んで **Apply** で確定します。変更を取り消す場合は **Cancel** を押します。
 
 | 設定 | 動作 |
 |---|---|
-| **オン** | 停止・ドリフト・無音・再生エラー等を契機とする、すべての自動Resyncを停止する |
-| **オフ** | 自動検知と自動復旧を通常どおり行う |
+| **Auto** | 自動検知と自動復旧を通常どおり行う |
+| **Manual** | 停止・ドリフト・無音・再生エラー等を契機とする、すべての自動Resyncを停止する |
 
-オンの間も、観客自身の **Resync / Reboot ボタン**と、スタッフの **Resync All / Reboot All**などの明示操作は有効です。Silence Resyncは操作できなくなりますが、Manual Modeをオフにすると再び操作できます。
+Manualの間も、観客自身の **Resync / Reboot ボタン**と、スタッフの **Resync All / Reboot All**などの明示操作は有効です。Silence Resyncは操作できなくなりますが、Autoに戻すと再び操作できます。
 
-!!! warning "通常運用ではオフのままにします"
-    Manual Modeでは、再生が停止しても自動復旧しません。不調時は観客自身が Resync または Reboot を行う必要があります。スタッフから案内があった場合や、自動Resyncを止めなければ視聴を続行できない場合に限って使用してください。
+スタッフが [Force Mode](panel-staff.md#force-mode) をAutoまたはManualにしている間は、表示が強制値になり **Edit** ボタンは操作できません。Force ModeがNo Overrideに戻ると、強制前の自分のMode設定へ復帰します。
+
+!!! warning "通常運用ではAutoのままにします"
+    Manualでは、再生が停止しても自動復旧しません。不調時は観客自身が Resync または Reboot を行う必要があります。スタッフから案内があった場合や、自動Resyncを止めなければ視聴を続行できない場合に限って使用してください。
 
 ---
 

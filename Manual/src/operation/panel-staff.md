@@ -1,11 +1,11 @@
 ---
-description: 配信を管理するスタッフ向けの操作。スタッフビューの解錠、配信URLの変更、全員一斉の再同期・停止・再起動、同時接続上限や Drift Threshold の調整を説明します。
+description: 配信を管理するスタッフ向けの操作。スタッフビューの解錠、配信URLの変更、全員一斉の再同期・停止・再起動、同時接続上限・Drift Threshold・Force Modeの調整を説明します。
 image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 ---
 
 # 手元パネル：スタッフビュー
 
-このページでは、配信を管理するスタッフが行う操作を説明します。スタッフビューの解錠、配信URLの変更、全員一斉の再同期・停止・再起動、接続上限の調整などが含まれます。
+このページでは、配信を管理するスタッフが行う操作を説明します。スタッフビューの解錠、配信URLの変更、全員一斉の再同期・停止・再起動、同時接続上限や Force Mode の調整などが含まれます。
 
 壁パネルと手元パネルの呼び出し方法は[壁パネルと手元パネル](panels.md)、手元パネルの基本操作は[手元パネル：観客ビュー](panel-viewer.md)を参照してください。スタッフも、自分の端末の再同期や音量調整では観客ビューの操作を使用します。事前に[再同期の仕組み](../concepts/resync.md)と[同時接続上限の管理](../concepts/connection-limit.md)を読んでおくと、各操作の意味を理解しやすくなります。
 
@@ -44,13 +44,14 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 | ⑧ **人数表示** | Playing / Instance / Queued の人数（→ [モニタリング](monitoring.md)） |
 | ⑨ **Connection≤**（<span class="material-symbol" aria-hidden="true">&#xEFE6;</span>）<br>　 **Concurrent≤**（<span class="material-symbol" aria-hidden="true">&#xF16A;</span>） | 同時接続 / Resync上限の現在値と **Edit** ボタン（<span class="material-symbol" aria-hidden="true">&#xF097;</span>） |
 | ⑩ **Drift Threshold**（<span class="material-symbol" aria-hidden="true">&#xE6DF;</span>） | ドリフト検知による自動Resyncのしきい値（→ [Drift Threshold](#drift-threshold)） |
-| ⑪ **ヘルプ表示** | ポイントしたUI部品の説明欄<br>インタラクトで日本語 / 英語を切替 |
-| ⑫ **Resync ボタン**（<span class="material-symbol" aria-hidden="true">&#xE627;</span>） | 自分の端末を再同期する。[観客ビューの Resync](panel-viewer.md#resync-button)と同じ |
-| ⑬ **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>） | 自分の端末を切断→再接続する。[観客ビューの Reboot](panel-viewer.md#reboot-button)と同じ |
-| ⑭ **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">&#xE899;</span>） | スタッフ操作を一時的に施錠し、誤操作を防ぐ（→ [操作ロック](#staff-lock)） |
-| ⑮ **Timeline Log**（<span class="material-symbol" aria-hidden="true">&#xE868;</span>） | 診断用タイムラインログのオン / オフ（→ [タイムラインログ](#timeline-logging)） |
+| ⑪ **Force Mode**（<span class="material-symbol" aria-hidden="true">&#xF53F;</span>） | 全観客のModeをAutoまたはManualに強制する（→ [Force Mode](#force-mode)） |
+| ⑫ **ヘルプ表示** | ポイントしたUI部品の説明欄<br>インタラクトで日本語 / 英語を切替 |
+| ⑬ **Resync ボタン**（<span class="material-symbol" aria-hidden="true">&#xE627;</span>） | 自分の端末を再同期する。[観客ビューの Resync](panel-viewer.md#resync-button)と同じ |
+| ⑭ **Reboot ボタン**（<span class="material-symbol" aria-hidden="true">&#xEA0B;</span>） | 自分の端末を切断→再接続する。[観客ビューの Reboot](panel-viewer.md#reboot-button)と同じ |
+| ⑮ **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">&#xE899;</span>） | スタッフ操作を一時的に施錠し、誤操作を防ぐ（→ [操作ロック](#staff-lock)） |
+| ⑯ **Timeline Log**（<span class="material-symbol" aria-hidden="true">&#xE868;</span>） | 診断用タイムラインログのオン / オフ（→ [タイムラインログ](#timeline-logging)） |
 
-⑫⑬ の Resync / Reboot と Volume は、スタッフビューでも **自分の端末に対する操作** です。挙動は観客ビューと同じなので、[手元パネル：観客ビュー](panel-viewer.md)を参照してください。
+⑬⑭ の Resync / Reboot は、スタッフビューでも **自分の端末に対する操作** です。挙動は観客ビューと同じなので、[手元パネル：観客ビュー](panel-viewer.md)を参照してください。
 
 ---
 
@@ -104,7 +105,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 ## 上限を変更する（Connection≤ / Concurrent≤）
 
-スタッフビューの **Connection≤ / Concurrent≤** は、それぞれ右の **Edit** ボタンで編集できます。数値の意味と調整の目安は次のページを参照してください。
+スタッフビューの **Connection≤ / Concurrent≤** は、それぞれ右の **Edit** ボタン（<span class="material-symbol" aria-hidden="true">&#xF097;</span>）で編集できます。数値の意味と調整の目安は次のページを参照してください。
 
 [→ モニタリングと上限調整へ](monitoring.md)
 
@@ -112,14 +113,31 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 ## Drift Threshold（ドリフト検知のしきい値） {#drift-threshold}
 
-**Drift Threshold**は、観客のドリフトがどこまで蓄積したら自動Resyncするかを、インスタンス全体に対して設定します。右の **Edit** ボタンを押し、左右のボタンで値を選んでから確定します。数値を直接入力することはできません。
+**Drift Threshold**は、観客のドリフトがどこまで蓄積したら自動Resyncするかを、インスタンス全体に対して設定します。右の **Edit** ボタン（<span class="material-symbol" aria-hidden="true">&#xF097;</span>）を押し、左右のボタンで値を選んでから確定します。数値を直接入力することはできません。
 
 - 値を大きくすると自動Resyncの頻度は下がりますが、許容されるズレの長さが増えます。
 - `OFF` はドリフト検知自体を停止します。他のイベントを契機とする自動Resyncは停止しません。
-- 観客が個別に [Manual Mode](panel-viewer.md#manual-mode) をオンにしている場合、その観客ではこのしきい値を超えても自動Resyncしません。
+- 観客の実効モードが Manual の場合は、しきい値を超えても自動Resyncしません。
 
 !!! warning "イベント中の緊急回避として変更する場合"
     自動Resyncがイベント続行を妨げている原因を確認し、まずは必要な範囲でしきい値を引き上げてください。`OFF` にするとドリフトの自動補正が行われなくなるため、観客へ Resync の手動操作を案内してください。この場合、ごく一般的なビデオプレイヤーと同様の運用になります。
+
+---
+
+## Force Mode（全観客のModeを一時的に強制） {#force-mode}
+
+**Force Mode** は、全観客の実効モードを一時的に強制するスタッフ操作です。右の **Edit** ボタン（<span class="material-symbol" aria-hidden="true">&#xF097;</span>）を押し、左右のボタンで値を選んでから **Apply** ボタン（<span class="material-symbol" aria-hidden="true">&#xE5CA;</span>）で確定します。値を直接入力することはできません。
+
+| 設定 | 動作 |
+|---|---|
+| **No Override** | 強制しない。観客ごとのMode設定をそのまま使用する |
+| **Auto** | 全観客の実効モードを Auto にする |
+| **Manual** | 全観客の実効モードを Manual にする |
+
+AutoまたはManualを強制している間、観客ビューのMode表示は強制値になり、**Edit** ボタンは操作できません。No Overrideに戻すと、各観客が強制前に設定していたModeへ復帰します。
+
+!!! warning "Manualの強制中は自動復旧が停止します"
+    Force ModeをManualにすると、停止・ドリフト・無音・再生エラーを契機とする自動Resync / Rebootが全観客で停止します。Resync / Rebootの手動操作と、スタッフのResync All / Reboot Allは引き続き有効です。必要な時間だけ使用し、状況が収まったらNo Overrideへ戻してください。
 
 ---
 
@@ -127,7 +145,7 @@ image: https://pasocommate.chigiri.tokyo/auncast/assets/auncast-og-card.jpg
 
 スタッフビュー右上の **操作ロックボタン**（<span class="material-symbol" aria-hidden="true">&#xE899;</span>）は、スタッフ操作を一時的に **施錠** して誤操作を防ぐスイッチです。
 
-- 施錠中は、送信・Stop All・Reboot All・Resync All などスタッフ操作のボタンが押せなくなります。
+- 施錠中は、送信・Stop All・Reboot All・Resync All・Force Mode などスタッフ操作のボタンが押せなくなります。
 - もう一度押すと解錠され、再び操作できます。アイコンは施錠中／解錠中で切り替わります。
 - これは **自分の端末だけ** のローカルな切り替えです。他のスタッフによる操作を禁止する効果はありません。
 

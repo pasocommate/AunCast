@@ -107,8 +107,8 @@ OBSなどで配信（ソース）を停止しても、AunCast 側は各クライ
 AunCastの自動Resyncが多発し、イベントの続行が難しい場合は、次の順で影響範囲を限定してください。
 
 1. ドリフト検知だけが原因なら、スタッフビューの [Drift Threshold](panel-staff.md#drift-threshold) を引き上げます。必要な場合は `OFF` にできます。
-2. 原因を限定できない場合は、アバターマイク等で観客へ [Manual Mode](panel-viewer.md#manual-mode) をオンにするよう案内します。切り替えは観客ごとのローカル操作で、スタッフから強制する機能はありません。
-3. Manual Mode中に再生が停止した観客には、Resync または Reboot を手動で行うよう案内します。スタッフの Resync All / Reboot All も引き続き有効です。
-4. 状況が収まったら Manual Mode をオフに戻し、必要に応じて Drift Threshold も通常値へ戻します。
+2. 原因を限定できない場合は、スタッフビューの [Force Mode](panel-staff.md#force-mode) をManualにして、自動Resyncを一時停止します。観客に個別の操作を依頼する場合は、[Mode](panel-viewer.md#manual-mode)をManualへ変更するよう案内してください。
+3. 実効モードがManual中に再生が停止した観客には、Resync または Reboot を手動で行うよう案内します。スタッフの Resync All / Reboot All も引き続き有効です。
+4. 状況が収まったら Force Mode をNo Overrideへ戻し、必要に応じて Drift Threshold も通常値へ戻します。
 
-Manual Modeを案内するときは、自動復旧が停止することと、不調時には手動操作が必要になることを併せて伝えてください。
+Manualを案内・強制するときは、自動復旧が停止することと、不調時には手動操作が必要になることを併せて伝えてください。
