@@ -5,6 +5,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0] - 2026-07-16
+- Mode 行の追加に伴い、手元パネル・壁パネルのレイアウトを変更しました（**破壊的変更**: テーマのコンテンツサイズと余白の調整、壁パネルのアンカーの上端基準への整理、VolumeSlider の SharedContent から UserContent への移動を含みます）。パネルの配置やサイズをプレハブオーバーライドで調整していた場合、表示が崩れます。オーバーライドを解除したうえで、必要な調整をやり直してください。
+- 観客が自分の端末で自動Resyncを行うかを切り替える **Mode** を追加しました。手元パネルの Edit から Auto または Manual を選び、Apply で確定します。Manual にすると、停止・ドリフト・無音・再生エラーを契機とする自動Resync / Rebootがすべて止まります（Resync / Rebootボタンの手動操作は引き続き有効です）。
+- Mode の初期値をエディタから設定できるようにしました。
+- スタッフが全観客の Mode を一時的に強制する **Force Mode** を追加しました。No Override / Auto / Manual を選択でき、Auto または Manual の間は観客側の Edit が操作できなくなります。No Override へ戻すと、各観客が強制前に設定していた Mode へ復帰します。トラブル対応中に全観客の自動Resyncを一括で止めたい場面で使用します。
+- ドリフトResyncの Resync閾値 をスタッフパネルから変更できるようにしました。50 ms から 5 s の段階選択式になり、OFF を選ぶとドリフト起因の自動Resyncを停止できます。
+- 監視インジケーターのホバーで、エラー状態のプレイヤー名を表示するようにしました。スタッフが対象者へ直接声をかけられます。
+- タイムラインログ解析CLI（`auncast-log.py`）を追加しました。VRChatのoutput_logからセッション概要・再生開始計測・Resync所要時間などを集計できます。
+- 接続試行・Resync・切替など重要なタイムラインログを、トグル設定に依らず常時出力するようにしました。あわせて再生開始の計測ログ（LoadURL→Ready→Startの所要時間）を追加しました。
+- bunch未受信のままOwner化したクライアントが同期URLを空にして全配信し、再生中のインスタンスで全員の再生が落ちる問題を修正しました。
+- late-joinerの同期・初回復旧、settle同期とResync状態管理を安定化しました。
+- 初回に再生時間が前進しない再生失敗を検知するようにしました。
+- 監視インジケーターのホバー中、エラー表示がホバー開始時のまま更新されない問題を修正しました。
+- 利用規約の同意判定をファイルハッシュ方式に変更しました。規約改訂後は再同意を求めます。
+- UPMがパッケージをキャッシュへ解決した環境で、規約ファイルが見つからず設定UI全体がブロックされる問題を修正しました。
+- 壁パネルのResyncボタンの文字色にテーマのボタンラベル色を適用しました。
+
 ## [5.1.2] - 2026-07-11
 - AudioLink を必須依存として明示しました（VCC で AudioLink が自動導入されるようになります）。
 

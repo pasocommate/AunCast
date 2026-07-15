@@ -12,7 +12,7 @@ namespace PasocomMate.AunCast
     public class AunCastDualPlayerController : UdonSharpBehaviour
     {
         // package.json の version と必ず一致させる。
-        public const string PACKAGE_VERSION = "5.1.2";
+        public const string PACKAGE_VERSION = "6.0.0";
 
         // =================================================================
         //  ローカル状態コード (Design Section 10.1)
