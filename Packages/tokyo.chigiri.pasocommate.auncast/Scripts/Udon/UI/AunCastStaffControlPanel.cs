@@ -85,6 +85,7 @@ namespace PasocomMate.AunCast
         private string[] _indicatorHexColors;
         // インジケーター描画のたびに配列を確保しないための使い回しバッファ（長さは MAX_PLAYERS 固定）。
         private int[] _indicatorSortKeys;
+        private const int MAX_INDICATOR_ERROR_HELP_LENGTH = 120;
 
         // インジケーター色インデックス。値がソートキーを兼ね、小さいほど上位（異常度高）に表示される。
         // 赤(エラー) → 橙(接続中) → 黄(Resync中) → 青(待機) → 白(正常) の順。
@@ -1009,11 +1010,82 @@ namespace PasocomMate.AunCast
             helpTextField.text = _isJapanese ? _helpTextsJa[helpKey] : _helpTextsEn[helpKey];
         }
 
+        /// <summary>
+        /// エラー状態のプレイヤー名を、ヘルプ欄に収まる文字数まで表示する。
+        /// エラーがない場合は通常のインジケーター説明を表示する。
+        /// </summary>
+        private void SetIndicatorErrorHelp()
+        {
+            _activeHelpKey = HELP_INDICATOR;
+            if (helpTextField == null || coordinator == null)
+            {
+                SetHelpText(HELP_INDICATOR);
+                return;
+            }
+
+            AunCastPlaybackMonitor pbm = coordinator.GetPlaybackMonitor();
+            if (pbm == null)
+            {
+                SetHelpText(HELP_INDICATOR);
+                return;
+            }
+
+            string prefix = _isJapanese ? "エラー: " : "Errors: ";
+            string separator = _isJapanese ? "、" : ", ";
+            string result = prefix;
+            int visibleLength = prefix.Length;
+            bool foundError = false;
+            int maxPlayers = coordinator.GetMaxPlayers();
+            for (int i = 0; i < maxPlayers; i++)
+            {
+                if (pbm.GetErrorActive(i) == 0) continue;
+
+                int playerId = coordinator.GetUserPlayerId(i);
+                VRCPlayerApi player = playerId != 0 ? VRCPlayerApi.GetPlayerById(playerId) : null;
+                if (player == null || !Utilities.IsValid(player) || string.IsNullOrEmpty(player.displayName))
+                    continue;
+
+                string delimiter = foundError ? separator : "";
+                int remaining = MAX_INDICATOR_ERROR_HELP_LENGTH - visibleLength - delimiter.Length;
+                if (remaining <= 0)
+                {
+                    if (visibleLength < MAX_INDICATOR_ERROR_HELP_LENGTH)
+                        result += "…";
+                    break;
+                }
+
+                string displayName = player.displayName;
+                if (displayName.Length > remaining)
+                {
+                    if (remaining > 1)
+                        displayName = displayName.Substring(0, remaining - 1) + "…";
+                    else
+                        displayName = "…";
+                }
+
+                result += delimiter + EscapeRichText(displayName);
+                visibleLength += delimiter.Length + displayName.Length;
+                foundError = true;
+
+                if (visibleLength >= MAX_INDICATOR_ERROR_HELP_LENGTH)
+                    break;
+            }
+
+            if (!foundError)
+            {
+                SetHelpText(HELP_INDICATOR);
+                return;
+            }
+
+            helpTextField.text = result;
+        }
+
         public override void OnLanguageChanged(string language)
         {
             if (_languageOverride) return;
             _isJapanese = language != null && language.StartsWith("ja");
-            if (_activeHelpKey >= 0) SetHelpText(_activeHelpKey);
+            if (_activeHelpKey == HELP_INDICATOR) SetIndicatorErrorHelp();
+            else if (_activeHelpKey >= 0) SetHelpText(_activeHelpKey);
         }
 
         private bool _languageOverride;
@@ -1023,7 +1095,8 @@ namespace PasocomMate.AunCast
         {
             _languageOverride = true;
             _isJapanese = !_isJapanese;
-            if (_activeHelpKey >= 0) SetHelpText(_activeHelpKey);
+            if (_activeHelpKey == HELP_INDICATOR) SetIndicatorErrorHelp();
+            else if (_activeHelpKey >= 0) SetHelpText(_activeHelpKey);
         }
 
         public void OnHoverStopButton() { SetHelpText(HELP_STOP_BUTTON); }
@@ -1039,7 +1112,7 @@ namespace PasocomMate.AunCast
             ApplyNowPlayingDisplay();
             SetHelpText(HELP_NOW_PLAYING);
         }
-        public void OnHoverIndicator() { SetHelpText(HELP_INDICATOR); }
+        public void OnHoverIndicator() { SetIndicatorErrorHelp(); }
         public void OnHoverUserCount() { SetHelpText(HELP_USER_COUNT); }
         public void OnHoverVolume() { SetHelpText(HELP_VOLUME); }
         public void OnHoverViewerResync() { SetHelpText(HELP_VIEWER_RESYNC); }
