@@ -97,7 +97,7 @@ namespace PasocomMate.AunCast.Internal
                 _cachedTermsSourceSignature = sourceSignature;
                 return true;
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 errorMessage = e.Message;
                 return false;
@@ -141,7 +141,7 @@ namespace PasocomMate.AunCast.Internal
 
         private static void WriteHashPart(Stream hashInput, byte[] bytes)
         {
-            byte[] lengthBytes = System.BitConverter.GetBytes(bytes.Length);
+            byte[] lengthBytes = BitConverter.GetBytes(bytes.Length);
             hashInput.Write(lengthBytes, 0, lengthBytes.Length);
             hashInput.Write(bytes, 0, bytes.Length);
         }
