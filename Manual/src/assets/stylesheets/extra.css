@@ -178,6 +178,16 @@ header {
   display: none;
 }
 
+/* 狭幅時の底部メニューも、通常のサイドバーと同じ文字サイズ・太さに揃える */
+#bottom-sidebar a {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+#bottom-sidebar .text-muted-foreground {
+  font-size: 0.75rem;
+}
+
 /* ページ遷移のクロスフェードを無効化する。
    shadcn テーマはネイティブのクロスドキュメント View Transitions
    (@view-transition { navigation: auto }) で遷移をクロスフェードするが、
