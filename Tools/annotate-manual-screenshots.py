@@ -22,38 +22,39 @@ JOBS = [
         f"{ASSETS}/portable-panel-viewer.png",
         f"{ASSETS}/portable-panel-viewer-annotated.png",
         [
-            (1, 1018, 866),  # Resync ボタン
-            (2, 114, 866),   # Reboot ボタン（⚡）
-            (3, 886, 322),   # Drift
-            (4, 886, 404),   # Audio Level
-            (5, 76, 704),    # Silence Resync
-            (6, 520, 704),   # Manual Mode
-            (7, 76, 783),    # Volume
-            (8, 76, 621),    # 再生ステータス表示（サムネイル下）
-            (9, 1372, 68),   # × ボタン
-            (10, 1165, 68),  # ビュー切替ボタン（⇔）
+            (1, 1372, 940),  # Resync ボタンの右側
+            (2, 65, 940),    # Reboot ボタンの左側
+            (3, 885, 326),   # Drift の左側
+            (4, 885, 415),   # Audio Level の左側
+            (5, 66, 730),    # Silence Resync の左側
+            (6, 550, 670),   # Mode の上側
+            (7, 66, 812),    # Volume の左側
+            (8, 66, 614),    # 再生ステータス表示の左側
+            (9, 1380, 172),  # × ボタンの右下
+            (10, 1145, 92),  # ビュー切替ボタンの左側
         ],
     ),
-    # panel-staff.md「スタッフビュー」の各部①〜⑮に対応
+    # panel-staff.md「スタッフビュー」の各部①〜⑯に対応
     (
         f"{ASSETS}/portable-panel-staff.png",
         f"{ASSETS}/portable-panel-staff-annotated.png",
         [
-            (1, 82, 218),    # Playing（配信中URL）
-            (2, 82, 306),    # Next URL 入力欄
-            (3, 1342, 266),  # 送信ボタン（↑↓）
-            (4, 118, 388),   # Stop All
-            (5, 478, 388),   # Reboot All
-            (6, 840, 388),   # Resync All
-            (7, 855, 510),   # 状態インジケーター
-            (8, 1360, 500),  # 人数表示（Playing / Instance / Queued）
-            (9, 82, 615),    # Connection / Concurrent の Edit
-            (10, 82, 720),   # Drift Threshold
-            (11, 230, 945),  # ヘルプ表示（言語切替）
-            (12, 1018, 866), # Resync ボタン（下部・観客ビューと同じ）
-            (13, 114, 866),  # Reboot ボタン（⚡・下部・観客ビューと同じ）
-            (14, 1042, 122), # スタッフ操作ロックボタン（🔒・右上）
-            (15, 76, 510),   # Timeline Log トグル
+            (1, 65, 199),    # Playing の左側
+            (2, 65, 291),    # Next URL の左側
+            (3, 1372, 290),  # 送信ボタンの右側
+            (4, 65, 405),    # Stop All の左側
+            (5, 640, 480),   # Reboot All の下側
+            (6, 1372, 465),  # Resync All の右側
+            (7, 870, 465),   # 状態インジケーターの上側
+            (8, 1372, 650),  # 人数表示の右側
+            (9, 745, 630),   # Connection / Concurrent の Edit の左側
+            (10, 745, 735),  # Drift Threshold の Edit の左側
+            (11, 745, 805),  # Force Mode の Edit の左側
+            (12, 1100, 850), # ヘルプ表示の上側
+            (13, 1372, 940), # Resync ボタン（下部・観客ビューと同じ）の右側
+            (14, 65, 940),   # Reboot ボタン（⚡・下部・観客ビューと同じ）の左側
+            (15, 1040, 92),  # スタッフ操作ロックボタンの左側
+            (16, 65, 526),   # Timeline Log の左側
         ],
     ),
 ]
@@ -64,7 +65,18 @@ CROPS = [
     (
         f"{ASSETS}/portable-panel-staff.png",
         f"{ASSETS}/portable-panel-staff-indicators.png",
-        (870, 465, 1395, 745),
+        (860, 470, 1395, 780),
+    ),
+    # panel-wall.md 用: 呼び出し設定の拡大
+    (
+        f"{ASSETS}/wall-panel-user-desktop.png",
+        f"{ASSETS}/wall-panel-spawn-gesture-desktop.png",
+        (120, 390, 960, 742),
+    ),
+    (
+        f"{ASSETS}/wall-panel-user-vr.png",
+        f"{ASSETS}/wall-panel-spawn-gesture-vr.png",
+        (120, 390, 960, 782),
     ),
 ]
 

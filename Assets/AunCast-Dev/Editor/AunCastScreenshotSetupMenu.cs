@@ -28,13 +28,28 @@ namespace PasocomMate.AunCast.Dev.Editor
         private const string USER_PADDED = USER_CONTENT + "/UserPadded";
         private const string STAFF_PADDED = STAFF_CONTENT + "/StaffPadded";
         private const string SHARED_PADDED = SHARED_CONTENT + "/SharedPadded";
+        private const string WALL_PANEL = "WallControlPanel";
+        private const string WALL_CONTENT_AREA = WALL_PANEL + "/ContentScaler/WallContentArea";
+        private const string WALL_USER_CONTENT = WALL_CONTENT_AREA + "/UserContent";
+        private const string WALL_STAFF_CONTENT = WALL_CONTENT_AREA + "/StaffContent";
+        private const string WALL_SHARED_CONTENT = WALL_CONTENT_AREA + "/SharedContent";
+        private const string WALL_RESYNC_ONLY_CONTENT = WALL_CONTENT_AREA + "/ResyncOnlyContent";
+        private const string WALL_INFORMATION_CONTENT = WALL_CONTENT_AREA + "/InformationContent";
 
         private const string SAMPLE_URL = "rtspt://example.com/live/abcd0123";
         private const int OUTPUT_WIDTH = 1440;
         private const int OUTPUT_HEIGHT = 1080;
+        private const int WALL_OUTPUT_WIDTH = 1080;
+        private const int WALL_OUTPUT_HEIGHT = 1080;
         private const int RENDER_SCALE = 2;
         private const string VIEWER_PNG_NAME = "portable-panel-viewer.png";
         private const string STAFF_PNG_NAME = "portable-panel-staff.png";
+        private const string WALL_RESYNC_ONLY_PNG_NAME = "wall-panel-resync-only.png";
+        private const string WALL_USER_DESKTOP_PNG_NAME = "wall-panel-user-desktop.png";
+        private const string WALL_USER_VR_PNG_NAME = "wall-panel-user-vr.png";
+        private const string WALL_STAFF_PASSCODE_PNG_NAME = "wall-panel-staff-passcode.png";
+        private const float WALL_CAPTURE_PADDING = 1.14f;
+        private const float WALL_CAPTURE_DISTANCE = 1f;
         private const string SAMPLE_USER_COUNTS =
             "Playing\n<size=28>34</size><size=16>+10</size>\n\n"
             + "In Instance\n<size=28>35</size>\n\n"
@@ -52,6 +67,14 @@ namespace PasocomMate.AunCast.Dev.Editor
         private static readonly Color SILENCE_GAUGE_COLOR = new Color(0.85f, 0.35f, 0.35f, 1f);
         private static readonly Color FALLBACK_USER_BACKGROUND = new Color(0.23f, 0.38f, 0.45f, 1f);
         private static readonly Color FALLBACK_STAFF_BACKGROUND = new Color(0.56f, 0.48f, 0.77f, 1f);
+
+        private enum WallPanelView
+        {
+            ResyncOnly,
+            UserDesktop,
+            UserVr,
+            StaffPasscode,
+        }
 
         [MenuItem(MENU_ROOT + "観客ビューを準備", false, 0)]
         public static void PrepareViewerView()
@@ -77,10 +100,76 @@ namespace PasocomMate.AunCast.Dev.Editor
             CaptureView(showStaff: true, STAFF_PNG_NAME);
         }
 
+        [MenuItem(MENU_ROOT + "壁パネル/離れているとき（Resync）を準備", false, 40)]
+        public static void PrepareWallResyncOnlyView()
+        {
+            PrepareWallPanelView(WallPanelView.ResyncOnly);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/近く：デスクトップを準備", false, 41)]
+        public static void PrepareWallUserDesktopView()
+        {
+            PrepareWallPanelView(WallPanelView.UserDesktop);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/近く：VRを準備", false, 42)]
+        public static void PrepareWallUserVrView()
+        {
+            PrepareWallPanelView(WallPanelView.UserVr);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/暗証番号入力を準備", false, 43)]
+        public static void PrepareWallStaffPasscodeView()
+        {
+            PrepareWallPanelView(WallPanelView.StaffPasscode);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/離れているとき（Resync）を撮影（透過PNG）", false, 60)]
+        public static void CaptureWallResyncOnlyPng()
+        {
+            CaptureWallPanelPng(WallPanelView.ResyncOnly, WALL_RESYNC_ONLY_PNG_NAME);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/近く：デスクトップを撮影（透過PNG）", false, 61)]
+        public static void CaptureWallUserDesktopPng()
+        {
+            CaptureWallPanelPng(WallPanelView.UserDesktop, WALL_USER_DESKTOP_PNG_NAME);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/近く：VRを撮影（透過PNG）", false, 62)]
+        public static void CaptureWallUserVrPng()
+        {
+            CaptureWallPanelPng(WallPanelView.UserVr, WALL_USER_VR_PNG_NAME);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/暗証番号入力を撮影（透過PNG）", false, 63)]
+        public static void CaptureWallStaffPasscodePng()
+        {
+            CaptureWallPanelPng(WallPanelView.StaffPasscode, WALL_STAFF_PASSCODE_PNG_NAME);
+        }
+
+        [MenuItem(MENU_ROOT + "壁パネル/すべてを撮影（透過PNG）", false, 70)]
+        public static void CaptureAllWallPanelPngs()
+        {
+            CaptureWallPanelPng(WallPanelView.ResyncOnly, WALL_RESYNC_ONLY_PNG_NAME);
+            CaptureWallPanelPng(WallPanelView.UserDesktop, WALL_USER_DESKTOP_PNG_NAME);
+            CaptureWallPanelPng(WallPanelView.UserVr, WALL_USER_VR_PNG_NAME);
+            CaptureWallPanelPng(WallPanelView.StaffPasscode, WALL_STAFF_PASSCODE_PNG_NAME);
+        }
+
         [MenuItem(MENU_ROOT + "観客ビューを準備", true)]
         [MenuItem(MENU_ROOT + "スタッフビューを準備", true)]
         [MenuItem(MENU_ROOT + "観客ビューを撮影（透過PNG）", true)]
         [MenuItem(MENU_ROOT + "スタッフビューを撮影（透過PNG）", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/離れているとき（Resync）を準備", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/近く：デスクトップを準備", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/近く：VRを準備", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/暗証番号入力を準備", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/離れているとき（Resync）を撮影（透過PNG）", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/近く：デスクトップを撮影（透過PNG）", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/近く：VRを撮影（透過PNG）", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/暗証番号入力を撮影（透過PNG）", true)]
+        [MenuItem(MENU_ROOT + "壁パネル/すべてを撮影（透過PNG）", true)]
         private static bool ValidatePrepareView()
         {
             return !EditorApplication.isPlayingOrWillChangePlaymode;
@@ -162,6 +251,186 @@ namespace PasocomMate.AunCast.Dev.Editor
             }
         }
 
+        private static Transform PrepareWallPanelView(WallPanelView view)
+        {
+            Transform root = FindSingleAunCastInstance();
+            if (root == null) return null;
+
+            Transform wall = RequireTransform(root, WALL_PANEL);
+            string viewName = GetWallPanelViewName(view);
+            string undoName = $"Prepare AunCast Wall Panel {viewName} Screenshot";
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+
+            try
+            {
+                bool userView = view == WallPanelView.UserDesktop || view == WallPanelView.UserVr;
+                bool staffView = view == WallPanelView.StaffPasscode;
+                bool resyncOnlyView = view == WallPanelView.ResyncOnly;
+
+                SetActive(wall.gameObject, true);
+                SetEnabled(RequireComponent<Canvas>(root, WALL_PANEL), true);
+                SetCanvasGroup(RequireComponent<CanvasGroup>(root, WALL_USER_CONTENT), userView);
+                SetCanvasGroup(RequireComponent<CanvasGroup>(root, WALL_STAFF_CONTENT), staffView);
+                SetCanvasGroup(RequireComponent<CanvasGroup>(root, WALL_SHARED_CONTENT), userView || staffView);
+                SetCanvasGroup(RequireComponent<CanvasGroup>(root, WALL_RESYNC_ONLY_CONTENT), resyncOnlyView);
+                SetCanvasGroup(RequireComponent<CanvasGroup>(root, WALL_INFORMATION_CONTENT), false);
+
+                SetActive(
+                    RequireTransform(root, WALL_USER_CONTENT + "/DesktopGestureGroup").gameObject,
+                    view == WallPanelView.UserDesktop);
+                SetActive(
+                    RequireTransform(root, WALL_USER_CONTENT + "/VrGestureGroup").gameObject,
+                    view == WallPanelView.UserVr);
+
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/DesktopGestureGroup/DesktopTabDoubleTapToggle"),
+                    true,
+                    true);
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/DesktopGestureGroup/DesktopF5DoubleTapToggle"),
+                    false,
+                    true);
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/DesktopGestureGroup/DesktopEscHoldToggle"),
+                    false,
+                    true);
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/VrGestureGroup/GestureRightStickUpToggle"),
+                    true,
+                    true);
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/VrGestureGroup/GestureBothTriggersToggle"),
+                    false,
+                    true);
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/VrGestureGroup/GestureDoubleTriggerLeftToggle"),
+                    false,
+                    true);
+                SetToggle(
+                    RequireComponent<Toggle>(root, WALL_USER_CONTENT + "/VrGestureGroup/GestureDoubleTriggerRightToggle"),
+                    false,
+                    true);
+                SetText(
+                    RequireComponent<TMP_Text>(root, WALL_STAFF_CONTENT + "/PasscodeDisplay"),
+                    "―  ―  ―  ―");
+                SetWallResyncButtonTextColors(root);
+                SetButtonsInteractable(wall, true);
+                SetTextAlpha(wall, 1f);
+
+                Canvas.ForceUpdateCanvases();
+                EditorApplication.QueuePlayerLoopUpdate();
+                SceneView.RepaintAll();
+                Selection.activeGameObject = wall.gameObject;
+                EditorSceneManager.MarkSceneDirty(root.gameObject.scene);
+                Undo.CollapseUndoOperations(undoGroup);
+                Debug.Log($"[AunCast Dev] 壁パネル（{viewName}）をスクリーンショット撮影用の状態にしました。", wall);
+                return root;
+            }
+            catch (Exception exception)
+            {
+                Undo.RevertAllDownToGroup(undoGroup);
+                Debug.LogException(exception);
+                EditorUtility.DisplayDialog(
+                    "AunCast 壁パネル撮影準備",
+                    $"{viewName}の準備に失敗しました。\n\n{exception.Message}",
+                    "OK");
+                return null;
+            }
+        }
+
+        private static void CaptureWallPanelPng(WallPanelView view, string fileName)
+        {
+            Transform root = PrepareWallPanelView(view);
+            if (root == null) return;
+
+            GameObject cameraObject = null;
+            try
+            {
+                Camera captureCamera = CreateWallCaptureCamera(root, out cameraObject);
+                string outputPath = GetManualAssetPath(fileName);
+                bool cornersAreTransparent = CaptureTransparentPng(
+                    captureCamera,
+                    outputPath,
+                    WALL_OUTPUT_WIDTH,
+                    WALL_OUTPUT_HEIGHT);
+                Debug.Log(
+                    $"[AunCast Dev] 壁パネル（{GetWallPanelViewName(view)}）を透過PNGとして出力しました: {outputPath.Replace('\\', '/')}",
+                    RequireTransform(root, WALL_PANEL));
+
+                if (!cornersAreTransparent)
+                {
+                    EditorUtility.DisplayDialog(
+                        "AunCast 壁パネル撮影完了（注意）",
+                        "PNGは出力されましたが、画像の四隅が透明ではありません。\n"
+                        + "壁パネル以外のオブジェクトが重なっていないか確認してください。",
+                        "OK");
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorUtility.DisplayDialog(
+                    "AunCast 壁パネル撮影失敗",
+                    $"{GetWallPanelViewName(view)}の撮影に失敗しました。\n\n{exception.Message}",
+                    "OK");
+            }
+            finally
+            {
+                if (cameraObject != null)
+                    UnityEngine.Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        private static Camera CreateWallCaptureCamera(Transform root, out GameObject cameraObject)
+        {
+            RectTransform wallRect = RequireComponent<RectTransform>(root, WALL_PANEL);
+            var corners = new Vector3[4];
+            wallRect.GetWorldCorners(corners);
+
+            float width = Vector3.Distance(corners[0], corners[3]);
+            float height = Vector3.Distance(corners[0], corners[1]);
+            if (width <= 0f || height <= 0f)
+                throw new InvalidOperationException("壁パネルの表示領域を取得できません。");
+
+            Vector3 center = (corners[0] + corners[2]) * 0.5f;
+            Vector3 forward = wallRect.forward;
+            if (forward.sqrMagnitude <= 0f)
+                throw new InvalidOperationException("壁パネルの向きを取得できません。");
+
+            cameraObject = new GameObject("AunCastWallScreenshotCamera")
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            var captureCamera = cameraObject.AddComponent<Camera>();
+            captureCamera.orthographic = true;
+            captureCamera.orthographicSize = Mathf.Max(height, width) * 0.5f * WALL_CAPTURE_PADDING;
+            captureCamera.nearClipPlane = 0.01f;
+            captureCamera.farClipPlane = 10f;
+            captureCamera.clearFlags = CameraClearFlags.SolidColor;
+            captureCamera.backgroundColor = Color.clear;
+            captureCamera.allowHDR = false;
+            captureCamera.allowMSAA = false;
+            captureCamera.cullingMask = ~0;
+            captureCamera.transform.SetPositionAndRotation(
+                center - forward * WALL_CAPTURE_DISTANCE,
+                Quaternion.LookRotation(forward, wallRect.up));
+            return captureCamera;
+        }
+
+        private static string GetWallPanelViewName(WallPanelView view)
+        {
+            switch (view)
+            {
+                case WallPanelView.ResyncOnly: return "離れているとき（Resync）";
+                case WallPanelView.UserDesktop: return "近く：デスクトップ";
+                case WallPanelView.UserVr: return "近く：VR";
+                case WallPanelView.StaffPasscode: return "暗証番号入力";
+                default: return "壁パネル";
+            }
+        }
+
         private static Camera FindCaptureCamera(Scene scene)
         {
             if (!scene.IsValid())
@@ -227,10 +496,14 @@ namespace PasocomMate.AunCast.Dev.Editor
                 Path.Combine(projectRoot.FullName, "Manual", "src", "assets", fileName));
         }
 
-        private static bool CaptureTransparentPng(Camera camera, string outputPath)
+        private static bool CaptureTransparentPng(
+            Camera camera,
+            string outputPath,
+            int outputWidth = OUTPUT_WIDTH,
+            int outputHeight = OUTPUT_HEIGHT)
         {
-            int renderWidth = OUTPUT_WIDTH * RENDER_SCALE;
-            int renderHeight = OUTPUT_HEIGHT * RENDER_SCALE;
+            int renderWidth = outputWidth * RENDER_SCALE;
+            int renderHeight = outputHeight * RENDER_SCALE;
             var source = new RenderTexture(
                 renderWidth,
                 renderHeight,
@@ -243,8 +516,8 @@ namespace PasocomMate.AunCast.Dev.Editor
                 antiAliasing = 1,
             };
             var output = new RenderTexture(
-                OUTPUT_WIDTH,
-                OUTPUT_HEIGHT,
+                outputWidth,
+                outputHeight,
                 0,
                 RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.sRGB)
@@ -254,8 +527,8 @@ namespace PasocomMate.AunCast.Dev.Editor
                 antiAliasing = 1,
             };
             var texture = new Texture2D(
-                OUTPUT_WIDTH,
-                OUTPUT_HEIGHT,
+                outputWidth,
+                outputHeight,
                 TextureFormat.RGBA32,
                 mipChain: false,
                 linear: false);
@@ -286,7 +559,7 @@ namespace PasocomMate.AunCast.Dev.Editor
 
                 Graphics.Blit(source, output);
                 RenderTexture.active = output;
-                texture.ReadPixels(new Rect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT), 0, 0, recalculateMipMaps: false);
+                texture.ReadPixels(new Rect(0, 0, outputWidth, outputHeight), 0, 0, recalculateMipMaps: false);
                 texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
 
                 string directory = Path.GetDirectoryName(outputPath);
@@ -461,6 +734,22 @@ namespace PasocomMate.AunCast.Dev.Editor
             return showStaff ? FALLBACK_STAFF_BACKGROUND : FALLBACK_USER_BACKGROUND;
         }
 
+        private static void SetWallResyncButtonTextColors(Transform root)
+        {
+            AunCastThemeApplier applier = root.GetComponent<AunCastThemeApplier>();
+            if (applier == null || applier.theme == null) return;
+
+            string resyncOnlyButton = WALL_RESYNC_ONLY_CONTENT + "/ResyncOnlyButton/ResyncOnlyButton_Inner";
+            SetTextColor(
+                RequireComponent<TMP_Text>(
+                    root,
+                    resyncOnlyButton + "/Label"),
+                applier.theme.buttonLabelColor);
+            SetTextColor(
+                RequireComponent<TMP_Text>(root, resyncOnlyButton + "/TextLabel"),
+                applier.theme.buttonLabelColor);
+        }
+
         private static Transform RequireTransform(Transform root, string path)
         {
             Transform target = root.Find(path);
@@ -516,6 +805,14 @@ namespace PasocomMate.AunCast.Dev.Editor
             if (target.text == text) return;
             Undo.RecordObject(target, "Prepare AunCast Screenshot");
             target.text = text;
+            RecordPrefabOverride(target);
+        }
+
+        private static void SetTextColor(TMP_Text target, Color color)
+        {
+            if (target.color == color) return;
+            Undo.RecordObject(target, "Prepare AunCast Screenshot");
+            target.color = color;
             RecordPrefabOverride(target);
         }
 
