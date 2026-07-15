@@ -84,29 +84,40 @@ namespace PasocomMate.AunCast.Internal
         }
 
         /// <summary>
-        /// 指定した規約ファイルのハッシュに対して同意済みかを返す。
-        /// 旧形式の同意記録は、初回確認時に現在の規約ハッシュへ移行する。
+        /// ハッシュ判定へ移行した時点（v5.1.2）の規約ファイルのハッシュ。
+        /// 旧形式の同意記録の引き継ぎは、現在の規約がこのハッシュと一致する場合だけに限る。
+        /// 規約本文を改訂したらこの定数は更新せず、改訂後の規約には必ず再同意を求める。
         /// </summary>
+        private const string MIGRATABLE_TERMS_HASH =
+            "151689DBB71E602051EC63CB00042E2F196EE2331930A5703E5655B677AE4AE1";
+
+        /// <summary>指定した規約ファイルのハッシュに対して同意済みかを返す。</summary>
         internal static bool HasConsented(string currentTermsHash)
         {
             if (string.IsNullOrEmpty(currentTermsHash)) return false;
 
+            return string.Equals(
+                Load().terms.agreedTermsHash, currentTermsHash, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// 旧形式（ハッシュ未記録）の同意記録を現在の形式へ引き継ぐ。移行した場合だけ true を返す。
+        /// 引き継ぎ先は移行時点の規約に固定するため、規約本文が改訂されていれば移行せず再同意を求める。
+        /// </summary>
+        internal static bool TryMigrateLegacyConsent(string currentTermsHash)
+        {
+            if (string.IsNullOrEmpty(currentTermsHash)) return false;
+            if (!string.Equals(currentTermsHash, MIGRATABLE_TERMS_HASH, StringComparison.Ordinal))
+                return false;
+
             ProjectSettingsData data = Load();
             TermsData terms = data.terms;
-            if (string.Equals(terms.agreedTermsHash, currentTermsHash, StringComparison.Ordinal))
-                return true;
+            if (!string.IsNullOrEmpty(terms.agreedTermsHash)) return false;
+            if (string.IsNullOrEmpty(terms.agreedVersion)) return false;
 
-            // 既存プロジェクトでは、従来の同意記録を現在の規約に対する同意として移行する。
-            // これにより、規約ファイルを変更していない今回の方式移行だけで再同意を求めない。
-            if (string.IsNullOrEmpty(terms.agreedTermsHash) &&
-                !string.IsNullOrEmpty(terms.agreedVersion))
-            {
-                terms.agreedTermsHash = currentTermsHash;
-                Save(data);
-                return true;
-            }
-
-            return false;
+            terms.agreedTermsHash = currentTermsHash;
+            Save(data);
+            return true;
         }
 
         /// <summary>同意を記録して ProjectSettings へ永続化する。</summary>

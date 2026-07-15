@@ -37,7 +37,8 @@ namespace PasocomMate.AunCast.Internal
                 return false;
             }
 
-            if (AunCastProjectSettingsStore.HasConsented(termsHash))
+            if (AunCastProjectSettingsStore.HasConsented(termsHash)
+                || AunCastProjectSettingsStore.TryMigrateLegacyConsent(termsHash))
                 return true;
 
             DrawConsentGate(version, termsHash);
