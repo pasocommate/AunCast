@@ -765,7 +765,7 @@ namespace PasocomMate.AunCast
 
                 string resyncOnly = wall + "/ResyncOnlyContent/ResyncOnlyButton/ResyncOnlyButton_Inner";
                 SetThemeTextColor(wallRoot, resyncOnly + "/Label", theme.buttonLabelColor);
-                SetThemeTextColor(wallRoot, resyncOnly + "/TextLabel", theme.bodyTextColor);
+                SetThemeTextColor(wallRoot, resyncOnly + "/TextLabel", theme.buttonLabelColor);
                 SetThemeTextColor(wallRoot, wallUser + "/GestureLabel", theme.headingTextColor);
 
                 SetThemeTextColor(wallRoot, wall + "/TopBarPadded/InformationButton/InformationButton_Inner/Label", theme.buttonLabelColor);
