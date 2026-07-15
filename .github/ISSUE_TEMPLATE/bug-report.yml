@@ -53,6 +53,7 @@ body:
       label: プラットフォーム
       options:
         - VR（PC接続）
+        - Android（Quest 等のスタンドアロン）
         - デスクトップ（VRなし）
     validations:
       required: true
