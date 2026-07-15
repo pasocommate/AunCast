@@ -117,7 +117,7 @@ namespace PasocomMate.AunCast
         [Tooltip("無音検知による自動 Resync（Silence Resync）を初期状態で有効にする。各クライアントのローカルトグルの初期値。")]
         public bool defaultAutoSilenceResync = true;
 
-        [Tooltip("Manual Mode を初期状態で有効にする。各クライアントのローカルトグルの初期値。有効時は自動 Resync / Retry Reboot を抑止する。")]
+        [Tooltip("Mode の初期値を Manual にする。各クライアントが保持するローカル値の初期値で、Manual では自動 Resync / Retry Reboot を抑止する。スタッフが Force Mode を Auto / Manual にしている間は、そちらの強制値が優先される。")]
         public bool defaultManualMode;
 
         [Tooltip("同時Resync上限の初期値")]

@@ -324,11 +324,11 @@ namespace PasocomMate.AunCast.Internal
                 settings.defaultAutoSilenceResync);
             EditorGUI.indentLevel--;
 
-            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("Manual Mode", "Manual Mode"));
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("Mode", "Mode"));
             EditorGUI.indentLevel++;
-            bool newManualMode = ToggleField("初期状態で有効", "Enabled by Default", "defaultManualMode",
-                "Manual Mode（各クライアントのローカルトグル）の初期値。オンで起動時から自動Resyncと自動Retry Rebootを抑止する。",
-                "Initial value of Manual Mode (each client's local toggle). On suppresses automatic Resync and retry Reboot from startup.",
+            bool newManualMode = ToggleField("初期状態で Manual", "Manual by Default", "defaultManualMode",
+                "Mode（各クライアントが保持するローカル値）の初期値。オンで起動時から自動Resyncと自動Retry Rebootを抑止する。スタッフが Force Mode で強制している間は、そちらが優先される。",
+                "Initial value of Mode (the local value each client keeps). On suppresses automatic Resync and retry Reboot from startup. While staff force a Mode via Force Mode, the forced value takes precedence.",
                 settings.defaultManualMode);
             EditorGUI.indentLevel--;
 
