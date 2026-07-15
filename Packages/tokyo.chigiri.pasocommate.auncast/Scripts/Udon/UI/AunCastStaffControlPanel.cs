@@ -963,6 +963,9 @@ namespace PasocomMate.AunCast
             int connecting = coordinator.GetConnectingEstimateCount();
             UpdateIndicatorDisplay();
             UpdateUserCountDisplay(playing, connecting);
+            // インジケーターをホバーしたままエラーが発生・解消しても表示が固着しないよう、
+            // インジケーター本体と同じ周期でヘルプ欄も作り直す。
+            if (_activeHelpKey == HELP_INDICATOR) SetIndicatorErrorHelp();
         }
 
         /// <summary>
