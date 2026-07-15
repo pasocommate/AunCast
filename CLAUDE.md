@@ -43,7 +43,7 @@
   - テンプレート: 既存の `.asset` ファイル（例: `AunCastScreen.asset`）を参考に、以下のフィールドを書き換えて作成する:
     - `m_Name`: スクリプト名
     - `sourceCsScript` の `guid`: 対象 `.cs.meta` ファイル内の GUID
-    - `behaviourSyncMode`: スクリプトの `[UdonBehaviourSyncMode]` に対応する値（0=Continuous, 1=Manual, 2=NoVariableSync）
+    - `behaviourSyncMode`: スクリプトの `[UdonBehaviourSyncMode]` に対応する値。`UdonSharp.BehaviourSyncMode` の宣言順（`Any=0, None=1, NoVariableSync=2, Continuous=3, Manual=4`）。UdonBehaviour 側の `_syncMethod` は別の enum（`VRC.SDKBase.Networking.SyncType`: `Unknown=0, None=1, Continuous=2, Manual=3`）なので混同しない
     - `hasInteractEvent`: `Interact()` をオーバーライドしている場合は 1、そうでなければ 0
     - `compiledVersion: 0` にして、Refresh で再コンパイルさせる
   - `m_Script` の `guid` (`c333ccfdd0cbdbc4ca30cef2dd6e6b9b`) は `UdonSharpProgramAsset` 型を指す固定値で、全アセット共通。

@@ -204,6 +204,22 @@
 - 対策: URL の空・現在の同期再生状態・プレイヤーの生存状態を併用する。初回ロード中のエラーは即座に FSM を進めず、通常の Ready / Play タイムアウト相当の猶予を置き、その間に新しい `OnVideoStart` が届けば成功を優先する。
 - Stop 後に届いたエラーは、同期 URL が空であることを確認して破棄する。現在の Active が再生中かつ時刻前進済みの場合も、古いロードの遅延エラーとして破棄し、通常の stall 検知を復旧判断に使う。
 
+### 9.19 UdonSharp が `_syncMethod` を毎回反転させる（Manual と NoVariableSync の同居時）
+- `UdonSharpEditorManager` の同期モード検証は、NoVariableSync のビヘイビアを **同じ GameObject 上の他ビヘイビアの同期方式へ揃える** ように `UdonBehaviour._syncMethod` を自動で書き換える。この処理に分岐の穴がある:
+  ```csharp
+  if (hasManual && behaviour.SyncMethod != Networking.SyncType.Manual)
+      behaviour.SyncMethod = Networking.SyncType.Manual;
+  else if (behaviour.SyncMethod == Networking.SyncType.Manual)
+      behaviour.SyncMethod = Networking.SyncType.Continuous;   // ← 既に Manual だとここに落ちる
+  ```
+- `hasManual == true` かつ既に `Manual` の NoVariableSync ビヘイビアは、第1条件が false になり else-if で **Continuous へ降格**する。次のパスで Manual に戻され、また降格し……と検証のたびに反転する。`hasManual` は NoVariableSync を除外して算出されるため、同居する Manual ビヘイビアがある限り常に true で、反転は止まらない。
+- AunCast では `DualPlayerController` GameObject が該当する。`AunCastDualPlayerController`（Manual）に `AunCastPlaybackSwitcher` / `AunCastActivePlayerMonitor` / `AunCastResyncCoordinatorClient`（いずれも NoVariableSync）が同居しており、シーン保存のたびにこの3つのプレハブオーバーライドが Manual ⇄ Continuous を往復する。
+- **正しい値は同居する Manual ビヘイビアと同じ `Manual`（`_syncMethod: 3`）で、4つとも揃っているのが正**。`AunCast.prefab` はその状態で、`AunCast-Verify.unity` に出る差分はどちらの位相も誤り。dev シーン限定の差分ノイズとして許容しているが、**`AunCast.prefab` を Prefab Mode で開いて保存した場合は、配布物側に反転が焼き込まれていないか確認する**。
+- 値の enum は 2 系統あるので混同しない:
+  - `UdonSharpProgramAsset.behaviourSyncMode` = `UdonSharp.BehaviourSyncMode`: `Any=0, None=1, NoVariableSync=2, Continuous=3, Manual=4`
+  - `UdonBehaviour._syncMethod` = `VRC.SDKBase.Networking.SyncType`: `Unknown=0, None=1, Continuous=2, Manual=3`
+- 反転を根絶するには NoVariableSync を Manual ビヘイビアと別 GameObject へ分離する（`hasManual == false` になり Continuous で安定する）。プレハブ改造と参照の張り直しを伴うため未実施。
+
 ## 10. 推奨デバッグ手順
 1. Console の Udon 露出エラーを最優先で潰す。
 2. UI が押せない場合は `VRCUiShape` / Layer / EventSystem / InputModule を確認。
