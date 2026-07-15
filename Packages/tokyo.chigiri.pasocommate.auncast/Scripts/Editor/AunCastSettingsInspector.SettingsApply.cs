@@ -324,6 +324,14 @@ namespace PasocomMate.AunCast.Internal
                 settings.defaultAutoSilenceResync);
             EditorGUI.indentLevel--;
 
+            EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("Manual Mode", "Manual Mode"));
+            EditorGUI.indentLevel++;
+            bool newManualMode = ToggleField("初期状態で有効", "Enabled by Default", "defaultManualMode",
+                "Manual Mode（各クライアントのローカルトグル）の初期値。オンで起動時から自動Resyncと自動Retry Rebootを抑止する。",
+                "Initial value of Manual Mode (each client's local toggle). On suppresses automatic Resync and retry Reboot from startup.",
+                settings.defaultManualMode);
+            EditorGUI.indentLevel--;
+
             EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("同時接続制限", "Concurrent Connection Limit"));
             EditorGUI.indentLevel++;
             int newConcurrent = IntSliderField("同時Resync上限 [人]", "Max Concurrent Resyncs", "maxConcurrentResyncUsers",
@@ -372,6 +380,7 @@ namespace PasocomMate.AunCast.Internal
 
             Undo.RecordObject(settings, "Change AunCast Resync Settings");
             settings.defaultAutoSilenceResync = newAutoSilence;
+            settings.defaultManualMode = newManualMode;
             settings.maxConcurrentResyncUsers = (byte)newConcurrent;
             settings.maxConnectionLimit = (byte)newConnLimit;
             settings.grantTimeoutSec = newGrant;
@@ -524,6 +533,7 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(controllers, so =>
             {
                 SetBoolProperty(so, "_autoSilenceResyncEnabled", settings.defaultAutoSilenceResync);
+                SetBoolProperty(so, "_manualModeEnabled", settings.defaultManualMode);
             });
 
             var coordinators = root.GetComponentsInChildren<AunCastResyncCoordinator>(true);
