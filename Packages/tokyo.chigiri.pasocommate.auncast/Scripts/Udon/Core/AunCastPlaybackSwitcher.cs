@@ -276,6 +276,15 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void StopStandbyOnFailure()
         {
+            // Crossfade 中の中断（サイクルタイムアウト、URL 変更、Reboot）では
+            // _crossfading と Active の途中ゲインが残り、映像更新の停止と音量低下が
+            // 固着する。CompleteSwitchRoles を通らない経路なのでここで復帰させる。
+            if (_crossfading)
+            {
+                _crossfading = false;
+                SetRolesGain(1.0f, 0.0f);
+            }
+
             AunCastVideoPlayerManager standbyManager = GetStandbyManager();
             if (standbyManager != null)
             {
