@@ -26,7 +26,7 @@ Update
 ├─ PerFrame: Crossfade 補間
 ├─ Fast (0.1秒): Coordinator / 同期待ち / Active・Standby監視 / FSM / 無音監視
 ├─ Slow (0.3秒): Global Force Reboot保険 / スロット割当・再送 / 同期待ち保険
-├─ FlushVisualRouting: 状態変化時、またはテクスチャ未到着時のみ
+├─ FlushVisualRouting: 状態変化時のみ（テクスチャ未到着時は Fast Tick で再試行）
 └─ FlushPlaybackReport: 状態変化時、または10秒キープアライブ時のみ
 ```
 
@@ -47,12 +47,32 @@ UI 系は次の静的確認をした。実測は、Controller の通常再生60�
 | `AunCastHudProgressOverlay` | 非表示かつ非フェード時は `LateUpdate` で早期 return |
 | `AunCastAudioOutputTunnel` | A/B 音量を比較する毎フレーム Update |
 
+## レビュー指摘による修正
+
+初回実装のレビューで以下を修正した。いずれも実機未検証。
+
+| 指摘 | 内容 | 対応 |
+|---|---|---|
+| EventBus 通知の遅延 | `NotifyLocalStateChangeIfNeeded` が `TickFast` 内のみになり、`RequestImmediateFastTick` を伴わない `TryManualResync` / `PlayVideo` で `LocalStateChanged` が最大100ms遅延 | `Update` 末尾へ戻した |
+| 映像再試行の毎フレーム化 | テクスチャ未到着中は `_visualRoutingDirty` が立ち続け、Active リブート待ちなど異常時に毎フレーム呼び出しへ戻る | `_visualRoutingRetryPending` に分離し `TickFast` で再試行 |
+| Crossfade 中のダーティ握り潰し | `UpdateRenderTexture` が `_crossfading` 中に `false` を返し、ダーティ要求が失われる | 再試行要求として `true` を返す |
+| Crossfade 中断の未復帰（既存不具合） | `_crossfading` は `CompleteSwitchRoles` でしかクリアされず、サイクルタイムアウト等の中断で映像固着と Active ゲイン低下が残る | `StopStandbyOnFailure` でクリアし Active を全開へ戻す |
+| 同期受信のダーティ漏れ | `_ownerPlaying` は同期受信が直接書き換えるため `SetOwnerPlaying` を通らない | `ApplySyncedState` 冒頭で無条件にダーティ化 |
+
+## 完了済みの反映
+
+- `AunCast.prefab` の `AunCastResyncCoordinator` へ `forceRebootNotifyTarget` を配線済み
+- UdonSharp Program Asset (`AunCastDualPlayerController` / `AunCastActivePlayerMonitor` /
+  `AunCastResyncCoordinator`) を再生成済み
+
 ## 未実施の検証
 
+- **上記「レビュー指摘による修正」を反映した Program Asset の再生成**
+  （`Tools > UdonSharp > Refresh All UdonSharp Programs`）
 - ClientSim / Play Mode と2クライアント実機で、計画書のシナリオを実行する
 - 30 / 60 / 90 FPS相当で無音判定時間を比較する
 - 通常再生・手動/自動 Resync・Force Reboot・Late Join を含む2時間試験を行う
-- Unity Editor の「参照関係を再配線」で `forceRebootNotifyTarget` を更新し、
-  `AunCast/ResyncCoordinator` から `AunCast/DualPlayerController` の
-  `AunCastDualPlayerController` へ配線されていることを確認する
-- UdonSharp Program Asset を `Tools > UdonSharp > Refresh All UdonSharp Programs` で更新する
+- ユーザーのシーン側は「参照関係を再配線」で `forceRebootNotifyTarget` の
+  更新が必要（`AunCast/ResyncCoordinator` → `AunCast/DualPlayerController`）
+- Crossfade 中断時のゲイン復帰は、サイクルタイムアウト (45s) を意図的に
+  起こす必要があり再現手順が未確立
