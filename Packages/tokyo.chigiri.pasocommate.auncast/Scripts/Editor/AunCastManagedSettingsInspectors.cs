@@ -141,6 +141,7 @@ namespace PasocomMate.AunCast.Internal
         {
             "playbackMonitor",
             "staffNotifyTarget",
+            "forceRebootNotifyTarget",
         };
 
         protected override string[] SettingsManagedPropertyNames => SETTINGS_MANAGED_PROPERTY_NAMES;

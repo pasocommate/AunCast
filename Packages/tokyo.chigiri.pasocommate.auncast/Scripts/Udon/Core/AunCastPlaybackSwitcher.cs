@@ -306,14 +306,15 @@ namespace PasocomMate.AunCast
 
         /// <summary>
         /// Active プレイヤーの映像テクスチャをワールドスクリーンへ反映する。
-        /// 毎フレーム呼ばれるため、前回と同一テクスチャなら代入をスキップして負荷を抑える。
+        /// テクスチャが未到着で再試行が必要な場合だけ true を返す。
         /// </summary>
-        public void UpdateRenderTexture(int localState, bool ownerPlaying)
+        public bool UpdateRenderTexture(int localState, bool ownerPlaying)
         {
-            if (_crossfading) return;
+            // Crossfade 中の映像切替は TickCrossfade 内で処理する。
+            if (_crossfading) return false;
 
             AunCastVideoPlayerManager active = GetActiveManager();
-            if (active == null) return;
+            if (active == null) return false;
 
             if (!ownerPlaying && !active.IsPlaying())
             {
@@ -323,7 +324,7 @@ namespace PasocomMate.AunCast
                     _lastAssignedRenderTexture = null;
                     _lastAssignedVideoFlipY = false;
                 }
-                return;
+                return false;
             }
 
             Texture tex = _activeAudioOnlyFallback
@@ -339,7 +340,7 @@ namespace PasocomMate.AunCast
                         _lastAssignedRenderTexture = null;
                         _lastAssignedVideoFlipY = false;
                     }
-                    return;
+                    return false;
                 }
 
                 float now = Time.time;
@@ -348,18 +349,20 @@ namespace PasocomMate.AunCast
                     _lastNullTextureWarnAt = now;
                     LogWarning($"Active texture is null (active={(_activeIsA ? "A" : "B")}, ownerPlaying={ownerPlaying})");
                 }
-                return;
+                // 再生開始コールバックよりテクスチャ取得が遅れる場合だけ再試行する。
+                return true;
             }
 
             bool flipY = active.GetVideoFlipY();
             // 同一テクスチャかつ同一反転なら Screen への再代入を省略
-            if (tex == _lastAssignedRenderTexture && flipY == _lastAssignedVideoFlipY) return;
+            if (tex == _lastAssignedRenderTexture && flipY == _lastAssignedVideoFlipY) return false;
 
             BroadcastVideoTexture(tex, flipY);
 
             _lastAssignedRenderTexture = tex;
             _lastAssignedVideoFlipY = flipY;
             _activeAudioOnlyFallback = false;
+            return false;
         }
 
         /// <summary>

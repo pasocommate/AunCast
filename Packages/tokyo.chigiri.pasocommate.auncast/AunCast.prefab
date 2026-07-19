@@ -11488,6 +11488,7 @@ MonoBehaviour:
   _timelineLogging: 0
   playbackMonitor: {fileID: 5248972186758826917}
   staffNotifyTarget: {fileID: 8485291155812932236}
+  forceRebootNotifyTarget: {fileID: 5377054145491112149}
   maxConcurrentResyncUsers: 10
   maxConnectionLimit: 100
   driftResyncThresholdIndex: 1
@@ -24878,7 +24879,7 @@ PrefabInstance:
     - target: {fileID: 8454962838864277692, guid: ce00acc11ee08524eb38fdb92ff3c79b,
         type: 3}
       propertyPath: m_fontColor32.rgba
-      value: 4291280831
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 8892818746973248607, guid: ce00acc11ee08524eb38fdb92ff3c79b,
         type: 3}

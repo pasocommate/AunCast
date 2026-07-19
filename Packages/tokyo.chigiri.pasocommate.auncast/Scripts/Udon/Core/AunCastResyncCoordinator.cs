@@ -58,6 +58,8 @@ namespace PasocomMate.AunCast
         [SerializeField] private AunCastPlaybackMonitor playbackMonitor;
         [Tooltip("同期変数の更新を通知する先（AunCastStaffControlPanel を配線）。UI 具象型に依存しないため UdonSharpBehaviour で受ける。")]
         [SerializeField] private UdonSharpBehaviour staffNotifyTarget;
+        [Tooltip("Global Force Reboot の同期受信を即時通知するローカル Controller。")]
+        [SerializeField] private AunCastDualPlayerController forceRebootNotifyTarget;
 
         // --- 同期変数: スロット管理 (Design Section 13.2) ---
         /// <summary>各スロットに割り当てられたプレイヤーの ID。0 = 空きスロット。</summary>
@@ -102,6 +104,9 @@ namespace PasocomMate.AunCast
         private bool _serializationPending;
         /// <summary>非 Owner が bunch を一度でも適用済みか。IsNetworkSettled だけでは適用完了を保証しない（Quest 実測）。</summary>
         private bool _syncApplied;
+        /// <summary>初回同期値を履歴ではなく基準値として扱うための Force Reboot シーケンス保持。</summary>
+        private bool _hasObservedForceRebootSeq;
+        private short _lastObservedForceRebootSeq;
 
         // =====================================================================
         //  Unity ライフサイクル
@@ -147,6 +152,18 @@ namespace PasocomMate.AunCast
             _syncApplied = true;
             RestoreOwnerTimestamps();
             NotifyObservers();
+
+            // 初回 bunch の値は Join 前に発行された履歴として扱い、Reboot を発火させない。
+            // 2回目以降の差分だけを Controller へ通知し、イベント欠落時は Controller の
+            // TickSlow ポーリングが保険として検出する。
+            if (_hasObservedForceRebootSeq
+                && _lastObservedForceRebootSeq != globalForceRebootSeq
+                && forceRebootNotifyTarget != null)
+            {
+                forceRebootNotifyTarget.OnCoordinatorForceRebootChanged();
+            }
+            _lastObservedForceRebootSeq = globalForceRebootSeq;
+            _hasObservedForceRebootSeq = true;
         }
 
         /// <summary>監視対象の UI パネルに再描画を促す。</summary>
@@ -498,6 +515,8 @@ namespace PasocomMate.AunCast
             globalForceRebootSeq++;
             RequestSerialization();
             NotifyObservers();
+            if (forceRebootNotifyTarget != null)
+                forceRebootNotifyTarget.OnCoordinatorForceRebootChanged();
             TL($"a=GLOBAL_FORCE_REBOOT_TRIGGER seq={globalForceRebootSeq}");
             LogMessage($"Global force reboot triggered: seq={globalForceRebootSeq}");
         }

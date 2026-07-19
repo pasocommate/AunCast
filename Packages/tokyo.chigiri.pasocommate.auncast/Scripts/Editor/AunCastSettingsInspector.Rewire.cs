@@ -184,7 +184,9 @@ namespace PasocomMate.AunCast.Internal
                 {
                     if (coord == null) continue;
                     var so = new SerializedObject(coord);
-                    if (SetObjectProperty(so, "staffNotifyTarget", staffPanel)
+                    bool changed = SetObjectProperty(so, "staffNotifyTarget", staffPanel);
+                    changed |= SetObjectProperty(so, "forceRebootNotifyTarget", controller);
+                    if (changed
                         && ApplyUdonSerializedChanges(coord, so, "Rewire AunCastResyncCoordinator StaffNotifyTarget", recordUndo))
                         notifyUpdated++;
                 }
