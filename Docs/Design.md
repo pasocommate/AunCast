@@ -1059,6 +1059,30 @@ private bool _crossfading;
 private float _crossfadeStartedAt;
 ```
 
+### 13.4.5 `AunCastDualPlayerController` の定期処理レーン
+
+`AunCastDualPlayerController` は単一の `Update()` を FSM の駆動点として維持し、
+自己再予約型の Custom Event ループへ分割しない。同期初期化と Global Force Reboot の
+即時通知確認を最初に行った後、以下の3レーンへ処理を分ける。
+
+| レーン | 周期 | 処理 |
+|---|---:|---|
+| PerFrame | 毎フレーム | `STATE_SWITCHING` 中の Crossfade 補間と完了判定 |
+| Fast | 0.1秒 | Coordinator 状態評価、Active/Standby の監視、無音監視、FSM の期限判定 |
+| Slow | 0.3秒 | スロット割当・イベント再送の保険、同期待機と Global Force Reboot の保険ポーリング |
+
+Fast / Slow の周期は `AunCastSettings` の転写対象を増やさないため `const` とする。
+Video コールバック、同期受信、スロット割当、ロール切替後は次回 Fast Tick を即時実行可能にし、
+通常周期による不要な待機を防ぐ。
+
+RenderTexture の経路は状態変化時にダーティ化してフレーム末に一度だけ反映する。テクスチャが
+まだ取得できない場合だけダーティ状態を維持して再試行し、旧映像保持・音声のみフォールバック・
+停止時のアイドル画像復元の既存分岐を維持する。
+
+Playback 状態は Active/Standby の有効再生状態が変化した時だけ再評価する。一方で
+`SendCustomNetworkEvent` の到達保証はないため、値が変わらない場合も10秒ごとのキープアライブ
+送信を維持する。
+
 ---
 
 ## 14. URL 管理方針

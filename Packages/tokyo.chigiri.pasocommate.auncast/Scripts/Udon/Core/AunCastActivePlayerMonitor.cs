@@ -73,6 +73,12 @@ namespace PasocomMate.AunCast
         private bool _hasSeenTimeAdvanceA;
         /// <summary>プレイヤー B が最初のフレームデコードを完了したか。未完了時は停滞誤検出を防ぐ。</summary>
         private bool _hasSeenTimeAdvanceB;
+        /// <summary>再生状態の変化番号。Controller 側が Playback 報告の再評価を要求するために使う。</summary>
+        private int _playbackStateRevision;
+        private bool _hasObservedPlaybackStateA;
+        private bool _hasObservedPlaybackStateB;
+        private bool _lastObservedPlaybackStateA;
+        private bool _lastObservedPlaybackStateB;
         /// <summary>初回前進タイムアウトのログを監視セッションごとに一度だけ出すためのガード。</summary>
         private bool _initialAdvanceTimeoutLogged;
 
@@ -154,6 +160,8 @@ namespace PasocomMate.AunCast
             _standbyAdvanceCount = 0;
             _lastStandbyTime = GetStandbyManager() != null ? GetStandbyManager().GetTime() : 0f;
             _verifyStartedAt = now;
+            // Active と Standby は排他的に監視する。切替直後の1回目だけは即時にサンプルする。
+            _lastMonitorTime = now - monitorIntervalSec;
         }
 
         // =================================================================
@@ -189,6 +197,7 @@ namespace PasocomMate.AunCast
                 _driftWarmupUntil = 0f;
                 _lastActiveTime = currentPlayerTime;
                 _lastObservedAt = now;
+                UpdatePlaybackState(_activeIsA, isPlaying && (_activeIsA ? _hasSeenTimeAdvanceA : _hasSeenTimeAdvanceB));
                 return;
             }
 
@@ -206,6 +215,7 @@ namespace PasocomMate.AunCast
                 {
                     _lastActiveTime = currentPlayerTime;
                     _lastObservedAt = now;
+                    UpdatePlaybackState(_activeIsA, false);
                     return;
                 }
             }
@@ -266,6 +276,7 @@ namespace PasocomMate.AunCast
 
             _lastActiveTime = currentPlayerTime;
             _lastObservedAt = now;
+            UpdatePlaybackState(_activeIsA, isPlaying && (_activeIsA ? _hasSeenTimeAdvanceA : _hasSeenTimeAdvanceB));
 
             if (_timelineLogging)
             {
@@ -289,6 +300,7 @@ namespace PasocomMate.AunCast
         public void PollStandby(float now)
         {
             if (now - _lastMonitorTime < monitorIntervalSec) return;
+            _lastMonitorTime = now;
 
             AunCastVideoPlayerManager standby = GetStandbyManager();
             if (standby == null) return;
@@ -300,10 +312,12 @@ namespace PasocomMate.AunCast
             {
                 _standbyAdvanceCount = 0;
                 _lastStandbyTime = currentTime;
+                UpdatePlaybackState(!_activeIsA, standby.IsPlaying() && (!_activeIsA ? _hasSeenTimeAdvanceA : _hasSeenTimeAdvanceB));
                 return;
             }
 
-            if (delta > minAdvanceThresholdSec && standby.IsPlaying())
+            bool isPlaying = standby.IsPlaying();
+            if (delta > minAdvanceThresholdSec && isPlaying)
             {
                 _standbyAdvanceCount++;
                 if (_activeIsA) _hasSeenTimeAdvanceB = true;
@@ -311,6 +325,7 @@ namespace PasocomMate.AunCast
             }
 
             _lastStandbyTime = currentTime;
+            UpdatePlaybackState(!_activeIsA, isPlaying && (!_activeIsA ? _hasSeenTimeAdvanceA : _hasSeenTimeAdvanceB));
         }
 
         // =================================================================
@@ -414,6 +429,9 @@ namespace PasocomMate.AunCast
             return a || b;
         }
 
+        /// <summary>前回通知後に再生状態が変化した回数を返す。</summary>
+        public int GetPlaybackStateRevision() { return _playbackStateRevision; }
+
         /// <summary>
         /// 指定プレイヤーの「最初の時間前進を確認済み」フラグをクリアする。
         /// プレイヤーをリロードする前に呼び出し、再デコード待ち状態に戻す。
@@ -422,6 +440,7 @@ namespace PasocomMate.AunCast
         {
             if (isA) _hasSeenTimeAdvanceA = false;
             else _hasSeenTimeAdvanceB = false;
+            UpdatePlaybackState(isA, false);
         }
         /// <summary>連続前進カウントを返す（デバッグ/HUD 用）。</summary>
         public int GetConsecutiveAdvanceCount() { return _consecutiveAdvanceCount; }
@@ -439,6 +458,25 @@ namespace PasocomMate.AunCast
             _baseWallTime = 0f;
             _basePlayerTime = 0f;
             TL($"a=STABLE_PLAYBACK warmupUntil={_driftWarmupUntil:F3}");
+        }
+
+        /// <summary>有効再生（IsPlaying かつ時間前進済み）の変化だけを Controller へ通知する。</summary>
+        private void UpdatePlaybackState(bool isA, bool isPlaying)
+        {
+            if (isA)
+            {
+                if (_hasObservedPlaybackStateA && _lastObservedPlaybackStateA == isPlaying) return;
+                _hasObservedPlaybackStateA = true;
+                _lastObservedPlaybackStateA = isPlaying;
+            }
+            else
+            {
+                if (_hasObservedPlaybackStateB && _lastObservedPlaybackStateB == isPlaying) return;
+                _hasObservedPlaybackStateB = true;
+                _lastObservedPlaybackStateB = isPlaying;
+            }
+
+            _playbackStateRevision++;
         }
 
         // =================================================================
