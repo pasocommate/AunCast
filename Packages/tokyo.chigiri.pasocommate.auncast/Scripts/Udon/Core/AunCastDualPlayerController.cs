@@ -1693,6 +1693,11 @@ namespace PasocomMate.AunCast
         /// <summary>同期変数の現在値をローカル状態へ反映する。URL 変更時は再ロード、停止時は全クリーンアップを行う。</summary>
         private void ApplySyncedState()
         {
+            // _ownerPlaying は同期受信が直接書き換えるため SetOwnerPlaying を通らない。
+            // 映像経路と再生報告の入力値が変わった可能性があるので無条件でダーティ化する。
+            MarkVisualRoutingDirty();
+            MarkPlaybackReportDirty();
+
             ApplySyncedForceMode();
 
             // 再生停止（オーナーの Stop を受信）。
