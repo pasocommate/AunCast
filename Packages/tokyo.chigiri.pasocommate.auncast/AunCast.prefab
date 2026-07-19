@@ -24879,7 +24879,7 @@ PrefabInstance:
     - target: {fileID: 8454962838864277692, guid: ce00acc11ee08524eb38fdb92ff3c79b,
         type: 3}
       propertyPath: m_fontColor32.rgba
-      value: 4294967295
+      value: 4291280831
       objectReference: {fileID: 0}
     - target: {fileID: 8892818746973248607, guid: ce00acc11ee08524eb38fdb92ff3c79b,
         type: 3}
