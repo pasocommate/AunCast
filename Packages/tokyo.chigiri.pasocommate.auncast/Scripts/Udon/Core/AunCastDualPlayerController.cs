@@ -337,6 +337,10 @@ namespace PasocomMate.AunCast
 
             FlushVisualRouting();
             FlushPlaybackReport();
+            // Tick レーンに載せると Video コールバックやスタッフ操作起因の状態変化が
+            // 次の Fast Tick まで通知されないため、毎フレーム末尾で判定する。
+            // 変化がなければ int 比較1回で終わり、Behaviour 境界は跨がない。
+            NotifyLocalStateChangeIfNeeded();
             LogDebugCounters(now);
         }
 
@@ -357,16 +361,11 @@ namespace PasocomMate.AunCast
             if (_timelineLogging) _debugFastTickCount++;
 
             PollResyncCoordinator(now);
-            if (PollActiveReboot(now))
-            {
-                NotifyLocalStateChangeIfNeeded();
-                return;
-            }
+            if (PollActiveReboot(now)) return;
 
             PollActiveMonitoring(now);
             TickStateMachine(now);
             PollSilenceDetection(now);
-            NotifyLocalStateChangeIfNeeded();
         }
 
         /// <summary>再送・スロット確保と、イベント欠落時の同期待ち保険を低頻度で実行する。</summary>
