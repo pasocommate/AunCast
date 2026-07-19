@@ -141,6 +141,7 @@ namespace PasocomMate.AunCast
         private float _nextSlowTickAt;
         private float _lastSilenceSampleAt;
         private bool _visualRoutingDirty = true;
+        private bool _visualRoutingRetryPending;
         private bool _playbackReportDirty = true;
         private bool _hasResyncSlot;
         private bool _forceRebootNotificationPending;
@@ -360,6 +361,13 @@ namespace PasocomMate.AunCast
         {
             if (_timelineLogging) _debugFastTickCount++;
 
+            // 映像テクスチャ未到着時の再試行はこのレーンで行う。
+            if (_visualRoutingRetryPending)
+            {
+                _visualRoutingRetryPending = false;
+                MarkVisualRoutingDirty();
+            }
+
             PollResyncCoordinator(now);
             if (PollActiveReboot(now)) return;
 
@@ -458,7 +466,7 @@ namespace PasocomMate.AunCast
             SetLocalState(pollResult);
         }
 
-        /// <summary>状態変化でのみ映像経路を再評価する。テクスチャ未到着時だけ次フレームへ再試行を持ち越す。</summary>
+        /// <summary>状態変化でのみ映像経路を再評価する。テクスチャ未到着時は Fast Tick で再試行する。</summary>
         private void FlushVisualRouting()
         {
             if (!_visualRoutingDirty || switcher == null) return;
@@ -468,7 +476,11 @@ namespace PasocomMate.AunCast
                 _debugCrossBehaviourCallCount++;
             }
 
-            _visualRoutingDirty = switcher.UpdateRenderTexture(_localState, _ownerPlaying);
+            _visualRoutingDirty = false;
+            // テクスチャ未到着や Crossfade 中の再試行を毎フレームに戻すと、
+            // Active リブート待ちのように長く続く異常時こそ負荷が上がる。
+            // 再試行は TickFast へ委ね、10Hz に抑える。
+            _visualRoutingRetryPending = switcher.UpdateRenderTexture(_localState, _ownerPlaying);
         }
 
         /// <summary>再生状態を変化時に評価し、送信は変化時と10秒キープアライブ時に限定する。</summary>
@@ -533,6 +545,7 @@ namespace PasocomMate.AunCast
             _combinedSilenceDuration = 0f;
             _lastSilenceSampleAt = 0f;
             _visualRoutingDirty = true;
+            _visualRoutingRetryPending = false;
             _playbackReportDirty = true;
             _lastPlaybackStateRevision = -1;
             _hasReportedPlaybackActive = false;
