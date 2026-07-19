@@ -320,7 +320,9 @@ namespace PasocomMate.AunCast
         public bool UpdateRenderTexture(int localState, bool ownerPlaying)
         {
             // Crossfade 中の映像切替は TickCrossfade 内で処理する。
-            if (_crossfading) return false;
+            // ここで false を返すと呼び出し元のダーティ要求を握り潰すため、
+            // 再試行を要求して Crossfade 終了後に必ず一度反映されるようにする。
+            if (_crossfading) return true;
 
             AunCastVideoPlayerManager active = GetActiveManager();
             if (active == null) return false;
