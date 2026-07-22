@@ -41,9 +41,11 @@ namespace PasocomMate.AunCast
         // --- Inspector パラメータ (Design Section 20) ---
         [Header("Coordinator Settings")]
         [Tooltip("Grant 後の接続開始タイムアウト（秒）。ネットワーク同期遅延を考慮して長めに設定")]
+        [Range(MIN_GRANT_TIMEOUT_SEC, MAX_GRANT_TIMEOUT_SEC)]
         [SerializeField] private float grantTimeoutSec = 10.0f;
 
         [Tooltip("Running 状態の最大継続時間（秒）。クライアント側サイクルタイムアウトより長く設定")]
+        [Range(MIN_RUNNING_TIMEOUT_SEC, MAX_RUNNING_TIMEOUT_SEC)]
         [SerializeField] private float runningTimeoutSec = 50.0f;
 
         [Tooltip("デバッグログを有効にする")]
@@ -75,6 +77,7 @@ namespace PasocomMate.AunCast
         // --- 同期変数: ランタイム変更可能パラメータ ---
         [UdonSynced]
         [Tooltip("同時Resync上限（スタッフが変更可能）")]
+        [Range(MIN_CONCURRENT_RESYNC_USERS, MAX_PLAYERS)]
         [SerializeField] private byte maxConcurrentResyncUsers = 10;
 
         [UdonSynced]
@@ -93,6 +96,11 @@ namespace PasocomMate.AunCast
         // 同期スロット配列の固定長上限。定義元は本クラスで、AunCastPlaybackMonitor は
         // この値を参照してビットパック配列長を Coordinator の配列長に一致させる。
         public const int MAX_PLAYERS = 82;
+        public const int MIN_CONCURRENT_RESYNC_USERS = 1;
+        public const float MIN_GRANT_TIMEOUT_SEC = 5f;
+        public const float MAX_GRANT_TIMEOUT_SEC = 60f;
+        public const float MIN_RUNNING_TIMEOUT_SEC = 10f;
+        public const float MAX_RUNNING_TIMEOUT_SEC = 120f;
         private const int DEFAULT_CONNECTION_LIMIT = 100;
         private const int MIN_CONNECTION_LIMIT = 1;
         private const int MAX_CONNECTION_LIMIT = 255;
@@ -116,6 +124,9 @@ namespace PasocomMate.AunCast
             if (_ownerTimestamp == null)
                 _ownerTimestamp = new float[MAX_PLAYERS];
 
+            maxConcurrentResyncUsers = (byte)GetMaxConcurrentResyncUsers();
+            grantTimeoutSec = Mathf.Clamp(grantTimeoutSec, MIN_GRANT_TIMEOUT_SEC, MAX_GRANT_TIMEOUT_SEC);
+            runningTimeoutSec = Mathf.Clamp(runningTimeoutSec, MIN_RUNNING_TIMEOUT_SEC, MAX_RUNNING_TIMEOUT_SEC);
             if (maxConnectionLimit < MIN_CONNECTION_LIMIT)
                 maxConnectionLimit = DEFAULT_CONNECTION_LIMIT;
             if (driftResyncThresholdIndex > DRIFT_THRESHOLD_OFF)
@@ -208,7 +219,7 @@ namespace PasocomMate.AunCast
             bool changed = CleanupExpiredStates(serverTime);
 
             // 同時 Resync 枠: maxConcurrentResyncUsers から既に走っている数を引いた残り
-            int available = maxConcurrentResyncUsers - CountGrantedOrRunning();
+            int available = GetMaxConcurrentResyncUsers() - CountGrantedOrRunning();
 
             // 同時接続上限による制約
             // Resync 中のユーザーは Active 側 + Standby 側で 2 接続を消費するため、
@@ -255,7 +266,9 @@ namespace PasocomMate.AunCast
                 float elapsed = serverTime - _ownerTimestamp[i];
                 if (elapsed < 0f) continue;
 
-                float timeout = state == STATE_GRANTED ? grantTimeoutSec : runningTimeoutSec;
+                float timeout = state == STATE_GRANTED
+                    ? Mathf.Clamp(grantTimeoutSec, MIN_GRANT_TIMEOUT_SEC, MAX_GRANT_TIMEOUT_SEC)
+                    : Mathf.Clamp(runningTimeoutSec, MIN_RUNNING_TIMEOUT_SEC, MAX_RUNNING_TIMEOUT_SEC);
                 if (elapsed > timeout)
                 {
                     resyncState[i] = STATE_NONE;
@@ -529,7 +542,10 @@ namespace PasocomMate.AunCast
 
         public int GetMaxPlayers() { return MAX_PLAYERS; }
         public AunCastPlaybackMonitor GetPlaybackMonitor() { return playbackMonitor; }
-        public int GetMaxConcurrentResyncUsers() { return maxConcurrentResyncUsers; }
+        public int GetMaxConcurrentResyncUsers()
+        {
+            return Mathf.Clamp(maxConcurrentResyncUsers, MIN_CONCURRENT_RESYNC_USERS, MAX_PLAYERS);
+        }
         public int GetMaxConnectionLimit() { return maxConnectionLimit; }
         public int GetMinConnectionLimit() { return MIN_CONNECTION_LIMIT; }
         public int GetMaxConnectionLimitCap() { return MAX_CONNECTION_LIMIT; }
@@ -623,7 +639,7 @@ namespace PasocomMate.AunCast
                 if (resyncState[i] == STATE_GRANTED || resyncState[i] == STATE_RUNNING) ahead++;
             }
 
-            int concurrent = maxConcurrentResyncUsers > 0 ? maxConcurrentResyncUsers : 1;
+            int concurrent = GetMaxConcurrentResyncUsers();
             return ((float)ahead / concurrent) * AVG_RESYNC_DURATION_SEC;
         }
 
@@ -643,7 +659,7 @@ namespace PasocomMate.AunCast
                 else if (s == STATE_GRANTED || s == STATE_RUNNING) active++;
             }
             if (queued == 0) return 0f;
-            int concurrent = maxConcurrentResyncUsers > 0 ? maxConcurrentResyncUsers : 1;
+            int concurrent = GetMaxConcurrentResyncUsers();
             return Mathf.Ceil((float)(queued + active) / concurrent) * AVG_RESYNC_DURATION_SEC;
         }
 
@@ -663,7 +679,10 @@ namespace PasocomMate.AunCast
         public void SetMaxConcurrentResyncUsersRuntime(int value)
         {
             if (!TryTakeOwnership()) return;
-            maxConcurrentResyncUsers = (byte)Mathf.Clamp(value, 1, 255);
+            maxConcurrentResyncUsers = (byte)Mathf.Clamp(
+                value,
+                MIN_CONCURRENT_RESYNC_USERS,
+                MAX_PLAYERS);
             RequestSerialization();
             NotifyObservers();
         }

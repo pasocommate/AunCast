@@ -14,6 +14,9 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class AunCastSpeaker : UdonSharpBehaviour
     {
+        public const float MIN_SILENCE_CONSECUTIVE_SEC = 0.5f;
+        public const float MAX_SILENCE_CONSECUTIVE_SEC = 30f;
+
         public const int PLAYER_A = 0;
         public const int PLAYER_B = 1;
 
@@ -40,6 +43,7 @@ namespace PasocomMate.AunCast
         [SerializeField] private float silenceRmsThresholdDbfs = -60f;
 
         [Tooltip("無音判定の継続時間（秒）")]
+        [Range(MIN_SILENCE_CONSECUTIVE_SEC, MAX_SILENCE_CONSECUTIVE_SEC)]
         [SerializeField] private float silenceConsecutiveSec = 2.0f;
 
         // --- RMS 計測（メインスレッドで GetOutputData を使用） ---
@@ -121,7 +125,13 @@ namespace PasocomMate.AunCast
         // --- Getters ---
 
         /// <summary>無音と判定するのに必要な連続秒数。自動リシンク判定で使用。</summary>
-        public float GetSilenceConsecutiveSec() { return silenceConsecutiveSec; }
+        public float GetSilenceConsecutiveSec()
+        {
+            return Mathf.Clamp(
+                silenceConsecutiveSec,
+                MIN_SILENCE_CONSECUTIVE_SEC,
+                MAX_SILENCE_CONSECUTIVE_SEC);
+        }
 
         /// <summary>無音と見なす RMS 閾値（リニア）。dBFS から変換して返す。</summary>
         public float GetSilenceRmsThreshold() { return Mathf.Pow(10f, silenceRmsThresholdDbfs / 20f); }

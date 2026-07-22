@@ -21,6 +21,17 @@ namespace PasocomMate.AunCast
         public const int REQUEST_REASON_MANUAL = 1;
         public const int REQUEST_REASON_SILENCE = 2;
 
+        public const float MIN_RESYNC_CYCLE_TIMEOUT_SEC = 10f;
+        public const float MAX_RESYNC_CYCLE_TIMEOUT_SEC = 120f;
+        public const float MIN_LOCAL_COOLDOWN_SEC = 6f;
+        public const float MAX_LOCAL_COOLDOWN_SEC = 60f;
+        public const float MIN_BASE_COOLDOWN_SEC = 10f;
+        public const float MAX_BASE_COOLDOWN_SEC = 180f;
+        public const float MIN_RETRY_COOLDOWN_MULTIPLIER = 1f;
+        public const float MAX_RETRY_COOLDOWN_MULTIPLIER = 2f;
+        public const float MIN_MAX_RETRY_COOLDOWN_SEC = 10f;
+        public const float MAX_MAX_RETRY_COOLDOWN_SEC = 180f;
+
         // =================================================================
         //  Inspector 参照
         // =================================================================
@@ -32,6 +43,7 @@ namespace PasocomMate.AunCast
         // =================================================================
         [Header("Resync Cycle")]
         [Tooltip("GRANTED 後、切替完了までの最大許容時間（秒）")]
+        [Range(MIN_RESYNC_CYCLE_TIMEOUT_SEC, MAX_RESYNC_CYCLE_TIMEOUT_SEC)]
         [SerializeField] private float resyncCycleTimeoutSec = 45.0f;
 
         [Header("Silence-Triggered Individual Resync")]
@@ -40,16 +52,20 @@ namespace PasocomMate.AunCast
 
         [Header("Cooldown")]
         [Tooltip("LoadURL 完了後のクールダウン（秒）")]
+        [Range(MIN_LOCAL_COOLDOWN_SEC, MAX_LOCAL_COOLDOWN_SEC)]
         [SerializeField] private float localCooldownSec = 6.5f;
 
         [Header("Retry")]
         [Tooltip("再試行の基本待機時間（秒）")]
+        [Range(MIN_BASE_COOLDOWN_SEC, MAX_BASE_COOLDOWN_SEC)]
         [SerializeField] private float baseCooldownSec = 10.0f;
 
         [Tooltip("再試行間隔を連続失敗ごとに増やす倍率")]
+        [Range(MIN_RETRY_COOLDOWN_MULTIPLIER, MAX_RETRY_COOLDOWN_MULTIPLIER)]
         [SerializeField] private float retryCooldownMultiplier = 1.5f;
 
         [Tooltip("再試行の最大待機時間（秒）")]
+        [Range(MIN_MAX_RETRY_COOLDOWN_SEC, MAX_MAX_RETRY_COOLDOWN_SEC)]
         [SerializeField] private float maxRetryCooldownSec = 90.0f;
 
         [Header("Timeline")]
@@ -352,15 +368,40 @@ namespace PasocomMate.AunCast
         /// <summary>切替サイクル開始を記録（タイムアウト判定の起点）。</summary>
         public void MarkCycleStarted(float now) { _cycleStartedAt = now; }
         /// <summary>切替サイクルが許容時間を超過したか判定。</summary>
-        public bool IsCycleTimedOut(float now) { return (now - _cycleStartedAt) > resyncCycleTimeoutSec; }
+        public bool IsCycleTimedOut(float now)
+        {
+            float effectiveTimeoutSec = Mathf.Clamp(
+                resyncCycleTimeoutSec,
+                MIN_RESYNC_CYCLE_TIMEOUT_SEC,
+                MAX_RESYNC_CYCLE_TIMEOUT_SEC);
+            return (now - _cycleStartedAt) > effectiveTimeoutSec;
+        }
         /// <summary>LoadURL 完了後のローカルクールダウン秒数。</summary>
-        public float GetLocalCooldownSec() { return localCooldownSec; }
+        public float GetLocalCooldownSec()
+        {
+            return Mathf.Clamp(localCooldownSec, MIN_LOCAL_COOLDOWN_SEC, MAX_LOCAL_COOLDOWN_SEC);
+        }
         /// <summary>再試行の基本待機秒数。</summary>
-        public float GetBaseCooldownSec() { return baseCooldownSec; }
+        public float GetBaseCooldownSec()
+        {
+            return Mathf.Clamp(baseCooldownSec, MIN_BASE_COOLDOWN_SEC, MAX_BASE_COOLDOWN_SEC);
+        }
         /// <summary>連続失敗ごとのリトライ間隔倍率。</summary>
-        public float GetRetryCooldownMultiplier() { return Mathf.Clamp(retryCooldownMultiplier, 1.0f, 2.0f); }
+        public float GetRetryCooldownMultiplier()
+        {
+            return Mathf.Clamp(
+                retryCooldownMultiplier,
+                MIN_RETRY_COOLDOWN_MULTIPLIER,
+                MAX_RETRY_COOLDOWN_MULTIPLIER);
+        }
         /// <summary>指数バックオフの上限秒数。</summary>
-        public float GetMaxRetryCooldownSec() { return maxRetryCooldownSec; }
+        public float GetMaxRetryCooldownSec()
+        {
+            return Mathf.Clamp(
+                maxRetryCooldownSec,
+                GetBaseCooldownSec(),
+                MAX_MAX_RETRY_COOLDOWN_SEC);
+        }
         /// <summary>Coordinator で同期されているドリフト Resync 閾値。</summary>
         public float GetDriftResyncThresholdSec()
         {

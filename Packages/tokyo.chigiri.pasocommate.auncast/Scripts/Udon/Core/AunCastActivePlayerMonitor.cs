@@ -11,6 +11,17 @@ namespace PasocomMate.AunCast
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
     public class AunCastActivePlayerMonitor : UdonSharpBehaviour
     {
+        public const float MIN_ADVANCE_THRESHOLD_SEC = 0.01f;
+        public const float MAX_ADVANCE_THRESHOLD_SEC = 0.1f;
+        public const float MIN_MONITOR_INTERVAL_SEC = 0.01f;
+        public const float MAX_MONITOR_INTERVAL_SEC = 1f;
+        public const int MIN_CONSECUTIVE_ADVANCES = 1;
+        public const int MAX_CONSECUTIVE_ADVANCES = 30;
+        public const float MIN_STALLED_TIMEOUT_SEC = 0.5f;
+        public const float MAX_STALLED_TIMEOUT_SEC = 30f;
+        public const float MIN_DRIFT_SMOOTHING_TIME_CONSTANT_SEC = 0.1f;
+        public const float MAX_DRIFT_SMOOTHING_TIME_CONSTANT_SEC = 10f;
+
         // OnVideoStart 直後の GetTime() は 1〜2 秒ほど進まないことがあるため、
         // 通常の stallTimeoutSec より長く初回前進を待つ。
         // ただし無期限に待つと、IsPlaying が false に戻る静かな失敗を見逃す。
@@ -27,15 +38,19 @@ namespace PasocomMate.AunCast
         // =================================================================
         [Header("Monitoring")]
         [Tooltip("Active Player の監視間隔（秒）")]
+        [Range(MIN_MONITOR_INTERVAL_SEC, MAX_MONITOR_INTERVAL_SEC)]
         [SerializeField] private float monitorIntervalSec = 0.1f;
 
         [Tooltip("GetTime() の最小前進量（秒）")]
-        [SerializeField] private float minAdvanceThresholdSec = 0.01f;
+        [Range(MIN_ADVANCE_THRESHOLD_SEC, MAX_ADVANCE_THRESHOLD_SEC)]
+        [SerializeField] private float minAdvanceThresholdSec = MIN_ADVANCE_THRESHOLD_SEC;
 
         [Tooltip("生存確認に必要な連続前進回数")]
+        [Range(MIN_CONSECUTIVE_ADVANCES, MAX_CONSECUTIVE_ADVANCES)]
         [SerializeField] private int minConsecutiveAdvances = 5;
 
         [Tooltip("停止判定の継続時間（秒）")]
+        [Range(MIN_STALLED_TIMEOUT_SEC, MAX_STALLED_TIMEOUT_SEC)]
         [SerializeField] private float stalledTimeoutSec = 2.0f;
 
         [Header("Standby Verification")]
@@ -44,6 +59,7 @@ namespace PasocomMate.AunCast
 
         [Header("Drift")]
         [Tooltip("ドリフト EMA の時定数（秒）。大きいほど緩やかに追従する")]
+        [Range(MIN_DRIFT_SMOOTHING_TIME_CONSTANT_SEC, MAX_DRIFT_SMOOTHING_TIME_CONSTANT_SEC)]
         [SerializeField] private float driftSmoothingTimeConstant = 1.5f;
 
         [Tooltip("安定再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
@@ -167,7 +183,11 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void PollActive(float now)
         {
-            if (now - _lastMonitorTime < monitorIntervalSec) return;
+            float effectiveMonitorIntervalSec = Mathf.Clamp(
+                monitorIntervalSec,
+                MIN_MONITOR_INTERVAL_SEC,
+                MAX_MONITOR_INTERVAL_SEC);
+            if (now - _lastMonitorTime < effectiveMonitorIntervalSec) return;
             _lastMonitorTime = now;
 
             AunCastVideoPlayerManager active = GetActiveManager();
@@ -176,6 +196,10 @@ namespace PasocomMate.AunCast
             float currentPlayerTime = active.GetTime();
             bool isPlaying = active.IsPlaying();
             float delta = currentPlayerTime - _lastActiveTime;
+            float advanceThresholdSec = Mathf.Clamp(
+                minAdvanceThresholdSec,
+                MIN_ADVANCE_THRESHOLD_SEC,
+                MAX_ADVANCE_THRESHOLD_SEC);
 
             // 巻き戻り検出: シーク等で時間が後退した場合は全状態をリセットして再計測
             if (delta < 0)
@@ -196,7 +220,7 @@ namespace PasocomMate.AunCast
             bool hasSeenAdvance = _activeIsA ? _hasSeenTimeAdvanceA : _hasSeenTimeAdvanceB;
             if (!hasSeenAdvance)
             {
-                if (delta > minAdvanceThresholdSec && isPlaying)
+                if (delta > advanceThresholdSec && isPlaying)
                 {
                     if (_activeIsA) _hasSeenTimeAdvanceA = true;
                     else _hasSeenTimeAdvanceB = true;
@@ -211,12 +235,16 @@ namespace PasocomMate.AunCast
             }
 
             // 前進判定
-            if (delta > minAdvanceThresholdSec && isPlaying)
+            if (delta > advanceThresholdSec && isPlaying)
             {
                 _consecutiveAdvanceCount++;
                 _consecutiveStallCount = 0;
                 _stallStartedAt = 0f;
-                if (_stablePlaybackStartedAt <= 0f && _consecutiveAdvanceCount >= minConsecutiveAdvances)
+                int effectiveMinConsecutiveAdvances = Mathf.Clamp(
+                    minConsecutiveAdvances,
+                    MIN_CONSECUTIVE_ADVANCES,
+                    MAX_CONSECUTIVE_ADVANCES);
+                if (_stablePlaybackStartedAt <= 0f && _consecutiveAdvanceCount >= effectiveMinConsecutiveAdvances)
                     BeginStablePlayback(now);
             }
             else
@@ -252,7 +280,11 @@ namespace PasocomMate.AunCast
                     // 基準点からの経過時間差 = 壁時間の進み - プレイヤー時間の進み
                     float rawDrift = now - _baseWallTime - (currentPlayerTime - _basePlayerTime);
                     float dt = now - _lastObservedAt;
-                    float alpha = Mathf.Clamp01(1f - Mathf.Exp(-dt / driftSmoothingTimeConstant));
+                    float effectiveSmoothingTimeConstant = Mathf.Clamp(
+                        driftSmoothingTimeConstant,
+                        MIN_DRIFT_SMOOTHING_TIME_CONSTANT_SEC,
+                        MAX_DRIFT_SMOOTHING_TIME_CONSTANT_SEC);
+                    float alpha = Mathf.Clamp01(1f - Mathf.Exp(-dt / effectiveSmoothingTimeConstant));
                     _driftAccumulator = Mathf.Lerp(_driftAccumulator, rawDrift, alpha);
                 }
             }
@@ -288,13 +320,21 @@ namespace PasocomMate.AunCast
         /// </summary>
         public void PollStandby(float now)
         {
-            if (now - _lastMonitorTime < monitorIntervalSec) return;
+            float effectiveMonitorIntervalSec = Mathf.Clamp(
+                monitorIntervalSec,
+                MIN_MONITOR_INTERVAL_SEC,
+                MAX_MONITOR_INTERVAL_SEC);
+            if (now - _lastMonitorTime < effectiveMonitorIntervalSec) return;
 
             AunCastVideoPlayerManager standby = GetStandbyManager();
             if (standby == null) return;
 
             float currentTime = standby.GetTime();
             float delta = currentTime - _lastStandbyTime;
+            float advanceThresholdSec = Mathf.Clamp(
+                minAdvanceThresholdSec,
+                MIN_ADVANCE_THRESHOLD_SEC,
+                MAX_ADVANCE_THRESHOLD_SEC);
 
             if (delta < 0)
             {
@@ -303,7 +343,7 @@ namespace PasocomMate.AunCast
                 return;
             }
 
-            if (delta > minAdvanceThresholdSec && standby.IsPlaying())
+            if (delta > advanceThresholdSec && standby.IsPlaying())
             {
                 _standbyAdvanceCount++;
                 if (_activeIsA) _hasSeenTimeAdvanceB = true;
@@ -340,7 +380,11 @@ namespace PasocomMate.AunCast
                 return true;
             }
 
-            if (_stallStartedAt > 0f && (now - _stallStartedAt) >= stalledTimeoutSec)
+            float effectiveStalledTimeoutSec = Mathf.Clamp(
+                stalledTimeoutSec,
+                MIN_STALLED_TIMEOUT_SEC,
+                MAX_STALLED_TIMEOUT_SEC);
+            if (_stallStartedAt > 0f && (now - _stallStartedAt) >= effectiveStalledTimeoutSec)
                 return true;
 
             if (driftResyncEnabled
@@ -371,7 +415,11 @@ namespace PasocomMate.AunCast
         /// </summary>
         public bool IsVerifySatisfied(float now)
         {
-            return _standbyAdvanceCount >= minConsecutiveAdvances
+            int effectiveMinConsecutiveAdvances = Mathf.Clamp(
+                minConsecutiveAdvances,
+                MIN_CONSECUTIVE_ADVANCES,
+                MAX_CONSECUTIVE_ADVANCES);
+            return _standbyAdvanceCount >= effectiveMinConsecutiveAdvances
                 && (now - _verifyStartedAt) >= verifyMinDurationSec;
         }
 
@@ -428,7 +476,13 @@ namespace PasocomMate.AunCast
         /// <summary>連続停滞カウントを返す（デバッグ/HUD 用）。</summary>
         public int GetConsecutiveStallCount() { return _consecutiveStallCount; }
         /// <summary>検証に必要な最低連続前進回数を返す（HUD 表示用）。</summary>
-        public int GetMinConsecutiveAdvances() { return minConsecutiveAdvances; }
+        public int GetMinConsecutiveAdvances()
+        {
+            return Mathf.Clamp(
+                minConsecutiveAdvances,
+                MIN_CONSECUTIVE_ADVANCES,
+                MAX_CONSECUTIVE_ADVANCES);
+        }
 
         private void BeginStablePlayback(float now)
         {

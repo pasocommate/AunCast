@@ -78,6 +78,7 @@ namespace PasocomMate.AunCast
         public float silenceRmsThresholdDbfs = -60f;
 
         [Tooltip("無音判定の継続時間（秒）")]
+        [Range(0.5f, 30f)]
         public float silenceConsecutiveSec = 2.0f;
 
         [Tooltip("Resync 後に無音検知を再有効化するまでの抑止時間（秒）")]
@@ -91,15 +92,19 @@ namespace PasocomMate.AunCast
 
         [Header("Active Player Monitoring")]
         [Tooltip("停止判定の継続時間（秒）")]
+        [Range(0.5f, 30f)]
         public float stalledTimeoutSec = 2.0f;
 
         [Tooltip("監視ポーリング間隔（秒）")]
+        [Range(0.01f, 1f)]
         public float monitorIntervalSec = 0.1f;
 
         [Tooltip("GetTime() の最小前進量（秒）")]
+        [Range(0.01f, 0.1f)]
         public float minAdvanceThresholdSec = 0.01f;
 
         [Tooltip("生存確認に必要な連続前進回数")]
+        [Range(1, 30)]
         public int minConsecutiveAdvances = 5;
 
         [Header("Drift Detection")]
@@ -108,6 +113,7 @@ namespace PasocomMate.AunCast
         public int driftResyncThresholdIndex = 1;
 
         [Tooltip("ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する")]
+        [Range(0.1f, 10f)]
         public float driftSmoothingTimeConstant = 1.5f;
 
         [Tooltip("安定再生開始直後にドリフト積算を抑制する猶予時間（秒）")]
@@ -121,31 +127,39 @@ namespace PasocomMate.AunCast
         public bool defaultManualMode;
 
         [Tooltip("同時Resync上限の初期値")]
+        [Range(1, 82)]
         public byte maxConcurrentResyncUsers = 10;
 
         [Tooltip("配信サーバへの同時接続上限の既定値")]
         public byte maxConnectionLimit = 100;
 
         [Tooltip("Grant 後の接続開始タイムアウト（秒）")]
+        [Range(5f, 60f)]
         public float grantTimeoutSec = 10.0f;
 
         [Tooltip("Running 状態の最大継続時間（秒）")]
+        [Range(10f, 120f)]
         public float runningTimeoutSec = 50.0f;
 
         [Header("Resync Client")]
         [Tooltip("GRANTED 後、切替完了までの最大許容時間（秒）")]
+        [Range(10f, 120f)]
         public float resyncCycleTimeoutSec = 45.0f;
 
         [Tooltip("LoadURL完了後のクールダウン（秒）")]
+        [Range(6f, 60f)]
         public float localCooldownSec = 6.5f;
 
         [Tooltip("再試行の基本待機時間（秒）")]
+        [Range(10f, 180f)]
         public float baseCooldownSec = 10.0f;
 
         [Tooltip("再試行間隔を連続失敗ごとに増やす倍率")]
+        [Range(1f, 2f)]
         public float retryCooldownMultiplier = 1.5f;
 
         [Tooltip("再試行の最大待機時間（秒）")]
+        [Range(10f, 180f)]
         public float maxRetryCooldownSec = 90.0f;
 
         [Header("Crossfade")]

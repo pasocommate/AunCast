@@ -232,7 +232,9 @@ namespace PasocomMate.AunCast.Internal
             float newSilenceConsec = SliderField("継続秒数 [秒]", "Consecutive Duration [s]", "silenceConsecutiveSec",
                 "無音がこの秒数継続したらResyncを発火する。",
                 "Fires a Resync when silence continues for this many seconds.",
-                settings.silenceConsecutiveSec, 0.5f, 30f);
+                settings.silenceConsecutiveSec,
+                AunCastSpeaker.MIN_SILENCE_CONSECUTIVE_SEC,
+                AunCastSpeaker.MAX_SILENCE_CONSECUTIVE_SEC);
             float newSuppress = SliderField("抑止時間 [秒]", "Suppress Duration [s]", "silenceSuppressSec",
                 "Resync後に無音検知を再有効化するまでの抑止時間（秒）。",
                 "Suppression time (seconds) before re-enabling silence detection after a Resync.",
@@ -252,19 +254,27 @@ namespace PasocomMate.AunCast.Internal
             float newStalled = SliderField("タイムアウト [秒]", "Timeout [s]", "stalledTimeoutSec",
                 "停止判定の継続時間（秒）。",
                 "Duration (seconds) used to determine a stall.",
-                settings.stalledTimeoutSec, 0.5f, 30f);
+                settings.stalledTimeoutSec,
+                AunCastActivePlayerMonitor.MIN_STALLED_TIMEOUT_SEC,
+                AunCastActivePlayerMonitor.MAX_STALLED_TIMEOUT_SEC);
             float newInterval = SliderField("ポーリング間隔 [秒]", "Polling Interval [s]", "monitorIntervalSec",
                 "Active Playerの監視ポーリング間隔（秒）。",
                 "Polling interval (seconds) for monitoring the Active player.",
-                settings.monitorIntervalSec, 0.01f, 1f);
+                settings.monitorIntervalSec,
+                AunCastActivePlayerMonitor.MIN_MONITOR_INTERVAL_SEC,
+                AunCastActivePlayerMonitor.MAX_MONITOR_INTERVAL_SEC);
             float newAdvance = SliderField("前進判定閾値 [秒]", "Advance Threshold [s]", "minAdvanceThresholdSec",
                 "ポーリング間隔ごとの再生位置の変化量がこの値を超えたら「再生が前進した」と判定する。",
                 "If the playback position changes by more than this per polling interval, playback is considered to have advanced.",
-                settings.minAdvanceThresholdSec, 0f, 0.1f);
+                settings.minAdvanceThresholdSec,
+                AunCastActivePlayerMonitor.MIN_ADVANCE_THRESHOLD_SEC,
+                AunCastActivePlayerMonitor.MAX_ADVANCE_THRESHOLD_SEC);
             int newMinConsec = IntSliderField("最小連続前進回数 [回]", "Min Consecutive Advances", "minConsecutiveAdvances",
                 "生存確認に必要な連続前進回数。",
                 "Number of consecutive advances required to confirm liveness.",
-                settings.minConsecutiveAdvances, 1, 30);
+                settings.minConsecutiveAdvances,
+                AunCastActivePlayerMonitor.MIN_CONSECUTIVE_ADVANCES,
+                AunCastActivePlayerMonitor.MAX_CONSECUTIVE_ADVANCES);
             EditorGUI.indentLevel--;
 
             EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("ドリフト", "Drift"));
@@ -280,7 +290,9 @@ namespace PasocomMate.AunCast.Internal
             float newSmoothing = SliderField("平滑化時定数 [秒]", "Smoothing Time Constant [s]", "driftSmoothingTimeConstant",
                 "ドリフトEMAの時定数（秒）。大きいほど緩やかに追従する。",
                 "Time constant (seconds) for the drift EMA. Larger values track more gradually.",
-                settings.driftSmoothingTimeConstant, 0.1f, 10f);
+                settings.driftSmoothingTimeConstant,
+                AunCastActivePlayerMonitor.MIN_DRIFT_SMOOTHING_TIME_CONSTANT_SEC,
+                AunCastActivePlayerMonitor.MAX_DRIFT_SMOOTHING_TIME_CONSTANT_SEC);
             float newWarmup = SliderField("猶予時間 [秒]", "Warm-up Time [s]", "driftWarmupSec",
                 "安定再生開始直後にドリフト積算を抑制する猶予時間（秒）。",
                 "Grace time (seconds) that suppresses drift accumulation right after stable playback begins.",
@@ -297,7 +309,10 @@ namespace PasocomMate.AunCast.Internal
             settings.silenceMeterPeakDecayDbPerSec = newPeakDecay;
             settings.stalledTimeoutSec = newStalled;
             settings.monitorIntervalSec = newInterval;
-            settings.minAdvanceThresholdSec = newAdvance;
+            settings.minAdvanceThresholdSec = Mathf.Clamp(
+                newAdvance,
+                AunCastActivePlayerMonitor.MIN_ADVANCE_THRESHOLD_SEC,
+                AunCastActivePlayerMonitor.MAX_ADVANCE_THRESHOLD_SEC);
             settings.minConsecutiveAdvances = newMinConsec;
             settings.driftResyncThresholdIndex = newDriftThresholdIndex;
             settings.driftSmoothingTimeConstant = newSmoothing;
@@ -337,7 +352,9 @@ namespace PasocomMate.AunCast.Internal
             int newConcurrent = IntSliderField("同時Resync上限 [人]", "Max Concurrent Resyncs", "maxConcurrentResyncUsers",
                 "同時Resync実行数の初期上限。",
                 "Initial upper limit on the number of concurrent Resyncs.",
-                settings.maxConcurrentResyncUsers, 1, 100);
+                settings.maxConcurrentResyncUsers,
+                AunCastResyncCoordinator.MIN_CONCURRENT_RESYNC_USERS,
+                AunCastResyncCoordinator.MAX_PLAYERS);
             int newConnLimit = IntSliderField("同時接続上限", "Max Connections", "maxConnectionLimit",
                 "配信サーバへの同時接続上限の既定値。",
                 "Default upper limit on simultaneous connections to the streaming server.",
@@ -345,11 +362,15 @@ namespace PasocomMate.AunCast.Internal
             float newGrant = SliderField("接続開始待ち [秒]", "Connection Start Wait [s]", "grantTimeoutSec",
                 "Resync許可後、接続が始まるまでの最大待機時間（秒）。",
                 "Maximum wait time (seconds) for a connection to start after a Resync is granted.",
-                settings.grantTimeoutSec, 1f, 60f);
+                settings.grantTimeoutSec,
+                AunCastResyncCoordinator.MIN_GRANT_TIMEOUT_SEC,
+                AunCastResyncCoordinator.MAX_GRANT_TIMEOUT_SEC);
             float newRunning = SliderField("実行時間の上限 [秒]", "Max Run Time [s]", "runningTimeoutSec",
                 "1回のResync実行が許される最大時間（秒）。",
                 "Maximum time (seconds) allowed for a single Resync run.",
-                settings.runningTimeoutSec, 1f, 120f);
+                settings.runningTimeoutSec,
+                AunCastResyncCoordinator.MIN_RUNNING_TIMEOUT_SEC,
+                AunCastResyncCoordinator.MAX_RUNNING_TIMEOUT_SEC);
             EditorGUI.indentLevel--;
 
             EditorGUILayout.LabelField(AunCastEditorLocalization.Localize("リトライ / クールダウン", "Retry / Cooldown"));
@@ -357,23 +378,33 @@ namespace PasocomMate.AunCast.Internal
             float newCycle = SliderField("切替完了タイムアウト [秒]", "Switch Completion Timeout [s]", "resyncCycleTimeoutSec",
                 "GRANTED後、Active/Standby切替が完了するまでの最大許容時間（秒）。",
                 "Maximum allowed time (seconds) for the Active/Standby switch to complete after GRANTED.",
-                settings.resyncCycleTimeoutSec, 1f, 120f);
+                settings.resyncCycleTimeoutSec,
+                AunCastResyncCoordinatorClient.MIN_RESYNC_CYCLE_TIMEOUT_SEC,
+                AunCastResyncCoordinatorClient.MAX_RESYNC_CYCLE_TIMEOUT_SEC);
             float newLocal = SliderField("読込後の待機 [秒]", "Post-load Wait [s]", "localCooldownSec",
                 "LoadURL完了後、次のResyncを受け付けるまでの待機時間（秒）。",
                 "Wait time (seconds) after LoadURL completes before the next Resync is accepted.",
-                settings.localCooldownSec, 0f, 60f);
+                settings.localCooldownSec,
+                AunCastResyncCoordinatorClient.MIN_LOCAL_COOLDOWN_SEC,
+                AunCastResyncCoordinatorClient.MAX_LOCAL_COOLDOWN_SEC);
             float newBase = SliderField("リトライ間隔（初回） [秒]", "Retry Interval (Initial) [s]", "baseCooldownSec",
                 "リトライの基本待機時間（秒）。両系統の接続が失敗し続けると、この値からリトライ間隔倍率に従って増えていく（上限はリトライ間隔（上限））。レート制限による再接続待ちでは、倍増せずこの値で毎回待機する。",
                 "Base retry wait time (seconds). If both pipelines keep failing to connect, it grows from this value by the retry interval multiplier (capped by Retry Interval (Max)). For rate-limited reconnection waits, it waits this value each time without multiplying.",
-                settings.baseCooldownSec, 5f, 180f);
+                settings.baseCooldownSec,
+                AunCastResyncCoordinatorClient.MIN_BASE_COOLDOWN_SEC,
+                AunCastResyncCoordinatorClient.MAX_BASE_COOLDOWN_SEC);
             float newMultiplier = SliderField("リトライ間隔倍率", "Retry Interval Multiplier", "retryCooldownMultiplier",
                 "両系統失敗時に、連続失敗ごとのリトライ間隔へ掛ける倍率。1.0 で固定間隔、2.0 で倍々。",
                 "Multiplier applied to the retry interval per consecutive failure when both pipelines fail. 1.0 keeps a fixed interval, 2.0 doubles each time.",
-                settings.retryCooldownMultiplier, 1f, 2f);
+                settings.retryCooldownMultiplier,
+                AunCastResyncCoordinatorClient.MIN_RETRY_COOLDOWN_MULTIPLIER,
+                AunCastResyncCoordinatorClient.MAX_RETRY_COOLDOWN_MULTIPLIER);
             float newMax = SliderField("リトライ間隔（上限） [秒]", "Retry Interval (Max) [s]", "maxRetryCooldownSec",
                 "倍率に従って増えるリトライ間隔の頭打ち値（秒）。両系統失敗時のバックオフがこの値を超えない。",
                 "Cap (seconds) for the retry interval that grows by the multiplier. The backoff on both-pipeline failure does not exceed this value.",
-                settings.maxRetryCooldownSec, 5f, 180f);
+                settings.maxRetryCooldownSec,
+                AunCastResyncCoordinatorClient.MIN_MAX_RETRY_COOLDOWN_SEC,
+                AunCastResyncCoordinatorClient.MAX_MAX_RETRY_COOLDOWN_SEC);
             EditorGUI.indentLevel--;
 
             if (!EditorGUI.EndChangeCheck()) return;
@@ -384,12 +415,15 @@ namespace PasocomMate.AunCast.Internal
             settings.maxConcurrentResyncUsers = (byte)newConcurrent;
             settings.maxConnectionLimit = (byte)newConnLimit;
             settings.grantTimeoutSec = newGrant;
-            settings.runningTimeoutSec = newRunning;
+            settings.runningTimeoutSec = Mathf.Max(newCycle, newRunning);
             settings.resyncCycleTimeoutSec = newCycle;
             settings.localCooldownSec = newLocal;
             settings.baseCooldownSec = newBase;
             settings.retryCooldownMultiplier = newMultiplier;
-            settings.maxRetryCooldownSec = Mathf.Max(newBase, newMax);
+            settings.maxRetryCooldownSec = Mathf.Clamp(
+                Mathf.Max(newBase, newMax),
+                AunCastResyncCoordinatorClient.MIN_MAX_RETRY_COOLDOWN_SEC,
+                AunCastResyncCoordinatorClient.MAX_MAX_RETRY_COOLDOWN_SEC);
             EditorUtility.SetDirty(settings);
 
             ApplyResyncSettingsToScene(root, settings);
@@ -496,17 +530,35 @@ namespace PasocomMate.AunCast.Internal
             ApplyToUdonComponents(detectors, so =>
             {
                 SetFloatProperty(so, "silenceRmsThresholdDbfs", settings.silenceRmsThresholdDbfs);
-                SetFloatProperty(so, "silenceConsecutiveSec", settings.silenceConsecutiveSec);
+                SetFloatProperty(so, "silenceConsecutiveSec", Mathf.Clamp(
+                    settings.silenceConsecutiveSec,
+                    AunCastSpeaker.MIN_SILENCE_CONSECUTIVE_SEC,
+                    AunCastSpeaker.MAX_SILENCE_CONSECUTIVE_SEC));
             });
 
             var monitors = root.GetComponentsInChildren<AunCastActivePlayerMonitor>(true);
             ApplyToUdonComponents(monitors, so =>
             {
-                SetFloatProperty(so, "stalledTimeoutSec", settings.stalledTimeoutSec);
-                SetFloatProperty(so, "monitorIntervalSec", settings.monitorIntervalSec);
-                SetFloatProperty(so, "minAdvanceThresholdSec", settings.minAdvanceThresholdSec);
-                SetIntProperty(so, "minConsecutiveAdvances", settings.minConsecutiveAdvances);
-                SetFloatProperty(so, "driftSmoothingTimeConstant", settings.driftSmoothingTimeConstant);
+                SetFloatProperty(so, "stalledTimeoutSec", Mathf.Clamp(
+                    settings.stalledTimeoutSec,
+                    AunCastActivePlayerMonitor.MIN_STALLED_TIMEOUT_SEC,
+                    AunCastActivePlayerMonitor.MAX_STALLED_TIMEOUT_SEC));
+                SetFloatProperty(so, "monitorIntervalSec", Mathf.Clamp(
+                    settings.monitorIntervalSec,
+                    AunCastActivePlayerMonitor.MIN_MONITOR_INTERVAL_SEC,
+                    AunCastActivePlayerMonitor.MAX_MONITOR_INTERVAL_SEC));
+                SetFloatProperty(so, "minAdvanceThresholdSec", Mathf.Clamp(
+                    settings.minAdvanceThresholdSec,
+                    AunCastActivePlayerMonitor.MIN_ADVANCE_THRESHOLD_SEC,
+                    AunCastActivePlayerMonitor.MAX_ADVANCE_THRESHOLD_SEC));
+                SetIntProperty(so, "minConsecutiveAdvances", Mathf.Clamp(
+                    settings.minConsecutiveAdvances,
+                    AunCastActivePlayerMonitor.MIN_CONSECUTIVE_ADVANCES,
+                    AunCastActivePlayerMonitor.MAX_CONSECUTIVE_ADVANCES));
+                SetFloatProperty(so, "driftSmoothingTimeConstant", Mathf.Clamp(
+                    settings.driftSmoothingTimeConstant,
+                    AunCastActivePlayerMonitor.MIN_DRIFT_SMOOTHING_TIME_CONSTANT_SEC,
+                    AunCastActivePlayerMonitor.MAX_DRIFT_SMOOTHING_TIME_CONSTANT_SEC));
                 SetFloatProperty(so, "driftWarmupSec", settings.driftWarmupSec);
             });
 
@@ -526,6 +578,39 @@ namespace PasocomMate.AunCast.Internal
 
         internal static void ApplyResyncSettingsToScene(Transform root, PasocomMate.AunCast.AunCastSettings settings)
         {
+            int effectiveConcurrent = Mathf.Clamp(
+                settings.maxConcurrentResyncUsers,
+                AunCastResyncCoordinator.MIN_CONCURRENT_RESYNC_USERS,
+                AunCastResyncCoordinator.MAX_PLAYERS);
+            float effectiveGrantTimeoutSec = Mathf.Clamp(
+                settings.grantTimeoutSec,
+                AunCastResyncCoordinator.MIN_GRANT_TIMEOUT_SEC,
+                AunCastResyncCoordinator.MAX_GRANT_TIMEOUT_SEC);
+            float effectiveCycleTimeoutSec = Mathf.Clamp(
+                settings.resyncCycleTimeoutSec,
+                AunCastResyncCoordinatorClient.MIN_RESYNC_CYCLE_TIMEOUT_SEC,
+                AunCastResyncCoordinatorClient.MAX_RESYNC_CYCLE_TIMEOUT_SEC);
+            float effectiveRunningTimeoutSec = Mathf.Clamp(
+                Mathf.Max(settings.runningTimeoutSec, effectiveCycleTimeoutSec),
+                AunCastResyncCoordinator.MIN_RUNNING_TIMEOUT_SEC,
+                AunCastResyncCoordinator.MAX_RUNNING_TIMEOUT_SEC);
+            float effectiveLocalCooldownSec = Mathf.Clamp(
+                settings.localCooldownSec,
+                AunCastResyncCoordinatorClient.MIN_LOCAL_COOLDOWN_SEC,
+                AunCastResyncCoordinatorClient.MAX_LOCAL_COOLDOWN_SEC);
+            float effectiveBaseCooldownSec = Mathf.Clamp(
+                settings.baseCooldownSec,
+                AunCastResyncCoordinatorClient.MIN_BASE_COOLDOWN_SEC,
+                AunCastResyncCoordinatorClient.MAX_BASE_COOLDOWN_SEC);
+            float effectiveRetryCooldownMultiplier = Mathf.Clamp(
+                settings.retryCooldownMultiplier,
+                AunCastResyncCoordinatorClient.MIN_RETRY_COOLDOWN_MULTIPLIER,
+                AunCastResyncCoordinatorClient.MAX_RETRY_COOLDOWN_MULTIPLIER);
+            float effectiveMaxRetryCooldownSec = Mathf.Clamp(
+                settings.maxRetryCooldownSec,
+                effectiveBaseCooldownSec,
+                AunCastResyncCoordinatorClient.MAX_MAX_RETRY_COOLDOWN_SEC);
+
             var controllers = root.GetComponentsInChildren<AunCastDualPlayerController>(true);
             ApplyToUdonComponents(controllers, so =>
             {
@@ -536,28 +621,28 @@ namespace PasocomMate.AunCast.Internal
             var coordinators = root.GetComponentsInChildren<AunCastResyncCoordinator>(true);
             ApplyToUdonComponents(coordinators, so =>
             {
-                SetByteProperty(so, "maxConcurrentResyncUsers", settings.maxConcurrentResyncUsers);
+                SetByteProperty(so, "maxConcurrentResyncUsers", (byte)effectiveConcurrent);
                 SetByteProperty(so, "maxConnectionLimit", settings.maxConnectionLimit);
                 SetByteProperty(so, "driftResyncThresholdIndex", (byte)Mathf.Clamp(
                     settings.driftResyncThresholdIndex,
                     AunCastResyncCoordinator.DRIFT_THRESHOLD_50_MS,
                     AunCastResyncCoordinator.DRIFT_THRESHOLD_OFF));
-                SetFloatProperty(so, "grantTimeoutSec", settings.grantTimeoutSec);
-                SetFloatProperty(so, "runningTimeoutSec", settings.runningTimeoutSec);
+                SetFloatProperty(so, "grantTimeoutSec", effectiveGrantTimeoutSec);
+                SetFloatProperty(so, "runningTimeoutSec", effectiveRunningTimeoutSec);
             });
 
             var clients = root.GetComponentsInChildren<AunCastResyncCoordinatorClient>(true);
             ApplyToUdonComponents(clients, so =>
             {
-                SetFloatProperty(so, "resyncCycleTimeoutSec", settings.resyncCycleTimeoutSec);
-                SetFloatProperty(so, "localCooldownSec", settings.localCooldownSec);
-                SetFloatProperty(so, "baseCooldownSec", settings.baseCooldownSec);
-                SetFloatProperty(so, "retryCooldownMultiplier", settings.retryCooldownMultiplier);
-                SetFloatProperty(so, "maxRetryCooldownSec", settings.maxRetryCooldownSec);
+                SetFloatProperty(so, "resyncCycleTimeoutSec", effectiveCycleTimeoutSec);
+                SetFloatProperty(so, "localCooldownSec", effectiveLocalCooldownSec);
+                SetFloatProperty(so, "baseCooldownSec", effectiveBaseCooldownSec);
+                SetFloatProperty(so, "retryCooldownMultiplier", effectiveRetryCooldownMultiplier);
+                SetFloatProperty(so, "maxRetryCooldownSec", effectiveMaxRetryCooldownSec);
             });
 
             // AunCastStaffControlPanel の数値表示/入力欄を実値へ揃える（Play せずとも見た目を一致させる）
-            string concurrentVal = settings.maxConcurrentResyncUsers.ToString();
+            string concurrentVal = effectiveConcurrent.ToString();
             string connectionVal = settings.maxConnectionLimit.ToString();
             string driftThresholdVal = DRIFT_THRESHOLD_LABELS[Mathf.Clamp(
                 settings.driftResyncThresholdIndex, 0, DRIFT_THRESHOLD_LABELS.Length - 1)];
