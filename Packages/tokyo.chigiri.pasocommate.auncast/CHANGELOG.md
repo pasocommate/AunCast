@@ -5,6 +5,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.1.0] - 2026-07-22
+- 移行候補の再検出で、EditorOnly 配下を含めるか選択できるようにしました。
+- 音声のみフォールバックを既定で OFF にし、映像 Grab 経路を v3 相当の設定へ戻しました。
+- Resync の基本再試行間隔を 10 秒へ変更し、両系停止時の手動 Resync が Reboot へ昇格しないようにしました。
+
 ## [6.0.0] - 2026-07-16
 - Mode 行の追加に伴い、手元パネル・壁パネルのレイアウトを変更しました（**破壊的変更**: テーマのコンテンツサイズと余白の調整、壁パネルのアンカーの上端基準への整理、VolumeSlider の SharedContent から UserContent への移動を含みます）。パネルの配置やサイズをプレハブオーバーライドで調整していた場合、表示が崩れます。オーバーライドを解除したうえで、必要な調整をやり直してください。
 - 観客が自分の端末で自動Resyncを行うかを切り替える **Mode** を追加しました。手元パネルの Edit から Auto または Manual を選び、Apply で確定します。Manual にすると、停止・ドリフト・無音・再生エラーを契機とする自動Resync / Rebootがすべて止まります（Resync / Rebootボタンの手動操作は引き続き有効です）。
