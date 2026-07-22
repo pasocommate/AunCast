@@ -496,7 +496,7 @@ namespace PasocomMate.AunCast.Internal
                                 "This output is on an object tagged EditorOnly or under one. It will be stripped from builds; remove the EditorOnly tag if this output should be used by AunCast."),
                             MessageType.Warning);
                     }
-                    bool isBundledAunCastOutput = IsBundledAunCastOutputCandidate(root, candidate.gameObject, candidate.hierarchyPath);
+                    bool isBundledAunCastOutput = IsBundledAunCastOutputCandidate(root, candidate.gameObject);
                     if (isBundledAunCastOutput)
                     {
                         EditorGUILayout.HelpBox(
@@ -1122,18 +1122,14 @@ namespace PasocomMate.AunCast.Internal
 
         private static bool IsBundledAunCastOutputCandidate(
             Transform root,
-            GameObject gameObject,
-            string hierarchyPath)
+            GameObject gameObject)
         {
             if (root == null || gameObject == null) return false;
             if (!gameObject.transform.IsChildOf(root)) return false;
 
-            if (!string.IsNullOrEmpty(hierarchyPath)
-                && (hierarchyPath.Contains("/ExampleOutput/")
-                    || hierarchyPath.Contains("/PlayerA/")
-                    || hierarchyPath.Contains("/PlayerB/")))
-                return true;
-
+            // プレハブ実体に含まれるオブジェクトのみを同梱出力とみなす。
+            // パス名（PlayerA/PlayerB/ExampleOutput）による推測はユーザー自作出力を
+            // 誤検知するため行わない。
             return PrefabUtility.GetNearestPrefabInstanceRoot(gameObject) == root.gameObject
                    && PrefabUtility.GetCorrespondingObjectFromSource(gameObject) != null;
         }
