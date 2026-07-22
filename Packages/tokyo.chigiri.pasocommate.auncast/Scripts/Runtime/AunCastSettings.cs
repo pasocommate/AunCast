@@ -140,7 +140,7 @@ namespace PasocomMate.AunCast
         public float localCooldownSec = 6.5f;
 
         [Tooltip("再試行の基本待機時間（秒）")]
-        public float baseCooldownSec = 5.0f;
+        public float baseCooldownSec = 10.0f;
 
         [Tooltip("再試行間隔を連続失敗ごとに増やす倍率")]
         public float retryCooldownMultiplier = 1.5f;
@@ -153,7 +153,7 @@ namespace PasocomMate.AunCast
         public float crossfadeDurationSec = 0.1f;
 
         [Tooltip("映像テクスチャが取得できなくても、再生時刻が前進している場合は音声のみ配信として切替を完了する")]
-        public bool allowAudioOnlyFallback = true;
+        public bool allowAudioOnlyFallback = false;
 
         [Tooltip("音声のみ配信として扱うまで、Standby の映像テクスチャ到着を待つ時間（秒）")]
         public float audioOnlyFallbackDelaySec = 3.0f;

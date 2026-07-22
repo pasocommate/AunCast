@@ -44,7 +44,7 @@ namespace PasocomMate.AunCast
 
         [Header("Retry")]
         [Tooltip("再試行の基本待機時間（秒）")]
-        [SerializeField] private float baseCooldownSec = 5.0f;
+        [SerializeField] private float baseCooldownSec = 10.0f;
 
         [Tooltip("再試行間隔を連続失敗ごとに増やす倍率")]
         [SerializeField] private float retryCooldownMultiplier = 1.5f;

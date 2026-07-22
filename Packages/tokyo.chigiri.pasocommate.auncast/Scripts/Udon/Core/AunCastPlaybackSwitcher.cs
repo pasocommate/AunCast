@@ -30,7 +30,7 @@ namespace PasocomMate.AunCast
 
         [Header("Audio Only Fallback")]
         [Tooltip("映像テクスチャが取得できなくても、再生時刻が前進している場合は音声のみ配信として切替を完了する")]
-        [SerializeField] private bool allowAudioOnlyFallback = true;
+        [SerializeField] private bool allowAudioOnlyFallback = false;
         [Tooltip("音声のみ配信として扱うまで、Standby の映像テクスチャ到着を待つ時間（秒）")]
         [SerializeField] private float audioOnlyFallbackDelaySec = 3.0f;
         [Tooltip("音声のみ配信として扱うために必要な Standby の再生時刻前進量（秒）")]

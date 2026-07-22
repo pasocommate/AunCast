@@ -909,29 +909,20 @@ namespace PasocomMate.AunCast
             LogMessage("Reboot initiated");
         }
 
-        /// <summary>ユーザー操作による手動 Resync 要求。通常時は予約制、両系停止時はローカル Reboot に昇格する。</summary>
+        /// <summary>ユーザー操作による手動 Resync 要求。再生中のみ予約制で受け付ける。</summary>
         [PublicAPI]
         public bool RequestManualResync()
         {
             if (!HasPlayableSyncedUrl()) return false;
 
             float now = Time.time;
-            if (_localState == STATE_ACTIVE_PLAYING && !IsBothPlayersUnavailable())
-            {
-                if (!resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
+            if (_localState != STATE_ACTIVE_PLAYING) return false;
+            if (!resyncClient.TryRequestResync(now, AunCastResyncCoordinatorClient.REQUEST_REASON_MANUAL)) return false;
 
-                _retryWaitUntil = 0f;
-                _tlAction = "MANUAL_RESYNC";
-                _localState = STATE_REQUEST_PENDING;
-                LogMessage("Manual resync requested");
-                return true;
-            }
-
-            if (!ShouldEscalateManualResyncToReboot()) return false;
-
-            Reboot();
-            _tlAction = "MANUAL_RESYNC_REBOOT";
-            LogWarning("Manual resync escalated to reboot because both players are unavailable");
+            _retryWaitUntil = 0f;
+            _tlAction = "MANUAL_RESYNC";
+            _localState = STATE_REQUEST_PENDING;
+            LogMessage("Manual resync requested");
             return true;
         }
 
@@ -940,9 +931,8 @@ namespace PasocomMate.AunCast
         public bool CanRequestManualResync()
         {
             if (!HasPlayableSyncedUrl()) return false;
-            if (_localState == STATE_ACTIVE_PLAYING && !IsBothPlayersUnavailable())
-                return resyncClient.CanRequestResync(Time.time);
-            return ShouldEscalateManualResyncToReboot();
+            return _localState == STATE_ACTIVE_PLAYING
+                && resyncClient.CanRequestResync(Time.time);
         }
 
         /// <summary>Viewer/Wall UI がローカル Reboot ボタンを有効化してよいかを返す。</summary>
@@ -961,36 +951,6 @@ namespace PasocomMate.AunCast
         private bool HasSyncedUrl()
         {
             return _syncedURL != null && !string.IsNullOrEmpty(_syncedURL.Get());
-        }
-
-        private bool ShouldEscalateManualResyncToReboot()
-        {
-            if (_awaitingActiveReboot) return true;
-            if (_localState == STATE_RETRY_WAIT) return true;
-            if (_localState == STATE_IDLE
-                || _localState == STATE_REQUEST_PENDING
-                || _localState == STATE_RESERVED
-                || _localState == STATE_STANDBY_CONNECTING
-                || _localState == STATE_STANDBY_VERIFYING
-                || _localState == STATE_SWITCHING
-                || _localState == STATE_COOLDOWN)
-            {
-                return IsBothPlayersUnavailable();
-            }
-
-            return false;
-        }
-
-        private bool IsBothPlayersUnavailable()
-        {
-            return IsPlayerUnavailable(playerManagerA) && IsPlayerUnavailable(playerManagerB);
-        }
-
-        private bool IsPlayerUnavailable(AunCastVideoPlayerManager manager)
-        {
-            if (manager == null) return true;
-            if (!manager.IsPlaying()) return true;
-            return manager.GetTime() <= 0f;
         }
 
         // =================================================================
