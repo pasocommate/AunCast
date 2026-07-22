@@ -166,5 +166,10 @@ namespace PasocomMate.AunCast
         // 未指定の場合は、各スクリーンのマテリアル / RawImage に初期割り当てされていたテクスチャへ復元する。
         [Tooltip("再生停止中にスクリーンへ表示する固定画像。未指定なら初期割り当てのテクスチャへ復元する。")]
         public Texture2D idleScreenTexture;
+
+        // このシーンを最後に保存したときの AunCast パッケージバージョン。
+        // シーン保存時に AunCastVersionStamp が記録し、将来のバージョンアップ移行判定の基準に使う。
+        // SerializedObject 経由でのみ書き込むため HideInInspector かつ private。
+        [SerializeField, HideInInspector] private string _lastOpenedVersion = "";
     }
 }
