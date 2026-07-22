@@ -39,7 +39,7 @@ namespace PasocomMate.AunCast.Internal
                 AunCastSettingsInspector.RewireEventBusAndConsumers(
                     settings.transform, recordUndo: false, writeLog: false);
                 // Build 時（AunCastBuildCallback）と同様に、焼き込む管理設定も最新化する。
-                // これをしないと Play で defaultUrl / AVPro autoPlay 等が古い値のまま残る。
+                // これをしないと Play で defaultUrl / AVPro 再生設定等が古い値のまま残る。
                 AunCastSettingsInspector.ApplyVideoPlayerSettingsToScene(settings.transform, settings);
                 AunCastSettingsInspector.ApplyResyncSettingsToScene(settings.transform, settings);
                 AunCastSettingsInspector.ApplyUiSettingsToScene(settings.transform, settings);

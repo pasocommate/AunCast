@@ -13150,7 +13150,7 @@ MonoBehaviour:
   EnableAutomaticResync: 0
   videoURL:
     url: 
-  autoPlay: 0
+  autoPlay: 1
   loop: 1
   maximumResolution: 720
   useLowLatency: 1
@@ -22741,7 +22741,7 @@ MonoBehaviour:
   EnableAutomaticResync: 0
   videoURL:
     url: 
-  autoPlay: 0
+  autoPlay: 1
   loop: 1
   maximumResolution: 720
   useLowLatency: 1

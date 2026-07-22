@@ -405,9 +405,6 @@ namespace PasocomMate.AunCast.Internal
                 var so = new SerializedObject(avPro);
                 SetIntProperty(so, "maximumResolution", settings.maximumResolution);
                 SetBoolProperty(so, "useLowLatency", settings.useLowLatency);
-                // AunCast は Udon 側の LoadURL で再生を開始する。AVPro 自身の AutoPlay は
-                // ClientSim スタブの起動時再生を誘発するため、内蔵プレイヤーでは常に無効化する。
-                SetBoolProperty(so, "autoPlay", false);
 
                 if (!so.ApplyModifiedProperties()) continue;
                 EditorUtility.SetDirty(avPro);
