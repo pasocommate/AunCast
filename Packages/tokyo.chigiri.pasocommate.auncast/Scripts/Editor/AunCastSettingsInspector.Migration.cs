@@ -41,6 +41,16 @@ namespace PasocomMate.AunCast.Internal
                             RefreshMigrationCandidates(root, context, cache);
                         }
 
+                        EditorGUI.BeginChangeCheck();
+                        _migrationIncludeEditorOnly = EditorGUILayout.ToggleLeft(
+                            AunCastEditorLocalization.Localize(
+                                "EditorOnly を含める",
+                                "Include EditorOnly"),
+                            _migrationIncludeEditorOnly);
+                        // 既に検出済みなら、切替時に候補を再フィルタして即時反映する。
+                        if (EditorGUI.EndChangeCheck() && cache.detected)
+                            RefreshMigrationCandidates(root, context, cache);
+
                         EditorGUILayout.Space(4);
                         EditorGUILayout.HelpBox(
                             AunCastEditorLocalization.Localize(
@@ -433,7 +443,7 @@ namespace PasocomMate.AunCast.Internal
         {
             if (cache == null) return;
 
-            cache.candidates = CollectMigrationCandidates(root, context);
+            cache.candidates = CollectMigrationCandidates(root, context, _migrationIncludeEditorOnly);
             cache.residualCleanupCandidates = CollectResidualCleanupCandidates(root, context);
             cache.validationErrors = ValidateCurrentSpeakerRouting(context);
             cache.detected = true;
@@ -889,7 +899,10 @@ namespace PasocomMate.AunCast.Internal
             }
         }
 
-        private static MigrationCandidate[] CollectMigrationCandidates(Transform root, SpeakerSetupContext context)
+        private static MigrationCandidate[] CollectMigrationCandidates(
+            Transform root,
+            SpeakerSetupContext context,
+            bool includeEditorOnly)
         {
             var byKey = new Dictionary<string, MigrationCandidate>();
             if (root == null || !root.gameObject.scene.IsValid()) return Array.Empty<MigrationCandidate>();
@@ -1067,6 +1080,9 @@ namespace PasocomMate.AunCast.Internal
             }
 
             var list = new List<MigrationCandidate>(byKey.Values);
+            // OFF のときは EditorOnly タグ配下の出力を候補から除外する。
+            if (!includeEditorOnly)
+                list.RemoveAll(candidate => IsInEditorOnlyHierarchy(candidate.gameObject));
             list.Sort(CompareMigrationCandidates);
             return list.ToArray();
         }

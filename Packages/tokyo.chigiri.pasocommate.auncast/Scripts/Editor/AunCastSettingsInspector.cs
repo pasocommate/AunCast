@@ -30,6 +30,7 @@ namespace PasocomMate.AunCast.Internal
         // 折りたたみ状態は Editor インスタンスに持たせると選択切替で破棄されるため、SessionState に保存する。
         private const string SESSION_KEY_MIGRATION_EXPANDED = "AunCast.SettingsEditor.MigrationExpanded";
         private const string SESSION_KEY_CLEANUP_EXPANDED = "AunCast.SettingsEditor.CleanupExpanded";
+        private const string SESSION_KEY_MIGRATION_INCLUDE_EDITOR_ONLY = "AunCast.SettingsEditor.MigrationIncludeEditorOnly";
         private const string SCREEN_COMPONENT_TYPE_NAME = "VRCAVProVideoScreen";
         private const string SPEAKER_COMPONENT_TYPE_NAME = "VRCAVProVideoSpeaker";
         private const string AUDIO_OUTPUT_TUNNEL_COMPONENT_TYPE_NAME = "AudioOutputTunnel";
@@ -80,6 +81,13 @@ namespace PasocomMate.AunCast.Internal
         {
             get => SessionState.GetBool(SESSION_KEY_CLEANUP_EXPANDED, true);
             set => SessionState.SetBool(SESSION_KEY_CLEANUP_EXPANDED, value);
+        }
+
+        // 「候補を再検出」で EditorOnly 配下の出力を候補に含めるか。負荷や誤変換を避けるため既定は OFF。
+        private static bool _migrationIncludeEditorOnly
+        {
+            get => SessionState.GetBool(SESSION_KEY_MIGRATION_INCLUDE_EDITOR_ONLY, false);
+            set => SessionState.SetBool(SESSION_KEY_MIGRATION_INCLUDE_EDITOR_ONLY, value);
         }
 
         // 接続先ポップアップの選択値。0/1 は playerIndex そのもの、2 は「自動複製」。
