@@ -3,7 +3,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEditor.PackageManager;
+// UnityEditor.PackageInfo と衝突するため、明示的にエイリアスで PackageManager 側を指す。
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace PasocomMate.AunCast.Tests
 {
